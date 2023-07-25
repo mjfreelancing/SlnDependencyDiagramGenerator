@@ -25,6 +25,8 @@ namespace AllOverItDependencyDiagram
         // Such as net7.0
         public string TargetFramework { get; set; }
 
+        public bool ClearExportPath { get; set; }
+
         public string ExportPath { get; set; }
     }
 }

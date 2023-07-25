@@ -30,6 +30,11 @@ namespace AllOverItDependencyDiagram.Generator
 
         public async Task CreateDiagramsAsync()
         {
+            if (_options.ClearExportPath)
+            {
+                ClearFolder(_options.ExportPath);
+            }
+
             InitProjectGroupInfo(_options.SolutionPath);
 
             var solutionParser = new SolutionParser(Math.Max(_options.IndividualProjectTransitiveDepth, _options.AllProjectsTransitiveDepth));
@@ -45,6 +50,16 @@ namespace AllOverItDependencyDiagram.Generator
             await ExportAsSummary(_options.ExportPath, solutionProjects);
             await ExportAsIndividual(solutionProjects);
             await ExportAsAll(solutionProjects);
+        }
+
+        private static void ClearFolder(string exportPath)
+        {
+            var files = AllOverIt.IO.FileSearch.GetFiles(exportPath, "*.*", AllOverIt.IO.DiskSearchOptions.None);
+
+            foreach (var file in files)
+            {
+                file.Delete();
+            }
         }
 
         private void InitProjectGroupInfo(string solutionPath)
