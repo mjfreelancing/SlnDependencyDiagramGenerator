@@ -31,6 +31,7 @@ namespace AllOverItDependencyDiagram
             var configuration = new ConfigurationBuilder()
                 .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
                 .AddJsonFile("appsettings.json", false, false)
+                .AddUserSecrets<AppOptions>(true)
                 .Build();
 
             configuration.Bind("Options", options);

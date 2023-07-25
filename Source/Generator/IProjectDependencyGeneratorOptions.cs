@@ -30,6 +30,9 @@ namespace AllOverItDependencyDiagram.Generator
         // The target framework to resolve implicit (transitive) packages.
         string TargetFramework { get; }
 
+        // Clears the contents of the 'ExportPath' when true
+        bool ClearExportPath { get; }
+
         // The fully-qualified export path for the generated diagram files and images.
         string ExportPath { get; }
     }
