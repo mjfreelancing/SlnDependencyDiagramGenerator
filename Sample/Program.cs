@@ -12,7 +12,7 @@ namespace AllOverItDependencyDiagram
 {
     internal class Program
     {
-        static async Task Main()
+        private static async Task Main()
         {
             var options = GetAppOptions();
             var logger = new ColorConsoleLogger();
@@ -20,8 +20,11 @@ namespace AllOverItDependencyDiagram
 
             await generator.CreateDiagramsAsync();
 
-            Console.WriteLine();
-            Console.WriteLine($"The solution '{Path.GetFileName(options.SolutionPath)}' has been processed.");
+            logger
+                .WriteLine()
+                .Write(ConsoleColor.Green, "The solution '")
+                .Write(ConsoleColor.Yellow, Path.GetFileName(options.SolutionPath))
+                .WriteLine(ConsoleColor.Green, "' has been processed.");
         }
 
         private static IProjectDependencyGeneratorOptions GetAppOptions()

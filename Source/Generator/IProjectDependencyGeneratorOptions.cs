@@ -35,5 +35,8 @@ namespace AllOverItDependencyDiagram.Generator
 
         // The fully-qualified export path for the generated diagram files and images.
         string ExportPath { get; }
+
+        // Nuget package feed urls.
+        IReadOnlyCollection<string> PackageFeeds { get; set; }
     }
 }
