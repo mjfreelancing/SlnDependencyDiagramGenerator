@@ -13,13 +13,13 @@ namespace AllOverItDependencyDiagram
 
         public string TransitiveStyleFill { get; set; } = "#FFEC96";
 
-        // Also supports svg and pdf
-        public IReadOnlyCollection<DiagramImageFormat> ImageFormats { get; set; } = new List<DiagramImageFormat> { DiagramImageFormat.Png };
+        // Cannot initialize here with a default since anything read from the config is appended
+        public IReadOnlyCollection<DiagramImageFormat> ImageFormats { get; set; }
 
         // Such as C:\Dev\MyApp\MySolution.sln
         public string SolutionPath { get; set; }
 
-        // Such as C:\\Dev\\MyApp\\Source\\.*\\.csproj
+        // Such as C:\\Dev\\MyApp\\Source\\.*\.csproj
         public string ProjectPathRegex { get; set; }
 
         // Such as net7.0
