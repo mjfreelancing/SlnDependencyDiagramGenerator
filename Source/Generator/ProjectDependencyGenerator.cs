@@ -37,7 +37,8 @@ namespace AllOverItDependencyDiagram.Generator
 
             InitProjectGroupInfo(_options.SolutionPath);
 
-            var solutionParser = new SolutionParser(Math.Max(_options.IndividualProjectTransitiveDepth, _options.AllProjectsTransitiveDepth));
+            var maxTransitiveDepth = Math.Max(_options.IndividualProjectTransitiveDepth, _options.AllProjectsTransitiveDepth);
+            var solutionParser = new SolutionParser(_options.PackageFeeds, maxTransitiveDepth, _logger);
             var allProjects = await solutionParser.ParseAsync(_options.SolutionPath, _options.ProjectPathRegex, _options.TargetFramework);
 
             if (allProjects.Count == 0)

@@ -28,5 +28,8 @@ namespace AllOverItDependencyDiagram
         public bool ClearExportPath { get; set; }
 
         public string ExportPath { get; set; }
+
+        // Cannot initialize here with a default since anything read from the config is appended
+        public IReadOnlyCollection<string> PackageFeeds { get; set; }
     }
 }

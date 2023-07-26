@@ -1,5 +1,6 @@
 ﻿using AllOverIt.Extensions;
 using AllOverIt.IO;
+using AllOverIt.Logging;
 using Microsoft.Build.Construction;
 using System;
 using System.Collections.Generic;
@@ -14,11 +15,11 @@ namespace AllOverItDependencyDiagram.Parser
     {
         private static readonly Regex TargetFrameworksRegex = new(@"'\$\(TargetFramework\)'\s*==\s*'(?<target>.*?)'", RegexOptions.Singleline);
 
-        private readonly NugetPackageReferencesResolver _nugetResolver;
+        private readonly NugetPackageResolver _nugetResolver;
 
-        public SolutionParser(int maxTransitiveDepth)
+        public SolutionParser(IEnumerable<string> sourceRepositories, int maxTransitiveDepth, IColorConsoleLogger logger)
         {
-            _nugetResolver = new NugetPackageReferencesResolver(maxTransitiveDepth);
+            _nugetResolver = new NugetPackageResolver(sourceRepositories, maxTransitiveDepth, logger);
         }
 
         public async Task<IReadOnlyCollection<SolutionProject>> ParseAsync(string solutionFilePath, string projectPathRegex, string targetFramework)
