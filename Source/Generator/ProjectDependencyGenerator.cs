@@ -40,6 +40,17 @@ namespace AllOverItDependencyDiagram.Generator
             var solutionParser = new SolutionParser(Math.Max(_options.IndividualProjectTransitiveDepth, _options.AllProjectsTransitiveDepth));
             var allProjects = await solutionParser.ParseAsync(_options.SolutionPath, _options.ProjectPathRegex, _options.TargetFramework);
 
+            if (allProjects.Count == 0)
+            {
+                _logger
+                    .Write(ConsoleColor.Red, "No projects found in ")
+                    .Write(ConsoleColor.Yellow, Path.GetFileName(_options.SolutionPath))
+                    .Write(ConsoleColor.Red, " using the regex ")
+                    .WriteLine(ConsoleColor.Yellow, _options.ProjectPathRegex);
+
+                return;
+            }
+
             foreach (var project in allProjects)
             {
                 LogDependencies(project);
