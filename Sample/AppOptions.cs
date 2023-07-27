@@ -1,9 +1,10 @@
 ﻿using System.Collections.Generic;
 using AllOverItDependencyDiagram.Generator;
+using SlnDependencyDiagramGenerator.Config;
 
 namespace AllOverItDependencyDiagram
 {
-    public sealed class AppOptions : IProjectDependencyGeneratorOptions
+    public sealed class AppOptions : IDependencyGeneratorOptions
     {
         public int IndividualProjectTransitiveDepth { get; set; } = 1;
 
@@ -30,6 +31,6 @@ namespace AllOverItDependencyDiagram
         public string ExportPath { get; set; }
 
         // Cannot initialize here with a default since anything read from the config is appended
-        public IReadOnlyCollection<string> PackageFeeds { get; set; }
+        public IReadOnlyCollection<PackageFeed> PackageFeeds { get; set; }
     }
 }

@@ -4,6 +4,8 @@ using AllOverItDependencyDiagram.Generator;
 using AllOverItDependencyDiagram.Validator;
 using FluentValidation;
 using Microsoft.Extensions.Configuration;
+using SlnDependencyDiagramGenerator.Config;
+using SlnDependencyDiagramGenerator.Exceptions;
 using System;
 using System.IO;
 using System.Threading.Tasks;
@@ -18,16 +20,23 @@ namespace AllOverItDependencyDiagram
             var logger = new ColorConsoleLogger();
             var generator = new ProjectDependencyGenerator(options, logger);
 
-            await generator.CreateDiagramsAsync();
+            try
+            {
+                await generator.CreateDiagramsAsync();
 
-            logger
-                .WriteLine()
-                .Write(ConsoleColor.Green, "The solution '")
-                .Write(ConsoleColor.Yellow, Path.GetFileName(options.SolutionPath))
-                .WriteLine(ConsoleColor.Green, "' has been processed.");
+                logger
+                    .WriteLine()
+                    .Write(ConsoleColor.Green, "The solution '")
+                    .Write(ConsoleColor.Yellow, Path.GetFileName(options.SolutionPath))
+                    .WriteLine(ConsoleColor.Green, "' has been processed.");
+            }
+            catch (PackageReferenceNotResolvedException exception)
+            {
+                logger.WriteLine(ConsoleColor.Red, exception.Message);
+            }
         }
 
-        private static IProjectDependencyGeneratorOptions GetAppOptions()
+        private static IDependencyGeneratorOptions GetAppOptions()
         {
             var options = new AppOptions();
 

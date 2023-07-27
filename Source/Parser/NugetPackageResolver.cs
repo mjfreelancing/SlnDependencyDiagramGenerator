@@ -2,11 +2,14 @@
 using AllOverIt.Extensions;
 using AllOverIt.Logging;
 using NuGet.Common;
+using NuGet.Configuration;
 using NuGet.Frameworks;
 using NuGet.Packaging.Core;
 using NuGet.Protocol;
 using NuGet.Protocol.Core.Types;
 using NuGet.Versioning;
+using SlnDependencyDiagramGenerator.Config;
+using SlnDependencyDiagramGenerator.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -44,11 +47,11 @@ namespace AllOverItDependencyDiagram.Parser
         private readonly IColorConsoleLogger _consoleLogger;
         private readonly ILogger _nugetLogger;
 
-        public NugetPackageResolver(IEnumerable<string> sourceRepositories, int maxDepth, IColorConsoleLogger consoleLogger)
+        public NugetPackageResolver(IEnumerable<PackageFeed> packageFeeds, int maxDepth, IColorConsoleLogger consoleLogger)
         {
-            _sourceRepositories = sourceRepositories
+            _sourceRepositories = packageFeeds
                 .WhenNotNullOrEmpty()
-                .SelectAsReadOnlyCollection(Repository.Factory.GetCoreV3);
+                .SelectAsReadOnlyCollection(GetSourceRepository);
 
             _maxDepth = maxDepth;
             _consoleLogger = consoleLogger.WhenNotNull();
@@ -121,10 +124,29 @@ namespace AllOverItDependencyDiagram.Parser
                     }
                 }
 
+                if (packageReferences is null)
+                {
+                    throw new PackageReferenceNotResolvedException(packageName, packageVersion);
+                }
+
                 _nugetCache.Add(cacheKey, packageReferences);
             }
 
             return packageReferences?.AsReadOnlyCollection() ?? AllOverIt.Collections.Collection.EmptyReadOnly<PackageReference>();
+        }
+
+        private static SourceRepository GetSourceRepository(PackageFeed feed)
+        {
+            var credentials = feed.Username.IsNotNullOrEmpty() && feed.Password.IsNotNullOrEmpty()
+                ? new PackageSourceCredential(feed.SourceUri, feed.Username, feed.Password, true, null)
+                : null;
+
+            var packageSource = new PackageSource(feed.SourceUri)
+            {
+                Credentials = credentials
+            };
+
+            return Repository.Factory.GetCoreV3(packageSource);
         }
     }
 }

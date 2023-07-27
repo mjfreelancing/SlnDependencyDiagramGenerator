@@ -4,6 +4,7 @@ using AllOverIt.Logging;
 using AllOverIt.Process;
 using AllOverIt.Process.Extensions;
 using AllOverItDependencyDiagram.Parser;
+using SlnDependencyDiagramGenerator.Config;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -16,13 +17,13 @@ namespace AllOverItDependencyDiagram.Generator
 {
     public sealed class ProjectDependencyGenerator
     {
-        private readonly IProjectDependencyGeneratorOptions _options;
+        private readonly IDependencyGeneratorOptions _options;
         private readonly IColorConsoleLogger _logger;
 
         private string _projectGroupName;
         private string _projectGroupPrefix;
 
-        public ProjectDependencyGenerator(IProjectDependencyGeneratorOptions options, IColorConsoleLogger logger)
+        public ProjectDependencyGenerator(IDependencyGeneratorOptions options, IColorConsoleLogger logger)
         {
             _options = options.WhenNotNull();
             _logger = logger.WhenNotNull();

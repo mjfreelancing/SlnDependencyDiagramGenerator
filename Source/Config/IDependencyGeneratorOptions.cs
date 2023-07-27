@@ -1,8 +1,9 @@
 ﻿using System.Collections.Generic;
+using AllOverItDependencyDiagram.Generator;
 
-namespace AllOverItDependencyDiagram.Generator
+namespace SlnDependencyDiagramGenerator.Config
 {
-    public interface IProjectDependencyGeneratorOptions
+    public interface IDependencyGeneratorOptions
     {
         // How deep to traverse implicit (transitive) package references when processing an individual project diagram. Must be 0 or more.
         int IndividualProjectTransitiveDepth { get; }
@@ -37,6 +38,6 @@ namespace AllOverItDependencyDiagram.Generator
         string ExportPath { get; }
 
         // Nuget package feed urls.
-        IReadOnlyCollection<string> PackageFeeds { get; set; }
+        IReadOnlyCollection<PackageFeed> PackageFeeds { get; set; }
     }
 }
