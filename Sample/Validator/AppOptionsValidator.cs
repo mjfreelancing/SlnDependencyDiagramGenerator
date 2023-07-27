@@ -43,6 +43,13 @@ namespace AllOverItDependencyDiagram.Validator
                     .Must(Directory.Exists)
                     .WithMessage("The export path was not found.");
             });
+
+            RuleFor(model => model.PackageFeeds).IsNotEmpty();
+
+            When(model => model.PackageFeeds.IsNotNullOrEmpty(), () =>
+            {
+                RuleForEach(model => model.PackageFeeds).SetValidator(new PackageFeedValidator());
+            });
         }
     }
 }

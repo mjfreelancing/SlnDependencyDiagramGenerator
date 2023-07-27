@@ -2,6 +2,7 @@
 using AllOverIt.IO;
 using AllOverIt.Logging;
 using Microsoft.Build.Construction;
+using SlnDependencyDiagramGenerator.Config;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -17,9 +18,9 @@ namespace AllOverItDependencyDiagram.Parser
 
         private readonly NugetPackageResolver _nugetResolver;
 
-        public SolutionParser(IEnumerable<string> sourceRepositories, int maxTransitiveDepth, IColorConsoleLogger logger)
+        public SolutionParser(IEnumerable<PackageFeed> packageFeeds, int maxTransitiveDepth, IColorConsoleLogger logger)
         {
-            _nugetResolver = new NugetPackageResolver(sourceRepositories, maxTransitiveDepth, logger);
+            _nugetResolver = new NugetPackageResolver(packageFeeds, maxTransitiveDepth, logger);
         }
 
         public async Task<IReadOnlyCollection<SolutionProject>> ParseAsync(string solutionFilePath, string projectPathRegex, string targetFramework)
