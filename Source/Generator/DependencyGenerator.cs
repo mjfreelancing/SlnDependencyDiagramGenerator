@@ -18,15 +18,18 @@ using System.Threading.Tasks;
 
 namespace AllOverItDependencyDiagram.Generator
 {
-    public sealed class ProjectDependencyGenerator
+    public sealed partial class DependencyGenerator
     {
+        [GeneratedRegex("[A-Z]")]
+        private static partial Regex CapitalLettersRegex();
+
         private readonly DependencyGeneratorConfig _generatorConfig;
         private readonly IColorConsoleLogger _logger;
 
-        private string _projectGroupName;
-        private string _projectGroupPrefix;
+        //private string _dependencyGroupName;
+        //private string _dependencyGroupPrefix;
 
-        public ProjectDependencyGenerator(DependencyGeneratorConfig generatorConfig, IColorConsoleLogger logger)
+        public DependencyGenerator(DependencyGeneratorConfig generatorConfig, IColorConsoleLogger logger)
         {
             _generatorConfig = generatorConfig.WhenNotNull();
             _logger = logger.WhenNotNull();
@@ -41,7 +44,7 @@ namespace AllOverItDependencyDiagram.Generator
                 ClearFolder(_generatorConfig.Export.Path);
             }
 
-            InitProjectGroupInfo(_generatorConfig.Projects.SolutionPath);
+            //InitProjectGroupInfo(_generatorConfig.Projects.SolutionPath);
 
             var maxTransitiveDepth = Math.Max(_generatorConfig.Projects.IndividualTransitiveDepth, _generatorConfig.Projects.AllTransitiveDepth);
             var solutionParser = new SolutionParser(_generatorConfig.PackageFeeds, maxTransitiveDepth, _logger);
@@ -80,32 +83,32 @@ namespace AllOverItDependencyDiagram.Generator
             }
         }
 
-        private void InitProjectGroupInfo(string solutionPath)
-        {
-            _projectGroupName = Path.GetFileNameWithoutExtension(solutionPath);
+        //private void InitProjectGroupInfo(string solutionPath)
+        //{
+        //    _dependencyGroupName = Path.GetFileNameWithoutExtension(solutionPath);
 
-            var regex = new Regex("[A-Z]");
+        //    var regex = CapitalLettersRegex();
 
-            var matches = regex.Matches(_projectGroupName);
+        //    var matches = regex.Matches(_dependencyGroupName);
 
-            // Cater for when the incoming solution name is all lowercase
-            if (matches.Count == 0)
-            {
-                _projectGroupPrefix = _projectGroupName.ToLowerInvariant();
-            }
-            else
-            {
-                var capitalLetters = new char[matches.Count];
-                var i = 0;
+        //    // Cater for when the incoming solution name is all lowercase
+        //    if (matches.Count == 0)
+        //    {
+        //        _dependencyGroupPrefix = _dependencyGroupName.ToLowerInvariant();
+        //    }
+        //    else
+        //    {
+        //        var capitalLetters = new char[matches.Count];
+        //        var i = 0;
 
-                foreach (var match in matches.Cast<Match>())
-                {
-                    capitalLetters[i++] = match.Value[0];
-                }
+        //        foreach (var match in matches.Cast<Match>())
+        //        {
+        //            capitalLetters[i++] = match.Value[0];
+        //        }
 
-                _projectGroupPrefix = new string(capitalLetters).ToLowerInvariant();
-            }
-        }
+        //        _dependencyGroupPrefix = new string(capitalLetters).ToLowerInvariant();
+        //    }
+        //}
 
         private async Task ExportAsIndividual(IDictionary<string, SolutionProject> solutionProjects)
         {
@@ -121,7 +124,7 @@ namespace AllOverItDependencyDiagram.Generator
         {
             var d2Content = GenerateD2Content(solutionProjects);
 
-            return CreateD2FileAndImages($"{_projectGroupName}-All", d2Content);
+            return CreateD2FileAndImages($"{_generatorConfig.Diagram.GroupName}-All", d2Content);
         }
 
         private async Task CreateD2FileAndImages(string projectScope, string d2Content)
@@ -142,7 +145,7 @@ namespace AllOverItDependencyDiagram.Generator
             sb.AppendLine("direction: right");
             sb.AppendLine();
 
-            sb.AppendLine($"aoi: {_projectGroupName}");
+            sb.AppendLine($"{_generatorConfig.Diagram.GroupNamePrefix}: {_generatorConfig.Diagram.GroupName}");
 
             var dependencySet = new HashSet<string>();
             AppendProjectDependencies(solutionProject, solutionProjects, dependencySet, _generatorConfig.Projects.IndividualTransitiveDepth);
@@ -164,7 +167,7 @@ namespace AllOverItDependencyDiagram.Generator
             sb.AppendLine("direction: right");
             sb.AppendLine();
 
-            sb.AppendLine($"{_projectGroupPrefix}: {_projectGroupName}");
+            sb.AppendLine($"{_generatorConfig.Diagram.GroupNamePrefix}: {_generatorConfig.Diagram.GroupName}");
 
             var dependencySet = new HashSet<string>();
 
@@ -300,12 +303,12 @@ namespace AllOverItDependencyDiagram.Generator
 
         private string GetPackageStyleFillEntry(string packageAlias)
         {
-            return $"{packageAlias}.style.fill: \"{_generatorConfig.Style.PackageFill}\"";
+            return $"{packageAlias}.style.fill: \"{_generatorConfig.Diagram.PackageFill}\"";
         }
 
         private string GetTransitiveStyleFillEntry(string packageAlias)
         {
-            return $"{packageAlias}.style.fill: \"{_generatorConfig.Style.TransitiveFill}\"";
+            return $"{packageAlias}.style.fill: \"{_generatorConfig.Diagram.TransitiveFill}\"";
         }
 
         private static string GetProjectName(ProjectReference projectReference)
@@ -326,7 +329,7 @@ namespace AllOverItDependencyDiagram.Generator
         private async Task<string> CreateD2FileAsync(string content, string projectScope)
         {
             var fileName = projectScope.IsNullOrEmpty()
-                ? $"{_projectGroupName.ToLowerInvariant()}-all.d2"
+                ? $"{_generatorConfig.Diagram.GroupName.ToLowerInvariant()}-all.d2"
                 : $"{projectScope}.d2";
 
             var d2FilePath = Path.Combine(_generatorConfig.Export.Path, fileName);
@@ -377,7 +380,7 @@ namespace AllOverItDependencyDiagram.Generator
             alias = alias.ToLowerInvariant().Replace(".", "-");
 
             return includeProjectGroupPrefix
-                ? $"{_projectGroupPrefix}.{alias}"
+                ? $"{_generatorConfig.Diagram.GroupNamePrefix}.{alias}"
                 : alias;
         }
 

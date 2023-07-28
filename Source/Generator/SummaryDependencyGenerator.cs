@@ -114,7 +114,7 @@ namespace AllOverItDependencyDiagram.Generator
 
             if (!solutionProjects.TryGetValue(projectName, out var solutionProject))
             {
-                throw new DependencyDiagramGeneratorException($"The project '{projectName}' was not found using the provided regex paths.");
+                throw new DependencyGeneratorException($"The project '{projectName}' was not found using the provided regex paths.");
             }
 
             // Add all packages dependencies (recursively) for the current project

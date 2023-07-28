@@ -15,7 +15,7 @@ namespace AllOverItDependencyDiagram
         {
             var options = GetGeneratorConfig();
             var logger = new ColorConsoleLogger();
-            var generator = new ProjectDependencyGenerator(options, logger);
+            var generator = new DependencyGenerator(options, logger);
 
             try
             {
@@ -27,7 +27,7 @@ namespace AllOverItDependencyDiagram
                     .Write(ConsoleColor.Yellow, Path.GetFileName(options.Projects.SolutionPath))
                     .WriteLine(ConsoleColor.Green, "' has been processed.");
             }
-            catch (DependencyDiagramGeneratorException exception)
+            catch (DependencyGeneratorException exception)
             {
                 logger.WriteLine(ConsoleColor.Red, exception.Message);
             }

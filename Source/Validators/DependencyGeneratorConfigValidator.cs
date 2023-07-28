@@ -36,8 +36,10 @@ namespace SlnDependencyDiagramGenerator.Validators
             RuleFor(model => model.Projects.IndividualTransitiveDepth).IsGreaterThanOrEqualTo(0);
             RuleFor(model => model.Projects.AllTransitiveDepth).IsGreaterThanOrEqualTo(0);
 
-            RuleFor(model => model.Style.PackageFill).IsNotEmpty();
-            RuleFor(model => model.Style.TransitiveFill).IsNotEmpty();
+            RuleFor(model => model.Diagram.PackageFill).IsNotEmpty();
+            RuleFor(model => model.Diagram.TransitiveFill).IsNotEmpty();
+            RuleFor(model => model.Diagram.GroupName).IsNotEmpty();
+            RuleFor(model => model.Diagram.GroupNamePrefix).IsNotEmpty();
 
             RuleFor(model => model.TargetFramework).IsNotEmpty();
 
