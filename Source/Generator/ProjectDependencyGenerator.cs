@@ -3,8 +3,11 @@ using AllOverIt.Extensions;
 using AllOverIt.Logging;
 using AllOverIt.Process;
 using AllOverIt.Process.Extensions;
+using AllOverIt.Validation.Extensions;
 using AllOverItDependencyDiagram.Parser;
+using FluentValidation;
 using SlnDependencyDiagramGenerator.Config;
+using SlnDependencyDiagramGenerator.Validators;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -17,38 +20,40 @@ namespace AllOverItDependencyDiagram.Generator
 {
     public sealed class ProjectDependencyGenerator
     {
-        private readonly IDependencyGeneratorOptions _options;
+        private readonly DependencyGeneratorConfig _generatorConfig;
         private readonly IColorConsoleLogger _logger;
 
         private string _projectGroupName;
         private string _projectGroupPrefix;
 
-        public ProjectDependencyGenerator(IDependencyGeneratorOptions options, IColorConsoleLogger logger)
+        public ProjectDependencyGenerator(DependencyGeneratorConfig generatorConfig, IColorConsoleLogger logger)
         {
-            _options = options.WhenNotNull();
+            _generatorConfig = generatorConfig.WhenNotNull();
             _logger = logger.WhenNotNull();
+
+            AssertConfiguration();
         }
 
         public async Task CreateDiagramsAsync()
         {
-            if (_options.ClearExportPath)
+            if (_generatorConfig.Export.ClearContents)
             {
-                ClearFolder(_options.ExportPath);
+                ClearFolder(_generatorConfig.Export.Path);
             }
 
-            InitProjectGroupInfo(_options.SolutionPath);
+            InitProjectGroupInfo(_generatorConfig.Projects.SolutionPath);
 
-            var maxTransitiveDepth = Math.Max(_options.IndividualProjectTransitiveDepth, _options.AllProjectsTransitiveDepth);
-            var solutionParser = new SolutionParser(_options.PackageFeeds, maxTransitiveDepth, _logger);
-            var allProjects = await solutionParser.ParseAsync(_options.SolutionPath, _options.ProjectPathRegex, _options.TargetFramework);
+            var maxTransitiveDepth = Math.Max(_generatorConfig.Projects.IndividualTransitiveDepth, _generatorConfig.Projects.AllTransitiveDepth);
+            var solutionParser = new SolutionParser(_generatorConfig.PackageFeeds, maxTransitiveDepth, _logger);
+            var allProjects = await solutionParser.ParseAsync(_generatorConfig.Projects.SolutionPath, _generatorConfig.Projects.RegexToInclude, _generatorConfig.TargetFramework);
 
             if (allProjects.Count == 0)
             {
                 _logger
                     .Write(ConsoleColor.Red, "No projects found in ")
-                    .Write(ConsoleColor.Yellow, Path.GetFileName(_options.SolutionPath))
-                    .Write(ConsoleColor.Red, " using the regex ")
-                    .WriteLine(ConsoleColor.Yellow, _options.ProjectPathRegex);
+                    .Write(ConsoleColor.Yellow, Path.GetFileName(_generatorConfig.Projects.SolutionPath))
+                    .Write(ConsoleColor.Red, " using the regex(es) ")
+                    .WriteLine(ConsoleColor.Yellow, string.Join(", ", _generatorConfig.Projects.RegexToInclude));
 
                 return;
             }
@@ -60,7 +65,7 @@ namespace AllOverItDependencyDiagram.Generator
 
             var solutionProjects = allProjects.ToDictionary(project => project.Name, project => project);
 
-            await ExportAsSummary(_options.ExportPath, solutionProjects);
+            await ExportAsSummary(_generatorConfig.Export.Path, solutionProjects);
             await ExportAsIndividual(solutionProjects);
             await ExportAsAll(solutionProjects);
         }
@@ -124,7 +129,7 @@ namespace AllOverItDependencyDiagram.Generator
             // Create the file and return the fully-qualified file path
             var filePath = await CreateD2FileAsync(d2Content, GetDiagramAliasId(projectScope, false));
 
-            foreach (var format in _options.ImageFormats)
+            foreach (var format in _generatorConfig.Export.ImageFormats)
             {
                 await ExportD2ImageFileAsync(filePath, format);
             }
@@ -140,7 +145,7 @@ namespace AllOverItDependencyDiagram.Generator
             sb.AppendLine($"aoi: {_projectGroupName}");
 
             var dependencySet = new HashSet<string>();
-            AppendProjectDependencies(solutionProject, solutionProjects, dependencySet, _options.IndividualProjectTransitiveDepth);
+            AppendProjectDependencies(solutionProject, solutionProjects, dependencySet, _generatorConfig.Projects.IndividualTransitiveDepth);
 
             foreach (var dependency in dependencySet)
             {
@@ -165,7 +170,7 @@ namespace AllOverItDependencyDiagram.Generator
 
             foreach (var solutionProject in solutionProjects)
             {
-                AppendProjectDependencies(solutionProject.Value, solutionProjects, dependencySet, _options.AllProjectsTransitiveDepth);
+                AppendProjectDependencies(solutionProject.Value, solutionProjects, dependencySet, _generatorConfig.Projects.AllTransitiveDepth);
             }
 
             foreach (var dependency in dependencySet)
@@ -295,12 +300,12 @@ namespace AllOverItDependencyDiagram.Generator
 
         private string GetPackageStyleFillEntry(string packageAlias)
         {
-            return $"{packageAlias}.style.fill: \"{_options.PackageStyleFill}\"";
+            return $"{packageAlias}.style.fill: \"{_generatorConfig.Style.PackageFill}\"";
         }
 
         private string GetTransitiveStyleFillEntry(string packageAlias)
         {
-            return $"{packageAlias}.style.fill: \"{_options.TransitiveStyleFill}\"";
+            return $"{packageAlias}.style.fill: \"{_generatorConfig.Style.TransitiveFill}\"";
         }
 
         private static string GetProjectName(ProjectReference projectReference)
@@ -324,7 +329,7 @@ namespace AllOverItDependencyDiagram.Generator
                 ? $"{_projectGroupName.ToLowerInvariant()}-all.d2"
                 : $"{projectScope}.d2";
 
-            var d2FilePath = Path.Combine(_options.ExportPath, fileName);
+            var d2FilePath = Path.Combine(_generatorConfig.Export.Path, fileName);
 
             // Showing how to mix AddFormatted() with AddFragment() where the latter
             // is a simple alternative to using string interpolation.
@@ -438,6 +443,12 @@ namespace AllOverItDependencyDiagram.Generator
                     yield return transitiveReference;
                 }
             }
+        }
+
+        private void AssertConfiguration()
+        {
+            var validator = new DependencyGeneratorConfigValidator();
+            validator.ValidateAndThrow(_generatorConfig);
         }
     }
 }

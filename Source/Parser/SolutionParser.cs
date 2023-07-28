@@ -18,24 +18,24 @@ namespace AllOverItDependencyDiagram.Parser
 
         private readonly NugetPackageResolver _nugetResolver;
 
-        public SolutionParser(IEnumerable<PackageFeed> packageFeeds, int maxTransitiveDepth, IColorConsoleLogger logger)
+        public SolutionParser(IEnumerable<NugetPackageFeed> packageFeeds, int maxTransitiveDepth, IColorConsoleLogger logger)
         {
             _nugetResolver = new NugetPackageResolver(packageFeeds, maxTransitiveDepth, logger);
         }
 
-        public async Task<IReadOnlyCollection<SolutionProject>> ParseAsync(string solutionFilePath, string projectPathRegex, string targetFramework)
+        public async Task<IReadOnlyCollection<SolutionProject>> ParseAsync(string solutionFilePath, IReadOnlyCollection<string> projectPathRegexes, string targetFramework)
         {
             var projects = new List<SolutionProject>();
 
             var solutionFile = SolutionFile.Parse(solutionFilePath);
 
-            var regex = new Regex(projectPathRegex);
+            var regexes = projectPathRegexes.SelectAsReadOnlyCollection(pathRegex =>  new Regex(pathRegex));
 
             var orderedProjects = solutionFile.ProjectsInOrder
-                .Where(project => project.ProjectType == SolutionProjectType.KnownToBeMSBuildFormat)
+                .Where(project => project.ProjectType == SolutionProjectType.KnownToBeMSBuildFormat || project.ProjectType == SolutionProjectType.WebProject)
                 .Where(project =>
                 {
-                    return regex.Matches(project.AbsolutePath).Count > 0;
+                    return regexes.Any(regex => regex.Matches(project.AbsolutePath).Count > 0);
                 })
                 .OrderBy(item => item.ProjectName);
 

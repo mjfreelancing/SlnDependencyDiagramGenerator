@@ -3,9 +3,9 @@ using AllOverIt.Validation;
 using FluentValidation;
 using SlnDependencyDiagramGenerator.Config;
 
-namespace AllOverItDependencyDiagram.Validator
+namespace SlnDependencyDiagramGenerator.Validators
 {
-    internal sealed class PackageFeedValidator : ValidatorBase<PackageFeed>
+    internal sealed class PackageFeedValidator : ValidatorBase<NugetPackageFeed>
     {
         static PackageFeedValidator()
         {
