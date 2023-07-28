@@ -126,7 +126,7 @@ namespace AllOverItDependencyDiagram.Parser
 
                 if (packageReferences is null)
                 {
-                    throw new DependencyDiagramGeneratorException($"Could not resolve the package {packageName} v{packageVersion}.");
+                    throw new DependencyGeneratorException($"Could not resolve the package {packageName} v{packageVersion}.");
                 }
 
                 _nugetCache.Add(cacheKey, packageReferences);

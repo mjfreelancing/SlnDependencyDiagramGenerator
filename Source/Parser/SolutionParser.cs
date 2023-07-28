@@ -12,9 +12,10 @@ using System.Threading.Tasks;
 
 namespace AllOverItDependencyDiagram.Parser
 {
-    internal sealed class SolutionParser
+    internal sealed partial class SolutionParser
     {
-        private static readonly Regex TargetFrameworksRegex = new(@"'\$\(TargetFramework\)'\s*==\s*'(?<target>.*?)'", RegexOptions.Singleline);
+        [GeneratedRegex("'\\$\\(TargetFramework\\)'\\s*==\\s*'(?<target>.*?)'", RegexOptions.Singleline)]
+        private static partial Regex TargetFrameworksRegex();
 
         private readonly NugetPackageResolver _nugetResolver;
 
@@ -91,6 +92,8 @@ namespace AllOverItDependencyDiagram.Parser
                 })
                 .GroupBy(grp => grp.Condition);
 
+            var targetFrameworksRegex = TargetFrameworksRegex();
+
             foreach (var itemGroup in conditionItemGroups)
             {
                 // Should more elaborate parsing be required, refer to this link for possible condition usage:
@@ -111,7 +114,7 @@ namespace AllOverItDependencyDiagram.Parser
                     //
                     // .*?  - This matches any character (except for a newline if 'RegexOptions.Singleline' is not used) zero or more times,
                     //        but as few times as possible (a non-greedy match).
-                    var matches = TargetFrameworksRegex.Matches(condition).Select(item => item.Groups["target"].Value);
+                    var matches = targetFrameworksRegex.Matches(condition).Select(item => item.Groups["target"].Value);
 
                     if (!matches.Contains(targetFramework))
                     {
