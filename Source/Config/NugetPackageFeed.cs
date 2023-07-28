@@ -1,6 +1,6 @@
 ﻿namespace SlnDependencyDiagramGenerator.Config
 {
-    public sealed class PackageFeed
+    public sealed class NugetPackageFeed
     {
         public string SourceUri { get; init; }
         public string Username { get; init; }

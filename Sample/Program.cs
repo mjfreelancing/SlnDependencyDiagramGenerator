@@ -1,8 +1,5 @@
 ﻿using AllOverIt.Logging;
-using AllOverIt.Validation.Extensions;
 using AllOverItDependencyDiagram.Generator;
-using AllOverItDependencyDiagram.Validator;
-using FluentValidation;
 using Microsoft.Extensions.Configuration;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Exceptions;
@@ -16,7 +13,7 @@ namespace AllOverItDependencyDiagram
     {
         private static async Task Main()
         {
-            var options = GetAppOptions();
+            var options = GetGeneratorConfig();
             var logger = new ColorConsoleLogger();
             var generator = new ProjectDependencyGenerator(options, logger);
 
@@ -27,18 +24,18 @@ namespace AllOverItDependencyDiagram
                 logger
                     .WriteLine()
                     .Write(ConsoleColor.Green, "The solution '")
-                    .Write(ConsoleColor.Yellow, Path.GetFileName(options.SolutionPath))
+                    .Write(ConsoleColor.Yellow, Path.GetFileName(options.Projects.SolutionPath))
                     .WriteLine(ConsoleColor.Green, "' has been processed.");
             }
-            catch (PackageReferenceNotResolvedException exception)
+            catch (DependencyDiagramGeneratorException exception)
             {
                 logger.WriteLine(ConsoleColor.Red, exception.Message);
             }
         }
 
-        private static IDependencyGeneratorOptions GetAppOptions()
+        private static DependencyGeneratorConfig GetGeneratorConfig()
         {
-            var options = new AppOptions();
+            var generatorConfig = new AppOptions();
 
             var configuration = new ConfigurationBuilder()
                 .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
@@ -46,12 +43,9 @@ namespace AllOverItDependencyDiagram
                 .AddUserSecrets<AppOptions>(true)
                 .Build();
 
-            configuration.Bind("Options", options);
+            configuration.Bind("options", generatorConfig);
 
-            var validator = new AppOptionsValidator();
-            validator.ValidateAndThrow(options);
-
-            return options;
+            return generatorConfig;
         }
     }
 }

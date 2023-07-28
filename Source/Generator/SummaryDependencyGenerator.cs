@@ -1,5 +1,6 @@
 ﻿using AllOverIt.Extensions;
 using AllOverItDependencyDiagram.Parser;
+using SlnDependencyDiagramGenerator.Exceptions;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -35,14 +36,11 @@ namespace AllOverItDependencyDiagram.Generator
             sb.AppendLine("# Dependency Summary");
             sb.AppendLine();
 
-            var maxLengths = new int[3];
-
             foreach (var solutionProject in solutionProjects)
             {
                 var project = Path.GetFileNameWithoutExtension(solutionProject.Value.Path);
                 sb.AppendLine($"## {project}");
                 sb.AppendLine();
-
 
                 var frameworkBadges = TargetFrameworkBadges.Keys
                     .Intersect(solutionProject.Value.TargetFrameworks)
@@ -100,7 +98,9 @@ namespace AllOverItDependencyDiagram.Generator
                 AppendProjectDependenciesRecursively(project, solutionProjects, dependencySet, transitiveSet);
             }
 
-            return dependencySet.Concat(transitiveSet)
+            dependencySet.UnionWith(transitiveSet);
+
+            return dependencySet
                 .Order()
                 .AsReadOnlyCollection();
         }
@@ -112,8 +112,15 @@ namespace AllOverItDependencyDiagram.Generator
 
             dependencySet.Add(projectName);
 
+            if (!solutionProjects.TryGetValue(projectName, out var solutionProject))
+            {
+                throw new DependencyDiagramGeneratorException($"The project '{projectName}' was not found using the provided regex paths.");
+            }
+
             // Add all packages dependencies (recursively) for the current project
-            foreach (var package in solutionProjects[projectName].Dependencies.SelectMany(item => item.PackageReferences))
+            var packageReferences = solutionProject.Dependencies.SelectMany(item => item.PackageReferences);
+
+            foreach (var package in packageReferences)
             {
                 AppendPackageDependenciesRecursively(package, dependencySet, transitiveSet);
             }

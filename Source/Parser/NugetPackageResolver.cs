@@ -47,7 +47,7 @@ namespace AllOverItDependencyDiagram.Parser
         private readonly IColorConsoleLogger _consoleLogger;
         private readonly ILogger _nugetLogger;
 
-        public NugetPackageResolver(IEnumerable<PackageFeed> packageFeeds, int maxDepth, IColorConsoleLogger consoleLogger)
+        public NugetPackageResolver(IEnumerable<NugetPackageFeed> packageFeeds, int maxDepth, IColorConsoleLogger consoleLogger)
         {
             _sourceRepositories = packageFeeds
                 .WhenNotNullOrEmpty()
@@ -126,7 +126,7 @@ namespace AllOverItDependencyDiagram.Parser
 
                 if (packageReferences is null)
                 {
-                    throw new PackageReferenceNotResolvedException(packageName, packageVersion);
+                    throw new DependencyDiagramGeneratorException($"Could not resolve the package {packageName} v{packageVersion}.");
                 }
 
                 _nugetCache.Add(cacheKey, packageReferences);
@@ -135,7 +135,7 @@ namespace AllOverItDependencyDiagram.Parser
             return packageReferences?.AsReadOnlyCollection() ?? AllOverIt.Collections.Collection.EmptyReadOnly<PackageReference>();
         }
 
-        private static SourceRepository GetSourceRepository(PackageFeed feed)
+        private static SourceRepository GetSourceRepository(NugetPackageFeed feed)
         {
             var credentials = feed.Username.IsNotNullOrEmpty() && feed.Password.IsNotNullOrEmpty()
                 ? new PackageSourceCredential(feed.SourceUri, feed.Username, feed.Password, true, null)
