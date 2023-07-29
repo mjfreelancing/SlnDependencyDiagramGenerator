@@ -3,6 +3,7 @@
     public enum DiagramImageFormat
     {
         Svg,
-        Png
+        Png,
+        Pdf
     }
 }
