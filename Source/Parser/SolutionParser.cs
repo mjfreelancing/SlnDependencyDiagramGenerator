@@ -125,12 +125,14 @@ namespace AllOverItDependencyDiagram.Parser
                 var items = itemGroup.SelectMany(value => value.Items).ToList();
 
                 var projectReferences = GetProjectReferences(projectFolder, items);
+                var frameworkReferences = GetFrameworkReferences(items);
                 var packageReferences = await GetPackageReferencesAsync(items, targetFramework);
 
                 var conditionalReferences = new ConditionalReferences
                 {
                     Condition = condition,
                     ProjectReferences = projectReferences,
+                    FrameworkReferences = frameworkReferences,
                     PackageReferences = packageReferences
                 };
 
@@ -152,6 +154,17 @@ namespace AllOverItDependencyDiagram.Parser
                     };
                 })
                 .ToList();
+        }
+
+        private IReadOnlyCollection<FrameworkReference> GetFrameworkReferences(IEnumerable<ProjectItemElement> projectItems)
+        {
+            return projectItems
+                .Where(item => item.ItemType.Equals("FrameworkReference", StringComparison.OrdinalIgnoreCase))
+                .Select(item => new FrameworkReference
+                {
+                    Name = item.Include
+                })
+                .AsReadOnlyCollection();
         }
 
         private async Task<IReadOnlyCollection<PackageReference>> GetPackageReferencesAsync(IEnumerable<ProjectItemElement> projectItems, string targetFramework)

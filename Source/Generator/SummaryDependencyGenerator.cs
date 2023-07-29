@@ -91,6 +91,7 @@ namespace AllOverItDependencyDiagram.Generator
             var dependencySet = new HashSet<string>();
             var transitiveSet = new HashSet<string>();
 
+            AppendFrameworkDependencies(solutionProject, dependencySet);
             AppendPackageDependencies(solutionProject, dependencySet, transitiveSet);
 
             foreach (var project in solutionProject.Dependencies.SelectMany(item => item.ProjectReferences))
@@ -120,15 +121,25 @@ namespace AllOverItDependencyDiagram.Generator
             // Add all packages dependencies (recursively) for the current project
             var packageReferences = solutionProject.Dependencies.SelectMany(item => item.PackageReferences);
 
-            foreach (var package in packageReferences)
+            foreach (var packageReference in packageReferences)
             {
-                AppendPackageDependenciesRecursively(package, dependencySet, transitiveSet);
+                AppendPackageDependenciesRecursively(packageReference, dependencySet, transitiveSet);
             }
 
             // Add all project dependencies (recursively) for the current project
             foreach (var project in solutionProjects[projectName].Dependencies.SelectMany(item => item.ProjectReferences))
             {
                 AppendProjectDependenciesRecursively(project, solutionProjects, dependencySet, transitiveSet);
+            }
+        }
+
+        private static void AppendFrameworkDependencies(SolutionProject solutionProject, HashSet<string> dependencySet)
+        {
+            var projectName = solutionProject.Name;
+
+            foreach (var framework in solutionProject.Dependencies.SelectMany(item => item.FrameworkReferences))
+            {
+                dependencySet.Add(framework.Name);
             }
         }
 
