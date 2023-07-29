@@ -167,6 +167,7 @@ namespace AllOverItDependencyDiagram.Generator
 
             dependencySet.Add($"{projectAlias}: {projectName}");
 
+            AppendFrameworkDependencies(solutionProject, dependencySet);
             AppendPackageDependencies(solutionProject, dependencySet, maxTransitiveDepth);
 
             foreach (var project in solutionProject.Dependencies.SelectMany(item => item.ProjectReferences))
@@ -202,6 +203,21 @@ namespace AllOverItDependencyDiagram.Generator
                 AppendProjectDependenciesRecursively(project, solutionProjects, dependencySet, maxTransitiveDepth);
 
                 dependencySet.Add($"{GetProjectAliasId(project)} <- {projectAlias}");
+            }
+        }
+
+        private void AppendFrameworkDependencies(SolutionProject solutionProject, HashSet<string> dependencySet)
+        {
+            var projectName = solutionProject.Name;
+            var projectAlias = GetDiagramAliasId(projectName);
+
+            foreach (var frameworkReference in solutionProject.Dependencies.SelectMany(item => item.FrameworkReferences))
+            {
+                var frameworkAlias = GetFrameworkAliasId(frameworkReference);
+
+                dependencySet.Add($"{frameworkAlias} <- {projectAlias}");
+
+                AddFrameworkStyleFillEntry(dependencySet, frameworkAlias);
             }
         }
 
@@ -242,15 +258,20 @@ namespace AllOverItDependencyDiagram.Generator
                 if (!dependencySet.Contains(packageStyleFillEntry))
                 {
                     dependencySet.Add(transitiveStyleFillEntry);
+                    dependencySet.Add($"{packageAlias}.style.opacity: {_generatorConfig.Diagram.TransitiveStyle.Opacity}");
                 }
             }
             else
             {
-                dependencySet.Remove(transitiveStyleFillEntry);
-                dependencySet.Add(packageStyleFillEntry);
-            }
+                if (dependencySet.Contains(transitiveStyleFillEntry))
+                {
+                    dependencySet.Remove(transitiveStyleFillEntry);
+                    dependencySet.Remove($"{packageAlias}.style.opacity: {_generatorConfig.Diagram.TransitiveStyle.Opacity}");
+                }
 
-            dependencySet.Add($"{packageAlias}.style.opacity: 0.8");
+                dependencySet.Add(packageStyleFillEntry);
+                dependencySet.Add($"{packageAlias}.style.opacity: {_generatorConfig.Diagram.PackageStyle.Opacity}");
+            }
 
             foreach (var package in packageReference.TransitiveReferences)
             {
@@ -265,14 +286,20 @@ namespace AllOverItDependencyDiagram.Generator
             return true;
         }
 
-        private string GetPackageStyleFillEntry(string packageAlias)
+        private void AddFrameworkStyleFillEntry(HashSet<string> dependencySet, string frameworkAlias)
         {
-            return $"{packageAlias}.style.fill: \"{_generatorConfig.Diagram.PackageFill}\"";
+            dependencySet.Add($"{frameworkAlias}.style.fill: \"{_generatorConfig.Diagram.FrameworkStyle.Fill}\"");
+            dependencySet.Add($"{frameworkAlias}.style.opacity: {_generatorConfig.Diagram.FrameworkStyle.Opacity}");
         }
 
-        private string GetTransitiveStyleFillEntry(string packageAlias)
+        private string GetPackageStyleFillEntry(string packageAlias)
         {
-            return $"{packageAlias}.style.fill: \"{_generatorConfig.Diagram.TransitiveFill}\"";
+            return $"{packageAlias}.style.fill: \"{_generatorConfig.Diagram.PackageStyle.Fill}\"";
+        }
+
+        private string GetTransitiveStyleFillEntry(string transitiveAlias)
+        {
+            return $"{transitiveAlias}.style.fill: \"{_generatorConfig.Diagram.TransitiveStyle.Fill}\"";
         }
 
         private static string GetProjectName(ProjectReference projectReference)
@@ -283,6 +310,11 @@ namespace AllOverItDependencyDiagram.Generator
         private string GetProjectAliasId(ProjectReference projectReference)
         {
             return GetDiagramAliasId(GetProjectName(projectReference));
+        }
+
+        private static string GetFrameworkAliasId(FrameworkReference frameworkReference)
+        {
+            return GetDiagramFrameworkAliasId(frameworkReference);
         }
 
         private static string GetPackageAliasId(PackageReference packageReference)
@@ -348,12 +380,24 @@ namespace AllOverItDependencyDiagram.Generator
                 : alias;
         }
 
-        private static string GetDiagramPackageAliasId(PackageReference package)
+        private static string GetDiagramFrameworkAliasId(FrameworkReference frameworkReference)
         {
-            return $"{package.Name}_{package.Version}".Replace(".", "-").ToLowerInvariant();
+            return $"{frameworkReference.Name}".Replace(".", "-").ToLowerInvariant();
+        }
+
+        private static string GetDiagramPackageAliasId(PackageReference packageReference)
+        {
+            return $"{packageReference.Name}_{packageReference.Version}".Replace(".", "-").ToLowerInvariant();
         }
 
         private void LogDependencies(SolutionProject solutionProject)
+        {
+            LogProjectDependencies(solutionProject);
+            LogFrameworkDependencies(solutionProject);
+            LogPackageDependencies(solutionProject);
+        }
+
+        private void LogProjectDependencies(SolutionProject solutionProject)
         {
             var sortedProjectDependenies = solutionProject.Dependencies
                 .SelectMany(item => item.ProjectReferences)
@@ -367,7 +411,26 @@ namespace AllOverItDependencyDiagram.Generator
                     .Write(ConsoleColor.White, " depends on ")
                     .WriteLine(ConsoleColor.Yellow, Path.GetFileNameWithoutExtension(dependency));
             }
+        }
 
+        private void LogFrameworkDependencies(SolutionProject solutionProject)
+        {
+            var sortedFrameworkReferences = solutionProject.Dependencies
+                .SelectMany(item => item.FrameworkReferences)
+                .Select(item => item.Name)
+                .Order();
+
+            foreach (var dependency in sortedFrameworkReferences)
+            {
+                _logger
+                    .Write(ConsoleColor.Yellow, solutionProject.Name)
+                    .Write(ConsoleColor.White, " depends on ")
+                    .WriteLine(ConsoleColor.Yellow, Path.GetFileNameWithoutExtension(dependency));
+            }
+        }
+
+        private void LogPackageDependencies(SolutionProject solutionProject)
+        {
             var sortedPackageDependenies = solutionProject.Dependencies
                 .SelectMany(item => GetAllPackageDependencies(item.PackageReferences))
                 .Select(item => (item.Name, item.Version))
@@ -398,6 +461,8 @@ namespace AllOverItDependencyDiagram.Generator
                 }
             }
         }
+
+
 
         private static IEnumerable<PackageReference> GetAllPackageDependencies(IEnumerable<PackageReference> packageReferences)
         {

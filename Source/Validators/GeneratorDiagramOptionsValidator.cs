@@ -13,8 +13,11 @@ namespace SlnDependencyDiagramGenerator.Validators
 
         public GeneratorDiagramOptionsValidator()
         {
-            RuleFor(model => model.PackageFill).IsNotEmpty();
-            RuleFor(model => model.TransitiveFill).IsNotEmpty();
+            var fillStyleValidator = new GeneratorDiagramOptionsFillStyleValidator();
+
+            RuleFor(model => model.FrameworkStyle).SetValidator(fillStyleValidator);
+            RuleFor(model => model.PackageStyle).SetValidator(fillStyleValidator);
+            RuleFor(model => model.TransitiveStyle).SetValidator(fillStyleValidator);
             RuleFor(model => model.GroupName).IsNotEmpty();
             RuleFor(model => model.GroupNamePrefix).IsNotEmpty();
         }
