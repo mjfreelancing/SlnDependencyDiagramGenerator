@@ -21,7 +21,6 @@ namespace SlnDependencyDiagramGenerator.Validators
                 RuleForEach(model => model.PackageFeeds).SetValidator(new PackageFeedValidator());
             });
 
-
             RuleFor(model => model.Projects).SetValidator(new GeneratorProjectOptionsValidator());
             RuleFor(model => model.Diagram).SetValidator(new GeneratorDiagramOptionsValidator());
             RuleFor(model => model.TargetFramework).IsNotEmpty();

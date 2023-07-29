@@ -19,5 +19,4 @@ namespace SlnDependencyDiagramGenerator.Validators
             RuleFor(model => model.GroupNamePrefix).IsNotEmpty();
         }
     }
-
 }

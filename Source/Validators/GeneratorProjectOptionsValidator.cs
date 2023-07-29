@@ -30,5 +30,4 @@ namespace SlnDependencyDiagramGenerator.Validators
             RuleFor(model => model.AllTransitiveDepth).IsGreaterThanOrEqualTo(0);
         }
     }
-
 }

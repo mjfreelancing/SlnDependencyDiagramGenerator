@@ -11,7 +11,7 @@ namespace AllOverItDependencyDiagram.Parser
         public IReadOnlyCollection<PackageReference> TransitiveReferences { get; init; }
 
         public PackageReference()
-            : this(false, 0)
+            : this(false, 0)                        // Is the default, but being explicit
         {
         }
 

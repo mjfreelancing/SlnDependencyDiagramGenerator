@@ -13,21 +13,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace AllOverItDependencyDiagram.Generator
 {
     public sealed partial class DependencyGenerator
     {
-        [GeneratedRegex("[A-Z]")]
-        private static partial Regex CapitalLettersRegex();
-
         private readonly DependencyGeneratorConfig _generatorConfig;
         private readonly IColorConsoleLogger _logger;
-
-        //private string _dependencyGroupName;
-        //private string _dependencyGroupPrefix;
 
         public DependencyGenerator(DependencyGeneratorConfig generatorConfig, IColorConsoleLogger logger)
         {
@@ -43,8 +36,6 @@ namespace AllOverItDependencyDiagram.Generator
             {
                 ClearFolder(_generatorConfig.Export.Path);
             }
-
-            //InitProjectGroupInfo(_generatorConfig.Projects.SolutionPath);
 
             var maxTransitiveDepth = Math.Max(_generatorConfig.Projects.IndividualTransitiveDepth, _generatorConfig.Projects.AllTransitiveDepth);
             var solutionParser = new SolutionParser(_generatorConfig.PackageFeeds, maxTransitiveDepth, _logger);
@@ -82,33 +73,6 @@ namespace AllOverItDependencyDiagram.Generator
                 file.Delete();
             }
         }
-
-        //private void InitProjectGroupInfo(string solutionPath)
-        //{
-        //    _dependencyGroupName = Path.GetFileNameWithoutExtension(solutionPath);
-
-        //    var regex = CapitalLettersRegex();
-
-        //    var matches = regex.Matches(_dependencyGroupName);
-
-        //    // Cater for when the incoming solution name is all lowercase
-        //    if (matches.Count == 0)
-        //    {
-        //        _dependencyGroupPrefix = _dependencyGroupName.ToLowerInvariant();
-        //    }
-        //    else
-        //    {
-        //        var capitalLetters = new char[matches.Count];
-        //        var i = 0;
-
-        //        foreach (var match in matches.Cast<Match>())
-        //        {
-        //            capitalLetters[i++] = match.Value[0];
-        //        }
-
-        //        _dependencyGroupPrefix = new string(capitalLetters).ToLowerInvariant();
-        //    }
-        //}
 
         private async Task ExportAsIndividual(IDictionary<string, SolutionProject> solutionProjects)
         {

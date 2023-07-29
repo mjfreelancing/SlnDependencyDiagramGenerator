@@ -28,5 +28,4 @@ namespace SlnDependencyDiagramGenerator.Validators
             RuleFor(model => model.ImageFormats).NotNull();
         }
     }
-
 }
