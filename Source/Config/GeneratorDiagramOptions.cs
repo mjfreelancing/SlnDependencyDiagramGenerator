@@ -1,10 +1,10 @@
 ﻿namespace SlnDependencyDiagramGenerator.Config
 {
-    public class GeneratorDiagramOptions : IGeneratorDiagramOptions
+    public class GeneratorDiagramOptions
     {
-        public string PackageFill { get; set; }
-        public string TransitiveFill { get; set; }
-        public string GroupName { get; set; }
-        public string GroupNamePrefix { get; set; }
+        public string PackageFill { get; init; }
+        public string TransitiveFill { get; init; }
+        public string GroupName { get; init; }
+        public string GroupNamePrefix { get; init; }
     }
 }

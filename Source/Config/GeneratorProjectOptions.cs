@@ -2,11 +2,11 @@
 
 namespace SlnDependencyDiagramGenerator.Config
 {
-    public class GeneratorProjectOptions : IGeneratorProjectOptions
+    public class GeneratorProjectOptions
     {
-        public string SolutionPath { get; set; }
-        public IReadOnlyCollection<string> RegexToInclude { get; set; }
-        public int IndividualTransitiveDepth { get; set; }
-        public int AllTransitiveDepth { get; set; }
+        public string SolutionPath { get; init; }
+        public IReadOnlyCollection<string> RegexToInclude { get; init; }
+        public int IndividualTransitiveDepth { get; init; }
+        public int AllTransitiveDepth { get; init; }
     }
 }

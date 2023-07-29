@@ -2,12 +2,12 @@
 
 namespace SlnDependencyDiagramGenerator.Config
 {
-    public class DependencyGeneratorConfig : IDependencyGeneratorConfig
+    public class DependencyGeneratorConfig
     {
-        public IReadOnlyCollection<NugetPackageFeed> PackageFeeds { get; set; }
-        public IGeneratorProjectOptions Projects { get; set; } = new GeneratorProjectOptions();
-        public IGeneratorDiagramOptions Diagram { get; set; } = new GeneratorDiagramOptions();
-        public IGeneratorExportOptions Export { get; set; } = new GeneratorExportOptions();
-        public string TargetFramework { get; set; }
+        public IReadOnlyCollection<NugetPackageFeed> PackageFeeds { get; init; }
+        public GeneratorProjectOptions Projects { get; init; } = new GeneratorProjectOptions();
+        public GeneratorDiagramOptions Diagram { get; init; } = new GeneratorDiagramOptions();
+        public GeneratorExportOptions Export { get; init; } = new GeneratorExportOptions();
+        public string TargetFramework { get; init; }
     }
 }

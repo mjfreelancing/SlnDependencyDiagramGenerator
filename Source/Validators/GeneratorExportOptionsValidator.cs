@@ -7,7 +7,7 @@ using System.IO;
 
 namespace SlnDependencyDiagramGenerator.Validators
 {
-    internal sealed class GeneratorExportOptionsValidator : ValidatorBase<IGeneratorExportOptions>
+    internal sealed class GeneratorExportOptionsValidator : ValidatorBase<GeneratorExportOptions>
     {
         static GeneratorExportOptionsValidator()
         {

@@ -3,10 +3,10 @@ using System.Collections.Generic;
 
 namespace SlnDependencyDiagramGenerator.Config
 {
-    public class GeneratorExportOptions : IGeneratorExportOptions
+    public class GeneratorExportOptions
     {
-        public bool ClearContents { get; set; }
-        public string Path { get; set; }
-        public IReadOnlyCollection<DiagramImageFormat> ImageFormats { get; set; }
+        public bool ClearContents { get; init; }
+        public string Path { get; init; }
+        public IReadOnlyCollection<DiagramImageFormat> ImageFormats { get; init; }
     }
 }

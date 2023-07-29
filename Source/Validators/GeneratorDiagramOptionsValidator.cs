@@ -4,7 +4,7 @@ using SlnDependencyDiagramGenerator.Config;
 
 namespace SlnDependencyDiagramGenerator.Validators
 {
-    internal sealed class GeneratorDiagramOptionsValidator : ValidatorBase<IGeneratorDiagramOptions>
+    internal sealed class GeneratorDiagramOptionsValidator : ValidatorBase<GeneratorDiagramOptions>
     {
         static GeneratorDiagramOptionsValidator()
         {
