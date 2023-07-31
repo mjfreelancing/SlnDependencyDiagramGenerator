@@ -60,9 +60,6 @@ namespace AllOverItDependencyDiagram.Parser
 
         public Task<IReadOnlyCollection<PackageReference>> GetPackageReferences(string packageName, string packageVersion, string targetFramework)
         {
-            _consoleLogger.Write(ConsoleColor.Green, "Processing package references for ");
-            _consoleLogger.WriteLine(ConsoleColor.Yellow, $"{packageName} v{packageVersion} ({targetFramework})");
-
             return GetPackageReferencesRecursively(packageName, packageVersion, 1, targetFramework);
         }
 
@@ -73,6 +70,9 @@ namespace AllOverItDependencyDiagram.Parser
             {
                 return Array.Empty<PackageReference>();
             }
+
+            _consoleLogger.Write(ConsoleColor.Green, "Processing package references for ");
+            _consoleLogger.WriteLine(ConsoleColor.Yellow, $"{packageName} v{packageVersion} ({targetFramework})");
 
             var cacheKey = (packageName, packageVersion);
 
@@ -130,6 +130,10 @@ namespace AllOverItDependencyDiagram.Parser
                 }
 
                 _nugetCache.Add(cacheKey, packageReferences);
+            }
+            else
+            {
+                _consoleLogger.WriteLine("  Resolved from the cache.");
             }
 
             return packageReferences?.AsReadOnlyCollection() ?? AllOverIt.Collections.Collection.EmptyReadOnly<PackageReference>();

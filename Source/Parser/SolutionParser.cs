@@ -156,7 +156,7 @@ namespace AllOverItDependencyDiagram.Parser
                 .ToList();
         }
 
-        private IReadOnlyCollection<FrameworkReference> GetFrameworkReferences(IEnumerable<ProjectItemElement> projectItems)
+        private static IReadOnlyCollection<FrameworkReference> GetFrameworkReferences(IEnumerable<ProjectItemElement> projectItems)
         {
             return projectItems
                 .Where(item => item.ItemType.Equals("FrameworkReference", StringComparison.OrdinalIgnoreCase))
