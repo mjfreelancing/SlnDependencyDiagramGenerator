@@ -359,11 +359,23 @@ namespace AllOverItDependencyDiagram.Generator
                 .Write(ConsoleColor.Yellow, Path.GetFileName(imageFileName))
                 .Write(ConsoleColor.White, "...");
 
+            // D2 sends all output to stderr so we need to check for "err:" to differentiate it from "success" messages.
             var d2Process = ProcessBuilder
-               .For("d2.exe")
-               .WithNoWindow()
-               .WithArguments("-l", "elk", d2FileName, imageFileName)
-               .BuildProcessExecutor();
+                .For("d2.exe")
+                .WithNoWindow()
+                .WithArguments("-l", "elk", d2FileName, imageFileName)
+                .WithErrorOutputHandler((sender, eventArgs) =>
+                {
+                    if (eventArgs.Data is string message)
+                    {
+                        var consoleColor = message.StartsWith("err:", StringComparison.InvariantCultureIgnoreCase)
+                            ? ConsoleColor.Red
+                            : ConsoleColor.Green;
+
+                        _logger.WriteLine(consoleColor, message);
+                    }
+                })
+                .BuildProcessExecutor();
 
             await d2Process.ExecuteAsync();
 
