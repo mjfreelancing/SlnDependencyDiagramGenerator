@@ -17,37 +17,53 @@ using System.Threading.Tasks;
 
 namespace AllOverItDependencyDiagram.Generator
 {
+    /// <summary>Parses a Visual Studio Solution file to discover the projects it contains. These projects are then filtered based on
+    /// one or more regex expressions, allowing for projects to be filtered based on their name or folder location. Each project is
+    /// then parsed to discover any dependent <see cref="ProjectReference"/>, explicit and transitive (implicit) <see cref="PackageReference"/>,
+    /// and <see cref="FrameworkReference"/> elements.<br/><br/>
+    /// The <see cref="PackageReference"/> elements are recursively resolved to a specified depth from one or more nuget sources with the
+    /// transitive references reported based on their minimum package version. This opinionated method of reporting is to allow for the detection
+    /// of unintentional use of different versions across multiple projects in the solution and their dependencies.<br/><br/>
+    /// With all of this information the dependency generator creates a 'Dependency Summary' markdown report, a dependency diagram for each
+    /// project as well as the entire solution (for the projects processed) in D2 format as well as one or more of the <c>svg</c>, <c>png</c>,
+    /// or <c>pdf</c> formats.<br/><br/>
+    /// Refer to <see cref="DependencyGeneratorConfig"/> for more information on the configuration options available.</summary>
     public sealed partial class DependencyGenerator
     {
-        private readonly DependencyGeneratorConfig _generatorConfig;
+        private readonly DependencyGeneratorConfig _configuration;
         private readonly IColorConsoleLogger _logger;
 
-        public DependencyGenerator(DependencyGeneratorConfig generatorConfig, IColorConsoleLogger logger)
+        /// <summary>Constructor.</summary>
+        /// <param name="configuration">The dependency generator configuration options.</param>
+        /// <param name="logger">A console logger that provides progress information during the processing of projects and generation of diagrams.</param>
+        public DependencyGenerator(DependencyGeneratorConfig configuration, IColorConsoleLogger logger)
         {
-            _generatorConfig = generatorConfig.WhenNotNull();
+            _configuration = configuration.WhenNotNull();
             _logger = logger.WhenNotNull();
 
             AssertConfiguration();
         }
 
+        /// <summary>Initiates the process of parsing the solution projects and diagram generation.</summary>
+        /// <returns>A <see cref="Task"/> that completes when the diagram generation has completed.</returns>
         public async Task CreateDiagramsAsync()
         {
-            if (_generatorConfig.Export.ClearContents)
+            if (_configuration.Export.ClearContents)
             {
-                ClearFolder(_generatorConfig.Export.Path);
+                ClearFolder(_configuration.Export.Path);
             }
 
-            var maxTransitiveDepth = Math.Max(_generatorConfig.Projects.IndividualTransitiveDepth, _generatorConfig.Projects.AllTransitiveDepth);
-            var solutionParser = new SolutionParser(_generatorConfig.PackageFeeds, maxTransitiveDepth, _logger);
-            var allProjects = await solutionParser.ParseAsync(_generatorConfig.Projects.SolutionPath, _generatorConfig.Projects.RegexToInclude, _generatorConfig.TargetFramework);
+            var maxTransitiveDepth = Math.Max(_configuration.Projects.IndividualTransitiveDepth, _configuration.Projects.AllTransitiveDepth);
+            var solutionParser = new SolutionParser(_configuration.PackageFeeds, maxTransitiveDepth, _logger);
+            var allProjects = await solutionParser.ParseAsync(_configuration.Projects.SolutionPath, _configuration.Projects.RegexToInclude, _configuration.TargetFramework);
 
             if (allProjects.Count == 0)
             {
                 _logger
                     .Write(ConsoleColor.Red, "No projects found in ")
-                    .Write(ConsoleColor.Yellow, Path.GetFileName(_generatorConfig.Projects.SolutionPath))
+                    .Write(ConsoleColor.Yellow, Path.GetFileName(_configuration.Projects.SolutionPath))
                     .Write(ConsoleColor.Red, " using the regex(es) ")
-                    .WriteLine(ConsoleColor.Yellow, string.Join(", ", _generatorConfig.Projects.RegexToInclude));
+                    .WriteLine(ConsoleColor.Yellow, string.Join(", ", _configuration.Projects.RegexToInclude));
 
                 return;
             }
@@ -59,7 +75,7 @@ namespace AllOverItDependencyDiagram.Generator
 
             var solutionProjects = allProjects.ToDictionary(project => project.Name, project => project);
 
-            await ExportAsSummary(_generatorConfig.Export.Path, solutionProjects);
+            await ExportAsSummary(_configuration.Export.Path, solutionProjects);
             await ExportAsIndividual(solutionProjects);
             await ExportAsAll(solutionProjects);
         }
@@ -88,7 +104,7 @@ namespace AllOverItDependencyDiagram.Generator
         {
             var d2Content = GenerateD2Content(solutionProjects);
 
-            return CreateD2FileAndImages($"{_generatorConfig.Diagram.GroupName}-All", d2Content);
+            return CreateD2FileAndImages($"{_configuration.Diagram.GroupName}-All", d2Content);
         }
 
         private async Task CreateD2FileAndImages(string projectScope, string d2Content)
@@ -96,7 +112,7 @@ namespace AllOverItDependencyDiagram.Generator
             // Create the file and return the fully-qualified file path
             var filePath = await CreateD2FileAsync(d2Content, GetDiagramAliasId(projectScope, false));
 
-            foreach (var format in _generatorConfig.Export.ImageFormats)
+            foreach (var format in _configuration.Export.ImageFormats)
             {
                 await ExportD2ImageFileAsync(filePath, format);
             }
@@ -109,10 +125,10 @@ namespace AllOverItDependencyDiagram.Generator
             sb.AppendLine("direction: right");
             sb.AppendLine();
 
-            sb.AppendLine($"{_generatorConfig.Diagram.GroupNamePrefix}: {_generatorConfig.Diagram.GroupName}");
+            sb.AppendLine($"{_configuration.Diagram.GroupNamePrefix}: {_configuration.Diagram.GroupName}");
 
             var dependencySet = new HashSet<string>();
-            AppendProjectDependencies(solutionProject, solutionProjects, dependencySet, _generatorConfig.Projects.IndividualTransitiveDepth);
+            AppendProjectDependencies(solutionProject, solutionProjects, dependencySet, _configuration.Projects.IndividualTransitiveDepth);
 
             foreach (var dependency in dependencySet)
             {
@@ -131,13 +147,13 @@ namespace AllOverItDependencyDiagram.Generator
             sb.AppendLine("direction: right");
             sb.AppendLine();
 
-            sb.AppendLine($"{_generatorConfig.Diagram.GroupNamePrefix}: {_generatorConfig.Diagram.GroupName}");
+            sb.AppendLine($"{_configuration.Diagram.GroupNamePrefix}: {_configuration.Diagram.GroupName}");
 
             var dependencySet = new HashSet<string>();
 
             foreach (var solutionProject in solutionProjects)
             {
-                AppendProjectDependencies(solutionProject.Value, solutionProjects, dependencySet, _generatorConfig.Projects.AllTransitiveDepth);
+                AppendProjectDependencies(solutionProject.Value, solutionProjects, dependencySet, _configuration.Projects.AllTransitiveDepth);
             }
 
             foreach (var dependency in dependencySet)
@@ -258,7 +274,7 @@ namespace AllOverItDependencyDiagram.Generator
                 if (!dependencySet.Contains(packageStyleFillEntry))
                 {
                     dependencySet.Add(transitiveStyleFillEntry);
-                    dependencySet.Add($"{packageAlias}.style.opacity: {_generatorConfig.Diagram.TransitiveStyle.Opacity}");
+                    dependencySet.Add($"{packageAlias}.style.opacity: {_configuration.Diagram.TransitiveStyle.Opacity}");
                 }
             }
             else
@@ -266,11 +282,11 @@ namespace AllOverItDependencyDiagram.Generator
                 if (dependencySet.Contains(transitiveStyleFillEntry))
                 {
                     dependencySet.Remove(transitiveStyleFillEntry);
-                    dependencySet.Remove($"{packageAlias}.style.opacity: {_generatorConfig.Diagram.TransitiveStyle.Opacity}");
+                    dependencySet.Remove($"{packageAlias}.style.opacity: {_configuration.Diagram.TransitiveStyle.Opacity}");
                 }
 
                 dependencySet.Add(packageStyleFillEntry);
-                dependencySet.Add($"{packageAlias}.style.opacity: {_generatorConfig.Diagram.PackageStyle.Opacity}");
+                dependencySet.Add($"{packageAlias}.style.opacity: {_configuration.Diagram.PackageStyle.Opacity}");
             }
 
             foreach (var package in packageReference.TransitiveReferences)
@@ -288,18 +304,18 @@ namespace AllOverItDependencyDiagram.Generator
 
         private void AddFrameworkStyleFillEntry(HashSet<string> dependencySet, string frameworkAlias)
         {
-            dependencySet.Add($"{frameworkAlias}.style.fill: \"{_generatorConfig.Diagram.FrameworkStyle.Fill}\"");
-            dependencySet.Add($"{frameworkAlias}.style.opacity: {_generatorConfig.Diagram.FrameworkStyle.Opacity}");
+            dependencySet.Add($"{frameworkAlias}.style.fill: \"{_configuration.Diagram.FrameworkStyle.Fill}\"");
+            dependencySet.Add($"{frameworkAlias}.style.opacity: {_configuration.Diagram.FrameworkStyle.Opacity}");
         }
 
         private string GetPackageStyleFillEntry(string packageAlias)
         {
-            return $"{packageAlias}.style.fill: \"{_generatorConfig.Diagram.PackageStyle.Fill}\"";
+            return $"{packageAlias}.style.fill: \"{_configuration.Diagram.PackageStyle.Fill}\"";
         }
 
         private string GetTransitiveStyleFillEntry(string transitiveAlias)
         {
-            return $"{transitiveAlias}.style.fill: \"{_generatorConfig.Diagram.TransitiveStyle.Fill}\"";
+            return $"{transitiveAlias}.style.fill: \"{_configuration.Diagram.TransitiveStyle.Fill}\"";
         }
 
         private static string GetProjectName(ProjectReference projectReference)
@@ -325,10 +341,10 @@ namespace AllOverItDependencyDiagram.Generator
         private async Task<string> CreateD2FileAsync(string content, string projectScope)
         {
             var fileName = projectScope.IsNullOrEmpty()
-                ? $"{_generatorConfig.Diagram.GroupName.ToLowerInvariant()}-all.d2"
+                ? $"{_configuration.Diagram.GroupName.ToLowerInvariant()}-all.d2"
                 : $"{projectScope}.d2";
 
-            var d2FilePath = Path.Combine(_generatorConfig.Export.Path, fileName);
+            var d2FilePath = Path.Combine(_configuration.Export.Path, fileName);
 
             // Showing how to mix AddFormatted() with AddFragment() where the latter
             // is a simple alternative to using string interpolation.
@@ -388,7 +404,7 @@ namespace AllOverItDependencyDiagram.Generator
             alias = alias.ToLowerInvariant().Replace(".", "-");
 
             return includeProjectGroupPrefix
-                ? $"{_generatorConfig.Diagram.GroupNamePrefix}.{alias}"
+                ? $"{_configuration.Diagram.GroupNamePrefix}.{alias}"
                 : alias;
         }
 
@@ -474,8 +490,6 @@ namespace AllOverItDependencyDiagram.Generator
             }
         }
 
-
-
         private static IEnumerable<PackageReference> GetAllPackageDependencies(IEnumerable<PackageReference> packageReferences)
         {
             foreach (var packageReference in packageReferences)
@@ -492,7 +506,7 @@ namespace AllOverItDependencyDiagram.Generator
         private void AssertConfiguration()
         {
             var validator = new DependencyGeneratorConfigValidator();
-            validator.ValidateAndThrow(_generatorConfig);
+            validator.ValidateAndThrow(_configuration);
         }
     }
 }
