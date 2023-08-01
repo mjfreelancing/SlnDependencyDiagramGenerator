@@ -373,9 +373,9 @@ namespace AllOverItDependencyDiagram.Generator
             _logger
                 .Write(ConsoleColor.White, "Creating image: ")
                 .Write(ConsoleColor.Yellow, Path.GetFileName(imageFileName))
-                .Write(ConsoleColor.White, "...");
+                .WriteLine(ConsoleColor.White, "...");
 
-            // D2 sends all output to stderr so we need to check for "err:" to differentiate it from "success" messages.
+            // D2 sends all output to stderr so we need to check for "err:" to differentiate it from "success" / "info" messages.
             var d2Process = ProcessBuilder
                 .For("d2.exe")
                 .WithNoWindow()
@@ -388,15 +388,14 @@ namespace AllOverItDependencyDiagram.Generator
                             ? ConsoleColor.Red
                             : ConsoleColor.Green;
 
-                        _logger.WriteLine(consoleColor, message);
+                        _logger.WriteLine(consoleColor, $"  {message}");
                     }
                 })
                 .BuildProcessExecutor();
 
-            await d2Process.ExecuteAsync();
+            _ = await d2Process.ExecuteAsync();
 
-            // An example using a foreground color and text
-            _logger.WriteLine(ConsoleColor.Green, "Done");
+            _logger.WriteLine(ConsoleColor.Green, "  Done");
         }
 
         private string GetDiagramAliasId(string alias, bool includeProjectGroupPrefix = true)
