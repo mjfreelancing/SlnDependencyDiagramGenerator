@@ -1,6 +1,7 @@
 ﻿using AllOverIt.Assertion;
 using AllOverIt.Extensions;
 using AllOverIt.Logging;
+using AllOverIt.Patterns.Specification.Extensions;
 using AllOverIt.Process;
 using AllOverIt.Process.Extensions;
 using AllOverIt.Validation.Extensions;
@@ -94,7 +95,7 @@ namespace AllOverItDependencyDiagram.Generator
         {
             foreach (var scopedProject in solutionProjects.Values)
             {
-                var d2Content = GenerateD2Content(scopedProject, solutionProjects);
+                var d2Content = GenerateIndividualProjectD2Content(scopedProject, solutionProjects);
 
                 await CreateD2FileAndImages(scopedProject.Name, d2Content);
             }
@@ -102,7 +103,7 @@ namespace AllOverItDependencyDiagram.Generator
 
         private Task ExportAsAll(IDictionary<string, SolutionProject> solutionProjects)
         {
-            var d2Content = GenerateD2Content(solutionProjects);
+            var d2Content = GenerateAllProjectsD2Content(solutionProjects);
 
             return CreateD2FileAndImages($"{_configuration.Diagram.GroupName}-All", d2Content);
         }
@@ -118,17 +119,21 @@ namespace AllOverItDependencyDiagram.Generator
             }
         }
 
-        private string GenerateD2Content(SolutionProject solutionProject, IDictionary<string, SolutionProject> solutionProjects)
+        private string GenerateIndividualProjectD2Content(SolutionProject solutionProject, IDictionary<string, SolutionProject> solutionProjects)
         {
             var sb = new StringBuilder();
 
-            sb.AppendLine("direction: right");
+            sb.AppendLine($"direction: {_configuration.Diagram.Direction}".ToLowerInvariant());
             sb.AppendLine();
 
             sb.AppendLine($"{_configuration.Diagram.GroupNamePrefix}: {_configuration.Diagram.GroupName}");
 
+            var packagesWithMultipleVersions = GetOrderedDistinctPackageDependencies(solutionProject, kvp => kvp.Count() > 1)
+                .ToDictionary(kvp => kvp.Key, kvp => GetDiagramPackageGroupId(kvp.Key));
+
             var dependencySet = new HashSet<string>();
-            AppendProjectDependencies(solutionProject, solutionProjects, dependencySet, _configuration.Projects.IndividualTransitiveDepth);
+
+            AppendProjectDependencies(solutionProject, packagesWithMultipleVersions, solutionProjects, dependencySet, _configuration.Projects.IndividualTransitiveDepth);
 
             foreach (var dependency in dependencySet)
             {
@@ -140,11 +145,11 @@ namespace AllOverItDependencyDiagram.Generator
             return sb.ToString();
         }
 
-        private string GenerateD2Content(IDictionary<string, SolutionProject> solutionProjects)
+        private string GenerateAllProjectsD2Content(IDictionary<string, SolutionProject> solutionProjects)
         {
             var sb = new StringBuilder();
 
-            sb.AppendLine("direction: right");
+            sb.AppendLine($"direction: {_configuration.Diagram.Direction}".ToLowerInvariant());
             sb.AppendLine();
 
             sb.AppendLine($"{_configuration.Diagram.GroupNamePrefix}: {_configuration.Diagram.GroupName}");
@@ -153,7 +158,10 @@ namespace AllOverItDependencyDiagram.Generator
 
             foreach (var solutionProject in solutionProjects)
             {
-                AppendProjectDependencies(solutionProject.Value, solutionProjects, dependencySet, _configuration.Projects.AllTransitiveDepth);
+                var packagesWithMultipleVersions = GetOrderedDistinctPackageDependencies(solutionProject.Value, kvp => kvp.Count() > 1)
+                   .ToDictionary(kvp => kvp.Key, kvp => GetDiagramPackageGroupId(kvp.Key));;
+
+                AppendProjectDependencies(solutionProject.Value, packagesWithMultipleVersions, solutionProjects, dependencySet, _configuration.Projects.AllTransitiveDepth);
             }
 
             foreach (var dependency in dependencySet)
@@ -175,8 +183,8 @@ namespace AllOverItDependencyDiagram.Generator
             await File.WriteAllTextAsync(summaryPath, content);
         }
 
-        private void AppendProjectDependencies(SolutionProject solutionProject, IDictionary<string, SolutionProject> solutionProjects,
-            HashSet<string> dependencySet, int maxTransitiveDepth)
+        private void AppendProjectDependencies(SolutionProject solutionProject, IDictionary<string, string> packagesWithMultipleVersions,
+            IDictionary<string, SolutionProject> solutionProjects, HashSet<string> dependencySet, int maxTransitiveDepth)
         {
             var projectName = solutionProject.Name;
             var projectAlias = GetDiagramAliasId(projectName);
@@ -184,18 +192,18 @@ namespace AllOverItDependencyDiagram.Generator
             dependencySet.Add($"{projectAlias}: {projectName}");
 
             AppendFrameworkDependencies(solutionProject, dependencySet);
-            AppendPackageDependencies(solutionProject, dependencySet, maxTransitiveDepth);
+            AppendPackageDependencies(solutionProject, packagesWithMultipleVersions, dependencySet, maxTransitiveDepth);
 
             foreach (var project in solutionProject.Dependencies.SelectMany(item => item.ProjectReferences))
             {
-                AppendProjectDependenciesRecursively(project, solutionProjects, dependencySet, maxTransitiveDepth);
+                AppendProjectDependenciesRecursively(project, packagesWithMultipleVersions, solutionProjects, dependencySet, maxTransitiveDepth);
 
                 dependencySet.Add($"{GetProjectAliasId(project)} <- {projectAlias}");
             }
         }
 
-        private void AppendProjectDependenciesRecursively(ProjectReference projectReference, IDictionary<string, SolutionProject> solutionProjects,
-            HashSet<string> dependencySet, int maxTransitiveDepth)
+        private void AppendProjectDependenciesRecursively(ProjectReference projectReference, IDictionary<string, string> packagesWithMultipleVersions,
+            IDictionary<string, SolutionProject> solutionProjects, HashSet<string> dependencySet, int maxTransitiveDepth)
         {
             var projectName = GetProjectName(projectReference);
             var projectAlias = GetDiagramAliasId(projectName);
@@ -203,20 +211,12 @@ namespace AllOverItDependencyDiagram.Generator
             dependencySet.Add($"{projectAlias}: {projectName}");
 
             // Add all packages dependencies (recursively) for the current project
-            foreach (var package in solutionProjects[projectName].Dependencies.SelectMany(item => item.PackageReferences))
-            {
-                var added = AppendPackageDependenciesRecursively(package, dependencySet, maxTransitiveDepth);
-
-                if (added)
-                {
-                    dependencySet.Add($"{GetPackageAliasId(package)} <- {projectAlias}");
-                }
-            }
+            AddProjectPackageDependencies(solutionProjects[projectName], projectAlias, packagesWithMultipleVersions, dependencySet, maxTransitiveDepth);
 
             // Add all project dependencies (recursively) for the current project
             foreach (var project in solutionProjects[projectName].Dependencies.SelectMany(item => item.ProjectReferences))
             {
-                AppendProjectDependenciesRecursively(project, solutionProjects, dependencySet, maxTransitiveDepth);
+                AppendProjectDependenciesRecursively(project, packagesWithMultipleVersions, solutionProjects, dependencySet, maxTransitiveDepth);
 
                 dependencySet.Add($"{GetProjectAliasId(project)} <- {projectAlias}");
             }
@@ -229,7 +229,7 @@ namespace AllOverItDependencyDiagram.Generator
 
             foreach (var frameworkReference in solutionProject.Dependencies.SelectMany(item => item.FrameworkReferences))
             {
-                var frameworkAlias = GetFrameworkAliasId(frameworkReference);
+                var frameworkAlias = GetDiagramFrameworkAliasId(frameworkReference);
 
                 dependencySet.Add($"{frameworkAlias} <- {projectAlias}");
 
@@ -237,23 +237,34 @@ namespace AllOverItDependencyDiagram.Generator
             }
         }
 
-        private void AppendPackageDependencies(SolutionProject solutionProject, HashSet<string> dependencySet, int maxTransitiveDepth)
+        private void AppendPackageDependencies(SolutionProject solutionProject, IDictionary<string, string> packagesWithMultipleVersions,
+            HashSet<string> dependencySet, int maxTransitiveDepth)
         {
             var projectName = solutionProject.Name;
             var projectAlias = GetDiagramAliasId(projectName);
 
+            // Add all packages dependencies (recursively) for the current project
+            AddProjectPackageDependencies(solutionProject, projectAlias, packagesWithMultipleVersions, dependencySet, maxTransitiveDepth);
+        }
+
+        private void AddProjectPackageDependencies(SolutionProject solutionProject, string projectAlias, IDictionary<string, string> packagesWithMultipleVersions,
+            HashSet<string> dependencySet, int maxTransitiveDepth)
+        {
             foreach (var package in solutionProject.Dependencies.SelectMany(item => item.PackageReferences))
             {
-                var added = AppendPackageDependenciesRecursively(package, dependencySet, maxTransitiveDepth);
+                var added = AppendPackageDependenciesRecursively(package, packagesWithMultipleVersions, dependencySet, maxTransitiveDepth);
 
                 if (added)
                 {
-                    dependencySet.Add($"{GetPackageAliasId(package)} <- {projectAlias}");
+                    var packageAlias = GetDiagramPackageAliasId(package, packagesWithMultipleVersions, dependencySet);
+
+                    dependencySet.Add($"{packageAlias} <- {projectAlias}");
                 }
             }
         }
 
-        private bool AppendPackageDependenciesRecursively(PackageReference packageReference, HashSet<string> dependencySet, int maxTransitiveDepth)
+        private bool AppendPackageDependenciesRecursively(PackageReference packageReference, IDictionary<string, string> packagesWithMultipleVersions,
+            HashSet<string> dependencySet, int maxTransitiveDepth)
         {
             if (packageReference.Depth > maxTransitiveDepth)
             {
@@ -261,7 +272,7 @@ namespace AllOverItDependencyDiagram.Generator
             }
 
             var packageName = packageReference.Name;
-            var packageAlias = GetDiagramPackageAliasId(packageReference);
+            var packageAlias = GetDiagramPackageAliasId(packageReference, packagesWithMultipleVersions, dependencySet);
 
             dependencySet.Add($"{packageAlias}: {packageName}\\nv{packageReference.Version}");
 
@@ -291,11 +302,13 @@ namespace AllOverItDependencyDiagram.Generator
 
             foreach (var package in packageReference.TransitiveReferences)
             {
-                var added = AppendPackageDependenciesRecursively(package, dependencySet, maxTransitiveDepth);
+                var added = AppendPackageDependenciesRecursively(package, packagesWithMultipleVersions, dependencySet, maxTransitiveDepth);
 
                 if (added)
                 {
-                    dependencySet.Add($"{GetPackageAliasId(package)} <- {packageAlias}");
+                    var transitivePackageAlias = GetDiagramPackageAliasId(package, packagesWithMultipleVersions, dependencySet);
+
+                    dependencySet.Add($"{transitivePackageAlias} <- {packageAlias}");
                 }
             }
 
@@ -326,16 +339,6 @@ namespace AllOverItDependencyDiagram.Generator
         private string GetProjectAliasId(ProjectReference projectReference)
         {
             return GetDiagramAliasId(GetProjectName(projectReference));
-        }
-
-        private static string GetFrameworkAliasId(FrameworkReference frameworkReference)
-        {
-            return GetDiagramFrameworkAliasId(frameworkReference);
-        }
-
-        private static string GetPackageAliasId(PackageReference packageReference)
-        {
-            return GetDiagramPackageAliasId(packageReference);
         }
 
         private async Task<string> CreateD2FileAsync(string content, string projectScope)
@@ -407,14 +410,36 @@ namespace AllOverItDependencyDiagram.Generator
                 : alias;
         }
 
-        private static string GetDiagramFrameworkAliasId(FrameworkReference frameworkReference)
+        private static string GetDiagramPackageGroupId(string packageName)
         {
-            return $"{frameworkReference.Name}".Replace(".", "-").ToLowerInvariant();
+            return packageName.Replace(".", "-").ToLowerInvariant();
         }
 
-        private static string GetDiagramPackageAliasId(PackageReference packageReference)
+        private static string GetDiagramFrameworkAliasId(FrameworkReference frameworkReference)
         {
-            return $"{packageReference.Name}_{packageReference.Version}".Replace(".", "-").ToLowerInvariant();
+            return frameworkReference.Name.Replace(".", "-").ToLowerInvariant();
+        }
+
+        private static string GetDiagramPackageAliasId(PackageReference packageReference, IDictionary<string, string> packagesWithMultipleVersions,
+            HashSet<string> dependencySet)
+        {
+            var packageAlias = $"{packageReference.Name}_{packageReference.Version}".Replace(".", "-").ToLowerInvariant();
+
+            if (packagesWithMultipleVersions.TryGetValue(packageReference.Name, out var diagramPackageName))
+            {
+                var groupName = $"{diagramPackageName}-group";
+
+                packageAlias = $"{groupName}.{packageAlias}";
+
+                var diagramGroupItem = $"{groupName}: \"\"";
+
+                if (!dependencySet.Contains(diagramGroupItem))
+                {
+                    dependencySet.Add(diagramGroupItem);
+                }
+            }
+
+            return packageAlias;
         }
 
         private void LogDependencies(SolutionProject solutionProject)
@@ -456,16 +481,26 @@ namespace AllOverItDependencyDiagram.Generator
             }
         }
 
-        private void LogPackageDependencies(SolutionProject solutionProject)
+        private static IEnumerable<IGrouping<string, (string Name, string Version)>> GetOrderedDistinctPackageDependencies(SolutionProject solutionProject,
+            Func<IGrouping<string, (string Name, string Version)>, bool> predicate = default)
         {
-            var sortedPackageDependenies = solutionProject.Dependencies
+            var results = solutionProject.Dependencies
                 .SelectMany(item => GetAllPackageDependencies(item.PackageReferences))
                 .Select(item => (item.Name, item.Version))
                 .Distinct()                                     // Multiple packages may depend on another common package
                 .Order()
                 .GroupBy(item => item.Name);
 
-            foreach (var dependency in sortedPackageDependenies)
+            return predicate is null
+                ? results
+                : results.Where(predicate);
+        }
+
+        private void LogPackageDependencies(SolutionProject solutionProject)
+        {
+            var sortedPackageDependencies = GetOrderedDistinctPackageDependencies(solutionProject);
+
+            foreach (var dependency in sortedPackageDependencies)
             {
                 var dependencyName = dependency.Key;
                 var dependencyVersions = dependency.ToList();

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 namespace SlnDependencyDiagramGenerator.Config
 {
+    /// <summary>Specifies export path and image format options.</summary>
     public class GeneratorExportOptions
     {
         public bool ClearContents { get; init; }
