@@ -5,8 +5,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="AllOverIt" Version="7.0.0-rc.20" />
-        <PackageReference Include="AllOverIt.Validation" Version="7.0.0-rc.20" />
+        <PackageReference Include="AllOverIt" Version="7.0.0-rc.29" />
+        <PackageReference Include="AllOverIt.Validation" Version="7.0.0-rc.28" />
         <PackageReference Include="Microsoft.Build" Version="17.6.3" />
         <PackageReference Include="NuGet.Protocol" Version="6.6.1" />
     </ItemGroup>
