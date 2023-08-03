@@ -128,7 +128,7 @@ namespace AllOverItDependencyDiagram.Generator
 
             sb.AppendLine($"{_configuration.Diagram.GroupNamePrefix}: {_configuration.Diagram.GroupName}");
 
-            var packagesWithMultipleVersions = GetOrderedDistinctPackageDependencies(solutionProject, kvp => kvp.Count() > 1)
+            var packagesWithMultipleVersions = GetDeepOrderedDistinctPackageDependencies(solutionProject, solutionProjects, kvp => kvp.Count() > 1)
                 .ToDictionary(kvp => kvp.Key, kvp => GetDiagramPackageGroupId(kvp.Key));
 
             var dependencySet = new HashSet<string>();
@@ -158,8 +158,8 @@ namespace AllOverItDependencyDiagram.Generator
 
             foreach (var solutionProject in solutionProjects)
             {
-                var packagesWithMultipleVersions = GetOrderedDistinctPackageDependencies(solutionProject.Value, kvp => kvp.Count() > 1)
-                   .ToDictionary(kvp => kvp.Key, kvp => GetDiagramPackageGroupId(kvp.Key));;
+                var packagesWithMultipleVersions = GetDeepOrderedDistinctPackageDependencies(solutionProject.Value, solutionProjects, kvp => kvp.Count() > 1)
+                    .ToDictionary(kvp => kvp.Key, kvp => GetDiagramPackageGroupId(kvp.Key));
 
                 AppendProjectDependencies(solutionProject.Value, packagesWithMultipleVersions, solutionProjects, dependencySet, _configuration.Projects.AllTransitiveDepth);
             }
@@ -500,6 +500,46 @@ namespace AllOverItDependencyDiagram.Generator
             return predicate is null
                 ? results
                 : results.Where(predicate);
+        }
+
+        // For a given project get an ordered, distinct, list of all package references, including the package references for all referenced projects.
+        private static IEnumerable<IGrouping<string, (string Name, string Version)>> GetDeepOrderedDistinctPackageDependencies(SolutionProject solutionProject,
+            IDictionary<string, SolutionProject> solutionProjects, Func<IGrouping<string, (string Name, string Version)>, bool> predicate = default)
+        {
+            var allPackageDependencies = new List<(string Name, string Version)>();
+
+            GetDeepProjectPackageDependenciesRecursively(solutionProject, solutionProjects, allPackageDependencies);
+
+            var results = allPackageDependencies
+                .Distinct()                                     // Multiple packages may depend on another common package
+                .Order()
+                .GroupBy(item => item.Name);
+
+            return predicate is null
+                ? results
+                : results.Where(predicate);
+        }
+
+        // For a given project find all package references, including the package references for all referenced projects.
+        private static void GetDeepProjectPackageDependenciesRecursively(SolutionProject solutionProject, IDictionary<string, SolutionProject> solutionProjects,
+            List<(string Name, string Version)> allPackageDependencies)
+        {
+            var packageDependencies = solutionProject.Dependencies
+                .SelectMany(item => GetAllPackageDependencies(item.PackageReferences))
+                .Select(item => (item.Name, item.Version))
+                .Distinct();
+
+            allPackageDependencies.AddRange(packageDependencies);
+
+            var projectReferences = solutionProject.Dependencies
+                .SelectMany(item => item.ProjectReferences)
+                .Select(GetProjectName)
+                .Select(projectName => solutionProjects[projectName]);
+
+            foreach (var projectReference in projectReferences)
+            {
+                GetDeepProjectPackageDependenciesRecursively(projectReference, solutionProjects, allPackageDependencies);
+            }
         }
 
         private void LogPackageDependencies(SolutionProject solutionProject)
