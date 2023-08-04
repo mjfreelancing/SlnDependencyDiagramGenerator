@@ -6,6 +6,7 @@ namespace SlnDependencyDiagramGenerator.Config
     /// are resolved and the depth of their package dependency graph.</summary>
     public sealed class GeneratorProjectOptions
     {
+        /// <summary>Contains options relevant to several project scope options.</summary>
         public sealed class ProjectScope
         {
             /// <summary>Indicates if this project scope will be processed.</summary>

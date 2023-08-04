@@ -1,14 +1,15 @@
 ﻿namespace SlnDependencyDiagramGenerator.Config
 {
+    /// <summary>Contains configuration for a nuget package feed.</summary>
     public sealed class NugetPackageFeed
     {
-        // NuGet feed Uri
+        /// <summary>The NuGet feed Uri.</summary>
         public string SourceUri { get; init; }
 
-        // Auth username. Null if not required.
+        /// <summary>The authentication username. Set to null if not required.</summary>
         public string Username { get; init; }
 
-        // Auth password. Null if not required.
+        /// <summary>The authentication password. Set to null if not required.</summary>
         public string Password { get; init; }
     }
 }

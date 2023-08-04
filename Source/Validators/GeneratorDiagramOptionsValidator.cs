@@ -19,7 +19,7 @@ namespace SlnDependencyDiagramGenerator.Validators
             RuleFor(model => model.PackageStyle).SetValidator(fillStyleValidator);
             RuleFor(model => model.TransitiveStyle).SetValidator(fillStyleValidator);
             RuleFor(model => model.GroupName).IsNotEmpty();
-            RuleFor(model => model.GroupNamePrefix).IsNotEmpty();
+            RuleFor(model => model.GroupNameAlias).IsNotEmpty();
         }
     }
 }

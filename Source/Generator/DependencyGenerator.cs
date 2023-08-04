@@ -144,7 +144,7 @@ namespace AllOverItDependencyDiagram.Generator
             sb.AppendLine($"direction: {_configuration.Diagram.Direction}".ToLowerInvariant());
             sb.AppendLine();
 
-            sb.AppendLine($"{_configuration.Diagram.GroupNamePrefix}: {_configuration.Diagram.GroupName}");
+            sb.AppendLine($"{_configuration.Diagram.GroupNameAlias}: {_configuration.Diagram.GroupName}");
 
             var packagesWithMultipleVersions = GetDeepOrderedDistinctPackageDependencies(solutionProject, solutionProjects, kvp => kvp.Count() > 1)
                 .ToDictionary(kvp => kvp.Key, kvp => GetDiagramPackageGroupId(kvp.Key));
@@ -170,7 +170,7 @@ namespace AllOverItDependencyDiagram.Generator
             sb.AppendLine($"direction: {_configuration.Diagram.Direction}".ToLowerInvariant());
             sb.AppendLine();
 
-            sb.AppendLine($"{_configuration.Diagram.GroupNamePrefix}: {_configuration.Diagram.GroupName}");
+            sb.AppendLine($"{_configuration.Diagram.GroupNameAlias}: {_configuration.Diagram.GroupName}");
 
             var dependencySet = new HashSet<string>();
 
@@ -378,7 +378,7 @@ namespace AllOverItDependencyDiagram.Generator
             alias = alias.Replace(".", "-").ToLowerInvariant();
 
             return includeProjectGroupPrefix
-                ? $"{_configuration.Diagram.GroupNamePrefix}.{alias}"
+                ? $"{_configuration.Diagram.GroupNameAlias}.{alias}"
                 : alias;
         }
 
