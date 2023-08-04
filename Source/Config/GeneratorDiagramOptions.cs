@@ -1,7 +1,7 @@
 ﻿namespace SlnDependencyDiagramGenerator.Config
 {
     /// <summary>Specifies diagram options that determine how the diagram will be styled.</summary>
-    public class GeneratorDiagramOptions
+    public sealed class GeneratorDiagramOptions
     {
         public enum DiagramDirection
         {
