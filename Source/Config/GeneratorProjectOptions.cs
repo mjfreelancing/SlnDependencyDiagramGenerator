@@ -4,8 +4,18 @@ namespace SlnDependencyDiagramGenerator.Config
 {
     /// <summary>Specifies project related options that determine which projects for a given solution
     /// are resolved and the depth of their package dependency graph.</summary>
-    public class GeneratorProjectOptions
+    public sealed class GeneratorProjectOptions
     {
+        public sealed class ProjectScope
+        {
+            /// <summary>Indicates if this project scope will be processed.</summary>
+            public bool Enabled { get; init; }
+
+            /// <summary>Indicates how deep to traverse implicit (transitive) package references.
+            /// Must be 0 or more.</summary>
+            public int TransitiveDepth { get; init; }
+        }
+
         /// <summary>The fully-qualified path to the solution file to be parsed.</summary>
         public string SolutionPath { get; init; }
 
@@ -15,12 +25,10 @@ namespace SlnDependencyDiagramGenerator.Config
         /// are escaped for the regex pattern. Escape each of these again if used in code or configuration.</summary>
         public IReadOnlyCollection<string> RegexToInclude { get; init; }
 
-        /// <summary>Indicates how deep to traverse implicit (transitive) package references when processing an individual project diagram.
-        /// Must be 0 or more.</summary>
-        public int IndividualTransitiveDepth { get; init; }
+        /// <summary>Specifies options specific to the processing of individual projects in a solution.</summary>
+        public ProjectScope Individual { get; init; }
 
-        /// <summary>Indicates how deep to traverse implicit (transitive) package references when processing the "all projects" diagram.
-        /// Must be 0 or more.</summary>
-        public int AllTransitiveDepth { get; init; }
+        /// <summary>Specifies options specific to the processing of all projects in a solution.</summary>
+        public ProjectScope All { get; init; }
     }
 }

@@ -29,6 +29,8 @@ namespace AllOverItDependencyDiagram.Generator
             { "netstandard2.0", $"![](https://img.shields.io/badge/.NET-standard2.0-{Red}.svg)"}
         };
 
+        public const string MarkdownFilename = "Dependency Summary.md";
+
         public static string CreateContent(IDictionary<string, SolutionProject> solutionProjects)
         {
             var sb = new StringBuilder();

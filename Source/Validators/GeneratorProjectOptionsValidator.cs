@@ -26,8 +26,8 @@ namespace SlnDependencyDiagramGenerator.Validators
             });
 
             RuleFor(model => model.RegexToInclude).IsNotEmpty();
-            RuleFor(model => model.IndividualTransitiveDepth).IsGreaterThanOrEqualTo(0);
-            RuleFor(model => model.AllTransitiveDepth).IsGreaterThanOrEqualTo(0);
+            RuleFor(model => model.Individual.TransitiveDepth).IsGreaterThanOrEqualTo(0);
+            RuleFor(model => model.All.TransitiveDepth).IsGreaterThanOrEqualTo(0);
         }
     }
 }

@@ -41,7 +41,6 @@ namespace AllOverItDependencyDiagram.Parser
         }
 
         private readonly IDictionary<(string, string), IEnumerable<PackageReference>> _nugetCache = new Dictionary<(string, string), IEnumerable<PackageReference>>();
-
         private readonly IReadOnlyCollection<SourceRepository> _sourceRepositories;
         private readonly int _maxDepth;
         private readonly IColorConsoleLogger _consoleLogger;
@@ -88,9 +87,13 @@ namespace AllOverItDependencyDiagram.Parser
                 {
                     foreach (var sourceRepository in _sourceRepositories)
                     {
-                        var dependencyInfoResource = await sourceRepository.GetResourceAsync<DependencyInfoResource>();
+                        var dependencyInfoResource = await sourceRepository
+                            .GetResourceAsync<DependencyInfoResource>()
+                            .ConfigureAwait(false);
 
-                        var dependencyInfo = await dependencyInfoResource.ResolvePackage(package, nuGetFramework, cacheContext, _nugetLogger, CancellationToken.None);
+                        var dependencyInfo = await dependencyInfoResource
+                            .ResolvePackage(package, nuGetFramework, cacheContext, _nugetLogger, CancellationToken.None)
+                            .ConfigureAwait(false);
 
                         if (dependencyInfo is null)
                         {
@@ -99,27 +102,8 @@ namespace AllOverItDependencyDiagram.Parser
 
                         var dependencies = dependencyInfo.Dependencies;
 
-                        var packageReferencesList = new List<PackageReference>();
+                        packageReferences = await GetPackageReferencesForDependencies(dependencies, targetFramework, depth).ConfigureAwait(false);
 
-                        foreach (var dependency in dependencies)
-                        {
-                            var dependencyName = dependency.Id;
-                            var dependencyVersion = dependency.VersionRange.MinVersion.ToFullString();
-
-                            var transitiveReferences = await GetPackageReferencesRecursively(dependencyName, dependencyVersion, depth + 1, targetFramework);
-
-                            var packageReference = new PackageReference(true, depth)
-                            {
-                                Name = dependencyName,
-                                Version = dependencyVersion,
-                                TransitiveReferences = transitiveReferences.AsReadOnlyCollection()
-                            };
-
-                            packageReferencesList.Add(packageReference);
-                        }
-
-                        packageReferences = packageReferencesList;
-                        
                         break;
                     }
                 }
@@ -137,6 +121,30 @@ namespace AllOverItDependencyDiagram.Parser
             }
 
             return packageReferences?.AsReadOnlyCollection() ?? AllOverIt.Collections.Collection.EmptyReadOnly<PackageReference>();
+        }
+
+        private async Task<List<PackageReference>> GetPackageReferencesForDependencies(IEnumerable<PackageDependency> dependencies, string targetFramework, int depth)
+        {
+            var packageReferencesList = new List<PackageReference>();
+
+            foreach (var dependency in dependencies)
+            {
+                var dependencyName = dependency.Id;
+                var dependencyVersion = dependency.VersionRange.MinVersion.ToFullString();
+
+                var transitiveReferences = await GetPackageReferencesRecursively(dependencyName, dependencyVersion, depth + 1, targetFramework).ConfigureAwait(false);
+
+                var packageReference = new PackageReference(true, depth)
+                {
+                    Name = dependencyName,
+                    Version = dependencyVersion,
+                    TransitiveReferences = transitiveReferences.AsReadOnlyCollection()
+                };
+
+                packageReferencesList.Add(packageReference);
+            }
+
+            return packageReferencesList;
         }
 
         private static SourceRepository GetSourceRepository(NugetPackageFeed feed)

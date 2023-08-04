@@ -54,8 +54,12 @@ namespace AllOverItDependencyDiagram.Generator
                 ClearFolder(_configuration.Export.Path);
             }
 
-            var maxTransitiveDepth = Math.Max(_configuration.Projects.IndividualTransitiveDepth, _configuration.Projects.AllTransitiveDepth);
+            var individualTransitiveDepth = _configuration.Projects.Individual.Enabled ? _configuration.Projects.Individual.TransitiveDepth : 0;
+            var allTransitiveDepth = _configuration.Projects.All.Enabled ? _configuration.Projects.All.TransitiveDepth : 0;
+            var maxTransitiveDepth = Math.Max(individualTransitiveDepth, allTransitiveDepth);
+
             var solutionParser = new SolutionParser(_configuration.PackageFeeds, maxTransitiveDepth, _logger);
+
             var allProjects = await solutionParser.ParseAsync(_configuration.Projects.SolutionPath, _configuration.Projects.RegexToInclude, _configuration.TargetFramework);
 
             if (allProjects.Count == 0)
@@ -74,11 +78,21 @@ namespace AllOverItDependencyDiagram.Generator
                 LogDependencies(project);
             }
 
+            _logger.WriteLine();
+
             var solutionProjects = allProjects.ToDictionary(project => project.Name, project => project);
 
-            await ExportAsSummary(_configuration.Export.Path, solutionProjects);
-            await ExportAsIndividual(solutionProjects);
-            await ExportAsAll(solutionProjects);
+            await ExportAsSummary(_configuration.Export.Path, solutionProjects).ConfigureAwait(false);
+
+            if (_configuration.Projects.Individual.Enabled)
+            {
+                await ExportAsIndividual(solutionProjects).ConfigureAwait(false);
+            }
+
+            if (_configuration.Projects.All.Enabled)
+            {
+                await ExportAsAll(solutionProjects).ConfigureAwait(false);
+            }
         }
 
         private static void ClearFolder(string exportPath)
@@ -97,15 +111,19 @@ namespace AllOverItDependencyDiagram.Generator
             {
                 var d2Content = GenerateIndividualProjectD2Content(scopedProject, solutionProjects);
 
-                await CreateD2FileAndImages(scopedProject.Name, d2Content);
+                await CreateD2FileAndImages(scopedProject.Name, d2Content).ConfigureAwait(false);
+
+                _logger.WriteLine();
             }
         }
 
-        private Task ExportAsAll(IDictionary<string, SolutionProject> solutionProjects)
+        private async Task ExportAsAll(IDictionary<string, SolutionProject> solutionProjects)
         {
             var d2Content = GenerateAllProjectsD2Content(solutionProjects);
 
-            return CreateD2FileAndImages($"{_configuration.Diagram.GroupName}-All", d2Content);
+            await CreateD2FileAndImages($"{_configuration.Diagram.GroupName}-All", d2Content).ConfigureAwait(false);
+
+            _logger.WriteLine();
         }
 
         private async Task CreateD2FileAndImages(string projectScope, string d2Content)
@@ -133,7 +151,7 @@ namespace AllOverItDependencyDiagram.Generator
 
             var dependencySet = new HashSet<string>();
 
-            AppendProjectDependencies(solutionProject, packagesWithMultipleVersions, solutionProjects, dependencySet, _configuration.Projects.IndividualTransitiveDepth);
+            AppendProjectDependencies(solutionProject, packagesWithMultipleVersions, solutionProjects, dependencySet, _configuration.Projects.Individual.TransitiveDepth);
 
             foreach (var dependency in dependencySet)
             {
@@ -161,7 +179,7 @@ namespace AllOverItDependencyDiagram.Generator
                 var packagesWithMultipleVersions = GetDeepOrderedDistinctPackageDependencies(solutionProject.Value, solutionProjects, kvp => kvp.Count() > 1)
                     .ToDictionary(kvp => kvp.Key, kvp => GetDiagramPackageGroupId(kvp.Key));
 
-                AppendProjectDependencies(solutionProject.Value, packagesWithMultipleVersions, solutionProjects, dependencySet, _configuration.Projects.AllTransitiveDepth);
+                AppendProjectDependencies(solutionProject.Value, packagesWithMultipleVersions, solutionProjects, dependencySet, _configuration.Projects.All.TransitiveDepth);
             }
 
             foreach (var dependency in dependencySet)
@@ -174,13 +192,21 @@ namespace AllOverItDependencyDiagram.Generator
             return sb.ToString();
         }
 
-        private static async Task ExportAsSummary(string exportPath, IDictionary<string, SolutionProject> solutionProjects)
+        private async Task ExportAsSummary(string exportPath, IDictionary<string, SolutionProject> solutionProjects)
         {
             var content = SummaryDependencyGenerator.CreateContent(solutionProjects);
 
-            var summaryPath = Path.Combine(exportPath, "Dependency Summary.md");
+            var summaryPath = Path.Combine(exportPath, SummaryDependencyGenerator.MarkdownFilename);
 
+            _logger
+                .Write("{forecolor:white}Exporting Summary: ")
+                .Write(ConsoleColor.Yellow, summaryPath)
+                .Write("{forecolor:white}...");
+            
             await File.WriteAllTextAsync(summaryPath, content);
+
+            _logger.WriteLine("{forecolor:green}Done");
+            _logger.WriteLine();
         }
 
         private void AppendProjectDependencies(SolutionProject solutionProject, IDictionary<string, string> packagesWithMultipleVersions,

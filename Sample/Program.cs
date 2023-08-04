@@ -22,7 +22,6 @@ namespace AllOverItDependencyDiagram
                 await generator.CreateDiagramsAsync();
 
                 logger
-                    .WriteLine()
                     .Write(ConsoleColor.Green, "The solution '")
                     .Write(ConsoleColor.Yellow, Path.GetFileName(options.Projects.SolutionPath))
                     .WriteLine(ConsoleColor.Green, "' has been processed.");
