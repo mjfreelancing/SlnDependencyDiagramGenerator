@@ -23,7 +23,7 @@ namespace SlnDependencyDiagramGenerator.Validators
 
             RuleFor(model => model.Projects).SetValidator(new GeneratorProjectOptionsValidator());
             RuleFor(model => model.Diagram).SetValidator(new GeneratorDiagramOptionsValidator());
-            RuleFor(model => model.TargetFramework).IsNotEmpty();
+            RuleFor(model => model.TargetFrameworks).IsNotEmpty();
             RuleFor(model => model.Export).SetValidator(new GeneratorExportOptionsValidator());
         }
     }

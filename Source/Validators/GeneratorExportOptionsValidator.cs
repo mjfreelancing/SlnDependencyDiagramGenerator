@@ -16,13 +16,13 @@ namespace SlnDependencyDiagramGenerator.Validators
 
         public GeneratorExportOptionsValidator()
         {
-            RuleFor(model => model.Path).IsNotEmpty();
+            RuleFor(model => model.RootPath).IsNotEmpty();
 
-            When(model => model.Path.IsNotNullOrEmpty(), () =>
+            When(model => model.RootPath.IsNotNullOrEmpty(), () =>
             {
-                RuleFor(model => model.Path)
+                RuleFor(model => model.RootPath)
                     .Must(Directory.Exists)
-                    .WithMessage("The export path was not found.");
+                    .WithMessage("The root export path was not found.");
             });
 
             RuleFor(model => model.ImageFormats).NotNull();

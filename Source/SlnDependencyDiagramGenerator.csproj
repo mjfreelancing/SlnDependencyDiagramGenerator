@@ -1,14 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net7.0</TargetFramework>
+        <TargetFrameworks>net8.0;net7.0</TargetFrameworks>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="AllOverIt" Version="7.0.0-rc.39" />
-        <PackageReference Include="AllOverIt.Validation" Version="7.0.0-rc.39" />
-        <PackageReference Include="Microsoft.Build" Version="17.7.2" />
-        <PackageReference Include="NuGet.Protocol" Version="6.7.0" />
+        <PackageReference Include="AllOverIt" Version="7.0.0-rc.45" />
+        <PackageReference Include="AllOverIt.Validation" Version="7.0.0-rc.45" />
+        <PackageReference Include="Microsoft.Build" Version="17.8.3" />
+        <PackageReference Include="NuGet.Protocol" Version="6.8.0" />
     </ItemGroup>
 
 </Project>

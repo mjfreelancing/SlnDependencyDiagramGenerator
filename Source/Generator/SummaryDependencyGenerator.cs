@@ -59,7 +59,7 @@ namespace AllOverItDependencyDiagram.Generator
 
                 var dependencies = AppendProjectDependencies(solutionProject.Value, solutionProjects);
 
-                if (dependencies.Any())
+                if (dependencies.Count > 0)
                 {
                     foreach (var dependency in dependencies)
                     {

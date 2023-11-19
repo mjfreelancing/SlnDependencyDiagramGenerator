@@ -4,5 +4,4 @@
 // a specific target and scoped to a namespace, type, member, etc.
 
 using System.Diagnostics.CodeAnalysis;
-
-[assembly: SuppressMessage("GeneratedRegex", "SYSLIB1045:Convert to 'GeneratedRegexAttribute'.", Justification = "Not a concern in this utility")]
+[assembly: SuppressMessage("Style", "IDE0290:Use primary constructor")]

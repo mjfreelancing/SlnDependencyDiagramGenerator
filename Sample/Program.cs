@@ -1,7 +1,6 @@
 ﻿using AllOverIt.Logging;
 using AllOverItDependencyDiagram.Generator;
 using Microsoft.Extensions.Configuration;
-using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Exceptions;
 using System;
 using System.IO;
@@ -32,7 +31,7 @@ namespace AllOverItDependencyDiagram
             }
         }
 
-        private static DependencyGeneratorConfig GetGeneratorConfig()
+        private static AppOptions GetGeneratorConfig()
         {
             var generatorConfig = new AppOptions();
 

@@ -40,7 +40,7 @@ namespace AllOverItDependencyDiagram.Parser
             }
         }
 
-        private readonly IDictionary<(string, string), IEnumerable<PackageReference>> _nugetCache = new Dictionary<(string, string), IEnumerable<PackageReference>>();
+        private readonly Dictionary<(string, string), IEnumerable<PackageReference>> _nugetCache = [];
         private readonly IReadOnlyCollection<SourceRepository> _sourceRepositories;
         private readonly int _maxDepth;
         private readonly IColorConsoleLogger _consoleLogger;

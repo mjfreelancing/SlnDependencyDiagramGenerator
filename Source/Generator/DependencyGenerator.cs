@@ -49,49 +49,56 @@ namespace AllOverItDependencyDiagram.Generator
         /// <returns>A <see cref="Task"/> that completes when the diagram generation has completed.</returns>
         public async Task CreateDiagramsAsync()
         {
-            if (_configuration.Export.ClearContents)
-            {
-                ClearFolder(_configuration.Export.Path);
-            }
-
             var individualTransitiveDepth = _configuration.Projects.Individual.Enabled ? _configuration.Projects.Individual.TransitiveDepth : 0;
             var allTransitiveDepth = _configuration.Projects.All.Enabled ? _configuration.Projects.All.TransitiveDepth : 0;
             var maxTransitiveDepth = Math.Max(individualTransitiveDepth, allTransitiveDepth);
 
             var solutionParser = new SolutionParser(_configuration.PackageFeeds, maxTransitiveDepth, _logger);
 
-            var allProjects = await solutionParser.ParseAsync(_configuration.Projects.SolutionPath, _configuration.Projects.RegexToInclude, _configuration.TargetFramework);
-
-            if (allProjects.Count == 0)
+            foreach (var targetFramework in _configuration.TargetFrameworks)
             {
-                _logger
-                    .Write(ConsoleColor.Red, "No projects found in ")
-                    .Write(ConsoleColor.Yellow, Path.GetFileName(_configuration.Projects.SolutionPath))
-                    .Write(ConsoleColor.Red, " using the regex(es) ")
-                    .WriteLine(ConsoleColor.Yellow, string.Join(", ", _configuration.Projects.RegexToInclude));
+                var exportPath = Path.Combine(_configuration.Export.RootPath, targetFramework);
 
-                return;
-            }
+                Directory.CreateDirectory(exportPath);
 
-            foreach (var project in allProjects)
-            {
-                LogDependencies(project);
-            }
+                if (_configuration.Export.ClearContents)
+                {
+                    ClearFolder(exportPath);
+                }
 
-            _logger.WriteLine();
+                var allProjects = await solutionParser.ParseAsync(_configuration.Projects.SolutionPath, _configuration.Projects.RegexToInclude, targetFramework);
 
-            var solutionProjects = allProjects.ToDictionary(project => project.Name, project => project);
+                if (allProjects.Count == 0)
+                {
+                    _logger
+                        .Write(ConsoleColor.Red, "No projects found in ")
+                        .Write(ConsoleColor.Yellow, Path.GetFileName(_configuration.Projects.SolutionPath))
+                        .Write(ConsoleColor.Red, " using the regex(es) ")
+                        .WriteLine(ConsoleColor.Yellow, string.Join(", ", _configuration.Projects.RegexToInclude));
 
-            await ExportAsSummary(_configuration.Export.Path, solutionProjects).ConfigureAwait(false);
+                    return;
+                }
 
-            if (_configuration.Projects.Individual.Enabled)
-            {
-                await ExportAsIndividual(solutionProjects).ConfigureAwait(false);
-            }
+                foreach (var project in allProjects)
+                {
+                    LogDependencies(project);
+                }
 
-            if (_configuration.Projects.All.Enabled)
-            {
-                await ExportAsAll(solutionProjects).ConfigureAwait(false);
+                _logger.WriteLine();
+
+                var solutionProjects = allProjects.ToDictionary(project => project.Name, project => project);
+
+                await ExportAsSummary(exportPath, solutionProjects).ConfigureAwait(false);
+
+                if (_configuration.Projects.Individual.Enabled)
+                {
+                    await ExportAsIndividual(targetFramework, exportPath, solutionProjects).ConfigureAwait(false);
+                }
+
+                if (_configuration.Projects.All.Enabled)
+                {
+                    await ExportAsAll(targetFramework, exportPath, solutionProjects).ConfigureAwait(false);
+                }
             }
         }
 
@@ -105,31 +112,31 @@ namespace AllOverItDependencyDiagram.Generator
             }
         }
 
-        private async Task ExportAsIndividual(IDictionary<string, SolutionProject> solutionProjects)
+        private async Task ExportAsIndividual(string targetFramework, string exportPath, IDictionary<string, SolutionProject> solutionProjects)
         {
             foreach (var scopedProject in solutionProjects.Values)
             {
                 var d2Content = GenerateIndividualProjectD2Content(scopedProject, solutionProjects);
 
-                await CreateD2FileAndImages(scopedProject.Name, d2Content).ConfigureAwait(false);
+                await CreateD2FileAndImages(targetFramework, exportPath, scopedProject.Name, d2Content).ConfigureAwait(false);
 
                 _logger.WriteLine();
             }
         }
 
-        private async Task ExportAsAll(IDictionary<string, SolutionProject> solutionProjects)
+        private async Task ExportAsAll(string targetFramework, string exportPath, IDictionary<string, SolutionProject> solutionProjects)
         {
             var d2Content = GenerateAllProjectsD2Content(solutionProjects);
 
-            await CreateD2FileAndImages($"{_configuration.Diagram.GroupName}-All", d2Content).ConfigureAwait(false);
+            await CreateD2FileAndImages(targetFramework, exportPath, $"{_configuration.Diagram.GroupName}-All", d2Content).ConfigureAwait(false);
 
             _logger.WriteLine();
         }
 
-        private async Task CreateD2FileAndImages(string projectScope, string d2Content)
+        private async Task CreateD2FileAndImages(string targetFramework, string exportPath, string projectScope, string d2Content)
         {
             // Create the file and return the fully-qualified file path
-            var filePath = await CreateD2FileAsync(d2Content, GetDiagramAliasId(projectScope, false));
+            var filePath = await CreateD2FileAsync(targetFramework, exportPath, d2Content, GetDiagramAliasId(projectScope, false));
 
             foreach (var format in _configuration.Export.ImageFormats)
             {
@@ -202,7 +209,7 @@ namespace AllOverItDependencyDiagram.Generator
                 .Write("{forecolor:white}Exporting Summary: ")
                 .Write(ConsoleColor.Yellow, summaryPath)
                 .Write("{forecolor:white}...");
-            
+
             await File.WriteAllTextAsync(summaryPath, content);
 
             _logger.WriteLine("{forecolor:green}Done");
@@ -336,11 +343,13 @@ namespace AllOverItDependencyDiagram.Generator
             }
             else
             {
+#pragma warning disable CA1868 // Unnecessary call to 'Contains(item)'
                 if (dependencySet.Contains(transitiveStyleFillEntry))
                 {
                     dependencySet.Remove(transitiveStyleFillEntry);
                     dependencySet.Remove($"{packageAlias}.style.opacity: {_configuration.Diagram.TransitiveStyle.Opacity}");
                 }
+#pragma warning restore CA1868 // Unnecessary call to 'Contains(item)'
 
                 dependencySet.Add(packageStyleFillEntry);
                 dependencySet.Add($"{packageAlias}.style.opacity: {_configuration.Diagram.PackageStyle.Opacity}");
@@ -405,26 +414,24 @@ namespace AllOverItDependencyDiagram.Generator
 
                 var diagramGroupItem = $"{groupName}: \"\"";
 
-                if (!dependencySet.Contains(diagramGroupItem))
-                {
-                    dependencySet.Add(diagramGroupItem);
-                }
+                // Ignored if already in the set
+                dependencySet.Add(diagramGroupItem);
             }
 
             return packageAlias;
         }
 
-        private async Task<string> CreateD2FileAsync(string content, string projectScope)
+        private async Task<string> CreateD2FileAsync(string targetFramework, string exportPath, string content, string projectScope)
         {
             var fileName = projectScope.IsNullOrEmpty()
                 ? $"{_configuration.Diagram.GroupName.ToLowerInvariant()}-all.d2"
                 : $"{projectScope}.d2";
 
-            var d2FilePath = Path.Combine(_configuration.Export.Path, fileName);
+            var d2FilePath = Path.Combine(exportPath, fileName);
 
             // Showing how to mix AddFormatted() with AddFragment() where the latter
             // is a simple alternative to using string interpolation.
-            _logger.Write("{forecolor:white}Creating diagram: ")
+            _logger.Write($"{{forecolor:white}}Creating {{forecolor:yellow}}'{targetFramework}'{{forecolor:white}} diagram: ")
                    .Write(ConsoleColor.Yellow, Path.GetFileName(fileName))
                    .Write("{forecolor:white}...");
 

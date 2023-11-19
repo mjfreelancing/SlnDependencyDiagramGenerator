@@ -24,6 +24,6 @@ namespace SlnDependencyDiagramGenerator.Config
         public GeneratorExportOptions Export { get; init; } = new GeneratorExportOptions();
 
         /// <summary>Specifies the target framework to resolve for all nuget package references.</summary>
-        public string TargetFramework { get; init; }
+        public IReadOnlyCollection<string> TargetFrameworks { get; init; }
     }
 }
