@@ -2,13 +2,54 @@
 
     <PropertyGroup>
         <TargetFrameworks>net8.0;net7.0</TargetFrameworks>
+        <LangVersion>Latest</LangVersion>
+        <Version>1.0.0-rc.13</Version>
+        <Authors>Malcolm Smith</Authors>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+        <RepositoryType>git</RepositoryType>
+        <RepositoryUrl>https://github.com/mjfreelancing/SlnDependencyDiagramGenerator</RepositoryUrl>
+        <PackageIcon>package_icon.png</PackageIcon>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+
+        <!--Stop warning related to end-of-life .NET versions-->
+        <CheckEolTargetFramework>false</CheckEolTargetFramework>
+        <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
+
+        <!-- devblogs.microsoft.com/dotnet/producing-packages-with-source-link/ -->
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+        <DebugType>embedded</DebugType>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+        <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+        <GenerateDocumentationFile>True</GenerateDocumentationFile>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="AllOverIt" Version="7.0.0-rc.45" />
         <PackageReference Include="AllOverIt.Validation" Version="7.0.0-rc.45" />
-        <PackageReference Include="Microsoft.Build" Version="17.8.3" />
         <PackageReference Include="NuGet.Protocol" Version="6.8.0" />
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
     </ItemGroup>
 
+    <ItemGroup Condition=" '$(TargetFramework)' == 'net7.0' ">
+        <PackageReference Include="Microsoft.Build" Version="17.7.2" />
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(TargetFramework)' == 'net8.0' ">
+        <PackageReference Include="Microsoft.Build" Version="17.8.3" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="package_icon.png">
+            <Pack>True</Pack>
+            <PackagePath>\</PackagePath>
+        </None>
+        <None Include="..\README.md">
+            <Pack>True</Pack>
+            <PackagePath>\</PackagePath>
+        </None>
+    </ItemGroup>    
 </Project>
