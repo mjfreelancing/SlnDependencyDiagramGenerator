@@ -19,9 +19,8 @@ namespace AllOverItDependencyDiagram.Parser
 
             '\\s*'                      : This matches zero or more whitespace characters (such as spaces, tabs, or line breaks).
 
-            '(?<operator>[=!><]+={0,1})': This part uses a named group operator to capture a comparison operator. It matches a sequence
-                                          of characters that can be =, !, >, or < repeated one or more times, followed by an optional =.
-                                          For example, it can match =, ==, !=, >=, <=, >, or <.
+            '(?<operator>[!=]=)'        : Captures either != or == in the operator named group. The [!=] part specifies that only
+                                         ! or = is allowed before the =.
 
             '\\s*'                      : Similar to the previous \s*, this matches zero or more whitespace characters.
 
@@ -33,7 +32,7 @@ namespace AllOverItDependencyDiagram.Parser
             including newline characters (\n). By default, the dot matches any character except newline. With RegexOptions.Singleline, it will
             match newline characters as well.
         */
-        [GeneratedRegex("'\\$\\(TargetFramework\\)'\\s*(?<operator>[=!><]+={0,1})\\s*'(?<target>.*?)'", RegexOptions.Singleline)]
+        [GeneratedRegex("'\\$\\(TargetFramework\\)'\\s*(?<operator>[!=]=)\\s*'(?<target>.*?)'", RegexOptions.Singleline)]
         private static partial Regex TargetFrameworkEqualityRegex();
 
         private readonly NugetPackageResolver _nugetResolver;
@@ -174,11 +173,6 @@ namespace AllOverItDependencyDiagram.Parser
                 yield return conditionalReferences;
             }
         }
-
-        //private bool GetMatchingConditional()
-        //{
-
-        //}
 
         private static List<ProjectReference> GetProjectReferences(string projectFolder, IEnumerable<ProjectItemElement> projectItems)
         {
