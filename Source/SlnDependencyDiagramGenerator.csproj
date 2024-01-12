@@ -28,10 +28,10 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="AllOverIt" Version="7.0.0-rc.45" />
-        <PackageReference Include="AllOverIt.Validation" Version="7.0.0-rc.45" />
+        <PackageReference Include="AllOverIt" Version="7.0.0-rc.49" />
+        <PackageReference Include="AllOverIt.Validation" Version="7.0.0-rc.49" />
         <PackageReference Include="NuGet.Protocol" Version="6.8.0" />
-        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
     </ItemGroup>
 
     <ItemGroup Condition=" '$(TargetFramework)' == 'net7.0' ">
