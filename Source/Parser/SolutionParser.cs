@@ -46,6 +46,9 @@ namespace AllOverItDependencyDiagram.Parser
         {
             var projects = new List<SolutionProject>();
 
+            // Make sure a rooted path is used (converts a relative path to an explicit path if required)
+            solutionFilePath = Path.GetFullPath(solutionFilePath);
+
             var solutionFile = SolutionFile.Parse(solutionFilePath);
 
             var regexes = projectPathRegexes.SelectAsReadOnlyCollection(pathRegex => new Regex(pathRegex));
