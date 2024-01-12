@@ -88,7 +88,7 @@ namespace AllOverItDependencyDiagram.Parser
             return projects;
         }
 
-        private static IReadOnlyCollection<string> GetTargetFrameworks(IEnumerable<ProjectPropertyGroupElement> propertyGroups)
+        private static string[] GetTargetFrameworks(IEnumerable<ProjectPropertyGroupElement> propertyGroups)
         {
             return propertyGroups
                 .SelectMany(grp => grp.Properties)

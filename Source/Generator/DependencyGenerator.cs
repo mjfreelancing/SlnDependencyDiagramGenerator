@@ -66,7 +66,9 @@ namespace AllOverItDependencyDiagram.Generator
                     ClearFolder(exportPath);
                 }
 
-                var allProjects = await solutionParser.ParseAsync(_configuration.Projects.SolutionPath, _configuration.Projects.RegexToInclude, targetFramework);
+                var regexToInclude = _configuration.Projects.RegexToInclude.AsReadOnlyCollection();
+
+                var allProjects = await solutionParser.ParseAsync(_configuration.Projects.SolutionPath, regexToInclude, targetFramework);
 
                 if (allProjects.Count == 0)
                 {
@@ -158,7 +160,7 @@ namespace AllOverItDependencyDiagram.Generator
 
             var dependencySet = new HashSet<string>();
 
-            AppendProjectDependencies(solutionProject, packagesWithMultipleVersions, solutionProjects, dependencySet, _configuration.Projects.Individual.TransitiveDepth);
+            AppendProjectDependencies(solutionProject, packagesWithMultipleVersions, solutionProjects, dependencySet, _configuration.Projects.Individual.IncludeDependencies, _configuration.Projects.Individual.TransitiveDepth);
 
             foreach (var dependency in dependencySet)
             {
@@ -186,7 +188,7 @@ namespace AllOverItDependencyDiagram.Generator
                 var packagesWithMultipleVersions = GetDeepOrderedDistinctPackageDependencies(solutionProject.Value, solutionProjects, kvp => kvp.Count() > 1)
                     .ToDictionary(kvp => kvp.Key, kvp => GetDiagramPackageGroupId(kvp.Key));
 
-                AppendProjectDependencies(solutionProject.Value, packagesWithMultipleVersions, solutionProjects, dependencySet, _configuration.Projects.All.TransitiveDepth);
+                AppendProjectDependencies(solutionProject.Value, packagesWithMultipleVersions, solutionProjects, dependencySet, _configuration.Projects.All.IncludeDependencies, _configuration.Projects.All.TransitiveDepth);
             }
 
             foreach (var dependency in dependencySet)
@@ -217,41 +219,47 @@ namespace AllOverItDependencyDiagram.Generator
         }
 
         private void AppendProjectDependencies(SolutionProject solutionProject, IDictionary<string, string> packagesWithMultipleVersions,
-            IDictionary<string, SolutionProject> solutionProjects, HashSet<string> dependencySet, int maxTransitiveDepth)
+            IDictionary<string, SolutionProject> solutionProjects, HashSet<string> dependencySet, bool includeDependencies, int maxTransitiveDepth)
         {
             var projectName = solutionProject.Name;
             var projectAlias = GetDiagramAliasId(projectName, true);
 
             dependencySet.Add($"{projectAlias}: {projectName}");
 
-            AppendProjectFrameworkDependencies(solutionProject, dependencySet);
+            if (includeDependencies)
+            {
+                AppendProjectFrameworkDependencies(solutionProject, dependencySet);
 
-            AppendProjectPackageDependencies(solutionProject, packagesWithMultipleVersions, dependencySet, maxTransitiveDepth);
+                AppendProjectPackageDependencies(solutionProject, packagesWithMultipleVersions, dependencySet, maxTransitiveDepth);
+            }
 
-            AppendProjectProjectReferences(solutionProject, projectAlias, packagesWithMultipleVersions, solutionProjects, dependencySet, maxTransitiveDepth);
+            AppendProjectProjectReferences(solutionProject, projectAlias, packagesWithMultipleVersions, solutionProjects, dependencySet, includeDependencies, maxTransitiveDepth);
         }
 
         private void AppendProjectDependenciesRecursively(ProjectReference projectReference, IDictionary<string, string> packagesWithMultipleVersions,
-            IDictionary<string, SolutionProject> solutionProjects, HashSet<string> dependencySet, int maxTransitiveDepth)
+            IDictionary<string, SolutionProject> solutionProjects, HashSet<string> dependencySet, bool includeDependencies, int maxTransitiveDepth)
         {
             var projectName = GetProjectName(projectReference);
             var projectAlias = GetDiagramAliasId(projectName, true);
 
             dependencySet.Add($"{projectAlias}: {projectName}");
 
-            // Add all packages dependencies (recursively) for the current project
-            AppendProjectPackageReferences(solutionProjects[projectName], projectAlias, packagesWithMultipleVersions, dependencySet, maxTransitiveDepth);
+            if (includeDependencies)
+            {
+                // Add all packages dependencies (recursively) for the current project
+                AppendProjectPackageReferences(solutionProjects[projectName], projectAlias, packagesWithMultipleVersions, dependencySet, maxTransitiveDepth);
+            }
 
             // Add all project dependencies (recursively) for the current project
-            AppendProjectProjectReferences(solutionProjects[projectName], projectAlias, packagesWithMultipleVersions, solutionProjects, dependencySet, maxTransitiveDepth);
+            AppendProjectProjectReferences(solutionProjects[projectName], projectAlias, packagesWithMultipleVersions, solutionProjects, dependencySet, includeDependencies, maxTransitiveDepth);
         }
 
         private void AppendProjectProjectReferences(SolutionProject solutionProject, string projectAlias, IDictionary<string, string> packagesWithMultipleVersions,
-            IDictionary<string, SolutionProject> solutionProjects, HashSet<string> dependencySet, int maxTransitiveDepth)
+            IDictionary<string, SolutionProject> solutionProjects, HashSet<string> dependencySet, bool includeDependencies, int maxTransitiveDepth)
         {
             foreach (var project in solutionProject.Dependencies.SelectMany(item => item.ProjectReferences))
             {
-                AppendProjectDependenciesRecursively(project, packagesWithMultipleVersions, solutionProjects, dependencySet, maxTransitiveDepth);
+                AppendProjectDependenciesRecursively(project, packagesWithMultipleVersions, solutionProjects, dependencySet, includeDependencies, maxTransitiveDepth);
 
                 dependencySet.Add($"{GetProjectAliasId(project)} <- {projectAlias}");
             }

@@ -10,9 +10,10 @@ namespace AllOverItDependencyDiagram
 {
     internal class Program
     {
-        private static async Task Main()
+        private static async Task Main(string[] args)
         {
-            var options = GetGeneratorConfig();
+            var configFile = GetConfigFilename(args);
+            var options = GetGeneratorConfig(configFile);
             var logger = new ColorConsoleLogger();
             var generator = new DependencyGenerator(options, logger);
 
@@ -31,14 +32,30 @@ namespace AllOverItDependencyDiagram
             }
         }
 
-        private static AppOptions GetGeneratorConfig()
+        private static string GetConfigFilename(string[] args)
+        {
+            var configFile = "appsettings.json";
+
+            if (args.Length == 2 && args[0].Equals("--configFile", StringComparison.InvariantCultureIgnoreCase))
+            {
+                configFile = args[1];
+            }
+
+            return configFile;
+        }
+
+        private static AppOptions GetGeneratorConfig(string configFile)
         {
             var generatorConfig = new AppOptions();
 
             var configuration = new ConfigurationBuilder()
                 .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
-                .AddJsonFile("appsettings.json", false, false)
+                .AddJsonFile(configFile, false, false)
+
+#if DEBUG
                 .AddUserSecrets<AppOptions>(true)
+#endif
+
                 .Build();
 
             configuration.Bind("options", generatorConfig);

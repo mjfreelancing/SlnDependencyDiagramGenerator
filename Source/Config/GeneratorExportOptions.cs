@@ -8,13 +8,13 @@ namespace SlnDependencyDiagramGenerator.Config
     {
         /// <summary>When <see langword="True"/>, clears the contents of the folder that combines <see cref="RootPath"/>
         /// with the target framework being processed.</summary>
-        public bool ClearContents { get; init; }
+        public bool ClearContents { get; set; }
 
         /// <summary>The fully-qualified export root path for the generated diagram files and images.
         /// A sub-folder will be created for each target framework processed.</summary>
-        public string RootPath { get; init; }
+        public string RootPath { get; set; }
 
         /// <summary>The diagram image formats to create. Can be empty or one or more of "png", "svg", "pdf".</summary>
-        public IReadOnlyCollection<DiagramImageFormat> ImageFormats { get; init; }
+        public IList<DiagramImageFormat> ImageFormats { get; init; } = new List<DiagramImageFormat>();
     }
 }

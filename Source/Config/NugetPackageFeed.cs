@@ -4,12 +4,12 @@
     public sealed class NugetPackageFeed
     {
         /// <summary>The NuGet feed Uri.</summary>
-        public string SourceUri { get; init; }
+        public string SourceUri { get; set; }
 
         /// <summary>The authentication username. Set to null if not required.</summary>
-        public string Username { get; init; }
+        public string Username { get; set; }
 
         /// <summary>The authentication password. Set to null if not required.</summary>
-        public string Password { get; init; }
+        public string Password { get; set; }
     }
 }
