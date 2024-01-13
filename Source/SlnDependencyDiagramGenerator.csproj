@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFrameworks>net8.0;net7.0</TargetFrameworks>
         <LangVersion>Latest</LangVersion>
-        <Version>1.0.0-rc.16</Version>
+        <Version>1.0.0-rc.17</Version>
         <Authors>Malcolm Smith</Authors>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
