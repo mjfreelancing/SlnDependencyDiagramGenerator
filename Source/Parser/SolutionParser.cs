@@ -3,6 +3,7 @@ using AllOverIt.IO;
 using AllOverIt.Logging;
 using Microsoft.Build.Construction;
 using SlnDependencyDiagramGenerator.Config;
+using SlnDependencyDiagramGenerator.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -68,6 +69,11 @@ namespace AllOverItDependencyDiagram.Parser
 
                 var targetFrameworks = GetTargetFrameworks(projectRootElement.PropertyGroups);
 
+                if (targetFrameworks.Length == 0)
+                {
+                    throw new DependencyGeneratorException($"{projectRootElement.FullPath} does not specify a target framework. Importing of Directory.Build.Props is not supported.");
+                }
+
                 // Can't skip (without additional logic) as we need to cater for WPF projects targeting, such as net8.0-windows;net7.0-windows
                 //
                 // if (!targetFrameworks.Contains(targetFramework))
@@ -93,13 +99,16 @@ namespace AllOverItDependencyDiagram.Parser
 
         private static string[] GetTargetFrameworks(IEnumerable<ProjectPropertyGroupElement> propertyGroups)
         {
-            return propertyGroups
+            var frameworks = propertyGroups
                 .SelectMany(grp => grp.Properties)
                 .Where(prop => prop.Name.Equals("TargetFrameworks", StringComparison.OrdinalIgnoreCase) ||
                                prop.Name.Equals("TargetFramework", StringComparison.OrdinalIgnoreCase))
                 .Select(prop => prop.Value)
-                .Single()
-                .Split(";");
+                .SingleOrDefault();
+
+            return frameworks is null
+                ? []
+                : frameworks.Split(";");
         }
 
         private async IAsyncEnumerable<ConditionalReferences> GetConditionalReferencesAsync(string projectFolder, IEnumerable<ProjectItemGroupElement> itemGroups,
