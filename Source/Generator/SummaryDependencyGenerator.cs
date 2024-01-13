@@ -106,12 +106,12 @@ namespace AllOverItDependencyDiagram.Generator
         {
             var projectName = GetProjectName(projectReference);
 
-            dependencySet.Add(projectName);
-
             if (!solutionProjects.TryGetValue(projectName, out var solutionProject))
             {
                 throw new DependencyGeneratorException($"The dependency project '{projectName}' was not found using the provided regex paths.");
             }
+
+            dependencySet.Add(projectName);
 
             // Add all packages dependencies (recursively) for the current project
             var packageReferences = solutionProject.Dependencies.SelectMany(item => item.PackageReferences);
