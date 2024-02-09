@@ -10,23 +10,16 @@ namespace AllOverItDependencyDiagram.Generator
 {
     internal static class SummaryDependencyGenerator
     {
-        private const string Blue = "55A9EE";
-        private const string Green = "6EBE50";
-        private const string Purple = "C56EE0";
-        private const string Orange = "FF8C67";
-        private const string Red = "E3505C";
-        //private const string Yellow = "FFC33C";
-
         public static readonly IDictionary<string, string> TargetFrameworkBadges = new Dictionary<string, string>
         {
-            { "net8.0", $"![](https://img.shields.io/badge/.NET-7.0-{Purple}.svg)"},
-            { "net8.0-windows", $"![](https://img.shields.io/badge/.NET-7.0--windows-{Purple}.svg)"},
-            { "net7.0", $"![](https://img.shields.io/badge/.NET-7.0-{Blue}.svg)"},
-            { "net7.0-windows", $"![](https://img.shields.io/badge/.NET-7.0--windows-{Blue}.svg)"},
-            { "net6.0", $"![](https://img.shields.io/badge/.NET-6.0-{Orange}.svg)"},
-            { "net6.0-windows", $"![](https://img.shields.io/badge/.NET-6.0--windows-{Orange}.svg)"},
-            { "netstandard2.1", $"![](https://img.shields.io/badge/.NET-standard2.1-{Green}.svg)"},
-            { "netstandard2.0", $"![](https://img.shields.io/badge/.NET-standard2.0-{Red}.svg)"}
+            { "net8.0", $"![](https://img.shields.io/badge/.NET-7.0-{ColorCode.Purple}.svg)"},
+            { "net8.0-windows", $"![](https://img.shields.io/badge/.NET-7.0--windows-{ColorCode.Purple}.svg)"},
+            { "net7.0", $"![](https://img.shields.io/badge/.NET-7.0-{ColorCode.Blue}.svg)"},
+            { "net7.0-windows", $"![](https://img.shields.io/badge/.NET-7.0--windows-{ColorCode.Blue}.svg)"},
+            { "net6.0", $"![](https://img.shields.io/badge/.NET-6.0-{ColorCode.Orange}.svg)"},
+            { "net6.0-windows", $"![](https://img.shields.io/badge/.NET-6.0--windows-{ColorCode.Orange}.svg)"},
+            { "netstandard2.1", $"![](https://img.shields.io/badge/.NET-standard2.1-{ColorCode.Green}.svg)"},
+            { "netstandard2.0", $"![](https://img.shields.io/badge/.NET-standard2.0-{ColorCode.Red}.svg)"}
         };
 
         public const string MarkdownFilename = "Dependency Summary.md";
@@ -59,7 +52,7 @@ namespace AllOverItDependencyDiagram.Generator
 
                 var dependencies = AppendProjectDependencies(solutionProject.Value, solutionProjects);
 
-                if (dependencies.Any())
+                if (dependencies.Count > 0)
                 {
                     foreach (var dependency in dependencies)
                     {
@@ -113,12 +106,12 @@ namespace AllOverItDependencyDiagram.Generator
         {
             var projectName = GetProjectName(projectReference);
 
-            dependencySet.Add(projectName);
-
             if (!solutionProjects.TryGetValue(projectName, out var solutionProject))
             {
-                throw new DependencyGeneratorException($"The project '{projectName}' was not found using the provided regex paths.");
+                throw new DependencyGeneratorException($"The dependency project '{projectName}' was not found using the provided regex paths.");
             }
+
+            dependencySet.Add(projectName);
 
             // Add all packages dependencies (recursively) for the current project
             var packageReferences = solutionProject.Dependencies.SelectMany(item => item.PackageReferences);

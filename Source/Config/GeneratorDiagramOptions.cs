@@ -23,14 +23,14 @@
         public sealed class FillStyle
         {
             /// <summary>The css or RGB fill color.</summary>
-            public string Fill { get; init; }
+            public string Fill { get; set; }
 
             /// <summary>The opacity.</summary>
-            public double Opacity { get; init; }
+            public double Opacity { get; set; }
         }
 
         /// <summary>Specifies the direction the diagram flows towards.</summary>
-        public DiagramDirection Direction { get; init; } = DiagramDirection.Left;
+        public DiagramDirection Direction { get; set; } = DiagramDirection.Left;
 
         /// <summary>The fill style to use for framework dependencies referenced by a project.</summary>
         public FillStyle FrameworkStyle { get; init; } = new();
@@ -42,11 +42,11 @@
         public FillStyle TransitiveStyle { get; init; } = new();
 
         /// <summary>The name (title) to use for the group of projects parsed.</summary>
-        public string GroupName { get; init; }
+        public string GroupName { get; set; }
 
         /// <summary>The alias to use in the D2 generated file to represent the group of projects parsed.
         /// This prefix is not included in the diagram image output, but it is required in the D2
         /// file so the generated diagram can visually group the projects together.</summary>
-        public string GroupNameAlias { get; init; }
+        public string GroupNameAlias { get; set; }
     }
 }

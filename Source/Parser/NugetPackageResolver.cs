@@ -40,7 +40,7 @@ namespace AllOverItDependencyDiagram.Parser
             }
         }
 
-        private readonly IDictionary<(string, string), IEnumerable<PackageReference>> _nugetCache = new Dictionary<(string, string), IEnumerable<PackageReference>>();
+        private readonly Dictionary<(string, string), IEnumerable<PackageReference>> _nugetCache = [];
         private readonly IReadOnlyCollection<SourceRepository> _sourceRepositories;
         private readonly int _maxDepth;
         private readonly IColorConsoleLogger _consoleLogger;
@@ -67,7 +67,7 @@ namespace AllOverItDependencyDiagram.Parser
         {
             if (depth > _maxDepth)
             {
-                return Array.Empty<PackageReference>();
+                return [];
             }
 
             _consoleLogger.Write(ConsoleColor.Green, "Processing package references for ");

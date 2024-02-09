@@ -3,6 +3,7 @@ using AllOverIt.IO;
 using AllOverIt.Logging;
 using Microsoft.Build.Construction;
 using SlnDependencyDiagramGenerator.Config;
+using SlnDependencyDiagramGenerator.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -14,8 +15,26 @@ namespace AllOverItDependencyDiagram.Parser
 {
     internal sealed partial class SolutionParser
     {
-        [GeneratedRegex("'\\$\\(TargetFramework\\)'\\s*==\\s*'(?<target>.*?)'", RegexOptions.Singleline)]
-        private static partial Regex TargetFrameworksRegex();
+        /*
+            '\\$\\(TargetFramework\\)'  : This part matches the literal string $(TargetFramework).
+
+            '\\s*'                      : This matches zero or more whitespace characters (such as spaces, tabs, or line breaks).
+
+            '(?<operator>[!=]=)'        : Captures either != or == in the operator named group. The [!=] part specifies that only
+                                         ! or = is allowed before the =.
+
+            '\\s*'                      : Similar to the previous \s*, this matches zero or more whitespace characters.
+
+            '(?<target>.*?)'            : This uses another named group target to capture any character (.) zero or more times (*?) in a
+                                          non-greedy way, meaning it captures as few characters as possible until the next part of the
+                                          pattern is matched. The ? makes the * quantifier non-greedy.
+
+            When using the RegexOptions.Singleline option in C#, it changes the behavior of the dot (.) metacharacter to match any character,
+            including newline characters (\n). By default, the dot matches any character except newline. With RegexOptions.Singleline, it will
+            match newline characters as well.
+        */
+        [GeneratedRegex("'\\$\\(TargetFramework\\)'\\s*(?<operator>[!=]=)\\s*'(?<target>.*?)'", RegexOptions.Singleline)]
+        private static partial Regex TargetFrameworkEqualityRegex();
 
         private readonly NugetPackageResolver _nugetResolver;
 
@@ -28,9 +47,12 @@ namespace AllOverItDependencyDiagram.Parser
         {
             var projects = new List<SolutionProject>();
 
+            // Make sure a rooted path is used (converts a relative path to an explicit path if required)
+            solutionFilePath = Path.GetFullPath(solutionFilePath);
+
             var solutionFile = SolutionFile.Parse(solutionFilePath);
 
-            var regexes = projectPathRegexes.SelectAsReadOnlyCollection(pathRegex =>  new Regex(pathRegex));
+            var regexes = projectPathRegexes.SelectAsReadOnlyCollection(pathRegex => new Regex(pathRegex));
 
             var orderedProjects = solutionFile.ProjectsInOrder
                 .Where(project => project.ProjectType == SolutionProjectType.KnownToBeMSBuildFormat || project.ProjectType == SolutionProjectType.WebProject)
@@ -47,7 +69,12 @@ namespace AllOverItDependencyDiagram.Parser
 
                 var targetFrameworks = GetTargetFrameworks(projectRootElement.PropertyGroups);
 
-                // Can't skip (without additional logic) as we need to cater for WPF projects targeting, such as net7.0-windows;net6.0-windows
+                if (targetFrameworks.Length == 0)
+                {
+                    throw new DependencyGeneratorException($"{projectRootElement.FullPath} does not specify a target framework. Importing of Directory.Build.Props is not supported.");
+                }
+
+                // Can't skip (without additional logic) as we need to cater for WPF projects targeting, such as net8.0-windows;net7.0-windows
                 //
                 // if (!targetFrameworks.Contains(targetFramework))
                 // {
@@ -70,15 +97,18 @@ namespace AllOverItDependencyDiagram.Parser
             return projects;
         }
 
-        private static IReadOnlyCollection<string> GetTargetFrameworks(IEnumerable<ProjectPropertyGroupElement> propertyGroups)
+        private static string[] GetTargetFrameworks(IEnumerable<ProjectPropertyGroupElement> propertyGroups)
         {
-            return propertyGroups
+            var frameworks = propertyGroups
                 .SelectMany(grp => grp.Properties)
                 .Where(prop => prop.Name.Equals("TargetFrameworks", StringComparison.OrdinalIgnoreCase) ||
                                prop.Name.Equals("TargetFramework", StringComparison.OrdinalIgnoreCase))
                 .Select(prop => prop.Value)
-                .Single()
-                .Split(";");
+                .SingleOrDefault();
+
+            return frameworks is null
+                ? []
+                : frameworks.Split(";");
         }
 
         private async IAsyncEnumerable<ConditionalReferences> GetConditionalReferencesAsync(string projectFolder, IEnumerable<ProjectItemGroupElement> itemGroups,
@@ -92,31 +122,47 @@ namespace AllOverItDependencyDiagram.Parser
                 })
                 .GroupBy(grp => grp.Condition);
 
-            var targetFrameworksRegex = TargetFrameworksRegex();
-
             foreach (var itemGroup in conditionItemGroups)
             {
-                // Should more elaborate parsing be required, refer to this link for possible condition usage:
-                // https://learn.microsoft.com/en-us/visualstudio/msbuild/msbuild-conditions?view=vs-2022
-
-                // Example: '$(TargetFramework)' == 'netstandard2.1' or '$(TargetFramework)' == 'net5.0'
+                // Example: '$(TargetFramework)' == 'net8.0' or '$(TargetFramework)' == 'net7.0'
                 var condition = itemGroup.Key;
 
-                // Only process conditions that have an exact match (when not empty)
                 if (!condition.IsNullOrEmpty())
                 {
-                    // Matches a string that starts with '$(TargetFramework)', followed by zero or more whitespace characters, followed by '==',
-                    // followed by zero or more whitespace characters, followed by a string enclosed in single quotes. The contents of the string
-                    // inside the single quotes are captured in a named group called 'target'.
-                    //
-                    // (?   - This starts a named capture group. The <target> part of the group indicates the name of the group.
-                    //        The ? indicates that this is an optional group.
-                    //
-                    // .*?  - This matches any character (except for a newline if 'RegexOptions.Singleline' is not used) zero or more times,
-                    //        but as few times as possible (a non-greedy match).
-                    var matches = targetFrameworksRegex.Matches(condition).Select(item => item.Groups["target"].Value);
+                    var matches = TargetFrameworkEqualityRegex().Matches(condition);
+                    var targets = matches.SelectAsReadOnlyCollection(item => item.Groups["target"].Value);
+                    var comparisons = matches.SelectAsReadOnlyCollection(item => item.Groups["operator"].Value);
 
-                    if (!matches.Contains(targetFramework))
+                    var foundMatch = false;
+
+                    if (targets.Count != 0)
+                    {
+                        var combined = targets.Zip(comparisons, (target, comparison) => (target, comparison));
+
+                        foreach (var (target, comparison) in combined)
+                        {
+                            // Only currently catering for single conditions (or multiple that are OR'd) that use == or !=
+                            //
+                            // Should more elaborate parsing be required, refer to this link for possible condition usage:
+                            // https://learn.microsoft.com/en-us/visualstudio/msbuild/msbuild-conditions?view=vs-2022
+                            //
+                            if (target.Equals(targetFramework, StringComparison.InvariantCultureIgnoreCase))
+                            {
+                                foundMatch = comparison.Equals("==");
+                            }
+                            else
+                            {
+                                foundMatch = comparison.Equals("!=");
+                            }
+
+                            if (foundMatch)
+                            {
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!foundMatch)
                     {
                         continue;
                     }
@@ -140,7 +186,7 @@ namespace AllOverItDependencyDiagram.Parser
             }
         }
 
-        private static IReadOnlyCollection<ProjectReference> GetProjectReferences(string projectFolder, IEnumerable<ProjectItemElement> projectItems)
+        private static List<ProjectReference> GetProjectReferences(string projectFolder, IEnumerable<ProjectItemElement> projectItems)
         {
             return projectItems
                 .Where(item => item.ItemType.Equals("ProjectReference", StringComparison.OrdinalIgnoreCase))
