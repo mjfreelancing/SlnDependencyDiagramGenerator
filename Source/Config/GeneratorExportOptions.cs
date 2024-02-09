@@ -15,6 +15,6 @@ namespace SlnDependencyDiagramGenerator.Config
         public string RootPath { get; set; }
 
         /// <summary>The diagram image formats to create. Can be empty or one or more of "png", "svg", "pdf".</summary>
-        public IList<DiagramImageFormat> ImageFormats { get; init; } = new List<DiagramImageFormat>();
+        public IList<DiagramImageFormat> ImageFormats { get; init; } = [];
     }
 }

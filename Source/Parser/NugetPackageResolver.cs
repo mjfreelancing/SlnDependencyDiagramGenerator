@@ -67,7 +67,7 @@ namespace AllOverItDependencyDiagram.Parser
         {
             if (depth > _maxDepth)
             {
-                return Array.Empty<PackageReference>();
+                return [];
             }
 
             _consoleLogger.Write(ConsoleColor.Green, "Processing package references for ");

@@ -27,7 +27,7 @@ namespace SlnDependencyDiagramGenerator.Config
         /// all <c>.csproj</c> files under a specified path, including sub-folders, use a regex such as
         /// <c>"C:\\Dev\\Project\\Source\\.*\.csproj"</c>. Note that the <c>\\</c> shown in this example
         /// are escaped for the regex pattern. Escape each of these again if used in code or configuration.</summary>
-        public IList<string> RegexToInclude { get; init; } = new List<string>();
+        public IList<string> RegexToInclude { get; init; } = [];
 
         /// <summary>Specifies options specific to the processing of individual projects in a solution.</summary>
         public ProjectScope Individual { get; set; }

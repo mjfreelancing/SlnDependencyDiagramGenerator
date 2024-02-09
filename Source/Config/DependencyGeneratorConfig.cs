@@ -11,7 +11,7 @@ namespace SlnDependencyDiagramGenerator.Config
     public class DependencyGeneratorConfig
     {
         /// <summary>Specifies one or more nuget feeds, with authorization credentials if required.</summary>
-        public IList<NugetPackageFeed> PackageFeeds { get; init; } = new List<NugetPackageFeed>();
+        public IList<NugetPackageFeed> PackageFeeds { get; init; } = [];
 
         /// <summary>Specifies project related options that determine which projects for a given solution
         /// are resolved and the depth of their package dependency graph.</summary>
@@ -24,6 +24,6 @@ namespace SlnDependencyDiagramGenerator.Config
         public GeneratorExportOptions Export { get; init; } = new GeneratorExportOptions();
 
         /// <summary>Specifies the target framework to resolve for all nuget package references.</summary>
-        public IList<string> TargetFrameworks { get; init; } = new List<string>();
+        public IList<string> TargetFrameworks { get; init; } = [];
     }
 }
