@@ -50,7 +50,7 @@ namespace AllOverItDependencyDiagram.Parser
         {
             _sourceRepositories = packageFeeds
                 .WhenNotNullOrEmpty()
-                .SelectAsReadOnlyCollection(GetSourceRepository);
+                .SelectToReadOnlyCollection(GetSourceRepository);
 
             _maxDepth = maxDepth;
             _consoleLogger = consoleLogger.WhenNotNull();

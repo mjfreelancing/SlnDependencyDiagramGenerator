@@ -20,7 +20,7 @@ namespace SlnDependencyDiagramGenerator.Config
             public int TransitiveDepth { get; set; }
         }
 
-        /// <summary>The fully-qualified path to the solution file to be parsed.</summary>
+        /// <summary>The relative or fully-qualified path to the solution file to be parsed.</summary>
         public string SolutionPath { get; set; }
 
         /// <summary>One or more regex patterns to match solution projects to be processed. To parse
@@ -32,7 +32,7 @@ namespace SlnDependencyDiagramGenerator.Config
         /// <summary>Specifies options specific to the processing of individual projects in a solution.</summary>
         public ProjectScope Individual { get; set; }
 
-        /// <summary>Specifies options specific to the processing of all projects in a solution.</summary>
+        /// <summary>Specifies options specific to the processing of all projects in the solution (collectively).</summary>
         public ProjectScope All { get; set; }
     }
 }
