@@ -1,6 +1,13 @@
-# SlnDependencyDiagramGenerator
-Generates D2 diagram files and images for a Visual Studio Solution.
+# v1.0.1
+## 24 Feb 2024
 
-## Dependencies
+* Maintenance package and documentation updates.
 
-## Configuration
+
+---
+
+
+# v1.0.0
+## 09 Feb 2024
+
+* Initial release.
