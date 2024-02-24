@@ -22,10 +22,10 @@
         /// <summary>The fill style used for framework and package dependencies.</summary>
         public sealed class FillStyle
         {
-            /// <summary>The css or RGB fill color.</summary>
+            /// <summary>The CSS or RGB fill color.</summary>
             public string Fill { get; set; }
 
-            /// <summary>The opacity.</summary>
+            /// <summary>The opacity. This should be a value between 0 and 1.</summary>
             public double Opacity { get; set; }
         }
 

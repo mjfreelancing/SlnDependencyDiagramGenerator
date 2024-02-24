@@ -52,7 +52,7 @@ namespace AllOverItDependencyDiagram.Parser
 
             var solutionFile = SolutionFile.Parse(solutionFilePath);
 
-            var regexes = projectPathRegexes.SelectAsReadOnlyCollection(pathRegex => new Regex(pathRegex));
+            var regexes = projectPathRegexes.SelectToReadOnlyCollection(pathRegex => new Regex(pathRegex));
 
             var orderedProjects = solutionFile.ProjectsInOrder
                 .Where(project => project.ProjectType == SolutionProjectType.KnownToBeMSBuildFormat || project.ProjectType == SolutionProjectType.WebProject)
@@ -130,8 +130,8 @@ namespace AllOverItDependencyDiagram.Parser
                 if (!condition.IsNullOrEmpty())
                 {
                     var matches = TargetFrameworkEqualityRegex().Matches(condition);
-                    var targets = matches.SelectAsReadOnlyCollection(item => item.Groups["target"].Value);
-                    var comparisons = matches.SelectAsReadOnlyCollection(item => item.Groups["operator"].Value);
+                    var targets = matches.SelectToReadOnlyCollection(item => item.Groups["target"].Value);
+                    var comparisons = matches.SelectToReadOnlyCollection(item => item.Groups["operator"].Value);
 
                     var foundMatch = false;
 

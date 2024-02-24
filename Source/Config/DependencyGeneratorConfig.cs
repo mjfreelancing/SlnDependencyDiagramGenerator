@@ -23,7 +23,7 @@ namespace SlnDependencyDiagramGenerator.Config
         /// <summary>Specifies export path and image format options.</summary>
         public GeneratorExportOptions Export { get; init; } = new GeneratorExportOptions();
 
-        /// <summary>Specifies the target framework to resolve for all nuget package references.</summary>
+        /// <summary>Specifies the target frameworks to resolve for all nuget package references.</summary>
         public IList<string> TargetFrameworks { get; init; } = [];
     }
 }
