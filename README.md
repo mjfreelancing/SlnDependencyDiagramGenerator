@@ -118,7 +118,7 @@ package dependency graph.
 * **Individual**: Specifies options specific to the processing of individual projects in a solution.
 * **All**: Specifies options specific to the processing of all projects in the solution (collectively).
 
-The `individual` and `all` nodes provide these options:
+The `Individual` and `All` nodes provide these options:
 
 * **Enabled**: Indicates if this project scope will be processed.
 * **IncludeDependencies**: Indicates if framework and package dependencies should be processed.
@@ -128,13 +128,33 @@ The `individual` and `all` nodes provide these options:
 ### Diagram
 Specifies diagram options that determine how the diagram will be styled.
 
+* **Direction**: Specifies the direction the diagram flows towards. The default is `Left`.
+* **FrameworkStyle**: The fill style to use for framework dependencies referenced by a project.
+* **PackageStyle**: The fill style to use for explicit package dependencies referenced by a project.
+* **TransitiveStyle**: The fill style to use for transitive (implicit) package dependencies referenced by a project.
+* **GroupName**: The name (title) to use for the group of projects parsed.
+* **GroupNameAlias**: The alias to use in the D2 generated file to represent the group of projects parsed.
+
+`FrameworkStyle`, `PackageStyle`, and `TransitiveStyle` provide these options:
+
+* **Fill**: The CSS or RGB fill color.
+* **Opacity**: The opacity. This should be a value between 0 and 1.
+
 
 ### Export
 Specifies export path and image format options.
 
+* **ClearContents**: When True, clears the contents of the folder that combines `RootPath` and the target framework
+  being processed.
+* **RootPath**: The relative or fully-qualified export root path for the generated diagram files and images.
+  A sub-folder will be created for each target framework processed.
+* **ImageFormats**: The diagram image formats to create. Can be empty, or one or more of "png", "svg", "pdf".
+
 
 ### TargetFrameworks
-Specifies the target frameworks to resolve for all nuget package references.
+Specifies the target frameworks to resolve for all nuget package references. The values should be a target
+framework moniker, such as `net6.0`, `net7.0`, `net8.0`, etc. Refer to the following link for a list of
+valid monikers: [https://learn.microsoft.com/en-us/dotnet/standard/frameworks](https://learn.microsoft.com/en-us/dotnet/standard/frameworks).
 
 
 
