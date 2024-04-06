@@ -1,6 +1,7 @@
 ﻿using AllOverIt.Extensions;
 using AllOverItDependencyDiagram.Parser;
 using SlnDependencyDiagramGenerator.Exceptions;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -12,8 +13,10 @@ namespace AllOverItDependencyDiagram.Generator
     {
         public static readonly IDictionary<string, string> TargetFrameworkBadges = new Dictionary<string, string>
         {
-            { "net8.0", $"![](https://img.shields.io/badge/.NET-7.0-{ColorCode.Purple}.svg)"},
-            { "net8.0-windows", $"![](https://img.shields.io/badge/.NET-7.0--windows-{ColorCode.Purple}.svg)"},
+            { "net9.0", $"![](https://img.shields.io/badge/.NET-9.0-{ColorCode.Yellow}.svg)"},
+            { "net9.0-windows", $"![](https://img.shields.io/badge/.NET-9.0--windows-{ColorCode.Yellow}.svg)"},
+            { "net8.0", $"![](https://img.shields.io/badge/.NET-8.0-{ColorCode.Purple}.svg)"},
+            { "net8.0-windows", $"![](https://img.shields.io/badge/.NET-8.0--windows-{ColorCode.Purple}.svg)"},
             { "net7.0", $"![](https://img.shields.io/badge/.NET-7.0-{ColorCode.Blue}.svg)"},
             { "net7.0-windows", $"![](https://img.shields.io/badge/.NET-7.0--windows-{ColorCode.Blue}.svg)"},
             { "net6.0", $"![](https://img.shields.io/badge/.NET-6.0-{ColorCode.Orange}.svg)"},
@@ -37,10 +40,7 @@ namespace AllOverItDependencyDiagram.Generator
                 sb.AppendLine($"## {project}");
                 sb.AppendLine();
 
-                var frameworkBadges = TargetFrameworkBadges.Keys
-                    .Intersect(solutionProject.Value.TargetFrameworks)
-                    .Select(key => TargetFrameworkBadges[key])
-                    .ToList();
+                var frameworkBadges = GetTargetFrameworkBadges(solutionProject);
 
                 var projectBadges = string.Join(" ", frameworkBadges);
                 sb.AppendLine(projectBadges);
@@ -74,6 +74,38 @@ namespace AllOverItDependencyDiagram.Generator
             }
 
             return sb.ToString();
+        }
+
+        private static List<string> GetTargetFrameworkBadges(KeyValuePair<string, SolutionProject> solutionProject)
+        {
+            var frameworkBadges = new List<string>();
+
+            foreach (var badgeKey in TargetFrameworkBadges.Keys)
+            {
+                foreach (var framework in solutionProject.Value.TargetFrameworks)
+                {
+                    // eg., compare both are net8.0
+                    var exactMatch = string.Compare(badgeKey, framework, StringComparison.OrdinalIgnoreCase) == 0;
+
+                    if (exactMatch)
+                    {
+                        frameworkBadges.Add(TargetFrameworkBadges[badgeKey]);
+                    }
+                    else
+                    {
+                        var badge = TargetFrameworkBadges[badgeKey];
+
+                        // eg., compare net8.0-windows10.0.19041 with net8.0-windows, but don't add it more than once
+                        //      (multiple versions of windows may be specfied)
+                        if (!frameworkBadges.Contains(badge) && badgeKey.Contains("windows") && framework.StartsWith(badgeKey))
+                        {
+                            frameworkBadges.Add(badge);
+                        }
+                    }
+                }
+            }
+
+            return frameworkBadges;
         }
 
         private static string GetProjectName(ProjectReference projectReference)
