@@ -7,6 +7,6 @@
         internal const string Purple = "C56EE0";
         internal const string Orange = "FF8C67";
         internal const string Red = "E3505C";
-        //internal const string Yellow = "FFC33C";
+        internal const string Yellow = "FFC33C";
     }
 }
