@@ -1,5 +1,6 @@
 ﻿using AllOverIt.Assertion;
 using AllOverIt.Extensions;
+using AllOverIt.IO;
 using AllOverIt.Logging;
 using AllOverIt.Patterns.Specification.Extensions;
 using AllOverIt.Process;
@@ -106,7 +107,7 @@ namespace AllOverItDependencyDiagram.Generator
 
         private static void ClearFolder(string exportPath)
         {
-            var files = AllOverIt.IO.FileSearch.GetFiles(exportPath, "*.*", AllOverIt.IO.DiskSearchOptions.None);
+            var files = FileSearch.GetFiles(exportPath, "*.*", AllOverIt.IO.DiskSearchOptions.None);
 
             foreach (var file in files)
             {
@@ -137,12 +138,13 @@ namespace AllOverItDependencyDiagram.Generator
 
         private async Task CreateD2FileAndImages(string targetFramework, string exportPath, string projectScope, string d2Content)
         {
-            // Create the file and return the fully-qualified file path
-            var filePath = await CreateD2FileAsync(targetFramework, exportPath, d2Content, GetDiagramAliasId(projectScope, false));
+            var fileName = GetD2Filename(exportPath, GetDiagramAliasId(projectScope, false));
+
+            await CreateD2FileAsync(targetFramework, fileName, d2Content);
 
             foreach (var format in _configuration.Export.ImageFormats)
             {
-                await ExportD2ImageFileAsync(filePath, format);
+                await ExportD2ImageFileAsync(fileName, format);
             }
         }
 
@@ -205,14 +207,14 @@ namespace AllOverItDependencyDiagram.Generator
         {
             var content = SummaryDependencyGenerator.CreateContent(solutionProjects);
 
-            var summaryPath = Path.Combine(exportPath, SummaryDependencyGenerator.MarkdownFilename);
+            var filename = Path.Combine(exportPath, SummaryDependencyGenerator.MarkdownFilename);
 
             _logger
                 .Write("{forecolor:white}Exporting Summary: ")
-                .Write(ConsoleColor.Yellow, summaryPath)
+                .Write(ConsoleColor.Yellow, filename)
                 .Write("{forecolor:white}...");
 
-            await File.WriteAllTextAsync(summaryPath, content);
+            await File.WriteAllTextAsync(filename, content);
 
             _logger.WriteLine("{forecolor:green}Done");
             _logger.WriteLine();
@@ -429,32 +431,33 @@ namespace AllOverItDependencyDiagram.Generator
             return packageAlias;
         }
 
-        private async Task<string> CreateD2FileAsync(string targetFramework, string exportPath, string content, string projectScope)
+        private string GetD2Filename(string exportPath, string projectScope)
         {
             var fileName = projectScope.IsNullOrEmpty()
                 ? $"{_configuration.Diagram.GroupName.ToLowerInvariant()}-all.d2"
                 : $"{projectScope}.d2";
 
-            var d2FilePath = Path.Combine(exportPath, fileName);
+            return Path.Combine(exportPath, fileName);
+        }
 
+        private async Task CreateD2FileAsync(string targetFramework, string fileName, string content)
+        {
             // Showing how to mix AddFormatted() with AddFragment() where the latter
             // is a simple alternative to using string interpolation.
             _logger.Write($"{{forecolor:white}}Creating {{forecolor:yellow}}'{targetFramework}'{{forecolor:white}} diagram: ")
                    .Write(ConsoleColor.Yellow, Path.GetFileName(fileName))
                    .Write("{forecolor:white}...");
 
-            File.WriteAllText(d2FilePath, content);
+            File.WriteAllText(fileName, content);
 
             await ProcessBuilder
                 .For("d2.exe")
-                .WithArguments("fmt", d2FilePath)
+                .WithArguments("fmt", fileName)
                 .BuildProcessExecutor()
                 .ExecuteAsync();
 
             // An example using formatted text
             _logger.WriteLine("{forecolor:green}Done");
-
-            return d2FilePath;
         }
 
         private async Task ExportD2ImageFileAsync(string d2FileName, DiagramImageFormat format)

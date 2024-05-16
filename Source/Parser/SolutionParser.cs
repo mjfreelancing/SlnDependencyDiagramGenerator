@@ -217,7 +217,7 @@ namespace AllOverItDependencyDiagram.Parser
         {
             var packageReferences = await projectItems
                 .Where(item => item.ItemType.Equals("PackageReference", StringComparison.OrdinalIgnoreCase))
-                .SelectAsync(async item =>
+                .SelectAsync(async (item, _) =>
                 {
                     var packageName = item.Include;
 
