@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace SlnDependencyDiagramGenerator.Config
+﻿namespace SlnDependencyDiagramGenerator.Config
 {
     /// <summary>Specifies project related options that determine which projects for a given solution
     /// are resolved and the depth of their package dependency graph.</summary>
@@ -23,11 +21,14 @@ namespace SlnDependencyDiagramGenerator.Config
         /// <summary>The relative or fully-qualified path to the solution file to be parsed.</summary>
         public string SolutionPath { get; set; }
 
-        /// <summary>One or more regex patterns to match solution projects to be processed. To parse
-        /// all <c>.csproj</c> files under a specified path, including sub-folders, use a regex such as
+        /// <summary>One or more regex patterns to match solution projects to be included. To parse
+        /// all <c>.csproj</c> files under a specific path, including sub-folders, use a regex such as
         /// <c>"C:\\Dev\\Project\\Source\\.*\.csproj"</c>. Note that the <c>\\</c> shown in this example
         /// are escaped for the regex pattern. Escape each of these again if used in code or configuration.</summary>
-        public IList<string> RegexToInclude { get; init; } = [];
+        public string[] RegexToInclude { get; init; } = [];
+
+        /// <summary>One or more (optional) regex patterns to match solution projects to be excluded.</summary>
+        public string[] RegexToExclude { get; init; } = [];
 
         /// <summary>Specifies options specific to the processing of individual projects in a solution.</summary>
         public ProjectScope Individual { get; set; }

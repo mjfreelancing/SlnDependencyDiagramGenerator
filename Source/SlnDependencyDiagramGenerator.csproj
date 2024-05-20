@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFrameworks>net8.0;net7.0</TargetFrameworks>
         <LangVersion>Latest</LangVersion>
-        <Version>1.1.1</Version>
+        <Version>1.2.0</Version>
         <Description>This package contains a Visual Studio Dependency Generator.</Description>
         <Authors>Malcolm Smith</Authors>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>

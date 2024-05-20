@@ -43,7 +43,7 @@ namespace AllOverItDependencyDiagram.Parser
             _nugetResolver = new NugetPackageResolver(packageFeeds, maxTransitiveDepth, logger);
         }
 
-        public async Task<IReadOnlyCollection<SolutionProject>> ParseAsync(string solutionFilePath, IReadOnlyCollection<string> projectPathRegexes, string targetFramework)
+        public async Task<SolutionProject[]> ParseAsync(string solutionFilePath, string[] regexToInclude, string[] regexToExclude, string targetFramework)
         {
             var projects = new List<SolutionProject>();
 
@@ -52,13 +52,21 @@ namespace AllOverItDependencyDiagram.Parser
 
             var solutionFile = SolutionFile.Parse(solutionFilePath);
 
-            var regexes = projectPathRegexes.SelectToReadOnlyCollection(pathRegex => new Regex(pathRegex));
+            var includeRegexes = regexToInclude.SelectToArray(regex => new Regex(regex));
+            var excludeRegexes = regexToExclude.SelectToArray(regex => new Regex(regex));
 
             var orderedProjects = solutionFile.ProjectsInOrder
                 .Where(project => project.ProjectType == SolutionProjectType.KnownToBeMSBuildFormat || project.ProjectType == SolutionProjectType.WebProject)
                 .Where(project =>
                 {
-                    return regexes.Any(regex => regex.Matches(project.AbsolutePath).Count > 0);
+                    var include = includeRegexes.Any(regex => regex.Matches(project.AbsolutePath).Count > 0);
+
+                    if (!include || excludeRegexes.Length == 0)
+                    {
+                        return include;
+                    }
+
+                    return !excludeRegexes.Any(regex => regex.Matches(project.AbsolutePath).Count > 0);
                 })
                 .OrderBy(item => item.ProjectName);
 
@@ -94,7 +102,7 @@ namespace AllOverItDependencyDiagram.Parser
                 projects.Add(project);
             }
 
-            return projects;
+            return [.. projects];
         }
 
         private static string[] GetTargetFrameworks(IEnumerable<ProjectPropertyGroupElement> propertyGroups)
