@@ -1,3 +1,11 @@
+# v1.2.0
+## 20 May 2024
+
+* Added a regex option to exclude projects.
+
+---
+
+
 # v1.1.1
 ## 16 May 2024
 

@@ -67,11 +67,12 @@ namespace AllOverItDependencyDiagram.Generator
                     ClearFolder(exportPath);
                 }
 
-                var regexToInclude = _configuration.Projects.RegexToInclude.AsReadOnlyCollection();
+                var regexToInclude = _configuration.Projects.RegexToInclude;
+                var regexToExclude = _configuration.Projects.RegexToExclude;
 
-                var allProjects = await solutionParser.ParseAsync(_configuration.Projects.SolutionPath, regexToInclude, targetFramework);
+                var allProjects = await solutionParser.ParseAsync(_configuration.Projects.SolutionPath, regexToInclude, regexToExclude, targetFramework);
 
-                if (allProjects.Count == 0)
+                if (allProjects.Length == 0)
                 {
                     _logger
                         .Write(ConsoleColor.Red, "No projects found in ")
