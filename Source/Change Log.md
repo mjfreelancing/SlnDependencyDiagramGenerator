@@ -1,3 +1,11 @@
+# v1.3.0
+## 12 Jun 2024
+
+* Package dependency updates.
+
+---
+
+
 # v1.2.0
 ## 20 May 2024
 
