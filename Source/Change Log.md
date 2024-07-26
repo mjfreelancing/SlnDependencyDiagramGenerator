@@ -1,3 +1,12 @@
+# v1.5.0
+## 26 Jul 2024
+
+* Skip projects that do not have a configured target framework.
+* Only create folders for target frameworks processed.
+
+---
+
+
 # v1.4.0
 ## 25 Jun 2024
 
