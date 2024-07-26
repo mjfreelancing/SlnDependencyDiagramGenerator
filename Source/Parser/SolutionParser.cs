@@ -36,6 +36,8 @@ namespace AllOverItDependencyDiagram.Parser
         [GeneratedRegex("'\\$\\(TargetFramework\\)'\\s*(?<operator>[!=]=)\\s*'(?<target>.*?)'", RegexOptions.Singleline)]
         private static partial Regex TargetFrameworkEqualityRegex();
 
+        private readonly Dictionary<string, SolutionFile> _solutionFiles = [];
+
         private readonly NugetPackageResolver _nugetResolver;
 
         public SolutionParser(IEnumerable<NugetPackageFeed> packageFeeds, int maxTransitiveDepth, IColorConsoleLogger logger)
@@ -50,7 +52,12 @@ namespace AllOverItDependencyDiagram.Parser
             // Make sure a rooted path is used (converts a relative path to an explicit path if required)
             solutionFilePath = Path.GetFullPath(solutionFilePath);
 
-            var solutionFile = SolutionFile.Parse(solutionFilePath);
+            if (!_solutionFiles.TryGetValue(solutionFilePath, out var solutionFile))
+            {
+                solutionFile = SolutionFile.Parse(solutionFilePath);
+
+                _solutionFiles.Add(solutionFilePath, solutionFile);
+            }
 
             var includeRegexes = regexToInclude.SelectToArray(regex => new Regex(regex));
             var excludeRegexes = regexToExclude.SelectToArray(regex => new Regex(regex));
@@ -82,12 +89,11 @@ namespace AllOverItDependencyDiagram.Parser
                     throw new DependencyGeneratorException($"{projectRootElement.FullPath} does not specify a target framework. Importing of Directory.Build.Props is not supported.");
                 }
 
-                // Can't skip (without additional logic) as we need to cater for WPF projects targeting, such as net8.0-windows;net7.0-windows
-                //
-                // if (!targetFrameworks.Contains(targetFramework))
-                // {
-                //     continue;
-                // }
+                // Looking this way so we can detect project types, such as WPF, that may target as net8.0-windows;net7.0-windows
+                if (!targetFrameworks.Any(framework => framework.Contains(targetFramework)))
+                {
+                    continue;
+                }
 
                 var conditionalReferences = await GetConditionalReferencesAsync(projectFolder, projectRootElement.ItemGroups, targetFramework).ToListAsync();
 
@@ -123,6 +129,7 @@ namespace AllOverItDependencyDiagram.Parser
             string targetFramework)
         {
             var conditionItemGroups = itemGroups
+                .Where(grp => grp.Condition.IsNotNullOrEmpty())
                 .Select(grp => new
                 {
                     grp.Condition,
