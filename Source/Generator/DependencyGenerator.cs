@@ -58,15 +58,6 @@ namespace AllOverItDependencyDiagram.Generator
 
             foreach (var targetFramework in _configuration.TargetFrameworks)
             {
-                var exportPath = Path.Combine(_configuration.Export.RootPath, targetFramework);
-
-                Directory.CreateDirectory(exportPath);
-
-                if (_configuration.Export.ClearContents)
-                {
-                    ClearFolder(exportPath);
-                }
-
                 var regexToInclude = _configuration.Projects.RegexToInclude;
                 var regexToExclude = _configuration.Projects.RegexToExclude;
 
@@ -78,9 +69,12 @@ namespace AllOverItDependencyDiagram.Generator
                         .Write(ConsoleColor.Red, "No projects found in ")
                         .Write(ConsoleColor.Yellow, Path.GetFileName(_configuration.Projects.SolutionPath))
                         .Write(ConsoleColor.Red, " using the regex(es) ")
-                        .WriteLine(ConsoleColor.Yellow, string.Join(", ", _configuration.Projects.RegexToInclude));
+                        .Write(ConsoleColor.Yellow, string.Join(", ", _configuration.Projects.RegexToInclude))
+                        .Write(ConsoleColor.Red, " and target framework ")
+                        .WriteLine(ConsoleColor.Yellow, targetFramework)
+                        .WriteLine();
 
-                    return;
+                    continue;
                 }
 
                 foreach (var project in allProjects)
@@ -91,6 +85,15 @@ namespace AllOverItDependencyDiagram.Generator
                 _logger.WriteLine();
 
                 var solutionProjects = allProjects.ToDictionary(project => project.Name, project => project);
+
+                var exportPath = Path.Combine(_configuration.Export.RootPath, targetFramework);
+
+                Directory.CreateDirectory(exportPath);
+
+                if (_configuration.Export.ClearContents)
+                {
+                    ClearFolder(exportPath);
+                }
 
                 await ExportAsSummary(exportPath, solutionProjects).ConfigureAwait(false);
 
