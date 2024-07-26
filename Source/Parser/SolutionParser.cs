@@ -129,10 +129,9 @@ namespace AllOverItDependencyDiagram.Parser
             string targetFramework)
         {
             var conditionItemGroups = itemGroups
-                .Where(grp => grp.Condition.IsNotNullOrEmpty())
                 .Select(grp => new
                 {
-                    grp.Condition,
+                    grp.Condition,      // May be empty
                     grp.Items
                 })
                 .GroupBy(grp => grp.Condition);

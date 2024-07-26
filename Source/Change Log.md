@@ -1,3 +1,11 @@
+# v1.5.1
+## 27 Jul 2024
+
+* Fixed regression where not all dependencies were being processed.
+
+---
+
+
 # v1.5.0
 ## 27 Jul 2024
 
