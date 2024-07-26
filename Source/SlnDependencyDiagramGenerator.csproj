@@ -29,8 +29,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="AllOverIt" Version="7.25.0" />
-        <PackageReference Include="AllOverIt.Validation" Version="7.25.0" />
+        <PackageReference Include="AllOverIt" Version="7.26.0" />
+        <PackageReference Include="AllOverIt.Validation" Version="7.26.0" />
         <PackageReference Include="NuGet.Protocol" Version="6.10.1" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
     </ItemGroup>
