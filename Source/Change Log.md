@@ -1,3 +1,12 @@
+# v2.0.0
+## 26 Nov 2024
+
+* Updated to latest dependencies
+* Support changed to NET 8 and NET 9
+
+---
+
+
 # v1.5.1
 ## 27 Jul 2024
 
