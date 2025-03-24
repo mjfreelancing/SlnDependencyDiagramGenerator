@@ -1,4 +1,4 @@
-﻿using AllOverItDependencyDiagram.Generator;
+﻿using SlnDependencyDiagramGenerator.Generator;
 using System.Collections.Generic;
 
 namespace SlnDependencyDiagramGenerator.Config

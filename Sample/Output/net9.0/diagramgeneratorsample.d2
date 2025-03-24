@@ -1,0 +1,121 @@
+direction: left
+
+ddg: Dependency Diagram Generator
+ddg.diagramgeneratorsample: DiagramGeneratorSample
+microsoft-extensions-configuration_9-0-3: Microsoft.Extensions.Configuration\nv9.0.3
+microsoft-extensions-configuration_9-0-3.style.fill: "#ADD8E6"
+microsoft-extensions-configuration_9-0-3.style.opacity: 0.8
+microsoft-extensions-configuration-abstractions_9-0-3: Microsoft.Extensions.Configuration.Abstractions\nv9.0.3
+microsoft-extensions-configuration-abstractions_9-0-3.style.fill: "#FFEC96"
+microsoft-extensions-configuration-abstractions_9-0-3.style.opacity: 0.8
+microsoft-extensions-configuration-abstractions_9-0-3 <- microsoft-extensions-configuration_9-0-3
+microsoft-extensions-primitives_9-0-3: Microsoft.Extensions.Primitives\nv9.0.3
+microsoft-extensions-primitives_9-0-3.style.fill: "#FFEC96"
+microsoft-extensions-primitives_9-0-3.style.opacity: 0.8
+microsoft-extensions-primitives_9-0-3 <- microsoft-extensions-configuration_9-0-3
+microsoft-extensions-configuration_9-0-3 <- ddg.diagramgeneratorsample
+microsoft-extensions-configuration-binder_9-0-3: Microsoft.Extensions.Configuration.Binder\nv9.0.3
+microsoft-extensions-configuration-binder_9-0-3.style.fill: "#ADD8E6"
+microsoft-extensions-configuration-binder_9-0-3.style.opacity: 0.8
+microsoft-extensions-configuration-abstractions_9-0-3 <- microsoft-extensions-configuration-binder_9-0-3
+microsoft-extensions-configuration-binder_9-0-3 <- ddg.diagramgeneratorsample
+microsoft-extensions-configuration-json_9-0-3: Microsoft.Extensions.Configuration.Json\nv9.0.3
+microsoft-extensions-configuration-json_9-0-3.style.fill: "#ADD8E6"
+microsoft-extensions-configuration-json_9-0-3.style.opacity: 0.8
+microsoft-extensions-configuration-abstractions_9-0-3 <- microsoft-extensions-configuration-json_9-0-3
+microsoft-extensions-configuration-fileextensions_9-0-3: Microsoft.Extensions.Configuration.FileExtensions\nv9.0.3
+microsoft-extensions-configuration-fileextensions_9-0-3.style.fill: "#FFEC96"
+microsoft-extensions-configuration-fileextensions_9-0-3.style.opacity: 0.8
+microsoft-extensions-configuration-fileextensions_9-0-3 <- microsoft-extensions-configuration-json_9-0-3
+microsoft-extensions-configuration_9-0-3 <- microsoft-extensions-configuration-json_9-0-3
+microsoft-extensions-fileproviders-abstractions_9-0-3: Microsoft.Extensions.FileProviders.Abstractions\nv9.0.3
+microsoft-extensions-fileproviders-abstractions_9-0-3.style.fill: "#FFEC96"
+microsoft-extensions-fileproviders-abstractions_9-0-3.style.opacity: 0.8
+microsoft-extensions-fileproviders-abstractions_9-0-3 <- microsoft-extensions-configuration-json_9-0-3
+microsoft-extensions-configuration-json_9-0-3 <- ddg.diagramgeneratorsample
+microsoft-extensions-configuration-usersecrets_9-0-3: Microsoft.Extensions.Configuration.UserSecrets\nv9.0.3
+microsoft-extensions-configuration-usersecrets_9-0-3.style.fill: "#ADD8E6"
+microsoft-extensions-configuration-usersecrets_9-0-3.style.opacity: 0.8
+microsoft-extensions-configuration-abstractions_9-0-3 <- microsoft-extensions-configuration-usersecrets_9-0-3
+microsoft-extensions-configuration-json_9-0-3 <- microsoft-extensions-configuration-usersecrets_9-0-3
+microsoft-extensions-fileproviders-abstractions_9-0-3 <- microsoft-extensions-configuration-usersecrets_9-0-3
+microsoft-extensions-fileproviders-physical_9-0-3: Microsoft.Extensions.FileProviders.Physical\nv9.0.3
+microsoft-extensions-fileproviders-physical_9-0-3.style.fill: "#FFEC96"
+microsoft-extensions-fileproviders-physical_9-0-3.style.opacity: 0.8
+microsoft-extensions-fileproviders-physical_9-0-3 <- microsoft-extensions-configuration-usersecrets_9-0-3
+microsoft-extensions-configuration-usersecrets_9-0-3 <- ddg.diagramgeneratorsample
+ddg.slndependencydiagramgenerator: SlnDependencyDiagramGenerator
+alloverit_8-1-0: AllOverIt\nv8.1.0
+alloverit_8-1-0.style.fill: "#ADD8E6"
+alloverit_8-1-0.style.opacity: 0.8
+alloverit-assertion_8-1-0: AllOverIt.Assertion\nv8.1.0
+alloverit-assertion_8-1-0.style.fill: "#FFEC96"
+alloverit-assertion_8-1-0.style.opacity: 0.8
+alloverit-assertion_8-1-0 <- alloverit_8-1-0
+alloverit_8-1-0 <- ddg.slndependencydiagramgenerator
+alloverit-validation_8-1-0: AllOverIt.Validation\nv8.1.0
+alloverit-validation_8-1-0.style.fill: "#ADD8E6"
+alloverit-validation_8-1-0.style.opacity: 0.8
+alloverit_8-1-0 <- alloverit-validation_8-1-0
+fluentvalidation_11-11-0: FluentValidation\nv11.11.0
+fluentvalidation_11-11-0.style.fill: "#FFEC96"
+fluentvalidation_11-11-0.style.opacity: 0.8
+fluentvalidation_11-11-0 <- alloverit-validation_8-1-0
+microsoft-extensions-dependencyinjection-abstractions_9-0-3: Microsoft.Extensions.DependencyInjection.Abstractions\nv9.0.3
+microsoft-extensions-dependencyinjection-abstractions_9-0-3.style.fill: "#FFEC96"
+microsoft-extensions-dependencyinjection-abstractions_9-0-3.style.opacity: 0.8
+microsoft-extensions-dependencyinjection-abstractions_9-0-3 <- alloverit-validation_8-1-0
+alloverit-validation_8-1-0 <- ddg.slndependencydiagramgenerator
+nuget-protocol_6-13-2: NuGet.Protocol\nv6.13.2
+nuget-protocol_6-13-2.style.fill: "#ADD8E6"
+nuget-protocol_6-13-2.style.opacity: 0.8
+nuget-packaging_6-13-2: NuGet.Packaging\nv6.13.2
+nuget-packaging_6-13-2.style.fill: "#FFEC96"
+nuget-packaging_6-13-2.style.opacity: 0.8
+nuget-packaging_6-13-2 <- nuget-protocol_6-13-2
+nuget-protocol_6-13-2 <- ddg.slndependencydiagramgenerator
+microsoft-sourcelink-github_8-0-0: Microsoft.SourceLink.GitHub\nv8.0.0
+microsoft-sourcelink-github_8-0-0.style.fill: "#ADD8E6"
+microsoft-sourcelink-github_8-0-0.style.opacity: 0.8
+microsoft-sourcelink-common_8-0-0: Microsoft.SourceLink.Common\nv8.0.0
+microsoft-sourcelink-common_8-0-0.style.fill: "#FFEC96"
+microsoft-sourcelink-common_8-0-0.style.opacity: 0.8
+microsoft-sourcelink-common_8-0-0 <- microsoft-sourcelink-github_8-0-0
+microsoft-build-tasks-git_8-0-0: Microsoft.Build.Tasks.Git\nv8.0.0
+microsoft-build-tasks-git_8-0-0.style.fill: "#FFEC96"
+microsoft-build-tasks-git_8-0-0.style.opacity: 0.8
+microsoft-build-tasks-git_8-0-0 <- microsoft-sourcelink-github_8-0-0
+microsoft-sourcelink-github_8-0-0 <- ddg.slndependencydiagramgenerator
+microsoft-build_17-13-9: Microsoft.Build\nv17.13.9
+microsoft-build_17-13-9.style.fill: "#ADD8E6"
+microsoft-build_17-13-9.style.opacity: 0.8
+microsoft-build-framework_17-13-9: Microsoft.Build.Framework\nv17.13.9
+microsoft-build-framework_17-13-9.style.fill: "#FFEC96"
+microsoft-build-framework_17-13-9.style.opacity: 0.8
+microsoft-build-framework_17-13-9 <- microsoft-build_17-13-9
+microsoft-net-stringtools_17-13-9: Microsoft.NET.StringTools\nv17.13.9
+microsoft-net-stringtools_17-13-9.style.fill: "#FFEC96"
+microsoft-net-stringtools_17-13-9.style.opacity: 0.8
+microsoft-net-stringtools_17-13-9 <- microsoft-build_17-13-9
+microsoft-visualstudio-solutionpersistence_1-0-28: Microsoft.VisualStudio.SolutionPersistence\nv1.0.28
+microsoft-visualstudio-solutionpersistence_1-0-28.style.fill: "#FFEC96"
+microsoft-visualstudio-solutionpersistence_1-0-28.style.opacity: 0.8
+microsoft-visualstudio-solutionpersistence_1-0-28 <- microsoft-build_17-13-9
+system-configuration-configurationmanager_8-0-0: System.Configuration.ConfigurationManager\nv8.0.0
+system-configuration-configurationmanager_8-0-0.style.fill: "#FFEC96"
+system-configuration-configurationmanager_8-0-0.style.opacity: 0.8
+system-configuration-configurationmanager_8-0-0 <- microsoft-build_17-13-9
+system-reflection-metadataloadcontext_8-0-0: System.Reflection.MetadataLoadContext\nv8.0.0
+system-reflection-metadataloadcontext_8-0-0.style.fill: "#FFEC96"
+system-reflection-metadataloadcontext_8-0-0.style.opacity: 0.8
+system-reflection-metadataloadcontext_8-0-0 <- microsoft-build_17-13-9
+system-collections-immutable_8-0-0: System.Collections.Immutable\nv8.0.0
+system-collections-immutable_8-0-0.style.fill: "#FFEC96"
+system-collections-immutable_8-0-0.style.opacity: 0.8
+system-collections-immutable_8-0-0 <- microsoft-build_17-13-9
+system-reflection-metadata_8-0-0: System.Reflection.Metadata\nv8.0.0
+system-reflection-metadata_8-0-0.style.fill: "#FFEC96"
+system-reflection-metadata_8-0-0.style.opacity: 0.8
+system-reflection-metadata_8-0-0 <- microsoft-build_17-13-9
+microsoft-build_17-13-9 <- ddg.slndependencydiagramgenerator
+ddg.slndependencydiagramgenerator <- ddg.diagramgeneratorsample

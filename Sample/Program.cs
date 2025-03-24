@@ -1,12 +1,12 @@
 ﻿using AllOverIt.Logging;
-using AllOverItDependencyDiagram.Generator;
 using Microsoft.Extensions.Configuration;
 using SlnDependencyDiagramGenerator.Exceptions;
+using SlnDependencyDiagramGenerator.Generator;
 using System;
 using System.IO;
 using System.Threading.Tasks;
 
-namespace AllOverItDependencyDiagram
+namespace DiagramGeneratorSample
 {
     internal class Program
     {
@@ -46,6 +46,8 @@ namespace AllOverItDependencyDiagram
 
         private static AppOptions GetGeneratorConfig(string configFile)
         {
+            configFile = Path.GetFullPath(configFile);
+
             var generatorConfig = new AppOptions();
 
             var configuration = new ConfigurationBuilder()

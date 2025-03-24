@@ -1,4 +1,4 @@
-﻿namespace AllOverItDependencyDiagram.Generator
+﻿namespace SlnDependencyDiagramGenerator.Generator
 {
     internal static class ColorCode
     {

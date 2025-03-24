@@ -1,13 +1,13 @@
 ﻿using AllOverIt.Extensions;
-using AllOverItDependencyDiagram.Parser;
 using SlnDependencyDiagramGenerator.Exceptions;
+using SlnDependencyDiagramGenerator.Parser;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace AllOverItDependencyDiagram.Generator
+namespace SlnDependencyDiagramGenerator.Generator
 {
     internal static class SummaryDependencyGenerator
     {

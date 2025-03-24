@@ -15,9 +15,9 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace AllOverItDependencyDiagram.Parser
+namespace SlnDependencyDiagramGenerator.Parser
 {
-    internal sealed class NugetPackageResolver
+    internal sealed partial class NugetPackageResolver
     {
         private class NugetLogger : LoggerBase
         {

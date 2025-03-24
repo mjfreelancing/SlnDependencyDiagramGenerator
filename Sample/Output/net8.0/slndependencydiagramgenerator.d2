@@ -2,39 +2,72 @@ direction: left
 
 ddg: Dependency Diagram Generator
 ddg.slndependencydiagramgenerator: SlnDependencyDiagramGenerator
-microsoft-build_17-10-4: Microsoft.Build\nv17.10.4
-microsoft-build_17-10-4.style.fill: "#ADD8E6"
-microsoft-build_17-10-4.style.opacity: 0.8
-microsoft-build-framework_17-10-4: Microsoft.Build.Framework\nv17.10.4
-microsoft-build-framework_17-10-4.style.fill: "#FFEC96"
-microsoft-build-framework_17-10-4.style.opacity: 0.8
-microsoft-build-framework_17-10-4 <- microsoft-build_17-10-4
-microsoft-net-stringtools_17-10-4: Microsoft.NET.StringTools\nv17.10.4
-microsoft-net-stringtools_17-10-4.style.fill: "#FFEC96"
-microsoft-net-stringtools_17-10-4.style.opacity: 0.8
-microsoft-net-stringtools_17-10-4 <- microsoft-build_17-10-4
-system-collections-immutable_8-0-0: System.Collections.Immutable\nv8.0.0
-system-collections-immutable_8-0-0.style.fill: "#FFEC96"
-system-collections-immutable_8-0-0.style.opacity: 0.8
-system-collections-immutable_8-0-0 <- microsoft-build_17-10-4
+alloverit_8-1-0: AllOverIt\nv8.1.0
+alloverit_8-1-0.style.fill: "#ADD8E6"
+alloverit_8-1-0.style.opacity: 0.8
+alloverit-assertion_8-1-0: AllOverIt.Assertion\nv8.1.0
+alloverit-assertion_8-1-0.style.fill: "#FFEC96"
+alloverit-assertion_8-1-0.style.opacity: 0.8
+alloverit-assertion_8-1-0 <- alloverit_8-1-0
+alloverit_8-1-0 <- ddg.slndependencydiagramgenerator
+alloverit-validation_8-1-0: AllOverIt.Validation\nv8.1.0
+alloverit-validation_8-1-0.style.fill: "#ADD8E6"
+alloverit-validation_8-1-0.style.opacity: 0.8
+alloverit_8-1-0 <- alloverit-validation_8-1-0
+fluentvalidation_11-11-0: FluentValidation\nv11.11.0
+fluentvalidation_11-11-0.style.fill: "#FFEC96"
+fluentvalidation_11-11-0.style.opacity: 0.8
+fluentvalidation_11-11-0 <- alloverit-validation_8-1-0
+microsoft-extensions-dependencyinjection-abstractions_9-0-3: Microsoft.Extensions.DependencyInjection.Abstractions\nv9.0.3
+microsoft-extensions-dependencyinjection-abstractions_9-0-3.style.fill: "#FFEC96"
+microsoft-extensions-dependencyinjection-abstractions_9-0-3.style.opacity: 0.8
+microsoft-extensions-dependencyinjection-abstractions_9-0-3 <- alloverit-validation_8-1-0
+alloverit-validation_8-1-0 <- ddg.slndependencydiagramgenerator
+nuget-protocol_6-13-2: NuGet.Protocol\nv6.13.2
+nuget-protocol_6-13-2.style.fill: "#ADD8E6"
+nuget-protocol_6-13-2.style.opacity: 0.8
+nuget-packaging_6-13-2: NuGet.Packaging\nv6.13.2
+nuget-packaging_6-13-2.style.fill: "#FFEC96"
+nuget-packaging_6-13-2.style.opacity: 0.8
+nuget-packaging_6-13-2 <- nuget-protocol_6-13-2
+nuget-protocol_6-13-2 <- ddg.slndependencydiagramgenerator
+microsoft-sourcelink-github_8-0-0: Microsoft.SourceLink.GitHub\nv8.0.0
+microsoft-sourcelink-github_8-0-0.style.fill: "#ADD8E6"
+microsoft-sourcelink-github_8-0-0.style.opacity: 0.8
+microsoft-sourcelink-common_8-0-0: Microsoft.SourceLink.Common\nv8.0.0
+microsoft-sourcelink-common_8-0-0.style.fill: "#FFEC96"
+microsoft-sourcelink-common_8-0-0.style.opacity: 0.8
+microsoft-sourcelink-common_8-0-0 <- microsoft-sourcelink-github_8-0-0
+microsoft-build-tasks-git_8-0-0: Microsoft.Build.Tasks.Git\nv8.0.0
+microsoft-build-tasks-git_8-0-0.style.fill: "#FFEC96"
+microsoft-build-tasks-git_8-0-0.style.opacity: 0.8
+microsoft-build-tasks-git_8-0-0 <- microsoft-sourcelink-github_8-0-0
+microsoft-sourcelink-github_8-0-0 <- ddg.slndependencydiagramgenerator
+microsoft-build_17-11-4: Microsoft.Build\nv17.11.4
+microsoft-build_17-11-4.style.fill: "#ADD8E6"
+microsoft-build_17-11-4.style.opacity: 0.8
+microsoft-build-framework_17-11-4: Microsoft.Build.Framework\nv17.11.4
+microsoft-build-framework_17-11-4.style.fill: "#FFEC96"
+microsoft-build-framework_17-11-4.style.opacity: 0.8
+microsoft-build-framework_17-11-4 <- microsoft-build_17-11-4
+microsoft-net-stringtools_17-11-4: Microsoft.NET.StringTools\nv17.11.4
+microsoft-net-stringtools_17-11-4.style.fill: "#FFEC96"
+microsoft-net-stringtools_17-11-4.style.opacity: 0.8
+microsoft-net-stringtools_17-11-4 <- microsoft-build_17-11-4
 system-configuration-configurationmanager_8-0-0: System.Configuration.ConfigurationManager\nv8.0.0
 system-configuration-configurationmanager_8-0-0.style.fill: "#FFEC96"
 system-configuration-configurationmanager_8-0-0.style.opacity: 0.8
-system-configuration-configurationmanager_8-0-0 <- microsoft-build_17-10-4
+system-configuration-configurationmanager_8-0-0 <- microsoft-build_17-11-4
 system-reflection-metadataloadcontext_8-0-0: System.Reflection.MetadataLoadContext\nv8.0.0
 system-reflection-metadataloadcontext_8-0-0.style.fill: "#FFEC96"
 system-reflection-metadataloadcontext_8-0-0.style.opacity: 0.8
-system-reflection-metadataloadcontext_8-0-0 <- microsoft-build_17-10-4
-system-security-principal-windows_5-0-0: System.Security.Principal.Windows\nv5.0.0
-system-security-principal-windows_5-0-0.style.fill: "#FFEC96"
-system-security-principal-windows_5-0-0.style.opacity: 0.8
-system-security-principal-windows_5-0-0 <- microsoft-build_17-10-4
-system-threading-tasks-dataflow_8-0-0: System.Threading.Tasks.Dataflow\nv8.0.0
-system-threading-tasks-dataflow_8-0-0.style.fill: "#FFEC96"
-system-threading-tasks-dataflow_8-0-0.style.opacity: 0.8
-system-threading-tasks-dataflow_8-0-0 <- microsoft-build_17-10-4
+system-reflection-metadataloadcontext_8-0-0 <- microsoft-build_17-11-4
+system-collections-immutable_8-0-0: System.Collections.Immutable\nv8.0.0
+system-collections-immutable_8-0-0.style.fill: "#FFEC96"
+system-collections-immutable_8-0-0.style.opacity: 0.8
+system-collections-immutable_8-0-0 <- microsoft-build_17-11-4
 system-reflection-metadata_8-0-0: System.Reflection.Metadata\nv8.0.0
 system-reflection-metadata_8-0-0.style.fill: "#FFEC96"
 system-reflection-metadata_8-0-0.style.opacity: 0.8
-system-reflection-metadata_8-0-0 <- microsoft-build_17-10-4
-microsoft-build_17-10-4 <- ddg.slndependencydiagramgenerator
+system-reflection-metadata_8-0-0 <- microsoft-build_17-11-4
+microsoft-build_17-11-4 <- ddg.slndependencydiagramgenerator
