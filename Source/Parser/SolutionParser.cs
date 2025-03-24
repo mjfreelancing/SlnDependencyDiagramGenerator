@@ -11,7 +11,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace AllOverItDependencyDiagram.Parser
+namespace SlnDependencyDiagramGenerator.Parser
 {
     internal sealed partial class SolutionParser
     {
@@ -35,6 +35,9 @@ namespace AllOverItDependencyDiagram.Parser
         */
         [GeneratedRegex("'\\$\\(TargetFramework\\)'\\s*(?<operator>[!=]=)\\s*'(?<target>.*?)'", RegexOptions.Singleline)]
         private static partial Regex TargetFrameworkEqualityRegex();
+
+        [GeneratedRegex(@"\b\d+\.\d+\.\d+\b")]
+        private static partial Regex PackageVersionRegex();
 
         private readonly Dictionary<string, SolutionFile> _solutionFiles = [];
 
@@ -204,7 +207,7 @@ namespace AllOverItDependencyDiagram.Parser
         {
             return projectItems
                 .Where(item => item.ItemType.Equals("ProjectReference", StringComparison.OrdinalIgnoreCase))
-                .Select(item =>
+                .SelectToList(item =>
                 {
                     var projectPath = FileUtils.GetAbsolutePath(projectFolder, item.Include);
 
@@ -212,8 +215,7 @@ namespace AllOverItDependencyDiagram.Parser
                     {
                         Path = projectPath
                     };
-                })
-                .ToList();
+                });
         }
 
         private static IReadOnlyCollection<FrameworkReference> GetFrameworkReferences(IEnumerable<ProjectItemElement> projectItems)
@@ -235,7 +237,7 @@ namespace AllOverItDependencyDiagram.Parser
                 {
                     var packageName = item.Include;
 
-                    var packageVersion = item.Metadata.SingleOrDefault(item => item.Name == "Version")?.Value;
+                    var packageVersion = GetNormalisedPackageVersion(item.Metadata.SingleOrDefault(item => item.Name == "Version")?.Value);
 
                     var transitivePackages = await _nugetResolver.GetPackageReferences(packageName, packageVersion, targetFramework);
 
@@ -249,6 +251,12 @@ namespace AllOverItDependencyDiagram.Parser
                 .ToListAsync();
 
             return packageReferences.AsReadOnlyCollection();
+        }
+
+        private static string GetNormalisedPackageVersion(string packageVersion)
+        {
+            // Make sure strings such as [8.0.0] are converted to 8.0.0
+            return PackageVersionRegex().Match(packageVersion).Groups[0].Value;
         }
     }
 }

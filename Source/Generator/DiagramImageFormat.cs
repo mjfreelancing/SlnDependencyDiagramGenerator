@@ -1,4 +1,4 @@
-﻿namespace AllOverItDependencyDiagram.Generator
+﻿namespace SlnDependencyDiagramGenerator.Generator
 {
     /// <summary>The image formats than can be created from the generated D2 files.</summary>
     public enum DiagramImageFormat

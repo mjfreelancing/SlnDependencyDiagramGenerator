@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace AllOverItDependencyDiagram.Parser
+namespace SlnDependencyDiagramGenerator.Parser
 {
     internal sealed class ConditionalReferences
     {

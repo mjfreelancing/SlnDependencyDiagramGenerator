@@ -6,9 +6,9 @@ using AllOverIt.Patterns.Specification.Extensions;
 using AllOverIt.Process;
 using AllOverIt.Process.Extensions;
 using AllOverIt.Validation.Extensions;
-using AllOverItDependencyDiagram.Parser;
 using FluentValidation;
 using SlnDependencyDiagramGenerator.Config;
+using SlnDependencyDiagramGenerator.Parser;
 using SlnDependencyDiagramGenerator.Validators;
 using System;
 using System.Collections.Generic;
@@ -17,7 +17,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AllOverItDependencyDiagram.Generator
+namespace SlnDependencyDiagramGenerator.Generator
 {
     /// <summary>Parses a Visual Studio Solution file to discover the projects it contains. These projects are then filtered based on
     /// one or more regex expressions, allowing for projects to be filtered based on their name or folder location. Each project is
@@ -111,7 +111,7 @@ namespace AllOverItDependencyDiagram.Generator
 
         private static void ClearFolder(string exportPath)
         {
-            var files = FileSearch.GetFiles(exportPath, "*.*", AllOverIt.IO.DiskSearchOptions.None);
+            var files = FileSearch.GetFiles(exportPath, "*.*", DiskSearchOptions.None);
 
             foreach (var file in files)
             {

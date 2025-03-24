@@ -1,3 +1,11 @@
+# v2.1.0
+## 24 Mar 2025
+
+* Handle package versions such as [1.0.0] so they are processed as 1.0.0.
+
+---
+
+
 # v2.0.0
 ## 26 Nov 2024
 

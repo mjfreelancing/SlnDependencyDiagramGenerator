@@ -1,4 +1,4 @@
-﻿namespace AllOverItDependencyDiagram.Parser
+﻿namespace SlnDependencyDiagramGenerator.Parser
 {
     internal sealed class FrameworkReference
     {
