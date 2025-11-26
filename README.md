@@ -1,8 +1,9 @@
 # SlnDependencyDiagramGenerator
 Generates D2 diagram files and images for a Visual Studio Solution.
 
-![](https://img.shields.io/badge/.NET-8.0-C56EE0.svg)
-![](https://img.shields.io/badge/.NET-7.0-55A9EE.svg)
+![](https://img.shields.io/badge/.NET-10.0-55A9EE.svg)
+![](https://img.shields.io/badge/.NET-9.0-C56EE0.svg)
+![](https://img.shields.io/badge/.NET-8.0-FF8C67.svg)
 
 [![NuGet](https://img.shields.io/nuget/vpre/SlnDependencyDiagramGenerator?color=E3505C)](https://www.nuget.org/packages/SlnDependencyDiagramGenerator/absoluteLatest/)
 [![NuGet](https://img.shields.io/nuget/dt/SlnDependencyDiagramGenerator?color=FFC33C)](https://www.nuget.org/packages/SlnDependencyDiagramGenerator/absoluteLatest/)
@@ -93,7 +94,7 @@ package, binding the configuration from its' `appsettings.json` file.
             "imageFormats": [ "png" ]
         },
 
-        "targetFrameworks": [ "net8.0" ]
+        "targetFrameworks": [ "net8.0", "net9.0", "net10.0" ]
     }
 }
 ```

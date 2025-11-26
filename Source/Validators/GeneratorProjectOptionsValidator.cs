@@ -21,8 +21,12 @@ namespace SlnDependencyDiagramGenerator.Validators
             When(model => model.SolutionPath.IsNotNullOrEmpty(), () =>
             {
                 RuleFor(model => model.SolutionPath)
-                    .Must(Path.Exists)
-                    .WithMessage("The solution was not found.");
+                    .Must(path =>
+                    {
+                        var solutionFilePath = Path.GetFullPath(path);
+                        return Path.Exists(solutionFilePath);
+                    })
+                    .WithMessage(model => $"The solution was not found: {Path.GetFullPath(model.SolutionPath)}");
             });
 
             RuleFor(model => model.RegexToInclude).IsNotEmpty();

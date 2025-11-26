@@ -1,4 +1,5 @@
 ﻿using AllOverIt.Logging;
+using FluentValidation;
 using Microsoft.Extensions.Configuration;
 using SlnDependencyDiagramGenerator.Exceptions;
 using SlnDependencyDiagramGenerator.Generator;
@@ -15,10 +16,11 @@ namespace DiagramGeneratorSample
             var configFile = GetConfigFilename(args);
             var options = GetGeneratorConfig(configFile);
             var logger = new ColorConsoleLogger();
-            var generator = new DependencyGenerator(options, logger);
 
             try
             {
+                var generator = new DependencyGenerator(options, logger);
+
                 await generator.CreateDiagramsAsync();
 
                 logger
@@ -27,6 +29,10 @@ namespace DiagramGeneratorSample
                     .WriteLine(ConsoleColor.Green, "' has been processed.");
             }
             catch (DependencyGeneratorException exception)
+            {
+                logger.WriteLine(ConsoleColor.Red, exception.Message);
+            }
+            catch (ValidationException exception)
             {
                 logger.WriteLine(ConsoleColor.Red, exception.Message);
             }
