@@ -19,7 +19,7 @@ and package references. Based on the configuration, the generator will then opti
 After gathering all of the information, the generator will produce a 'Dependency Summary' in markdown format,
 along with one or more [D2](https://d2lang.org/) diagram files, as well as either `png`, `svg`, or `pdf` diagrams.
 
-This [example](./Sample/Output/net8.0/slndependencydiagramgenerator.png) has been produced from the solution in this repository.
+This [example](./Sample/Output/net9.0/slndependencydiagramgenerator.png) has been produced from the solution in this repository.
 
 
 ## Configuration
