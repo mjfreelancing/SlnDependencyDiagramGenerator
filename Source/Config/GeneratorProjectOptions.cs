@@ -1,39 +1,42 @@
-﻿namespace SlnDependencyDiagramGenerator.Config
+﻿namespace SlnDependencyDiagramGenerator.Config;
+
+/// <summary>Specifies project related options that determine which projects for a given solution
+/// are resolved and the depth of their package dependency graph.</summary>
+public sealed class GeneratorProjectOptions
 {
-    /// <summary>Specifies project related options that determine which projects for a given solution
-    /// are resolved and the depth of their package dependency graph.</summary>
-    public sealed class GeneratorProjectOptions
+    /// <summary>Contains options relevant to several project scope options.</summary>
+    public sealed class ProjectScope
     {
-        /// <summary>Contains options relevant to several project scope options.</summary>
-        public sealed class ProjectScope
-        {
-            /// <summary>Indicates if this project scope will be processed.</summary>
-            public bool Enabled { get; set; }
+        /// <summary>Indicates if this project scope will be processed.</summary>
+        public bool Enabled { get; set; }
 
-            /// <summary>Indicates if framework and package dependencies should be processed.</summary>
-            public bool IncludeDependencies { get; set; }
+        /// <summary>Indicates if framework and package dependencies should be processed.</summary>
+        public bool IncludeDependencies { get; set; }
 
-            /// <summary>Indicates how deep to traverse implicit (transitive) package references.
-            /// Must be 0 or more.</summary>
-            public int TransitiveDepth { get; set; }
-        }
-
-        /// <summary>The relative or fully-qualified path to the solution file to be parsed.</summary>
-        public string SolutionPath { get; set; }
-
-        /// <summary>One or more regex patterns to match solution projects to be included. To parse
-        /// all <c>.csproj</c> files under a specific path, including sub-folders, use a regex such as
-        /// <c>"C:\\Dev\\Project\\Source\\.*\.csproj"</c>. Note that the <c>\\</c> shown in this example
-        /// are escaped for the regex pattern. Escape each of these again if used in code or configuration.</summary>
-        public string[] RegexToInclude { get; init; } = [];
-
-        /// <summary>One or more (optional) regex patterns to match solution projects to be excluded.</summary>
-        public string[] RegexToExclude { get; init; } = [];
-
-        /// <summary>Specifies options specific to the processing of individual projects in a solution.</summary>
-        public ProjectScope Individual { get; set; }
-
-        /// <summary>Specifies options specific to the processing of all projects in the solution (collectively).</summary>
-        public ProjectScope All { get; set; }
+        /// <summary>Indicates how deep to traverse implicit (transitive) package references.
+        /// Must be 0 or more.</summary>
+        public int TransitiveDepth { get; set; }
     }
+
+    /// <summary>The relative or fully-qualified path to the solution file to be parsed.</summary>
+    public string SolutionPath { get; set; }
+
+    /// <summary>One or more regex patterns to match solution projects to be included. To parse
+    /// all <c>.csproj</c> files under a specific path, including sub-folders, use a regex such as
+    /// <c>"C:\\Dev\\Project\\Source\\.*\.csproj"</c>. Note that the <c>\\</c> shown in this example
+    /// are escaped for the regex pattern. Escape each of these again if used in code or configuration.</summary>
+    public string[] RegexToInclude { get; init; } = [];
+
+    /// <summary>One or more (optional) regex patterns to match solution projects to be excluded.</summary>
+    public string[] RegexToExclude { get; init; } = [];
+
+    /// <summary>One or more (optional) package IDs to exclude from diagram and summary output (case-insensitive).
+    /// Transitive dependencies reachable only through excluded packages are also omitted.</summary>
+    public string[] PackagesToExclude { get; init; } = [];
+
+    /// <summary>Specifies options specific to the processing of individual projects in a solution.</summary>
+    public ProjectScope Individual { get; set; }
+
+    /// <summary>Specifies options specific to the processing of all projects in the solution (collectively).</summary>
+    public ProjectScope All { get; set; }
 }

@@ -1,7 +1,8 @@
-﻿namespace SlnDependencyDiagramGenerator.Parser
+﻿namespace SlnDependencyDiagramGenerator.Parser;
+
+/// <summary>Represents a framework reference declared by a project.</summary>
+internal sealed class FrameworkReference
 {
-    internal sealed class FrameworkReference
-    {
-        public string Name { get; init; }
-    }
+    /// <summary>The framework reference name.</summary>
+    public string Name { get; init; }
 }

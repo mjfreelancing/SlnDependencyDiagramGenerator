@@ -1,7 +1,8 @@
-﻿namespace SlnDependencyDiagramGenerator.Parser
+﻿namespace SlnDependencyDiagramGenerator.Parser;
+
+/// <summary>Represents a project-to-project reference.</summary>
+internal sealed class ProjectReference
 {
-    internal sealed class ProjectReference
-    {
-        public string Path { get; init; }
-    }
+    /// <summary>The referenced project path.</summary>
+    public string Path { get; init; }
 }

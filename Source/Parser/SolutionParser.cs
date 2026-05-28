@@ -1,262 +1,189 @@
 ﻿using AllOverIt.Extensions;
 using AllOverIt.IO;
-using AllOverIt.Logging;
 using Microsoft.Build.Construction;
-using SlnDependencyDiagramGenerator.Config;
-using SlnDependencyDiagramGenerator.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
-namespace SlnDependencyDiagramGenerator.Parser
+namespace SlnDependencyDiagramGenerator.Parser;
+
+/// <summary>Parses solution projects and resolves project, framework, and package dependencies.</summary>
+internal sealed class SolutionParser
 {
-    internal sealed partial class SolutionParser
+    private readonly Dictionary<string, SolutionFile> _solutionFiles = [];
+    private readonly ProjectAssetReader _assetReader = new();
+
+    // Returns the distinct target frameworks present across all matching projects,
+    // discovered from each project's project.assets.json (not from config).
+    /// <summary>Discovers target frameworks from matching projects in the solution.</summary>
+    /// <param name="solutionFilePath">The solution path.</param>
+    /// <param name="regexToInclude">Regex patterns used to include projects.</param>
+    /// <param name="regexToExclude">Regex patterns used to exclude projects.</param>
+    /// <returns>The ordered list of discovered target frameworks.</returns>
+    public string[] DiscoverTargetFrameworks(string solutionFilePath, string[] regexToInclude, string[] regexToExclude)
     {
-        /*
-            '\\$\\(TargetFramework\\)'  : This part matches the literal string $(TargetFramework).
+        solutionFilePath = Path.GetFullPath(solutionFilePath);
 
-            '\\s*'                      : This matches zero or more whitespace characters (such as spaces, tabs, or line breaks).
+        return FilterAndOrderProjects(solutionFilePath, regexToInclude, regexToExclude)
+            .SelectMany(project => _assetReader.GetTargetFrameworks(project.AbsolutePath))
+            .Select(targetFramework => targetFramework.Split('-')[0])      // strip platform suffix (e.g. net10.0-windows10.0.19041 -> net10.0)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(TfmSortVersion)
+            .ThenBy(targetFramework => targetFramework, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
 
-            '(?<operator>[!=]=)'        : Captures either != or == in the operator named group. The [!=] part specifies that only
-                                         ! or = is allowed before the =.
+    // Returns the projects that target the given framework, with their resolved packages
+    // read from project.assets.json and project/framework references read from raw XML.
+    /// <summary>Parses matching projects for a specific target framework.</summary>
+    /// <param name="solutionFilePath">The solution path.</param>
+    /// <param name="regexToInclude">Regex patterns used to include projects.</param>
+    /// <param name="regexToExclude">Regex patterns used to exclude projects.</param>
+    /// <param name="excludePackages">Package IDs to exclude from package resolution.</param>
+    /// <param name="targetFramework">The target framework to parse.</param>
+    /// <param name="maxTransitiveDepth">The maximum transitive package depth to include.</param>
+    /// <returns>The parsed solution projects for the target framework.</returns>
+    public SolutionProject[] Parse(string solutionFilePath, string[] regexToInclude, string[] regexToExclude,
+        string[] excludePackages, string targetFramework, int maxTransitiveDepth)
+    {
+        solutionFilePath = Path.GetFullPath(solutionFilePath);
 
-            '\\s*'                      : Similar to the previous \s*, this matches zero or more whitespace characters.
+        var excludeSet = new HashSet<string>(excludePackages, StringComparer.OrdinalIgnoreCase);
 
-            '(?<target>.*?)'            : This uses another named group target to capture any character (.) zero or more times (*?) in a
-                                          non-greedy way, meaning it captures as few characters as possible until the next part of the
-                                          pattern is matched. The ? makes the * quantifier non-greedy.
+        return FilterAndOrderProjects(solutionFilePath, regexToInclude, regexToExclude)
+            .Where(project => _assetReader.HasTargetFramework(project.AbsolutePath, targetFramework))
+            .Select(project => BuildSolutionProject(project, targetFramework, maxTransitiveDepth, excludeSet))
+            .ToArray();
+    }
 
-            When using the RegexOptions.Singleline option in C#, it changes the behavior of the dot (.) metacharacter to match any character,
-            including newline characters (\n). By default, the dot matches any character except newline. With RegexOptions.Singleline, it will
-            match newline characters as well.
-        */
-        [GeneratedRegex("'\\$\\(TargetFramework\\)'\\s*(?<operator>[!=]=)\\s*'(?<target>.*?)'", RegexOptions.Singleline)]
-        private static partial Regex TargetFrameworkEqualityRegex();
+    /// <summary>Converts a target framework moniker into a sortable version number.</summary>
+    /// <param name="tfm">The target framework moniker.</param>
+    /// <returns>The parsed version, or 0.0 when no version segment is found.</returns>
+    private static Version TfmSortVersion(string tfm)
+    {
+        // e.g. "net10.0-windows" -> "10.0", "netstandard2.1" -> "2.1"
+        var match = Regex.Match(tfm, @"^[a-z]+(\d+\.\d+)", RegexOptions.IgnoreCase);
 
-        [GeneratedRegex(@"\b\d+\.\d+\.\d+\b")]
-        private static partial Regex PackageVersionRegex();
+        return match.Success ? Version.Parse(match.Groups[1].Value) : new Version(0, 0);
+    }
 
-        private readonly Dictionary<string, SolutionFile> _solutionFiles = [];
-
-        private readonly NugetPackageResolver _nugetResolver;
-
-        public SolutionParser(IEnumerable<NugetPackageFeed> packageFeeds, int maxTransitiveDepth, IColorConsoleLogger logger)
+    /// <summary>Filters solution projects using include/exclude regex rules and orders by project name.</summary>
+    /// <param name="solutionFilePath">The solution path.</param>
+    /// <param name="regexToInclude">Regex patterns used to include projects.</param>
+    /// <param name="regexToExclude">Regex patterns used to exclude projects.</param>
+    /// <returns>The filtered and ordered project list.</returns>
+    private IEnumerable<ProjectInSolution> FilterAndOrderProjects(
+        string solutionFilePath,
+        string[] regexToInclude,
+        string[] regexToExclude)
+    {
+        if (!_solutionFiles.TryGetValue(solutionFilePath, out var solutionFile))
         {
-            _nugetResolver = new NugetPackageResolver(packageFeeds, maxTransitiveDepth, logger);
+            solutionFile = SolutionFile.Parse(solutionFilePath);
+            _solutionFiles.Add(solutionFilePath, solutionFile);
         }
 
-        public async Task<SolutionProject[]> ParseAsync(string solutionFilePath, string[] regexToInclude, string[] regexToExclude, string targetFramework)
+        var includeRegexes = regexToInclude.SelectToArray(regex => new Regex(regex));
+        var excludeRegexes = regexToExclude.SelectToArray(regex => new Regex(regex));
+
+        return solutionFile.ProjectsInOrder
+            .Where(project =>
+                project.ProjectType == SolutionProjectType.KnownToBeMSBuildFormat ||
+                project.ProjectType == SolutionProjectType.WebProject)
+            .Where(project =>
+            {
+                var include = includeRegexes.Any(regex => regex.Matches(project.AbsolutePath).Count > 0);
+
+                if (!include || excludeRegexes.Length == 0)
+                {
+                    return include;
+                }
+
+                return !excludeRegexes.Any(regex => regex.Matches(project.AbsolutePath).Count > 0);
+            })
+            .OrderBy(item => item.ProjectName);
+    }
+
+    /// <summary>Builds a <see cref="SolutionProject"/> including project, framework, and package dependencies.</summary>
+    /// <param name="projectInSolution">The project entry from the solution file.</param>
+    /// <param name="targetFramework">The target framework to resolve packages for.</param>
+    /// <param name="maxTransitiveDepth">The maximum transitive package depth to include.</param>
+    /// <param name="excludePackages">Package IDs to exclude from package resolution.</param>
+    /// <returns>The resolved solution project.</returns>
+    private SolutionProject BuildSolutionProject(
+        ProjectInSolution projectInSolution,
+        string targetFramework,
+        int maxTransitiveDepth,
+        HashSet<string> excludePackages)
+    {
+        var projectPath = projectInSolution.AbsolutePath;
+        var projectFolder = Path.GetDirectoryName(projectPath)!;
+
+        // Project and framework references are read from the raw project XML.
+        // These items (<ProjectReference>, <FrameworkReference>) are defined directly
+        // in the project file and do not require MSBuild import-chain evaluation.
+        var projectRootElement = ProjectRootElement.Open(projectPath);
+        var projectReferences = GetProjectReferences(projectFolder, projectRootElement.ItemGroups);
+        var frameworkReferences = GetFrameworkReferences(projectRootElement.ItemGroups);
+
+        // Package references are read from the assets file — the authoritative post-restore
+        // source that correctly reflects CPM, Directory.Build.props, and NuGet conflict resolution.
+        var packageReferences = _assetReader.ReadPackagesForFramework(projectPath, excludePackages, targetFramework, maxTransitiveDepth);
+
+        // All frameworks the project targets (used for badge display in the summary report).
+        var allTargetFrameworks = _assetReader.GetTargetFrameworks(projectPath);
+
+        var dependencies = new ConditionalReferences
         {
-            var projects = new List<SolutionProject>();
+            Condition = string.Empty,
+            ProjectReferences = projectReferences,
+            FrameworkReferences = frameworkReferences,
+            PackageReferences = packageReferences
+        };
 
-            // Make sure a rooted path is used (converts a relative path to an explicit path if required)
-            solutionFilePath = Path.GetFullPath(solutionFilePath);
+        return new SolutionProject
+        {
+            Name = projectInSolution.ProjectName,
+            Path = projectPath,
+            TargetFrameworks = allTargetFrameworks,
+            Dependencies = [dependencies]
+        };
+    }
 
-            if (!_solutionFiles.TryGetValue(solutionFilePath, out var solutionFile))
+    /// <summary>Gets project references from raw project XML item groups.</summary>
+    /// <param name="projectFolder">The base project folder used to resolve relative paths.</param>
+    /// <param name="itemGroups">The project XML item groups.</param>
+    /// <returns>The resolved project references.</returns>
+    private static List<ProjectReference> GetProjectReferences(
+        string projectFolder,
+        IEnumerable<ProjectItemGroupElement> itemGroups)
+    {
+        return itemGroups
+            .SelectMany(group => group.Items)
+            .Where(item => item.ItemType.Equals("ProjectReference", StringComparison.OrdinalIgnoreCase))
+            .SelectToList(item =>
             {
-                solutionFile = SolutionFile.Parse(solutionFilePath);
+                var projectPath = FileUtils.GetAbsolutePath(projectFolder, item.Include);
 
-                _solutionFiles.Add(solutionFilePath, solutionFile);
-            }
-
-            var includeRegexes = regexToInclude.SelectToArray(regex => new Regex(regex));
-            var excludeRegexes = regexToExclude.SelectToArray(regex => new Regex(regex));
-
-            var orderedProjects = solutionFile.ProjectsInOrder
-                .Where(project => project.ProjectType == SolutionProjectType.KnownToBeMSBuildFormat || project.ProjectType == SolutionProjectType.WebProject)
-                .Where(project =>
+                return new ProjectReference
                 {
-                    var include = includeRegexes.Any(regex => regex.Matches(project.AbsolutePath).Count > 0);
-
-                    if (!include || excludeRegexes.Length == 0)
-                    {
-                        return include;
-                    }
-
-                    return !excludeRegexes.Any(regex => regex.Matches(project.AbsolutePath).Count > 0);
-                })
-                .OrderBy(item => item.ProjectName);
-
-            foreach (var projectItem in orderedProjects)
-            {
-                var projectRootElement = ProjectRootElement.Open(projectItem.AbsolutePath);
-                var projectFolder = Path.GetDirectoryName(projectItem.AbsolutePath);
-
-                var targetFrameworks = GetTargetFrameworks(projectRootElement.PropertyGroups);
-
-                if (targetFrameworks.Length == 0)
-                {
-                    throw new DependencyGeneratorException($"{projectRootElement.FullPath} does not specify a target framework. Importing of Directory.Build.Props is not supported.");
-                }
-
-                // Looking this way so we can detect project types, such as WPF, that may target as net8.0-windows;net7.0-windows
-                if (!targetFrameworks.Any(framework => framework.Contains(targetFramework)))
-                {
-                    continue;
-                }
-
-                var conditionalReferences = await GetConditionalReferencesAsync(projectFolder, projectRootElement.ItemGroups, targetFramework).ToListAsync();
-
-                var project = new SolutionProject
-                {
-                    Name = projectItem.ProjectName,
-                    Path = projectItem.AbsolutePath,
-                    TargetFrameworks = targetFrameworks,
-                    Dependencies = conditionalReferences.AsReadOnlyCollection()
+                    Path = projectPath
                 };
+            });
+    }
 
-                projects.Add(project);
-            }
-
-            return [.. projects];
-        }
-
-        private static string[] GetTargetFrameworks(IEnumerable<ProjectPropertyGroupElement> propertyGroups)
-        {
-            var frameworks = propertyGroups
-                .SelectMany(grp => grp.Properties)
-                .Where(prop => prop.Name.Equals("TargetFrameworks", StringComparison.OrdinalIgnoreCase) ||
-                               prop.Name.Equals("TargetFramework", StringComparison.OrdinalIgnoreCase))
-                .Select(prop => prop.Value)
-                .SingleOrDefault();
-
-            return frameworks is null
-                ? []
-                : frameworks.Split(";");
-        }
-
-        private async IAsyncEnumerable<ConditionalReferences> GetConditionalReferencesAsync(string projectFolder, IEnumerable<ProjectItemGroupElement> itemGroups,
-            string targetFramework)
-        {
-            var conditionItemGroups = itemGroups
-                .Select(grp => new
-                {
-                    grp.Condition,      // May be empty
-                    grp.Items
-                })
-                .GroupBy(grp => grp.Condition);
-
-            foreach (var itemGroup in conditionItemGroups)
-            {
-                // Example: '$(TargetFramework)' == 'net8.0' or '$(TargetFramework)' == 'net7.0'
-                var condition = itemGroup.Key;
-
-                if (!condition.IsNullOrEmpty())
-                {
-                    var matches = TargetFrameworkEqualityRegex().Matches(condition);
-                    var targets = matches.SelectToReadOnlyCollection(item => item.Groups["target"].Value);
-                    var comparisons = matches.SelectToReadOnlyCollection(item => item.Groups["operator"].Value);
-
-                    var foundMatch = false;
-
-                    if (targets.Count != 0)
-                    {
-                        var combined = targets.Zip(comparisons, (target, comparison) => (target, comparison));
-
-                        foreach (var (target, comparison) in combined)
-                        {
-                            // Only currently catering for single conditions (or multiple that are OR'd) that use == or !=
-                            //
-                            // Should more elaborate parsing be required, refer to this link for possible condition usage:
-                            // https://learn.microsoft.com/en-us/visualstudio/msbuild/msbuild-conditions?view=vs-2022
-                            //
-                            if (target.Equals(targetFramework, StringComparison.InvariantCultureIgnoreCase))
-                            {
-                                foundMatch = comparison.Equals("==");
-                            }
-                            else
-                            {
-                                foundMatch = comparison.Equals("!=");
-                            }
-
-                            if (foundMatch)
-                            {
-                                break;
-                            }
-                        }
-                    }
-
-                    if (!foundMatch)
-                    {
-                        continue;
-                    }
-                }
-
-                var items = itemGroup.SelectMany(value => value.Items).ToList();
-
-                var projectReferences = GetProjectReferences(projectFolder, items);
-                var frameworkReferences = GetFrameworkReferences(items);
-                var packageReferences = await GetPackageReferencesAsync(items, targetFramework);
-
-                var conditionalReferences = new ConditionalReferences
-                {
-                    Condition = condition,
-                    ProjectReferences = projectReferences,
-                    FrameworkReferences = frameworkReferences,
-                    PackageReferences = packageReferences
-                };
-
-                yield return conditionalReferences;
-            }
-        }
-
-        private static List<ProjectReference> GetProjectReferences(string projectFolder, IEnumerable<ProjectItemElement> projectItems)
-        {
-            return projectItems
-                .Where(item => item.ItemType.Equals("ProjectReference", StringComparison.OrdinalIgnoreCase))
-                .SelectToList(item =>
-                {
-                    var projectPath = FileUtils.GetAbsolutePath(projectFolder, item.Include);
-
-                    return new ProjectReference
-                    {
-                        Path = projectPath
-                    };
-                });
-        }
-
-        private static IReadOnlyCollection<FrameworkReference> GetFrameworkReferences(IEnumerable<ProjectItemElement> projectItems)
-        {
-            return projectItems
-                .Where(item => item.ItemType.Equals("FrameworkReference", StringComparison.OrdinalIgnoreCase))
-                .Select(item => new FrameworkReference
-                {
-                    Name = item.Include
-                })
-                .AsReadOnlyCollection();
-        }
-
-        private async Task<IReadOnlyCollection<PackageReference>> GetPackageReferencesAsync(IEnumerable<ProjectItemElement> projectItems, string targetFramework)
-        {
-            var packageReferences = await projectItems
-                .Where(item => item.ItemType.Equals("PackageReference", StringComparison.OrdinalIgnoreCase))
-                .SelectAsync(async (item, _) =>
-                {
-                    var packageName = item.Include;
-
-                    var packageVersion = GetNormalisedPackageVersion(item.Metadata.SingleOrDefault(item => item.Name == "Version")?.Value);
-
-                    var transitivePackages = await _nugetResolver.GetPackageReferences(packageName, packageVersion, targetFramework);
-
-                    return new PackageReference
-                    {
-                        Name = packageName,
-                        Version = packageVersion,
-                        TransitiveReferences = transitivePackages
-                    };
-                })
-                .ToListAsync();
-
-            return packageReferences.AsReadOnlyCollection();
-        }
-
-        private static string GetNormalisedPackageVersion(string packageVersion)
-        {
-            // Make sure strings such as [8.0.0] are converted to 8.0.0
-            return PackageVersionRegex().Match(packageVersion).Groups[0].Value;
-        }
+    /// <summary>Gets framework references from raw project XML item groups.</summary>
+    /// <param name="itemGroups">The project XML item groups.</param>
+    /// <returns>The framework references.</returns>
+    private static IReadOnlyCollection<FrameworkReference> GetFrameworkReferences(
+        IEnumerable<ProjectItemGroupElement> itemGroups)
+    {
+        return itemGroups
+            .SelectMany(group => group.Items)
+            .Where(item => item.ItemType.Equals("FrameworkReference", StringComparison.OrdinalIgnoreCase))
+            .Select(item => new FrameworkReference { Name = item.Include })
+            .AsReadOnlyCollection();
     }
 }
