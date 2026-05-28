@@ -93,6 +93,14 @@ package, binding the configuration from its `appsettings.json` file.
       "groupName": "Dependency Diagram Generator",
       "groupNameAlias": "ddg",
 
+      "grouping": {
+        "enabled": true,
+        "backgroundStyle": {
+          "fill": "#E7EBFC",
+          "opacity": 1.0
+        }
+      },
+
       "formats": ["d2", "mermaid"]
     },
 
@@ -135,12 +143,18 @@ Specifies diagram options that determine how the diagram will be styled.
 - **TransitiveStyle**: The fill style to use for transitive (implicit) package dependencies referenced by a project.
 - **GroupName**: The name (title) to use for the group of projects parsed.
 - **GroupNameAlias**: The alias to use in the D2 generated file to represent the group of projects parsed.
+- **Grouping**: Shared grouping options applied to all diagram formats.
 - **Formats**: One or more diagram formats to generate: `d2` and/or `mermaid`.
 
-`FrameworkStyle`, `PackageStyle`, and `TransitiveStyle` provide these options:
+`FrameworkStyle`, `PackageStyle`, `TransitiveStyle`, and `Grouping.BackgroundStyle` provide these options:
 
 - **Fill**: The CSS or RGB fill color.
 - **Opacity**: The opacity. This should be a value between 0 and 1.
+
+`Grouping` provides these options:
+
+- **Enabled**: Indicates whether project and multi-version package grouping containers are rendered.
+- **BackgroundStyle**: The fill style to use for group container backgrounds.
 
 ### Export
 

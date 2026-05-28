@@ -1,0 +1,30 @@
+flowchart LR
+  subgraph ddg["Dependency Diagram Generator"]
+    direction LR
+    ddg_nugetconflictsample["NugetConflictSample"]
+  end
+  alloverit_9-2-0["AllOverIt<br>v9.2.0"]
+  alloverit-assertion_9-2-0["AllOverIt.Assertion<br>v9.2.0"]
+  nuget-protocol_7-3-1["NuGet.Protocol<br>v7.3.1"]
+  nuget-packaging_7-3-1["NuGet.Packaging<br>v7.3.1"]
+  newtonsoft-json_13-0-3["Newtonsoft.Json<br>v13.0.3"]
+  nuget-configuration_7-3-1["NuGet.Configuration<br>v7.3.1"]
+  nuget-versioning_7-3-1["NuGet.Versioning<br>v7.3.1"]
+  system-security-cryptography-pkcs_8-0-1["System.Security.Cryptography.Pkcs<br>v8.0.1"]
+  ddg_nugetconflictsample --> alloverit_9-2-0
+  alloverit_9-2-0 --> alloverit-assertion_9-2-0
+  ddg_nugetconflictsample --> nuget-protocol_7-3-1
+  nuget-protocol_7-3-1 --> nuget-packaging_7-3-1
+  nuget-packaging_7-3-1 --> newtonsoft-json_13-0-3
+  nuget-packaging_7-3-1 --> nuget-configuration_7-3-1
+  nuget-packaging_7-3-1 --> nuget-versioning_7-3-1
+  nuget-packaging_7-3-1 --> system-security-cryptography-pkcs_8-0-1
+  style ddg fill:#E7EBFC,stroke:#E7EBFC,stroke-width:1px,opacity:1
+  style alloverit_9-2-0 fill:#ADD8E6,opacity:0.8
+  style alloverit-assertion_9-2-0 fill:#FFEC96,opacity:0.8
+  style nuget-protocol_7-3-1 fill:#ADD8E6,opacity:0.8
+  style nuget-packaging_7-3-1 fill:#FFEC96,opacity:0.8
+  style newtonsoft-json_13-0-3 fill:#FFEC96,opacity:0.8
+  style nuget-configuration_7-3-1 fill:#FFEC96,opacity:0.8
+  style nuget-versioning_7-3-1 fill:#FFEC96,opacity:0.8
+  style system-security-cryptography-pkcs_8-0-1 fill:#FFEC96,opacity:0.8

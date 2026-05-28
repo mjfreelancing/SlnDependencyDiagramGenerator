@@ -1,5 +1,5 @@
 ﻿using SlnDependencyDiagramGenerator.Config;
-using System.Collections.Generic;
+using System;
 using System.Text;
 
 namespace SlnDependencyDiagramGenerator.Generator;
@@ -20,190 +20,137 @@ internal sealed class MermaidDiagramRenderer : DiagramRendererBase
     /// <inheritdoc />
     public override string Render(DependencyGraphModel model)
     {
+        // Build once from the shared traversal so Mermaid and D2 stay semantically aligned.
+        var ir = BuildIntermediateRepresentation(model);
         var sb = new StringBuilder();
-
-        // Mermaid style lines must be collected separately (they follow all node/edge declarations).
-        var styles = new List<string>();
-
-        // Tracks emitted node/edge lines so recursive traversal does not duplicate declarations.
-        var emitted = new HashSet<string>();
-
-        // Tracks style state keys so each node gets one effective style line.
-        var styledNodes = new HashSet<string>();
+        var groupingEnabled = Options.Grouping.Enabled;
+        var projectGroupAlias = MermaidSafeAlias(Options.GroupNameAlias);
 
         sb.AppendLine($"flowchart {MermaidDirection()}");
-        sb.AppendLine($"  subgraph {Options.GroupNameAlias}[\"{Options.GroupName}\"]");
-        sb.AppendLine($"    direction {MermaidDirection()}");
 
-        foreach (var project in model.Projects)
+        if (groupingEnabled)
         {
-            EmitProject(project, model, sb, styles, emitted, styledNodes);
+            sb.AppendLine($"  subgraph {projectGroupAlias}[\"{Options.GroupName}\"]");
+            sb.AppendLine($"    direction {MermaidDirection()}");
+
+            foreach (var node in ir.Nodes)
+            {
+                if (!IsProjectNode(node.Alias))
+                {
+                    continue;
+                }
+
+                var projectAlias = MermaidSafeAlias(node.Alias);
+                sb.AppendLine($"    {projectAlias}[\"{node.Label}\"]");
+            }
+
+            sb.AppendLine("  end");
         }
 
-        sb.AppendLine("  end");
-
-        foreach (var style in styles)
+        foreach (var node in ir.Nodes)
         {
-            sb.AppendLine(style);
+            var nodeGroupAlias = ir.GetNodeGroupAlias(node.Alias);
+            var shouldRenderNode = nodeGroupAlias is null && (!groupingEnabled || !IsProjectNode(node.Alias));
+
+            if (shouldRenderNode)
+            {
+                var nodeAlias = MermaidSafeAlias(node.Alias);
+                var nodeLabel = GetMermaidLabel(node);
+                sb.AppendLine($"  {nodeAlias}[\"{nodeLabel}\"]");
+            }
+        }
+
+        foreach (var group in ir.Groups)
+        {
+            var safeGroupAlias = MermaidSafeAlias(group.Alias);
+            sb.AppendLine($"  subgraph {safeGroupAlias}[\"{group.Label}\"]");
+
+            foreach (var groupNodeAlias in group.NodeAliases)
+            {
+                var groupNode = FindNode(ir, groupNodeAlias);
+                var safeNodeAlias = MermaidSafeAlias(groupNode.Alias);
+                var groupNodeLabel = GetMermaidLabel(groupNode);
+
+                sb.AppendLine($"      {safeNodeAlias}[\"{groupNodeLabel}\"]");
+            }
+
+            sb.AppendLine("    end");
+        }
+
+        foreach (var edge in ir.Edges)
+        {
+            var fromAlias = MermaidSafeAlias(edge.FromAlias);
+            var toAlias = MermaidSafeAlias(edge.ToAlias);
+
+            sb.AppendLine($"  {fromAlias} --> {toAlias}");
+        }
+
+        if (groupingEnabled)
+        {
+            var (groupFill, groupStroke, groupOpacity) = GetGroupStyleValues();
+
+            sb.AppendLine($"  style {projectGroupAlias} fill:{groupFill},stroke:{groupStroke},stroke-width:1px,opacity:{groupOpacity}");
+
+            foreach (var group in ir.Groups)
+            {
+                var groupAlias = MermaidSafeAlias(group.Alias);
+
+                sb.AppendLine($"  style {groupAlias} fill:{groupFill},stroke:{groupStroke},stroke-width:1px,opacity:{groupOpacity}");
+            }
+        }
+
+        foreach (var style in ir.Styles)
+        {
+            var (fill, opacity) = GetStyleValues(style.Role);
+            var styleAlias = MermaidSafeAlias(style.Alias);
+
+            sb.AppendLine($"  style {styleAlias} fill:{fill},opacity:{opacity}");
         }
 
         return sb.ToString();
     }
 
-    /// <summary>Emits Mermaid lines for a project and its direct references.</summary>
-    /// <param name="project">The project to emit.</param>
-    /// <param name="model">The complete dependency graph model.</param>
-    /// <param name="sb">The output builder for node/edge lines.</param>
-    /// <param name="styles">The collected style lines appended after graph lines.</param>
-    /// <param name="emitted">Set of already-emitted node/edge lines for de-duplication.</param>
-    /// <param name="styledNodes">Set of style-state keys used to control style precedence.</param>
-    private void EmitProject(ProjectNode project, DependencyGraphModel model,
-        StringBuilder sb, List<string> styles, HashSet<string> emitted, HashSet<string> styledNodes)
+    private static DiagramIrNode FindNode(DiagramIntermediateRepresentation ir, string alias)
     {
-        var projAlias = MermaidSafeAlias(ProjectAlias(project.Name));
-        EmitNode(sb, emitted, projAlias, project.Name);
-
-        // Framework references
-        foreach (var fw in project.FrameworkReferences)
+        foreach (var node in ir.Nodes)
         {
-            var fwAlias = MermaidSafeAlias(Sanitise(fw.Name));
-
-            EmitNode(sb, emitted, fwAlias, fw.Name);
-            EmitEdge(sb, emitted, projAlias, fwAlias);
-
-            AddStyle(styles, styledNodes, fwAlias, Options.FrameworkStyle.Fill, Options.FrameworkStyle.Opacity);
-        }
-
-        // Package references (recursive)
-        foreach (var pkg in project.PackageReferences)
-        {
-            EmitPackage(pkg, projAlias, model, sb, styles, emitted, styledNodes);
-        }
-
-        // Project-to-project references
-        foreach (var refName in project.ProjectReferences)
-        {
-            var refProjectName = GetProjectName(refName);
-            var refAlias = MermaidSafeAlias(ProjectAlias(refProjectName));
-
-            EmitNode(sb, emitted, refAlias, refProjectName);
-            EmitEdge(sb, emitted, projAlias, refAlias);
-            EmitProjectPackages(refProjectName, model, sb, styles, emitted, styledNodes);
-        }
-    }
-
-    /// <summary>Recursively emits package and project-reference lines for a referenced project.</summary>
-    /// <param name="projectName">The referenced project name.</param>
-    /// <param name="model">The complete dependency graph model.</param>
-    /// <param name="sb">The output builder for node/edge lines.</param>
-    /// <param name="styles">The collected style lines appended after graph lines.</param>
-    /// <param name="emitted">Set of already-emitted node/edge lines for de-duplication.</param>
-    /// <param name="styledNodes">Set of style-state keys used to control style precedence.</param>
-    private void EmitProjectPackages(string projectName, DependencyGraphModel model,
-        StringBuilder sb, List<string> styles, HashSet<string> emitted, HashSet<string> styledNodes)
-    {
-        foreach (var project in model.Projects)
-        {
-            if (project.Name != projectName)
+            if (node.Alias == alias)
             {
-                continue;
-            }
-
-            var projectAlias = MermaidSafeAlias(ProjectAlias(project.Name));
-
-            foreach (var package in project.PackageReferences)
-            {
-                EmitPackage(package, projectAlias, model, sb, styles, emitted, styledNodes);
-            }
-
-            foreach (var projectReferenceName in project.ProjectReferences)
-            {
-                var referencedProjectName = GetProjectName(projectReferenceName);
-                var referencedAlias = MermaidSafeAlias(ProjectAlias(referencedProjectName));
-
-                EmitNode(sb, emitted, referencedAlias, referencedProjectName);
-                EmitEdge(sb, emitted, projectAlias, referencedAlias);
-                EmitProjectPackages(referencedProjectName, model, sb, styles, emitted, styledNodes);
-            }
-
-            break;
-        }
-    }
-
-    /// <summary>Emits a package node, edge, style, and recursively emits transitive package dependencies.</summary>
-    /// <param name="pkg">The package to emit.</param>
-    /// <param name="parentAlias">The parent alias that the package edge should originate from.</param>
-    /// <param name="model">The complete dependency graph model.</param>
-    /// <param name="sb">The output builder for node/edge lines.</param>
-    /// <param name="styles">The collected style lines appended after graph lines.</param>
-    /// <param name="emitted">Set of already-emitted node/edge lines for de-duplication.</param>
-    /// <param name="styledNodes">Set of style-state keys used to control style precedence.</param>
-    private void EmitPackage(PackageNode pkg, string parentAlias, DependencyGraphModel model,
-        StringBuilder sb, List<string> styles, HashSet<string> emitted, HashSet<string> styledNodes)
-    {
-        var pkgAlias = MermaidSafeAlias(PackageAlias(pkg, model));
-
-        EmitNode(sb, emitted, pkgAlias, $"{pkg.Name}<br>v{pkg.Version}");
-        EmitEdge(sb, emitted, parentAlias, pkgAlias);
-
-        // Explicit style wins over transitive for the same alias.
-        // styledNodes records explicit/styled keys so recursive visits do not re-apply stale styles.
-        if (!pkg.IsTransitive || !styledNodes.Contains(pkgAlias + ":explicit"))
-        {
-            var fill = pkg.IsTransitive ? Options.TransitiveStyle.Fill : Options.PackageStyle.Fill;
-            var opacity = pkg.IsTransitive ? Options.TransitiveStyle.Opacity : Options.PackageStyle.Opacity;
-
-            if (!pkg.IsTransitive)
-            {
-                // Remove any previously added transitive style for this node
-                styles.RemoveAll(style => style.StartsWith($"  style {pkgAlias} "));
-                styledNodes.Add(pkgAlias + ":explicit");
-            }
-
-            if (!styledNodes.Contains(pkgAlias + ":explicit") || !pkg.IsTransitive)
-            {
-                AddStyle(styles, styledNodes, pkgAlias, fill, opacity);
+                return node;
             }
         }
 
-        foreach (var child in pkg.TransitiveReferences)
-        {
-            EmitPackage(child, pkgAlias, model, sb, styles, emitted, styledNodes);
-        }
+        return null;
     }
 
-    /// <summary>Emits a node declaration if it has not already been emitted.</summary>
-    private static void EmitNode(StringBuilder sb, HashSet<string> emitted, string alias, string label)
+    private static string GetMermaidLabel(DiagramIrNode node)
     {
-        var line = $"    {alias}[\"{label}\"]";
-
-        if (emitted.Add(line))
-        {
-            sb.AppendLine(line);
-        }
+        return node.Version is null
+            ? node.Label
+            : $"{node.Label}<br>v{node.Version}";
     }
 
-    /// <summary>Emits an edge declaration if it has not already been emitted.</summary>
-    private static void EmitEdge(StringBuilder sb, HashSet<string> emitted, string from, string to)
+    private bool IsProjectNode(string alias)
     {
-        var line = $"  {from} --> {to}";
-
-        if (emitted.Add(line))
-        {
-            sb.AppendLine(line);
-        }
+        return alias.StartsWith($"{Options.GroupNameAlias}.", StringComparison.Ordinal);
     }
 
-    /// <summary>Adds a style declaration for a node alias if one has not already been registered.</summary>
-    private static void AddStyle(List<string> styles, HashSet<string> styledNodes,
-        string alias, string fill, double opacity)
+    private (string Fill, double Opacity) GetStyleValues(DiagramIrStyleRole styleRole)
     {
-        var key = $"{alias}:styled";
-
-        if (styledNodes.Add(key))
+        return styleRole switch
         {
-            styles.Add($"  style {alias} fill:{fill},opacity:{opacity}");
-        }
+            DiagramIrStyleRole.Framework => (Options.FrameworkStyle.Fill, Options.FrameworkStyle.Opacity),
+            DiagramIrStyleRole.PackageExplicit => (Options.PackageStyle.Fill, Options.PackageStyle.Opacity),
+            _ => (Options.TransitiveStyle.Fill, Options.TransitiveStyle.Opacity)
+        };
+    }
+
+    private (string Fill, string Stroke, double Opacity) GetGroupStyleValues()
+    {
+        var groupFill = Options.Grouping.BackgroundStyle.Fill;
+        var groupOpacity = Options.Grouping.BackgroundStyle.Opacity;
+
+        return (groupFill, groupFill, groupOpacity);
     }
 
     /// <summary>Mermaid node IDs may not contain dots — replace with underscores.</summary>

@@ -170,6 +170,9 @@ public sealed partial class DependencyGenerator
         var includeDeps = _configuration.Projects.All.IncludeDependencies;
         var transitiveDepth = _configuration.Projects.All.TransitiveDepth;
 
+        // Calculated from assets-resolved package graphs across the selected project scope.
+        // This flags cross-project version divergence (same package id, different resolved versions),
+        // not unresolved NuGet restore conflicts within a single project.
         var packagesWithMultipleVersions = solutionProjects.Values
             .SelectMany(project => project.Dependencies.SelectMany(dependency => GetAllPackageDependencies(dependency.PackageReferences)))
             .Select(package => (package.Name, package.Version))

@@ -1,0 +1,43 @@
+direction: left
+
+ddg: Dependency Diagram Generator
+ddg.slndependencydiagramgenerator: SlnDependencyDiagramGenerator
+alloverit_9-2-1: AllOverIt\nv9.2.1
+alloverit-assertion_9-2-1: AllOverIt.Assertion\nv9.2.1
+alloverit-validation_9-2-1: AllOverIt.Validation\nv9.2.1
+fluentvalidation_12-1-1: FluentValidation\nv12.1.1
+microsoft-extensions-dependencyinjection-abstractions_10-0-8: Microsoft.Extensions.DependencyInjection.Abstractions\nv10.0.8
+nuget-projectmodel_7-6-0: NuGet.ProjectModel\nv7.6.0
+nuget-dependencyresolver-core_7-6-0: NuGet.DependencyResolver.Core\nv7.6.0
+nuget-protocol_7-6-0: NuGet.Protocol\nv7.6.0
+nuget-packaging_7-6-0: NuGet.Packaging\nv7.6.0
+alloverit_9-2-1 <- ddg.slndependencydiagramgenerator
+alloverit-assertion_9-2-1 <- alloverit_9-2-1
+alloverit-validation_9-2-1 <- ddg.slndependencydiagramgenerator
+alloverit_9-2-1 <- alloverit-validation_9-2-1
+fluentvalidation_12-1-1 <- alloverit-validation_9-2-1
+microsoft-extensions-dependencyinjection-abstractions_10-0-8 <- alloverit-validation_9-2-1
+nuget-projectmodel_7-6-0 <- ddg.slndependencydiagramgenerator
+nuget-dependencyresolver-core_7-6-0 <- nuget-projectmodel_7-6-0
+nuget-protocol_7-6-0 <- ddg.slndependencydiagramgenerator
+nuget-packaging_7-6-0 <- nuget-protocol_7-6-0
+alloverit_9-2-1.style.fill: "#ADD8E6"
+alloverit_9-2-1.style.opacity: 0.8
+alloverit-assertion_9-2-1.style.fill: "#FFEC96"
+alloverit-assertion_9-2-1.style.opacity: 0.8
+alloverit-validation_9-2-1.style.fill: "#ADD8E6"
+alloverit-validation_9-2-1.style.opacity: 0.8
+fluentvalidation_12-1-1.style.fill: "#FFEC96"
+fluentvalidation_12-1-1.style.opacity: 0.8
+microsoft-extensions-dependencyinjection-abstractions_10-0-8.style.fill: "#FFEC96"
+microsoft-extensions-dependencyinjection-abstractions_10-0-8.style.opacity: 0.8
+nuget-projectmodel_7-6-0.style.fill: "#ADD8E6"
+nuget-projectmodel_7-6-0.style.opacity: 0.8
+nuget-dependencyresolver-core_7-6-0.style.fill: "#FFEC96"
+nuget-dependencyresolver-core_7-6-0.style.opacity: 0.8
+nuget-protocol_7-6-0.style.fill: "#ADD8E6"
+nuget-protocol_7-6-0.style.opacity: 0.8
+nuget-packaging_7-6-0.style.fill: "#FFEC96"
+nuget-packaging_7-6-0.style.opacity: 0.8
+ddg.style.fill: "#E7EBFC"
+ddg.style.opacity: 1

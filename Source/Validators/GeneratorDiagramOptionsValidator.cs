@@ -31,6 +31,9 @@ internal sealed class GeneratorDiagramOptionsValidator : ValidatorBase<Generator
         RuleFor(model => model.Direction).IsInEnum();
         RuleFor(model => model.GroupName).IsNotEmpty();
         RuleFor(model => model.GroupNameAlias).IsNotEmpty();
+        RuleFor(model => model.Grouping).NotNull();
+        RuleFor(model => model.Grouping.BackgroundStyle).NotNull();
+        RuleFor(model => model.Grouping.BackgroundStyle).SetValidator(fillStyleValidator);
         RuleFor(model => model.Formats).NotNull();
         RuleFor(model => model.Formats).IsNotEmpty();
         RuleForEach(model => model.Formats).IsInEnum();

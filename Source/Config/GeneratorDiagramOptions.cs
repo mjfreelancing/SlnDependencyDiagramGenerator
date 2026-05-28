@@ -29,6 +29,24 @@ public sealed class GeneratorDiagramOptions
         public double Opacity { get; set; }
     }
 
+    /// <summary>Specifies grouping behavior and style for diagram containers.</summary>
+    public sealed class GroupingOptions
+    {
+        /// <summary>
+        /// Indicates whether project and multi-version package grouping containers are rendered.
+        /// When false, all nodes are rendered without group containers.
+        /// </summary>
+        public bool Enabled { get; set; } = true;
+
+        /// <summary>The fill style used for grouping container backgrounds.</summary>
+        public FillStyle BackgroundStyle { get; init; } = new()
+        {
+            // Match D2 Neutral Default container tone (B5) so group labels stay readable.
+            Fill = "#E7EBFC",
+            Opacity = 1
+        };
+    }
+
     /// <summary>Specifies the direction the diagram flows. Defaults to <see cref="DiagramDirection.LR"/>.</summary>
     public DiagramDirection Direction { get; set; } = DiagramDirection.LR;
 
@@ -49,6 +67,9 @@ public sealed class GeneratorDiagramOptions
     /// group projects together in D2 and Mermaid output.</summary>
     public string GroupNameAlias { get; set; }
 
-    /// <summary>The diagram format(s) to generate. Defaults to <see cref="DiagramFormat.D2"/> only.</summary>
-    public DiagramFormat[] Formats { get; set; } = [DiagramFormat.D2];
+    /// <summary>Grouping behavior and style options applied across all diagram formats.</summary>
+    public GroupingOptions Grouping { get; init; } = new();
+
+    /// <summary>The diagram format(s) to generate. Must contain at least one format.</summary>
+    public DiagramFormat[] Formats { get; set; } = [];
 }
