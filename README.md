@@ -168,13 +168,90 @@ Specifies export path and image format options.
 
 ### Tooling Requirements
 
-- D2 output requires the `d2` CLI to be available on PATH.
-- Mermaid image export requires `mmdc` (Mermaid CLI) on PATH when `imageFormats` is not empty.
+- D2 output requires the [d2 CLI](https://d2lang.com/tour/install/) to be available on PATH.
+- Mermaid image export requires [mmdc (Mermaid CLI)](https://github.com/mermaid-js/mermaid-cli#installation) on PATH when `imageFormats` is not empty.
 
 ### Target Framework Discovery
 
 Target frameworks are auto-discovered from each matching project's `obj/project.assets.json` file.
 Run `dotnet restore` or build the solution before generating diagrams so these files are present.
+
+## Architecture
+
+The engine uses a staged pipeline so dependency discovery, graph shaping, and renderer output stay decoupled.
+
+**Configuration load and bind:**<br/>
+The host application loads `appsettings.json`, binds `options` to `DependencyGeneratorConfig`, and constructs `DependencyGenerator`.
+
+**Validation and framework discovery:**<br/>
+`DependencyGenerator` validates configuration, discovers target frameworks from each matching project's `project.assets.json`, and verifies required external tools when image export is requested.
+
+**Solution parse and dependency resolution:**<br/>
+`SolutionParser` parses solution projects for each target framework and resolves package graphs from assets data (including explicit vs transitive dependencies).
+
+**Graph model construction:**<br/>
+`DependencyGenerator` builds a `DependencyGraphModel` for the selected scope (`individual` or `all`), including multi-version package grouping metadata.
+
+**Shared IR build:**<br/>
+Each renderer calls `DiagramRendererBase.BuildIntermediateRepresentation(...)` to produce a renderer-neutral intermediate representation (nodes, edges, styles, groups).
+
+**Renderer emission:**<br/>
+`D2DiagramRenderer` and `MermaidDiagramRenderer` serialize the same IR into `.d2` and `.mmd` outputs.
+
+**Optional image export:**<br/>
+If image formats are configured, the generated diagram text files are rendered via [d2](https://d2lang.com/) and/or [mmdc](https://github.com/mermaid-js/mermaid-cli) into `png`, `svg`, and `pdf`.
+
+### Sequence Diagram
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor User
+  participant App as Sample Program
+  participant Config as IConfiguration
+  participant Generator as DependencyGenerator
+  participant Parser as SolutionParser
+  participant Assets as Project assets reader
+  participant Model as Graph model builder
+  participant IR as IR builder (DiagramRendererBase)
+  participant D2 as D2 renderer
+  participant MMD as Mermaid renderer
+  participant Tools as d2/mmdc CLIs
+
+  User->>App: Run with config file
+  App->>Config: Load appsettings.json
+  Config-->>App: DependencyGeneratorConfig
+  App->>Generator: CreateDiagramsAsync()
+
+  Generator->>Parser: DiscoverTargetFrameworks(...)
+
+  loop Each target framework
+   Generator->>Parser: Parse(solution, filters, framework)
+   Parser->>Assets: Read project.assets.json
+   Assets-->>Parser: Resolved package graph
+   Parser-->>Generator: SolutionProject[]
+
+   Generator->>Model: Build DependencyGraphModel
+
+   par D2 format enabled
+    Generator->>D2: Render(model)
+    D2->>IR: BuildIntermediateRepresentation(model)
+    IR-->>D2: Diagram IR
+    D2-->>Generator: .d2 content
+    Generator->>Tools: Render D2 images (optional)
+   and Mermaid format enabled
+    Generator->>MMD: Render(model)
+    MMD->>IR: BuildIntermediateRepresentation(model)
+    IR-->>MMD: Diagram IR
+    MMD-->>Generator: .mmd content
+    Generator->>Tools: Render Mermaid images (optional)
+   end
+
+   Generator->>Generator: Export dependency summary
+  end
+
+  Generator-->>App: Generation complete
+```
 
 ## Limitations
 
