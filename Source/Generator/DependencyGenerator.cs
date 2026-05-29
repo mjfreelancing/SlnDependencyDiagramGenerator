@@ -36,6 +36,8 @@ namespace SlnDependencyDiagramGenerator.Generator;
 /// </remarks>
 public sealed class DependencyGenerator
 {
+    private readonly record struct PackageVersion(string Name, string Version);
+
     private readonly DependencyGeneratorConfig _configuration;
     private readonly IColorConsoleLogger _logger;
 
@@ -200,7 +202,7 @@ public sealed class DependencyGenerator
         // This flags cross-project version divergence (same package id, different resolved versions).
         var packagesWithMultipleVersions = solutionProjects.Values
             .SelectMany(project => GetAllPackageDependencies(project.PackageReferences))
-            .Select(package => (package.Name, package.Version))
+            .Select(package => new PackageVersion(package.Name, package.Version))
             .Distinct()
             .GroupBy(package => package.Name)
             .Where(group => group.Count() > 1)
@@ -411,13 +413,14 @@ public sealed class DependencyGenerator
         }
     }
 
-    private static IEnumerable<IGrouping<string, (string Name, string Version)>> GetOrderedDistinctPackageDependencies(SolutionProject solutionProject,
-        Func<IGrouping<string, (string Name, string Version)>, bool> predicate = default)
+    private static IEnumerable<IGrouping<string, PackageVersion>> GetOrderedDistinctPackageDependencies(SolutionProject solutionProject,
+        Func<IGrouping<string, PackageVersion>, bool> predicate = default)
     {
         var results = GetAllPackageDependencies(solutionProject.PackageReferences)
-            .Select(item => (item.Name, item.Version))
+            .Select(item => new PackageVersion(item.Name, item.Version))
             .Distinct()                                     // Multiple packages may depend on another common package
-            .Order()
+            .OrderBy(item => item.Name, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(item => item.Version, StringComparer.OrdinalIgnoreCase)
             .GroupBy(item => item.Name);
 
         return predicate is null
@@ -426,16 +429,17 @@ public sealed class DependencyGenerator
     }
 
     // For a given project get an ordered, distinct, list of all package references, including the package references for all referenced projects.
-    private static IEnumerable<IGrouping<string, (string Name, string Version)>> GetDeepOrderedDistinctPackageDependencies(SolutionProject solutionProject,
-        IDictionary<string, SolutionProject> solutionProjects, Func<IGrouping<string, (string Name, string Version)>, bool> predicate = default)
+    private static IEnumerable<IGrouping<string, PackageVersion>> GetDeepOrderedDistinctPackageDependencies(SolutionProject solutionProject,
+        IDictionary<string, SolutionProject> solutionProjects, Func<IGrouping<string, PackageVersion>, bool> predicate = default)
     {
-        var allPackageDependencies = new List<(string Name, string Version)>();
+        var allPackageDependencies = new List<PackageVersion>();
 
         GetDeepProjectPackageDependenciesRecursively(solutionProject, solutionProjects, allPackageDependencies);
 
         var results = allPackageDependencies
             .Distinct()                                     // Multiple packages may depend on another common package
-            .Order()
+            .OrderBy(item => item.Name, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(item => item.Version, StringComparer.OrdinalIgnoreCase)
             .GroupBy(item => item.Name);
 
         return predicate is null
@@ -445,10 +449,10 @@ public sealed class DependencyGenerator
 
     // For a given project find all package references, including the package references for all referenced projects.
     private static void GetDeepProjectPackageDependenciesRecursively(SolutionProject solutionProject, IDictionary<string, SolutionProject> solutionProjects,
-        List<(string Name, string Version)> allPackageDependencies)
+        List<PackageVersion> allPackageDependencies)
     {
         var packageDependencies = GetAllPackageDependencies(solutionProject.PackageReferences)
-            .Select(item => (item.Name, item.Version))
+            .Select(item => new PackageVersion(item.Name, item.Version))
             .Distinct();
 
         allPackageDependencies.AddRange(packageDependencies);

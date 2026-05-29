@@ -12,6 +12,8 @@ namespace SlnDependencyDiagramGenerator.Generator;
 /// <summary>Creates the markdown dependency summary report.</summary>
 internal static class SummaryDependencyGenerator
 {
+    private sealed record ConflictEntry(string ProjectName, string Version, string[] RequestedVersionPaths);
+
     private static readonly TargetFrameworkBadgeProvider BadgeProvider = new();
 
     /// <summary>The markdown output filename.</summary>
@@ -31,23 +33,30 @@ internal static class SummaryDependencyGenerator
 
         if (conflicts.Count > 0)
         {
-            sb.AppendLine("## Version Conflicts");
+            sb.AppendLine("## Cross-Project Version Conflicts");
             sb.AppendLine();
-            sb.AppendLine("| Package | Version | Project |");
-            sb.AppendLine("|---------|---------|---------|");
 
             var orderedConflicts = conflicts.OrderBy(kvp => kvp.Key, StringComparer.OrdinalIgnoreCase);
 
             foreach (var (packageName, entries) in orderedConflicts)
             {
+                sb.AppendLine($"### {packageName}");
+                sb.AppendLine();
+                sb.AppendLine("| Project | Resolved | Conflict Details |");
+                sb.AppendLine("|---------|----------|----------------------|");
+
                 var orderedEntries = entries
                     .OrderBy(entry => entry.Version, StringComparer.OrdinalIgnoreCase)
                     .ThenBy(entry => entry.ProjectName, StringComparer.OrdinalIgnoreCase);
 
-                foreach (var (projectName, version) in orderedEntries)
+                foreach (var entry in orderedEntries)
                 {
-                    sb.AppendLine($"| {packageName} | {version} | {projectName} |");
+                    var requestedVersionPaths = GetRequestedVersionPathCell(entry.ProjectName, entries);
+
+                    sb.AppendLine($"| {entry.ProjectName} | {entry.Version} | {requestedVersionPaths} |");
                 }
+
+                sb.AppendLine();
             }
 
             sb.AppendLine();
@@ -100,13 +109,14 @@ internal static class SummaryDependencyGenerator
         return sb.ToString();
     }
 
-    private static Dictionary<string, (string ProjectName, string Version)[]> GetVersionConflicts(IDictionary<string, SolutionProject> solutionProjects)
+    private static Dictionary<string, ConflictEntry[]> GetVersionConflicts(IDictionary<string, SolutionProject> solutionProjects)
     {
-        var packageProjectVersions = new Dictionary<string, List<(string ProjectName, string Version)>>(StringComparer.OrdinalIgnoreCase);
+        var packageProjectVersions = new Dictionary<string, List<ConflictEntry>>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var kvp in solutionProjects)
         {
             var projectName = kvp.Key;
+            var requestedVersionPaths = GetRequestedVersionPathsByPackage(kvp.Value.PackageReferences);
 
             var directPackages = kvp.Value.PackageReferences
                 .Where(package => package.Depth == 0)
@@ -121,7 +131,13 @@ internal static class SummaryDependencyGenerator
                     packageProjectVersions[name] = list;
                 }
 
-                list.Add((projectName, version));
+                string[] versionPaths = requestedVersionPaths.TryGetValue(name, out var paths)
+                    ? [.. paths.Order(StringComparer.OrdinalIgnoreCase)]
+                    : [];
+
+                var conflictEntry = new ConflictEntry(projectName, version, versionPaths);
+
+                list.Add(conflictEntry);
             }
         }
 
@@ -139,6 +155,67 @@ internal static class SummaryDependencyGenerator
                 packageEntry => packageEntry.Key,
                 packageEntry => packageEntry.Value.ToArray(),
                 StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static string GetRequestedVersionPathCell(string projectName, ConflictEntry[] entries)
+    {
+        var matchingEntry = entries.First(entry => string.Equals(entry.ProjectName, projectName, StringComparison.OrdinalIgnoreCase));
+
+        return matchingEntry.RequestedVersionPaths.Length == 0
+            ? $"Project resolved v{matchingEntry.Version}"
+            : string.Join("<br>", matchingEntry.RequestedVersionPaths);
+    }
+
+    private static Dictionary<string, HashSet<string>> GetRequestedVersionPathsByPackage(PackageReference[] packageReferences)
+    {
+        var requestedPathsByPackage = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var packageReference in packageReferences)
+        {
+            var activePath = new List<string>
+            {
+                FormatPackagePathNode(packageReference)
+            };
+
+            CollectRequestedVersionPaths(packageReference, activePath, requestedPathsByPackage);
+        }
+
+        return requestedPathsByPackage;
+    }
+
+    private static void CollectRequestedVersionPaths(PackageReference packageReference, List<string> activePath,
+        Dictionary<string, HashSet<string>> requestedPathsByPackage)
+    {
+        if (packageReference.RequestedDifferentVersion)
+        {
+            if (!requestedPathsByPackage.TryGetValue(packageReference.Name, out var paths))
+            {
+                paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                requestedPathsByPackage[packageReference.Name] = paths;
+            }
+
+            paths.Add(FormatRequestedVersionPath(activePath, packageReference));
+        }
+
+        foreach (var childReference in packageReference.TransitiveReferences)
+        {
+            activePath.Add(FormatPackagePathNode(childReference));
+
+            CollectRequestedVersionPaths(childReference, activePath, requestedPathsByPackage);
+            activePath.RemoveAt(activePath.Count - 1);
+        }
+    }
+
+    private static string FormatPackagePathNode(PackageReference packageReference)
+    {
+        return $"{packageReference.Name} v{packageReference.Version}";
+    }
+
+    private static string FormatRequestedVersionPath(List<string> activePath, PackageReference packageReference)
+    {
+        return activePath.Count == 1
+            ? $"Project requested {packageReference.Name} {packageReference.RequestedVersionRange}, resolved v{packageReference.Version}"
+            : $"Via {string.Join(" -> ", activePath[..^1])} requested {packageReference.Name} {packageReference.RequestedVersionRange}, resolved v{packageReference.Version}";
     }
 
     private static List<string> GetTargetFrameworkBadges(KeyValuePair<string, SolutionProject> solutionProject)

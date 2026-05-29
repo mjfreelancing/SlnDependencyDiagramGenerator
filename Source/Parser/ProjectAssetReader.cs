@@ -1,6 +1,8 @@
 ﻿using AllOverIt.Extensions;
 using NuGet.Common;
+using NuGet.LibraryModel;
 using NuGet.ProjectModel;
+using NuGet.Versioning;
 using SlnDependencyDiagramGenerator.Exceptions;
 using System;
 using System.Collections.Generic;
@@ -72,25 +74,28 @@ internal sealed class ProjectAssetReader
         // Apply the same exact-then-compatible fallback against PackageSpec.
         var packageSpecTargetFramework = GetPackageSpecTargetFramework(lockFile, targetFramework);
 
-        var explicitPackageNames = packageSpecTargetFramework is not null
+        var explicitPackageDependencies = packageSpecTargetFramework is not null
             ? packageSpecTargetFramework.Dependencies
                 .Where(dependency => packageLibraries.ContainsKey(dependency.Name))
-                .Select(dependency => dependency.Name)
-                .ToHashSet(StringComparer.OrdinalIgnoreCase)
-            : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                .ToDictionary(dependency => dependency.Name, GetRequestedVersionRange, StringComparer.OrdinalIgnoreCase)
+            : new Dictionary<string, VersionRange>(StringComparer.OrdinalIgnoreCase);
 
         // Build a package tree from each explicit package reference.
         var result = new List<PackageReference>();
 
-        foreach (var packageName in explicitPackageNames.OrderBy(package => package, StringComparer.OrdinalIgnoreCase))
+        var orderedPackageNames = explicitPackageDependencies.Keys.OrderBy(package => package, StringComparer.OrdinalIgnoreCase);
+
+        foreach (var packageName in orderedPackageNames)
         {
             if (excludePackages.Contains(packageName))
             {
                 continue;
             }
 
+            var requestedVersionRange = explicitPackageDependencies[packageName];
+
             var packageReference = BuildPackageTree(packageName, packageLibraries, 0, maxTransitiveDepth,
-                new HashSet<string>(StringComparer.OrdinalIgnoreCase), excludePackages);
+                new HashSet<string>(StringComparer.OrdinalIgnoreCase), excludePackages, requestedVersionRange);
 
             if (packageReference is not null)
             {
@@ -179,9 +184,10 @@ internal sealed class ProjectAssetReader
     /// <param name="maxDepth">The maximum recursion depth.</param>
     /// <param name="activePathPackages">The package IDs currently in the active recursion path, used for cycle prevention.</param>
     /// <param name="excludePackages">Package IDs to exclude from the graph.</param>
+    /// <param name="requestedVersionRange">The version range requested by the parent dependency edge.</param>
     /// <returns>A package node when found; otherwise, <see langword="null"/>.</returns>
     private static PackageReference BuildPackageTree(string packageName, Dictionary<string, LockFileTargetLibrary> libraryLookup,
-        int depth, int maxDepth, HashSet<string> activePathPackages, HashSet<string> excludePackages)
+        int depth, int maxDepth, HashSet<string> activePathPackages, HashSet<string> excludePackages, VersionRange requestedVersionRange)
     {
         if (!libraryLookup.TryGetValue(packageName, out var library))
         {
@@ -201,7 +207,8 @@ internal sealed class ProjectAssetReader
                     continue;
                 }
 
-                var child = BuildPackageTree(dep.Id, libraryLookup, depth + 1, maxDepth, activePathPackages, excludePackages);
+                var child = BuildPackageTree(dep.Id, libraryLookup, depth + 1, maxDepth, activePathPackages, excludePackages,
+                    dep.VersionRange);
 
                 if (child is not null)
                 {
@@ -216,8 +223,39 @@ internal sealed class ProjectAssetReader
         {
             Name = library.Name,
             Version = library.Version.ToNormalizedString(),
+            RequestedVersionRange = requestedVersionRange?.ToString(),
+            RequestedDifferentVersion = IsRequestedDifferentVersion(requestedVersionRange, library.Version),
             TransitiveReferences = [.. children]
         };
+    }
+
+    private static bool IsRequestedDifferentVersion(VersionRange requestedVersionRange, NuGetVersion resolvedVersion)
+    {
+        if (requestedVersionRange is null || resolvedVersion is null)
+        {
+            return false;
+        }
+
+        // Report exact version pins only when the requested version differs.
+        var isExactVersionRequest = requestedVersionRange.MinVersion is not null &&
+            requestedVersionRange.MaxVersion is not null &&
+            requestedVersionRange.IsMinInclusive &&
+            requestedVersionRange.IsMaxInclusive &&
+            requestedVersionRange.MinVersion == requestedVersionRange.MaxVersion;
+
+        if (isExactVersionRequest)
+        {
+            return requestedVersionRange.MinVersion != resolvedVersion;
+        }
+
+        // For version ranges, preserve request-path context in the summary to explain
+        // what constraints fed into the final NuGet resolution.
+        return true;
+    }
+
+    private static VersionRange GetRequestedVersionRange(LibraryDependency dependency)
+    {
+        return dependency.LibraryRange?.VersionRange;
     }
 
     /// <summary>Loads and caches a project's assets file.</summary>
