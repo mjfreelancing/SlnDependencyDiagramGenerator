@@ -130,7 +130,7 @@ internal sealed class D2DiagramRenderer : DiagramRendererBase
 
         // D2 sends all output to stderr - "err:" lines are errors, everything else is info/success.
         var d2Process = ProcessBuilder
-            .For("d2.exe")
+            .For("d2")
             .WithNoWindow()
             .WithArguments("-l", "elk", diagramFileName, imageFileName)
             .WithErrorOutputHandler((sender, eventArgs) =>
