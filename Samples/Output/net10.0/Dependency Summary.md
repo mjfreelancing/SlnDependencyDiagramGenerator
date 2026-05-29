@@ -1,13 +1,21 @@
 # Dependency Summary
 
-## Version Conflicts
+## Cross-Project Version Conflicts
 
-| Package | Version | Project |
-|---------|---------|---------|
-| AllOverIt | 9.2.0 | NugetConflictSample |
-| AllOverIt | 9.2.1 | SlnDependencyDiagramGenerator |
-| NuGet.Protocol | 7.3.1 | NugetConflictSample |
-| NuGet.Protocol | 7.6.0 | SlnDependencyDiagramGenerator |
+### AllOverIt
+
+| Project | Resolved | Conflict Details |
+|---------|----------|----------------------|
+| NugetConflictSample | 9.2.0 | Project requested AllOverIt [9.2.0, ), resolved v9.2.0 |
+| SlnDependencyDiagramGenerator | 9.2.1 | Project requested AllOverIt [9.2.1, ), resolved v9.2.1<br>Via AllOverIt.Validation v9.2.1 requested AllOverIt [9.2.1, 10.0.0), resolved v9.2.1 |
+
+### NuGet.Protocol
+
+| Project | Resolved | Conflict Details |
+|---------|----------|----------------------|
+| NugetConflictSample | 7.3.1 | Project requested NuGet.Protocol [7.3.1, ), resolved v7.3.1 |
+| SlnDependencyDiagramGenerator | 7.6.0 | Project requested NuGet.Protocol [7.6.0, ), resolved v7.6.0<br>Via NuGet.ProjectModel v7.6.0 -> NuGet.DependencyResolver.Core v7.6.0 requested NuGet.Protocol [7.6.0, ), resolved v7.6.0 |
+
 
 <br>
 
