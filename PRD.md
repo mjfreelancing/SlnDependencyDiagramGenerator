@@ -132,7 +132,7 @@ Only D2 and rendered D2 images (PNG/SVG/PDF) are produced. Mermaid is a widely s
 | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | FR-5.1 | Retain the existing `Dependency Summary.md` format.                                                                                                                                                                                                        |
 | FR-5.2 | When version conflicts are detected (same package, different winning versions across projects), add a **Version Conflicts** section to the summary listing the package, each project's resolved version, and the paths that requested a different version. |
-| FR-5.3 | Add `.NET 10.0` badge support to `TargetFrameworkBadges`.                                                                                                                                                                                                  |
+| FR-5.3 | Target framework badges must be generated dynamically from discovered frameworks, including `.NET 10.0` and future target frameworks without requiring code changes.                                                                                       |
 
 ### FR-6: Configuration Schema
 
@@ -505,12 +505,12 @@ A targeted rewrite (rather than incremental patching) is recommended for the fol
 
 ## 10. Milestones
 
-| Milestone                 | Scope                                                                                                                                                                                                 |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| M1 — Foundation           | `ProjectAssetReader` implementation + unit tests; updated `SolutionParser` using MSBuild evaluation; assets-file prerequisite check in `DependencyGenerator`                                          |
-| M2 — Rendering            | `DependencyGraphModel` intermediate representation; `D2DiagramRenderer` extracted; `MermaidDiagramRenderer` added; `DiagramFormat` config option                                                      |
-| M3 — Summary + config     | Version-conflict section in `Dependency Summary.md`; `.NET 10.0` badge; remove `NugetPackageFeed` and `targetFrameworks` config fields and associated validators; remaining config validation updates |
-| M4 — Integration + sample | Sample updated to exercise CPM and `Directory.Build.props` (after restore); Mermaid output; full end-to-end test against the solution itself                                                          |
+| Milestone                 | Scope                                                                                                                                                                                                                                                                           |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M1 — Foundation           | `ProjectAssetReader` implementation + unit tests; updated `SolutionParser` using MSBuild evaluation; assets-file prerequisite check in `DependencyGenerator`                                                                                                                    |
+| M2 — Rendering            | `DependencyGraphModel` intermediate representation; `D2DiagramRenderer` extracted; `MermaidDiagramRenderer` added; `DiagramFormat` config option                                                                                                                                |
+| M3 — Summary + config     | Version-conflict section in `Dependency Summary.md`; dynamically generated target framework badges (including `.NET 10.0` and future frameworks); remove `NugetPackageFeed` and `targetFrameworks` config fields and associated validators; remaining config validation updates |
+| M4 — Integration + sample | Sample updated to exercise CPM and `Directory.Build.props` (after restore); Mermaid output; full end-to-end test against the solution itself                                                                                                                                    |
 
 ---
 
