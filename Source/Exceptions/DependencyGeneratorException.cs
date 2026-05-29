@@ -11,4 +11,12 @@ public sealed class DependencyGeneratorException : Exception
         : base(message)
     {
     }
+
+    /// <summary>Initializes a new dependency generator exception with an inner exception.</summary>
+    /// <param name="message">The error message.</param>
+    /// <param name="innerException">The underlying exception that caused this error.</param>
+    public DependencyGeneratorException(string message, Exception innerException)
+        : base(message, innerException)
+    {
+    }
 }

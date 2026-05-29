@@ -31,7 +31,16 @@ internal class Program
         }
         catch (Exception exception) when (exception is DependencyGeneratorException or ValidationException)
         {
-            logger.WriteLine(ConsoleColor.Red, exception.Message);
+            if (exception is DependencyGeneratorException)
+            {
+                // Intentionally use ToString() so runtime failures include type, stack trace,
+                // and inner-exception details (Message alone hid root causes in prior debugging).
+                logger.WriteLine(ConsoleColor.Red, exception.ToString());
+            }
+            else
+            {
+                logger.WriteLine(ConsoleColor.Red, exception.Message);
+            }
         }
         catch (Exception exception) when (exception is InvalidOperationException or FormatException or
                                                        ArgumentException or InvalidDataException)
@@ -40,7 +49,9 @@ internal class Program
         }
         catch (Exception exception)
         {
-            logger.WriteLine(ConsoleColor.Red, exception.Message);
+            // Keep full exception output here as well so assembly-load and resolver failures
+            // are not reduced to a single message line.
+            logger.WriteLine(ConsoleColor.Red, exception.ToString());
         }
     }
 

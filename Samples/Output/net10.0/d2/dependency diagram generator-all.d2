@@ -6,19 +6,22 @@ alloverit-assertion-group: ""
 nuget-protocol-group: ""
 nuget-packaging-group: ""
 ddg.diagramgeneratorsample: DiagramGeneratorSample
-microsoft-extensions-configuration_10-0-0: Microsoft.Extensions.Configuration\nv10.0.0
-microsoft-extensions-configuration-abstractions_10-0-0: Microsoft.Extensions.Configuration.Abstractions\nv10.0.0
-microsoft-extensions-primitives_10-0-0: Microsoft.Extensions.Primitives\nv10.0.0
-microsoft-extensions-configuration-binder_10-0-0: Microsoft.Extensions.Configuration.Binder\nv10.0.0
-microsoft-extensions-configuration-json_10-0-0: Microsoft.Extensions.Configuration.Json\nv10.0.0
-microsoft-extensions-configuration-fileextensions_10-0-0: Microsoft.Extensions.Configuration.FileExtensions\nv10.0.0
-microsoft-extensions-fileproviders-abstractions_10-0-0: Microsoft.Extensions.FileProviders.Abstractions\nv10.0.0
+microsoft-netcore-app: Microsoft.NETCore.App
+microsoft-extensions-configuration_10-0-8: Microsoft.Extensions.Configuration\nv10.0.8
+microsoft-extensions-configuration-abstractions_10-0-8: Microsoft.Extensions.Configuration.Abstractions\nv10.0.8
+microsoft-extensions-primitives_10-0-8: Microsoft.Extensions.Primitives\nv10.0.8
+microsoft-extensions-configuration-binder_10-0-8: Microsoft.Extensions.Configuration.Binder\nv10.0.8
+microsoft-extensions-configuration-json_10-0-8: Microsoft.Extensions.Configuration.Json\nv10.0.8
+microsoft-extensions-configuration-fileextensions_10-0-8: Microsoft.Extensions.Configuration.FileExtensions\nv10.0.8
+microsoft-extensions-fileproviders-abstractions_10-0-8: Microsoft.Extensions.FileProviders.Abstractions\nv10.0.8
 ddg.slndependencydiagramgenerator: SlnDependencyDiagramGenerator
 alloverit-group.alloverit_9-2-1: AllOverIt\nv9.2.1
 alloverit-assertion-group.alloverit-assertion_9-2-1: AllOverIt.Assertion\nv9.2.1
 alloverit-validation_9-2-1: AllOverIt.Validation\nv9.2.1
 fluentvalidation_12-1-1: FluentValidation\nv12.1.1
 microsoft-extensions-dependencyinjection-abstractions_10-0-8: Microsoft.Extensions.DependencyInjection.Abstractions\nv10.0.8
+microsoft-build-locator_1-11-2: Microsoft.Build.Locator\nv1.11.2
+nuget-frameworks_7-6-0: NuGet.Frameworks\nv7.6.0
 nuget-projectmodel_7-6-0: NuGet.ProjectModel\nv7.6.0
 nuget-dependencyresolver-core_7-6-0: NuGet.DependencyResolver.Core\nv7.6.0
 nuget-protocol-group.nuget-protocol_7-6-0: NuGet.Protocol\nv7.6.0
@@ -28,17 +31,18 @@ alloverit-group.alloverit_9-2-0: AllOverIt\nv9.2.0
 alloverit-assertion-group.alloverit-assertion_9-2-0: AllOverIt.Assertion\nv9.2.0
 nuget-protocol-group.nuget-protocol_7-3-1: NuGet.Protocol\nv7.3.1
 nuget-packaging-group.nuget-packaging_7-3-1: NuGet.Packaging\nv7.3.1
-microsoft-extensions-configuration_10-0-0 <- ddg.diagramgeneratorsample
-microsoft-extensions-configuration-abstractions_10-0-0 <- microsoft-extensions-configuration_10-0-0
-microsoft-extensions-primitives_10-0-0 <- microsoft-extensions-configuration_10-0-0
-microsoft-extensions-configuration-binder_10-0-0 <- ddg.diagramgeneratorsample
-microsoft-extensions-configuration_10-0-0 <- microsoft-extensions-configuration-binder_10-0-0
-microsoft-extensions-configuration-abstractions_10-0-0 <- microsoft-extensions-configuration-binder_10-0-0
-microsoft-extensions-configuration-json_10-0-0 <- ddg.diagramgeneratorsample
-microsoft-extensions-configuration_10-0-0 <- microsoft-extensions-configuration-json_10-0-0
-microsoft-extensions-configuration-abstractions_10-0-0 <- microsoft-extensions-configuration-json_10-0-0
-microsoft-extensions-configuration-fileextensions_10-0-0 <- microsoft-extensions-configuration-json_10-0-0
-microsoft-extensions-fileproviders-abstractions_10-0-0 <- microsoft-extensions-configuration-json_10-0-0
+microsoft-netcore-app <- ddg.diagramgeneratorsample
+microsoft-extensions-configuration_10-0-8 <- ddg.diagramgeneratorsample
+microsoft-extensions-configuration-abstractions_10-0-8 <- microsoft-extensions-configuration_10-0-8
+microsoft-extensions-primitives_10-0-8 <- microsoft-extensions-configuration_10-0-8
+microsoft-extensions-configuration-binder_10-0-8 <- ddg.diagramgeneratorsample
+microsoft-extensions-configuration_10-0-8 <- microsoft-extensions-configuration-binder_10-0-8
+microsoft-extensions-configuration-abstractions_10-0-8 <- microsoft-extensions-configuration-binder_10-0-8
+microsoft-extensions-configuration-json_10-0-8 <- ddg.diagramgeneratorsample
+microsoft-extensions-configuration_10-0-8 <- microsoft-extensions-configuration-json_10-0-8
+microsoft-extensions-configuration-abstractions_10-0-8 <- microsoft-extensions-configuration-json_10-0-8
+microsoft-extensions-configuration-fileextensions_10-0-8 <- microsoft-extensions-configuration-json_10-0-8
+microsoft-extensions-fileproviders-abstractions_10-0-8 <- microsoft-extensions-configuration-json_10-0-8
 ddg.slndependencydiagramgenerator <- ddg.diagramgeneratorsample
 alloverit-group.alloverit_9-2-1 <- ddg.slndependencydiagramgenerator
 alloverit-assertion-group.alloverit-assertion_9-2-1 <- alloverit-group.alloverit_9-2-1
@@ -46,28 +50,34 @@ alloverit-validation_9-2-1 <- ddg.slndependencydiagramgenerator
 alloverit-group.alloverit_9-2-1 <- alloverit-validation_9-2-1
 fluentvalidation_12-1-1 <- alloverit-validation_9-2-1
 microsoft-extensions-dependencyinjection-abstractions_10-0-8 <- alloverit-validation_9-2-1
+microsoft-build-locator_1-11-2 <- ddg.slndependencydiagramgenerator
+nuget-frameworks_7-6-0 <- ddg.slndependencydiagramgenerator
 nuget-projectmodel_7-6-0 <- ddg.slndependencydiagramgenerator
 nuget-dependencyresolver-core_7-6-0 <- nuget-projectmodel_7-6-0
 nuget-protocol-group.nuget-protocol_7-6-0 <- ddg.slndependencydiagramgenerator
 nuget-packaging-group.nuget-packaging_7-6-0 <- nuget-protocol-group.nuget-protocol_7-6-0
+microsoft-netcore-app <- ddg.slndependencydiagramgenerator
+microsoft-netcore-app <- ddg.nugetconflictsample
 alloverit-group.alloverit_9-2-0 <- ddg.nugetconflictsample
 alloverit-assertion-group.alloverit-assertion_9-2-0 <- alloverit-group.alloverit_9-2-0
 nuget-protocol-group.nuget-protocol_7-3-1 <- ddg.nugetconflictsample
 nuget-packaging-group.nuget-packaging_7-3-1 <- nuget-protocol-group.nuget-protocol_7-3-1
-microsoft-extensions-configuration_10-0-0.style.fill: "#ADD8E6"
-microsoft-extensions-configuration_10-0-0.style.opacity: 0.8
-microsoft-extensions-configuration-abstractions_10-0-0.style.fill: "#FFEC96"
-microsoft-extensions-configuration-abstractions_10-0-0.style.opacity: 0.8
-microsoft-extensions-primitives_10-0-0.style.fill: "#FFEC96"
-microsoft-extensions-primitives_10-0-0.style.opacity: 0.8
-microsoft-extensions-configuration-binder_10-0-0.style.fill: "#ADD8E6"
-microsoft-extensions-configuration-binder_10-0-0.style.opacity: 0.8
-microsoft-extensions-configuration-json_10-0-0.style.fill: "#ADD8E6"
-microsoft-extensions-configuration-json_10-0-0.style.opacity: 0.8
-microsoft-extensions-configuration-fileextensions_10-0-0.style.fill: "#FFEC96"
-microsoft-extensions-configuration-fileextensions_10-0-0.style.opacity: 0.8
-microsoft-extensions-fileproviders-abstractions_10-0-0.style.fill: "#FFEC96"
-microsoft-extensions-fileproviders-abstractions_10-0-0.style.opacity: 0.8
+microsoft-netcore-app.style.fill: "#ECCBC0"
+microsoft-netcore-app.style.opacity: 0.8
+microsoft-extensions-configuration_10-0-8.style.fill: "#ADD8E6"
+microsoft-extensions-configuration_10-0-8.style.opacity: 0.8
+microsoft-extensions-configuration-abstractions_10-0-8.style.fill: "#FFEC96"
+microsoft-extensions-configuration-abstractions_10-0-8.style.opacity: 0.8
+microsoft-extensions-primitives_10-0-8.style.fill: "#FFEC96"
+microsoft-extensions-primitives_10-0-8.style.opacity: 0.8
+microsoft-extensions-configuration-binder_10-0-8.style.fill: "#ADD8E6"
+microsoft-extensions-configuration-binder_10-0-8.style.opacity: 0.8
+microsoft-extensions-configuration-json_10-0-8.style.fill: "#ADD8E6"
+microsoft-extensions-configuration-json_10-0-8.style.opacity: 0.8
+microsoft-extensions-configuration-fileextensions_10-0-8.style.fill: "#FFEC96"
+microsoft-extensions-configuration-fileextensions_10-0-8.style.opacity: 0.8
+microsoft-extensions-fileproviders-abstractions_10-0-8.style.fill: "#FFEC96"
+microsoft-extensions-fileproviders-abstractions_10-0-8.style.opacity: 0.8
 alloverit-group.alloverit_9-2-1.style.fill: "#ADD8E6"
 alloverit-group.alloverit_9-2-1.style.opacity: 0.8
 alloverit-assertion-group.alloverit-assertion_9-2-1.style.fill: "#FFEC96"
@@ -78,6 +88,10 @@ fluentvalidation_12-1-1.style.fill: "#FFEC96"
 fluentvalidation_12-1-1.style.opacity: 0.8
 microsoft-extensions-dependencyinjection-abstractions_10-0-8.style.fill: "#FFEC96"
 microsoft-extensions-dependencyinjection-abstractions_10-0-8.style.opacity: 0.8
+microsoft-build-locator_1-11-2.style.fill: "#ADD8E6"
+microsoft-build-locator_1-11-2.style.opacity: 0.8
+nuget-frameworks_7-6-0.style.fill: "#ADD8E6"
+nuget-frameworks_7-6-0.style.opacity: 0.8
 nuget-projectmodel_7-6-0.style.fill: "#ADD8E6"
 nuget-projectmodel_7-6-0.style.opacity: 0.8
 nuget-dependencyresolver-core_7-6-0.style.fill: "#FFEC96"
@@ -104,3 +118,4 @@ nuget-protocol-group.style.fill: "#E7EBFC"
 nuget-protocol-group.style.opacity: 1
 nuget-packaging-group.style.fill: "#E7EBFC"
 nuget-packaging-group.style.opacity: 1
+

@@ -34,11 +34,17 @@ internal static class SummaryDependencyGenerator
             sb.AppendLine("## Version Conflicts");
             sb.AppendLine();
             sb.AppendLine("| Package | Version | Project |");
-            sb.AppendLine("|---------|---------|---------|" );
+            sb.AppendLine("|---------|---------|---------|");
 
-            foreach (var (packageName, entries) in conflicts.OrderBy(kvp => kvp.Key, StringComparer.OrdinalIgnoreCase))
+            var orderedConflicts = conflicts.OrderBy(kvp => kvp.Key, StringComparer.OrdinalIgnoreCase);
+
+            foreach (var (packageName, entries) in orderedConflicts)
             {
-                foreach (var (projectName, version) in entries.OrderBy(entry => entry.Version, StringComparer.OrdinalIgnoreCase).ThenBy(entry => entry.ProjectName, StringComparer.OrdinalIgnoreCase))
+                var orderedEntries = entries
+                    .OrderBy(entry => entry.Version, StringComparer.OrdinalIgnoreCase)
+                    .ThenBy(entry => entry.ProjectName, StringComparer.OrdinalIgnoreCase);
+
+                foreach (var (projectName, version) in orderedEntries)
                 {
                     sb.AppendLine($"| {packageName} | {version} | {projectName} |");
                 }
@@ -56,22 +62,21 @@ internal static class SummaryDependencyGenerator
         foreach (var solutionProject in solutionProjects)
         {
             var project = Path.GetFileNameWithoutExtension(solutionProject.Value.Path);
+
             sb.AppendLine($"## {project}");
             sb.AppendLine();
 
             var frameworkBadges = GetTargetFrameworkBadges(solutionProject);
-
             var projectBadges = string.Join(" ", frameworkBadges);
+
             sb.AppendLine(projectBadges);
-
             sb.AppendLine();
-
             sb.AppendLine("### Dependencies");
             sb.AppendLine();
 
             var dependencies = AppendProjectDependencies(solutionProject.Value, solutionProjects);
 
-            if (dependencies.Count > 0)
+            if (dependencies.Length > 0)
             {
                 foreach (var dependency in dependencies)
                 {
@@ -95,8 +100,7 @@ internal static class SummaryDependencyGenerator
         return sb.ToString();
     }
 
-    private static IReadOnlyDictionary<string, IReadOnlyList<(string ProjectName, string Version)>> GetVersionConflicts(
-        IDictionary<string, SolutionProject> solutionProjects)
+    private static Dictionary<string, (string ProjectName, string Version)[]> GetVersionConflicts(IDictionary<string, SolutionProject> solutionProjects)
     {
         var packageProjectVersions = new Dictionary<string, List<(string ProjectName, string Version)>>(StringComparer.OrdinalIgnoreCase);
 
@@ -104,8 +108,7 @@ internal static class SummaryDependencyGenerator
         {
             var projectName = kvp.Key;
 
-            var directPackages = kvp.Value.Dependencies
-                .SelectMany(dependency => dependency.PackageReferences)
+            var directPackages = kvp.Value.PackageReferences
                 .Where(package => package.Depth == 0)
                 .Select(package => (package.Name, package.Version))
                 .Distinct();
@@ -123,10 +126,18 @@ internal static class SummaryDependencyGenerator
         }
 
         return packageProjectVersions
-            .Where(packageEntry => packageEntry.Value.Select(packageVersion => packageVersion.Version).Distinct(StringComparer.OrdinalIgnoreCase).Count() > 1)
+            .Where(packageEntry =>
+            {
+                var distinctCount = packageEntry.Value
+                    .Select(packageVersion => packageVersion.Version)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .Count();
+
+                return distinctCount > 1;
+            })
             .ToDictionary(
                 packageEntry => packageEntry.Key,
-                packageEntry => (IReadOnlyList<(string ProjectName, string Version)>) packageEntry.Value.AsReadOnly(),
+                packageEntry => packageEntry.Value.ToArray(),
                 StringComparer.OrdinalIgnoreCase);
     }
 
@@ -153,28 +164,27 @@ internal static class SummaryDependencyGenerator
         return Path.GetFileNameWithoutExtension(projectReference.Path);
     }
 
-    private static IReadOnlyCollection<string> AppendProjectDependencies(SolutionProject solutionProject, IDictionary<string, SolutionProject> solutionProjects)
+    private static string[] AppendProjectDependencies(SolutionProject solutionProject, IDictionary<string, SolutionProject> solutionProjects)
     {
         var dependencySet = new HashSet<string>();
         var transitiveSet = new HashSet<string>();
+        var activePathProjects = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         AppendFrameworkDependencies(solutionProject, dependencySet);
         AppendPackageDependencies(solutionProject, dependencySet, transitiveSet);
 
-        foreach (var project in solutionProject.Dependencies.SelectMany(item => item.ProjectReferences))
+        foreach (var project in solutionProject.ProjectReferences)
         {
-            AppendProjectDependenciesRecursively(project, solutionProjects, dependencySet, transitiveSet);
+            AppendProjectDependenciesRecursively(project, solutionProjects, dependencySet, transitiveSet, activePathProjects);
         }
 
         dependencySet.UnionWith(transitiveSet);
 
-        return dependencySet
-            .Order()
-            .AsReadOnlyCollection();
+        return [.. dependencySet.Order()];
     }
 
     private static void AppendProjectDependenciesRecursively(ProjectReference projectReference, IDictionary<string, SolutionProject> solutionProjects,
-        HashSet<string> dependencySet, HashSet<string> transitiveSet)
+        HashSet<string> dependencySet, HashSet<string> transitiveSet, HashSet<string> activePathProjects)
     {
         var projectName = GetProjectName(projectReference);
 
@@ -183,26 +193,40 @@ internal static class SummaryDependencyGenerator
             throw new DependencyGeneratorException($"The dependency project '{projectName}' was not found using the provided regex paths.");
         }
 
-        dependencySet.Add(projectName);
-
-        // Add all packages dependencies (recursively) for the current project
-        var packageReferences = solutionProject.Dependencies.SelectMany(item => item.PackageReferences);
-
-        foreach (var packageReference in packageReferences)
+        // Defensive check: valid project reference graphs are expected to be acyclic.
+        // Throw to prevent runaway recursion if malformed or inconsistent project metadata is encountered.
+        if (!activePathProjects.Add(projectName))
         {
-            AppendPackageDependenciesRecursively(packageReference, dependencySet, transitiveSet);
+            throw new DependencyGeneratorException($"A circular project reference was detected while building the dependency summary for '{projectName}'.");
         }
 
-        // Add all project dependencies (recursively) for the current project
-        foreach (var project in solutionProjects[projectName].Dependencies.SelectMany(item => item.ProjectReferences))
+        dependencySet.Add(projectName);
+
+        try
         {
-            AppendProjectDependenciesRecursively(project, solutionProjects, dependencySet, transitiveSet);
+            // Add all packages dependencies (recursively) for the current project
+            var packageReferences = solutionProject.PackageReferences;
+
+            foreach (var packageReference in packageReferences)
+            {
+                AppendPackageDependenciesRecursively(packageReference, dependencySet, transitiveSet);
+            }
+
+            // Add all project dependencies (recursively) for the current project
+            foreach (var project in solutionProject.ProjectReferences)
+            {
+                AppendProjectDependenciesRecursively(project, solutionProjects, dependencySet, transitiveSet, activePathProjects);
+            }
+        }
+        finally
+        {
+            activePathProjects.Remove(projectName);
         }
     }
 
     private static void AppendFrameworkDependencies(SolutionProject solutionProject, HashSet<string> dependencySet)
     {
-        foreach (var framework in solutionProject.Dependencies.SelectMany(item => item.FrameworkReferences))
+        foreach (var framework in solutionProject.FrameworkReferences)
         {
             dependencySet.Add(framework.Name);
         }
@@ -210,7 +234,7 @@ internal static class SummaryDependencyGenerator
 
     private static void AppendPackageDependencies(SolutionProject solutionProject, HashSet<string> dependencySet, HashSet<string> transitiveSet)
     {
-        foreach (var package in solutionProject.Dependencies.SelectMany(item => item.PackageReferences))
+        foreach (var package in solutionProject.PackageReferences)
         {
             AppendPackageDependenciesRecursively(package, dependencySet, transitiveSet);
         }

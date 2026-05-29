@@ -9,17 +9,19 @@ using System.Linq;
 
 namespace SlnDependencyDiagramGenerator.Parser;
 
-// Reads project.assets.json (written by 'dotnet restore') to obtain the fully-resolved
-// package graph for each target framework. The assets file is the authoritative post-restore
-// source: it embodies NuGet's "nearest wins" conflict resolution, Central Package Management
-// (Directory.Packages.props) version pins, and Directory.Build.props property evaluation —
-// no special handling for any of these is required here.
 /// <summary>Reads project assets files to resolve package dependencies for specific target frameworks.</summary>
+/// <remarks>
+/// Reads <c>project.assets.json</c> (written by <c>dotnet restore</c>) to obtain the fully resolved
+/// package graph for each target framework. The assets file is the authoritative post-restore source,
+/// already reflecting NuGet conflict resolution, Central Package Management
+/// (<c>Directory.Packages.props</c>), and <c>Directory.Build.props</c> evaluation.
+/// </remarks>
 internal sealed class ProjectAssetReader
 {
+    // Caches parsed project.assets.json lock files by absolute assets-file path so
+    // repeated queries within a run do not re-read or re-parse the same file.
     private readonly Dictionary<string, LockFile> _lockFileCache = new(StringComparer.OrdinalIgnoreCase);
 
-    // Returns the target frameworks available in the project's assets file (non-RID targets only).
     /// <summary>Returns all target frameworks declared in a project's assets file.</summary>
     /// <param name="projectPath">The project file path.</param>
     /// <returns>The target frameworks defined in the assets file.</returns>
@@ -27,47 +29,37 @@ internal sealed class ProjectAssetReader
     {
         var lockFile = LoadLockFile(projectPath);
 
-        return lockFile.Targets
-            .Where(target => string.IsNullOrEmpty(target.RuntimeIdentifier))
-            .Select(target => target.TargetFramework.GetShortFolderName())
-            .ToArray();
+        return [.. lockFile.Targets
+            .Where(target => target.RuntimeIdentifier.IsNullOrEmpty())
+            .Select(target => target.TargetFramework.GetShortFolderName())];
     }
 
-    // Returns true if the project's assets file contains the given target framework,
-    // including platform-specific variants (e.g. net10.0-windows matches net10.0).
     /// <summary>Checks if a project contains the requested target framework in its assets file.</summary>
     /// <param name="projectPath">The project file path.</param>
     /// <param name="targetFramework">The target framework to match.</param>
     /// <returns><see langword="true"/> when the target framework is present; otherwise, <see langword="false"/>.</returns>
     public bool HasTargetFramework(string projectPath, string targetFramework)
     {
-        return GetTargetFrameworks(projectPath)
-            .Any(framework => IsFrameworkMatch(framework, targetFramework));
+        return GetTargetFrameworks(projectPath).Any(framework => IsFrameworkMatch(framework, targetFramework));
     }
 
-    // Reads the fully-resolved package references for the given target framework from the assets file.
-    // Explicit packages (directly referenced by the project) are at depth 0; their transitive
-    // dependencies are at depth 1, 2, etc. up to maxTransitiveDepth.
-    // Any package whose name appears in excludePackages (case-insensitive) is omitted, along with
-    // any transitive dependency that is only reachable through excluded packages.
     /// <summary>Reads resolved package references for the given target framework.</summary>
     /// <param name="projectPath">The project file path.</param>
     /// <param name="excludePackages">Package IDs to exclude from the results.</param>
     /// <param name="targetFramework">The target framework to resolve.</param>
     /// <param name="maxTransitiveDepth">The maximum transitive depth to include.</param>
     /// <returns>The resolved package tree for direct and transitive dependencies.</returns>
-    public IReadOnlyCollection<PackageReference> ReadPackagesForFramework(string projectPath, HashSet<string> excludePackages,
+    public PackageReference[] ReadPackagesForFramework(string projectPath, HashSet<string> excludePackages,
         string targetFramework, int maxTransitiveDepth)
     {
         var lockFile = LoadLockFile(projectPath);
 
-        // Prefer an exact TFM match; fall back to a platform-specific variant with the same
-        // base TFM (e.g. net10.0-windows when iterating net10.0).
+        // Prefer an exact TFM match, then fall back to a compatible platform variant.
         var target = GetTarget(lockFile, targetFramework);
 
         if (target is null)
         {
-            return Array.Empty<PackageReference>();
+            return [];
         }
 
         // Build a lookup of all resolved package libraries for this target framework.
@@ -75,20 +67,19 @@ internal sealed class ProjectAssetReader
             .Where(library => string.Equals(library.Type, "package", StringComparison.OrdinalIgnoreCase))
             .ToDictionary(library => library.Name, library => library, StringComparer.OrdinalIgnoreCase);
 
-        // Find the explicit (direct) package references for this target framework.
-        // These are the packages the project directly references (i.e., PackageReference items
-        // in the project file). Project-to-project references are excluded.
-        // Same exact-then-base fallback for the PackageSpec entry.
-        var packageSpecTf = GetPackageSpecTargetFramework(lockFile, targetFramework);
+        // Find explicit (direct) package references for this target framework.
+        // Project-to-project references are not part of this package set.
+        // Apply the same exact-then-compatible fallback against PackageSpec.
+        var packageSpecTargetFramework = GetPackageSpecTargetFramework(lockFile, targetFramework);
 
-        var explicitPackageNames = packageSpecTf is not null
-            ? packageSpecTf.Dependencies
+        var explicitPackageNames = packageSpecTargetFramework is not null
+            ? packageSpecTargetFramework.Dependencies
                 .Where(dependency => packageLibraries.ContainsKey(dependency.Name))
                 .Select(dependency => dependency.Name)
                 .ToHashSet(StringComparer.OrdinalIgnoreCase)
             : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        // Build the package tree starting from each explicit package reference.
+        // Build a package tree from each explicit package reference.
         var result = new List<PackageReference>();
 
         foreach (var packageName in explicitPackageNames.OrderBy(package => package, StringComparer.OrdinalIgnoreCase))
@@ -98,17 +89,16 @@ internal sealed class ProjectAssetReader
                 continue;
             }
 
-            var pkg = BuildPackageTree(packageName, packageLibraries, depth: 0, maxDepth: maxTransitiveDepth,
-                currentPath: new HashSet<string>(StringComparer.OrdinalIgnoreCase),
-                excludePackages: excludePackages);
+            var packageReference = BuildPackageTree(packageName, packageLibraries, 0, maxTransitiveDepth,
+                new HashSet<string>(StringComparer.OrdinalIgnoreCase), excludePackages);
 
-            if (pkg is not null)
+            if (packageReference is not null)
             {
-                result.Add(pkg);
+                result.Add(packageReference);
             }
         }
 
-        return result.AsReadOnlyCollection();
+        return [.. result];
     }
 
     private static LockFileTarget GetTarget(LockFile lockFile, string targetFramework)
@@ -117,24 +107,24 @@ internal sealed class ProjectAssetReader
             .Where(target => target.RuntimeIdentifier.IsNullOrEmpty())
             .ToArray();
 
-        // Pass 1: prefer an exact target framework match (e.g. net10.0).
+        // Pass 1: prefer an exact target framework match.
         foreach (var target in frameworkOnlyTargets)
         {
             var framework = target.TargetFramework.GetShortFolderName();
 
-            // Stop at the first exact framework match.
+            // Stop at the first exact match.
             if (IsFrameworkMatch(framework, targetFramework, requireExactMatch: true))
             {
                 return target;
             }
         }
 
-        // Pass 2: fall back to base-framework matching (e.g. net10.0-windows -> net10.0).
+        // Pass 2: fall back to compatible base-framework matching.
         foreach (var target in frameworkOnlyTargets)
         {
             var framework = target.TargetFramework.GetShortFolderName();
 
-            // Return the first compatible base-framework match.
+            // Return the first compatible match.
             if (IsFrameworkMatch(framework, targetFramework))
             {
                 return target;
@@ -146,24 +136,24 @@ internal sealed class ProjectAssetReader
 
     private static TargetFrameworkInformation GetPackageSpecTargetFramework(LockFile lockFile, string targetFramework)
     {
-        // Pass 1: find an exact framework entry from the package spec.
+        // Pass 1: find an exact framework entry from PackageSpec.
         foreach (var framework in lockFile.PackageSpec.TargetFrameworks)
         {
             var frameworkName = framework.FrameworkName.GetShortFolderName();
 
-            // Stop at the first exact framework match.
+            // Stop at the first exact match.
             if (IsFrameworkMatch(frameworkName, targetFramework, requireExactMatch: true))
             {
                 return framework;
             }
         }
 
-        // Pass 2: fall back to base-framework matching.
+        // Pass 2: fall back to compatible base-framework matching.
         foreach (var framework in lockFile.PackageSpec.TargetFrameworks)
         {
             var frameworkName = framework.FrameworkName.GetShortFolderName();
 
-            // Return the first compatible base-framework match.
+            // Return the first compatible match.
             if (IsFrameworkMatch(frameworkName, targetFramework))
             {
                 return framework;
@@ -180,24 +170,18 @@ internal sealed class ProjectAssetReader
             : string.Equals(GetBaseFramework(framework), targetFramework, StringComparison.OrdinalIgnoreCase);
     }
 
-    private static string GetBaseFramework(string framework)
-    {
-        return framework.Split('-')[0];
-    }
+    private static string GetBaseFramework(string framework) => framework.Split('-')[0];
 
-    // Recursively builds the package dependency tree from the flat resolved graph.
-    // 'currentPath' tracks the active DFS path to detect cycles (which NuGet itself
-    // prevents, but are guarded against here for safety).
     /// <summary>Builds a package dependency tree recursively from the resolved package graph.</summary>
     /// <param name="packageName">The package name at the current recursion level.</param>
     /// <param name="libraryLookup">The lookup of package libraries for the target framework.</param>
     /// <param name="depth">The current recursion depth.</param>
     /// <param name="maxDepth">The maximum recursion depth.</param>
-    /// <param name="currentPath">The current recursion path used for cycle prevention.</param>
+    /// <param name="activePathPackages">The package IDs currently in the active recursion path, used for cycle prevention.</param>
     /// <param name="excludePackages">Package IDs to exclude from the graph.</param>
     /// <returns>A package node when found; otherwise, <see langword="null"/>.</returns>
     private static PackageReference BuildPackageTree(string packageName, Dictionary<string, LockFileTargetLibrary> libraryLookup,
-        int depth, int maxDepth, HashSet<string> currentPath, HashSet<string> excludePackages)
+        int depth, int maxDepth, HashSet<string> activePathPackages, HashSet<string> excludePackages)
     {
         if (!libraryLookup.TryGetValue(packageName, out var library))
         {
@@ -206,8 +190,9 @@ internal sealed class ProjectAssetReader
 
         var children = new List<PackageReference>();
 
-        // Traverse children only if we have not exceeded maxDepth and are not in a cycle.
-        if (depth < maxDepth && currentPath.Add(packageName))
+        // Traverse children only when still within maxDepth and not revisiting this path
+        // (cycle prevention for defensive safety).
+        if (depth < maxDepth && activePathPackages.Add(packageName))
         {
             foreach (var dep in library.Dependencies)
             {
@@ -216,7 +201,7 @@ internal sealed class ProjectAssetReader
                     continue;
                 }
 
-                var child = BuildPackageTree(dep.Id, libraryLookup, depth + 1, maxDepth, currentPath, excludePackages);
+                var child = BuildPackageTree(dep.Id, libraryLookup, depth + 1, maxDepth, activePathPackages, excludePackages);
 
                 if (child is not null)
                 {
@@ -224,19 +209,17 @@ internal sealed class ProjectAssetReader
                 }
             }
 
-            currentPath.Remove(packageName);
+            activePathPackages.Remove(packageName);
         }
 
         return new PackageReference(isTransitive: depth > 0, depth)
         {
             Name = library.Name,
             Version = library.Version.ToNormalizedString(),
-            TransitiveReferences = children.AsReadOnlyCollection()
+            TransitiveReferences = [.. children]
         };
     }
 
-    // Loads and caches the lock file for a project. Aborts with a clear diagnostic if
-    // the file is absent or its format is too old (requires 'dotnet restore' to be re-run).
     /// <summary>Loads and caches a project's assets file.</summary>
     /// <param name="projectPath">The project file path.</param>
     /// <returns>The parsed lock file.</returns>

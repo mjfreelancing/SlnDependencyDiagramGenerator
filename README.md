@@ -15,7 +15,7 @@ As large applications grow, awareness of dependencies diminishes. Hidden transit
 
 `SlnDependencyDiagramGenerator` solves this by parsing a Visual Studio Solution (`.sln`), filtering projects by include/exclude regex rules, and building dependency graphs for each selected target framework.
 
-Project and framework references are read from each project's `.csproj` file, while package references are resolved from `obj/project.assets.json` (generated during restore/build). This utility requires those assets files to exist before it runs. Using the assets file means the output reflects NuGet's resolved versions, including Central Package Management and `Directory.Build.props` evaluation.
+Project and framework references are read from the evaluated MSBuild project model (including imports and conditions such as `Directory.Build.props` / `Directory.Build.targets`), while package references are resolved from `obj/project.assets.json` (generated during restore/build). This utility requires those assets files to exist before it runs. Using the assets file means the output reflects NuGet's resolved versions, including Central Package Management and `Directory.Build.props` evaluation.
 
 For each discovered target framework, the generator can process both individual projects and the full solution scope, with configurable transitive package depth and package exclusions.
 
@@ -27,6 +27,7 @@ This [example](./Sample/Output/net9.0/slndependencydiagramgenerator.png) has bee
 ## Features
 
 - Parses Visual Studio solutions and filters projects using include/exclude regex rules.
+- Resolves project and framework references from evaluated MSBuild items, including references introduced via `Directory.Build.props` / `Directory.Build.targets`.
 - Resolves package graphs from `obj/project.assets.json` (post-restore/build), matching NuGet's resolved package versions.
 - Implicitly supports Central Package Management (`Directory.Packages.props`) and `Directory.Build.props` evaluation because dependencies are read from restore/build-generated assets files.
 - Auto-discovers target frameworks from restored assets files (no `targetFrameworks` configuration required).
@@ -184,10 +185,10 @@ The engine uses a staged pipeline so dependency discovery, graph shaping, and re
 The host application loads `appsettings.json`, binds `options` to `DependencyGeneratorConfig`, and constructs `DependencyGenerator`.
 
 **Validation and framework discovery:**<br/>
-`DependencyGenerator` validates configuration, discovers target frameworks from each matching project's `project.assets.json`, and verifies required external tools when image export is requested.
+`DependencyGenerator` validates configuration, initializes MSBuild SDK resolution for in-process project evaluation, discovers target frameworks from each matching project's `project.assets.json`, and verifies required external tools when image export is requested.
 
 **Solution parse and dependency resolution:**<br/>
-`SolutionParser` parses solution projects for each target framework and resolves package graphs from assets data (including explicit vs transitive dependencies).
+`SolutionParser` parses solution projects for each target framework, resolves project/framework references from evaluated MSBuild items, and resolves package graphs from assets data (including explicit vs transitive dependencies).
 
 **Graph model construction:**<br/>
 `DependencyGenerator` builds a `DependencyGraphModel` for the selected scope (`individual` or `all`), including multi-version package grouping metadata.
@@ -256,5 +257,4 @@ sequenceDiagram
 ## Limitations
 
 - The solution must be restored or built before generation so each project's `obj/project.assets.json` is available.
-- Package references are resolved from `project.assets.json` (including Central Package Management and `Directory.Build.props` evaluation).
-- `ProjectReference` and `FrameworkReference` are read directly from each `.csproj` XML; references introduced only via imported props/targets are not currently discovered.
+- Package dependency results reflect the latest available assets state; if `obj/project.assets.json` is stale or missing, run `dotnet restore` (or build) before generation.

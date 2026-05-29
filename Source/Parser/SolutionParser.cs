@@ -1,27 +1,35 @@
 ﻿using AllOverIt.Extensions;
-using AllOverIt.IO;
 using Microsoft.Build.Construction;
+using Microsoft.Build.Evaluation;
+using SlnDependencyDiagramGenerator.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace SlnDependencyDiagramGenerator.Parser;
 
 /// <summary>Parses solution projects and resolves project, framework, and package dependencies.</summary>
-internal sealed class SolutionParser
+internal sealed partial class SolutionParser
 {
+    [GeneratedRegex(@"^[a-z]+(\d+\.\d+)", RegexOptions.IgnoreCase, "en-AU")]
+    private static partial Regex TargetFrameworkRegex();
+
     private readonly Dictionary<string, SolutionFile> _solutionFiles = [];
     private readonly ProjectAssetReader _assetReader = new();
 
-    // Returns the distinct target frameworks present across all matching projects,
-    // discovered from each project's project.assets.json (not from config).
-    /// <summary>Discovers target frameworks from matching projects in the solution.</summary>
+    /// <summary>
+    /// Discovers the set of target frameworks that should be processed for the selected projects.
+    /// </summary>
     /// <param name="solutionFilePath">The solution path.</param>
     /// <param name="regexToInclude">Regex patterns used to include projects.</param>
     /// <param name="regexToExclude">Regex patterns used to exclude projects.</param>
-    /// <returns>The ordered list of discovered target frameworks.</returns>
+    /// <returns>
+    /// A distinct, ordered list of base target frameworks (for example, <c>net10.0</c>),
+    /// discovered from each matching project's assets file.
+    /// </returns>
     public string[] DiscoverTargetFrameworks(string solutionFilePath, string[] regexToInclude, string[] regexToExclude)
     {
         solutionFilePath = Path.GetFullPath(solutionFilePath);
@@ -35,20 +43,27 @@ internal sealed class SolutionParser
             .ToArray();
     }
 
-    // Returns the projects that target the given framework, with their resolved packages
-    // read from project.assets.json and project/framework references read from raw XML.
-    /// <summary>Parses matching projects for a specific target framework.</summary>
+    /// <summary>
+    /// Parses all matching projects that include the requested target framework and resolves
+    /// their project, framework, and package dependencies.
+    /// </summary>
     /// <param name="solutionFilePath">The solution path.</param>
     /// <param name="regexToInclude">Regex patterns used to include projects.</param>
     /// <param name="regexToExclude">Regex patterns used to exclude projects.</param>
     /// <param name="excludePackages">Package IDs to exclude from package resolution.</param>
     /// <param name="targetFramework">The target framework to parse.</param>
     /// <param name="maxTransitiveDepth">The maximum transitive package depth to include.</param>
-    /// <returns>The parsed solution projects for the target framework.</returns>
+    /// <returns>
+    /// The parsed project models for the requested target framework.
+    /// </returns>
     public SolutionProject[] Parse(string solutionFilePath, string[] regexToInclude, string[] regexToExclude,
         string[] excludePackages, string targetFramework, int maxTransitiveDepth)
     {
         solutionFilePath = Path.GetFullPath(solutionFilePath);
+
+        // SDK-style project evaluation requires a registered MSBuild instance so SDK resolvers
+        // can locate Microsoft.NET.Sdk and related toolset components.
+        MsBuildSdkResolver.EnsureInitialized();
 
         var excludeSet = new HashSet<string>(excludePackages, StringComparer.OrdinalIgnoreCase);
 
@@ -57,22 +72,32 @@ internal sealed class SolutionParser
             .Select(project => BuildSolutionProject(project, targetFramework, maxTransitiveDepth, excludeSet))];
     }
 
-    /// <summary>Converts a target framework moniker into a sortable version number.</summary>
+    /// <summary>
+    /// Converts a target framework moniker into a sortable <see cref="Version"/>.
+    /// </summary>
     /// <param name="tfm">The target framework moniker.</param>
-    /// <returns>The parsed version, or 0.0 when no version segment is found.</returns>
+    /// <returns>
+    /// The parsed framework version, or <c>0.0</c> when no version segment is present.
+    /// </returns>
     private static Version TfmSortVersion(string tfm)
     {
         // e.g. "net10.0-windows" -> "10.0", "netstandard2.1" -> "2.1"
-        var match = Regex.Match(tfm, @"^[a-z]+(\d+\.\d+)", RegexOptions.IgnoreCase);
+        var match = TargetFrameworkRegex().Match(tfm);
 
-        return match.Success ? Version.Parse(match.Groups[1].Value) : new Version(0, 0);
+        return match.Success
+            ? Version.Parse(match.Groups[1].Value)
+            : new Version(0, 0);
     }
 
-    /// <summary>Filters solution projects using include/exclude regex rules and orders by project name.</summary>
+    /// <summary>
+    /// Loads and filters solution projects using include/exclude regex rules, then orders by project name.
+    /// </summary>
     /// <param name="solutionFilePath">The solution path.</param>
     /// <param name="regexToInclude">Regex patterns used to include projects.</param>
     /// <param name="regexToExclude">Regex patterns used to exclude projects.</param>
-    /// <returns>The filtered and ordered project list.</returns>
+    /// <returns>
+    /// The filtered and alphabetically ordered set of MSBuild-format projects.
+    /// </returns>
     private IEnumerable<ProjectInSolution> FilterAndOrderProjects(string solutionFilePath, string[] regexToInclude, string[] regexToExclude)
     {
         if (!_solutionFiles.TryGetValue(solutionFilePath, out var solutionFile))
@@ -102,24 +127,52 @@ internal sealed class SolutionParser
             .OrderBy(item => item.ProjectName);
     }
 
-    /// <summary>Builds a <see cref="SolutionProject"/> including project, framework, and package dependencies.</summary>
+    /// <summary>
+    /// Builds a <see cref="SolutionProject"/> by combining evaluated MSBuild references and
+    /// assets-resolved package dependencies for one target framework.
+    /// </summary>
     /// <param name="projectInSolution">The project entry from the solution file.</param>
     /// <param name="targetFramework">The target framework to resolve packages for.</param>
     /// <param name="maxTransitiveDepth">The maximum transitive package depth to include.</param>
     /// <param name="excludePackages">Package IDs to exclude from package resolution.</param>
-    /// <returns>The resolved solution project.</returns>
+    /// <returns>
+    /// The resolved project model used by downstream diagram and summary generation.
+    /// </returns>
     private SolutionProject BuildSolutionProject(ProjectInSolution projectInSolution, string targetFramework,
         int maxTransitiveDepth, HashSet<string> excludePackages)
     {
         var projectPath = projectInSolution.AbsolutePath;
-        var projectFolder = Path.GetDirectoryName(projectPath)!;
 
-        // Project and framework references are read from the raw project XML.
-        // These items (<ProjectReference>, <FrameworkReference>) are defined directly
-        // in the project file and do not require MSBuild import-chain evaluation.
-        var projectRootElement = ProjectRootElement.Open(projectPath);
-        var projectReferences = GetProjectReferences(projectFolder, projectRootElement.ItemGroups);
-        var frameworkReferences = GetFrameworkReferences(projectRootElement.ItemGroups);
+        // Evaluate the project for the current target framework so imported/conditioned items
+        // from Directory.Build.props/targets are included in ProjectReference and FrameworkReference.
+        using var projectCollection = new ProjectCollection(new Dictionary<string, string>
+        {
+            ["TargetFramework"] = targetFramework
+        });
+
+        Project evaluatedProject;
+
+        try
+        {
+            evaluatedProject = projectCollection.LoadProject(projectPath);
+        }
+        catch (Exception exception)
+        {
+            throw CreateMsBuildEvaluationException(projectPath, targetFramework, exception);
+        }
+
+        ProjectReference[] projectReferences;
+        FrameworkReference[] frameworkReferences;
+
+        try
+        {
+            projectReferences = GetProjectReferences(evaluatedProject);
+            frameworkReferences = GetFrameworkReferences(evaluatedProject);
+        }
+        catch (Exception exception)
+        {
+            throw CreateMsBuildEvaluationException(projectPath, targetFramework, exception);
+        }
 
         // Package references are read from the assets file — the authoritative post-restore
         // source that correctly reflects CPM, Directory.Build.props, and NuGet conflict resolution.
@@ -128,52 +181,76 @@ internal sealed class SolutionParser
         // All frameworks the project targets (used for badge display in the summary report).
         var allTargetFrameworks = _assetReader.GetTargetFrameworks(projectPath);
 
-        var dependencies = new ConditionalReferences
-        {
-            Condition = string.Empty,
-            ProjectReferences = projectReferences,
-            FrameworkReferences = frameworkReferences,
-            PackageReferences = packageReferences
-        };
-
         return new SolutionProject
         {
             Name = projectInSolution.ProjectName,
             Path = projectPath,
             TargetFrameworks = allTargetFrameworks,
-            Dependencies = [dependencies]
+            ProjectReferences = projectReferences,
+            FrameworkReferences = frameworkReferences,
+            PackageReferences = packageReferences
         };
     }
 
-    /// <summary>Extracts project references from raw project XML item groups.</summary>
-    /// <param name="projectFolder">The base project folder used to resolve relative paths.</param>
-    /// <param name="itemGroups">The project XML item groups.</param>
-    /// <returns>The resolved project references.</returns>
-    private static List<ProjectReference> GetProjectReferences(string projectFolder, IEnumerable<ProjectItemGroupElement> itemGroups)
+    /// <summary>
+    /// Extracts <c>ProjectReference</c> items from an evaluated project and normalizes them to absolute paths.
+    /// </summary>
+    /// <param name="project">The evaluated project for the active target framework.</param>
+    /// <returns>
+    /// The resolved project references for the active target framework.
+    /// </returns>
+    private static ProjectReference[] GetProjectReferences(Project project)
     {
-        return itemGroups
-            .SelectMany(group => group.Items)
+        return [.. project.Items
             .Where(item => item.ItemType.Equals("ProjectReference", StringComparison.OrdinalIgnoreCase))
-            .SelectToList(item =>
+            .Select(item =>
             {
-                var projectPath = FileUtils.GetAbsolutePath(projectFolder, item.Include);
+                var projectPath = item.GetMetadataValue("FullPath");
 
                 return new ProjectReference
                 {
-                    Path = projectPath
+                    Path = Path.GetFullPath(projectPath)
                 };
-            });
+            })];
     }
 
-    /// <summary>Extracts framework references from raw project XML item groups.</summary>
-    /// <param name="itemGroups">The project XML item groups.</param>
-    /// <returns>The framework references.</returns>
-    private static IReadOnlyCollection<FrameworkReference> GetFrameworkReferences(IEnumerable<ProjectItemGroupElement> itemGroups)
+    /// <summary>
+    /// Extracts <c>FrameworkReference</c> items from an evaluated project.
+    /// </summary>
+    /// <param name="project">The evaluated project for the active target framework.</param>
+    /// <returns>
+    /// The framework references for the active target framework.
+    /// </returns>
+    private static FrameworkReference[] GetFrameworkReferences(Project project)
     {
-        return itemGroups
-            .SelectMany(group => group.Items)
+        return [.. project.Items
             .Where(item => item.ItemType.Equals("FrameworkReference", StringComparison.OrdinalIgnoreCase))
-            .Select(item => new FrameworkReference { Name = item.Include })
-            .AsReadOnlyCollection();
+            .Select(item => new FrameworkReference { Name = item.EvaluatedInclude })];
+    }
+
+    /// <summary>
+    /// Creates a diagnostic-rich parser exception for MSBuild evaluation failures.
+    /// </summary>
+    /// <param name="projectPath">The project path being evaluated when the failure occurred.</param>
+    /// <param name="targetFramework">The target framework being evaluated when the failure occurred.</param>
+    /// <param name="exception">The underlying exception thrown by MSBuild evaluation or item processing.</param>
+    /// <returns>
+    /// A <see cref="DependencyGeneratorException"/> that includes project context, target framework,
+    /// resolver diagnostics, and the full underlying exception details.
+    /// </returns>
+    private static DependencyGeneratorException CreateMsBuildEvaluationException(string projectPath, string targetFramework, Exception exception)
+    {
+        var builder = new StringBuilder();
+
+        builder.AppendLine("Failed while evaluating an SDK-style project with MSBuild.");
+        builder.AppendLine($"Project path: {projectPath}");
+        builder.AppendLine($"Target framework: {targetFramework}");
+        builder.AppendLine();
+        builder.AppendLine("MSBuild diagnostic context:");
+        builder.AppendLine(MsBuildSdkResolver.GetDiagnostics());
+        builder.AppendLine("Underlying exception:");
+        builder.AppendLine(exception.ToString());
+
+        return new DependencyGeneratorException(builder.ToString(), exception);
     }
 }

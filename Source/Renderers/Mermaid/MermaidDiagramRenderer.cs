@@ -1,39 +1,62 @@
-﻿using SlnDependencyDiagramGenerator.Config;
+﻿using AllOverIt.Logging;
+using AllOverIt.Process;
+using AllOverIt.Process.Extensions;
+using SlnDependencyDiagramGenerator.Config;
+using SlnDependencyDiagramGenerator.Generator;
+using SlnDependencyDiagramGenerator.Generator.IntermediateRepresentation;
 using System;
+using System.Diagnostics;
+using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 
-namespace SlnDependencyDiagramGenerator.Generator;
+namespace SlnDependencyDiagramGenerator.Renderers.Mermaid;
 
 /// <summary>Renders a <see cref="DependencyGraphModel"/> as a Mermaid flowchart (.mmd) file.</summary>
 internal sealed class MermaidDiagramRenderer : DiagramRendererBase
 {
+    private const string MermaidCliToolName = "mmdc";
+
     /// <inheritdoc />
     public override string FileExtension => "mmd";
 
     /// <summary>Initializes a new Mermaid diagram renderer.</summary>
     /// <param name="options">The diagram options.</param>
-    public MermaidDiagramRenderer(GeneratorDiagramOptions options)
-        : base(options)
+    /// <param name="logger">A logger for progress and diagnostics.</param>
+    public MermaidDiagramRenderer(GeneratorDiagramOptions options, IColorConsoleLogger logger)
+        : base(options, logger)
     {
+    }
+
+    /// <inheritdoc />
+    public override async Task ValidateRequiredToolsAsync(bool imageExportEnabled)
+    {
+        if (!imageExportEnabled)
+        {
+            return;
+        }
+
+        await EnsureToolAvailableAsync(MermaidCliToolName,
+            "'mmdc' was not found on PATH. See: https://github.com/mermaid-js/mermaid-cli#installation").ConfigureAwait(false);
     }
 
     /// <inheritdoc />
     public override string Render(DependencyGraphModel model)
     {
         // Build once from the shared traversal so Mermaid and D2 stay semantically aligned.
-        var ir = BuildIntermediateRepresentation(model);
+        var diagramRepresentation = BuildIntermediateRepresentation(model);
         var sb = new StringBuilder();
         var groupingEnabled = Options.Grouping.Enabled;
         var projectGroupAlias = MermaidSafeAlias(Options.GroupNameAlias);
 
-        sb.AppendLine($"flowchart {MermaidDirection()}");
+        sb.AppendLine($"flowchart {GetDirection()}");
 
         if (groupingEnabled)
         {
             sb.AppendLine($"  subgraph {projectGroupAlias}[\"{Options.GroupName}\"]");
-            sb.AppendLine($"    direction {MermaidDirection()}");
+            sb.AppendLine($"    direction {GetDirection()}");
 
-            foreach (var node in ir.Nodes)
+            foreach (var node in diagramRepresentation.Nodes)
             {
                 if (!IsProjectNode(node.Alias))
                 {
@@ -47,9 +70,9 @@ internal sealed class MermaidDiagramRenderer : DiagramRendererBase
             sb.AppendLine("  end");
         }
 
-        foreach (var node in ir.Nodes)
+        foreach (var node in diagramRepresentation.Nodes)
         {
-            var nodeGroupAlias = ir.GetNodeGroupAlias(node.Alias);
+            var nodeGroupAlias = diagramRepresentation.GetNodeGroupAlias(node.Alias);
             var shouldRenderNode = nodeGroupAlias is null && (!groupingEnabled || !IsProjectNode(node.Alias));
 
             if (shouldRenderNode)
@@ -60,14 +83,14 @@ internal sealed class MermaidDiagramRenderer : DiagramRendererBase
             }
         }
 
-        foreach (var group in ir.Groups)
+        foreach (var group in diagramRepresentation.Groups)
         {
             var safeGroupAlias = MermaidSafeAlias(group.Alias);
             sb.AppendLine($"  subgraph {safeGroupAlias}[\"{group.Label}\"]");
 
             foreach (var groupNodeAlias in group.NodeAliases)
             {
-                var groupNode = FindNode(ir, groupNodeAlias);
+                var groupNode = FindNode(diagramRepresentation, groupNodeAlias);
                 var safeNodeAlias = MermaidSafeAlias(groupNode.Alias);
                 var groupNodeLabel = GetMermaidLabel(groupNode);
 
@@ -77,7 +100,7 @@ internal sealed class MermaidDiagramRenderer : DiagramRendererBase
             sb.AppendLine("    end");
         }
 
-        foreach (var edge in ir.Edges)
+        foreach (var edge in diagramRepresentation.Edges)
         {
             var fromAlias = MermaidSafeAlias(edge.FromAlias);
             var toAlias = MermaidSafeAlias(edge.ToAlias);
@@ -91,7 +114,7 @@ internal sealed class MermaidDiagramRenderer : DiagramRendererBase
 
             sb.AppendLine($"  style {projectGroupAlias} fill:{groupFill},stroke:{groupStroke},stroke-width:1px,opacity:{groupOpacity}");
 
-            foreach (var group in ir.Groups)
+            foreach (var group in diagramRepresentation.Groups)
             {
                 var groupAlias = MermaidSafeAlias(group.Alias);
 
@@ -99,7 +122,7 @@ internal sealed class MermaidDiagramRenderer : DiagramRendererBase
             }
         }
 
-        foreach (var style in ir.Styles)
+        foreach (var style in diagramRepresentation.Styles)
         {
             var (fill, opacity) = GetStyleValues(style.Role);
             var styleAlias = MermaidSafeAlias(style.Alias);
@@ -110,9 +133,53 @@ internal sealed class MermaidDiagramRenderer : DiagramRendererBase
         return sb.ToString();
     }
 
-    private static DiagramIrNode FindNode(DiagramIntermediateRepresentation ir, string alias)
+    /// <inheritdoc />
+    protected override string GetDirection()
     {
-        foreach (var node in ir.Nodes)
+        return Options.Direction.ToString();
+    }
+
+    /// <inheritdoc />
+    protected override async Task ExportImageFileAsync(string diagramFileName, DiagramImageFormat format)
+    {
+        var imageFileName = Path.ChangeExtension(diagramFileName, format.ToString().ToLowerInvariant());
+
+        Logger
+            .Write(ConsoleColor.White, "Creating image: ")
+            .Write(ConsoleColor.Yellow, Path.GetFileName(imageFileName))
+            .Write(ConsoleColor.White, "...");
+
+        var stopwatch = Stopwatch.StartNew();
+
+        // On Windows, npm installs mmdc as mmdc.cmd (not mmdc.exe). CreateProcess does not perform
+        // PATHEXT expansion, so we must go through cmd.exe /c to let the shell resolve the .cmd extension.
+        var (mmdcExe, mmdcArgs) = OperatingSystem.IsWindows()
+            ? ("cmd.exe", new[] { "/c", MermaidCliToolName, "-i", diagramFileName, "-o", imageFileName, "--scale", "4" })
+            : (MermaidCliToolName, ["-i", diagramFileName, "-o", imageFileName, "--scale", "4"]);
+
+        var mmdProcess = ProcessBuilder
+            .For(mmdcExe)
+            .WithNoWindow()
+            .WithArguments(mmdcArgs)
+            .WithErrorOutputHandler((sender, eventArgs) =>
+            {
+                if (eventArgs.Data is string message)
+                {
+                    Logger.WriteLine(ConsoleColor.Red, $"  {message}");
+                }
+            })
+            .BuildProcessExecutor();
+
+        _ = await mmdProcess.ExecuteAsync().ConfigureAwait(false);
+
+        stopwatch.Stop();
+
+        Logger.WriteLine(ConsoleColor.Green, $"Done ({FormatElapsed(stopwatch.Elapsed)})");
+    }
+
+    private static DiagramIrNode FindNode(DiagramIntermediateRepresentation diagramRepresentation, string alias)
+    {
+        foreach (var node in diagramRepresentation.Nodes)
         {
             if (node.Alias == alias)
             {
@@ -153,6 +220,6 @@ internal sealed class MermaidDiagramRenderer : DiagramRendererBase
         return (groupFill, groupFill, groupOpacity);
     }
 
-    /// <summary>Mermaid node IDs may not contain dots — replace with underscores.</summary>
+    /// <summary>Mermaid node IDs may not contain dots - replace with underscores.</summary>
     private static string MermaidSafeAlias(string alias) => alias.Replace(".", "_");
 }

@@ -1,13 +1,18 @@
+﻿/*
+ * Node: a diagram element such as a project, package, or framework reference.
+ * Edge: a directed relationship from one node to another, such as a dependency or reference.
+ */
+
 using System;
 using System.Collections.Generic;
 
-namespace SlnDependencyDiagramGenerator.Generator;
+namespace SlnDependencyDiagramGenerator.Generator.IntermediateRepresentation;
 
 /// <summary>
-/// A renderer-agnostic intermediate representation (IR) for dependency diagrams.
+/// A renderer-agnostic intermediate representation for dependency diagrams.
 /// </summary>
 /// <remarks>
-/// The goal of this IR is to separate graph semantics from renderer syntax.
+/// The goal of this intermediate representation is to separate graph semantics from renderer syntax.
 /// D2, Mermaid, and future renderers can consume the same structure and only differ
 /// in how they serialize nodes/edges/styles/groups to their specific text formats.
 /// </remarks>
@@ -64,6 +69,7 @@ internal sealed class DiagramIntermediateRepresentation
         }
 
         var node = new DiagramIrNode(alias, label, version);
+
         _nodesByAlias[alias] = node;
         _nodeOrder.Add(node);
     }
@@ -111,6 +117,7 @@ internal sealed class DiagramIntermediateRepresentation
         }
 
         var group = new DiagramIrGroup(groupAlias, groupLabel);
+
         _groupsByAlias[groupAlias] = group;
         _groupOrder.Add(group);
     }
@@ -139,48 +146,4 @@ internal sealed class DiagramIntermediateRepresentation
             ? groupAlias
             : null;
     }
-}
-
-/// <summary>Represents a single graph node.</summary>
-internal sealed record DiagramIrNode(string Alias, string Label, string Version);
-
-/// <summary>Represents a directional graph edge.</summary>
-internal sealed record DiagramIrEdge(string FromAlias, string ToAlias);
-
-/// <summary>Represents a style role attached to a node alias.</summary>
-internal sealed record DiagramIrStyle(string Alias, DiagramIrStyleRole Role);
-
-/// <summary>Represents a logical grouping container (used for multi-version package sets).</summary>
-internal sealed class DiagramIrGroup
-{
-    /// <summary>Initializes a new group container.</summary>
-    public DiagramIrGroup(string alias, string label)
-    {
-        Alias = alias;
-        Label = label;
-    }
-
-    /// <summary>The group alias.</summary>
-    public string Alias { get; }
-
-    /// <summary>The group display label.</summary>
-    public string Label { get; }
-
-    /// <summary>The node aliases that belong to this group.</summary>
-    public List<string> NodeAliases { get; } = [];
-}
-
-/// <summary>
-/// Logical style roles independent of renderer syntax.
-/// </summary>
-internal enum DiagramIrStyleRole
-{
-    /// <summary>Framework reference style.</summary>
-    Framework,
-
-    /// <summary>Explicit package reference style.</summary>
-    PackageExplicit,
-
-    /// <summary>Transitive package reference style.</summary>
-    PackageTransitive
 }

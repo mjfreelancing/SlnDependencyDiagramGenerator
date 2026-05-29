@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace SlnDependencyDiagramGenerator.Parser;
+﻿namespace SlnDependencyDiagramGenerator.Parser;
 
 /// <summary>Represents an explicit or transitive package dependency.</summary>
 internal sealed class PackageReference
@@ -18,7 +16,7 @@ internal sealed class PackageReference
     public string Version { get; init; }
 
     /// <summary>The transitive package dependencies.</summary>
-    public IReadOnlyCollection<PackageReference> TransitiveReferences { get; init; }
+    public PackageReference[] TransitiveReferences { get; init; }
 
     /// <summary>Initializes a new explicit package reference.</summary>
     public PackageReference()

@@ -18,13 +18,13 @@ A targeted rewrite is recommended. It retains all current public API surface and
 
 ### 2.1 How the Current System Works
 
-|Component|Location|Responsibility|
-|----------------------------|------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-|`SolutionParser`|`Source/Parser/SolutionParser.cs`|Reads `.sln`, iterates projects via `Microsoft.Build.Construction`, parses `ItemGroup` elements from raw `.csproj` XML|
-|`NugetPackageResolver`|`Source/Parser/NugetPackageResolver.cs`|For each explicit `PackageReference`, fetches dependency info from a configured NuGet feed using `DependencyInfoResource.ResolvePackage()`, then recurses to a configured depth|
-|`DependencyGenerator`|`Source/Generator/DependencyGenerator.cs`|Orchestrates parsing, then generates D2 content and invokes the `d2` CLI for image output|
-|`SummaryDependencyGenerator`|`Source/Generator/SummaryDependencyGenerator.cs`|Produces the `Dependency Summary.md` Markdown report|
-|Configuration|`Source/Config/`|Strongly-typed POCO configuration loaded from `appsettings.json`|
+| Component                    | Location                                         | Responsibility                                                                                                                                                                                                                    |
+| ---------------------------- | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SolutionParser`             | `Source/Parser/SolutionParser.cs`                | Reads `.sln`, iterates projects via `Microsoft.Build.Construction`, and extracts `ProjectReference`, `PackageReference`, `FrameworkReference`, and target-framework properties from project XML (without full MSBuild evaluation) |
+| `NugetPackageResolver`       | `Source/Parser/NugetPackageResolver.cs`          | For each explicit `PackageReference`, fetches dependency info from a configured NuGet feed using `DependencyInfoResource.ResolvePackage()`, then recurses to a configured depth                                                   |
+| `DependencyGenerator`        | `Source/Generator/DependencyGenerator.cs`        | Orchestrates parsing, then generates D2 content and invokes the `d2` CLI for image output                                                                                                                                         |
+| `SummaryDependencyGenerator` | `Source/Generator/SummaryDependencyGenerator.cs` | Produces the `Dependency Summary.md` Markdown report                                                                                                                                                                              |
+| Configuration                | `Source/Config/`                                 | Strongly-typed POCO configuration loaded from `appsettings.json`                                                                                                                                                                  |
 
 ### 2.2 Known Deficiencies
 
@@ -87,74 +87,74 @@ Only D2 and rendered D2 images (PNG/SVG/PDF) are produced. Mermaid is a widely s
 
 ### FR-1: Solution and Project Parsing
 
-|ID|Requirement|
-|------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-|FR-1.1|Parse the `.sln` file to enumerate projects, using `Microsoft.Build.Construction.SolutionFile` as today.|
-|FR-1.2|For each project, evaluate the fully-resolved MSBuild model (not raw XML) so that properties inherited from `Directory.Build.props`, `Directory.Build.targets`, and other import chains are visible. Use `Microsoft.Build.Evaluation.ProjectCollection` for this.|
-|FR-1.3|Enumerate the target frameworks to process from the `targets` keys in each project's `project.assets.json`. These are the frameworks that were actually restored and are the authoritative source. MSBuild-evaluated `TargetFramework`/`TargetFrameworks` properties are not used for this purpose.|
-|FR-1.4|Detect whether Central Package Management is active (`ManagePackageVersionsCentrally == true`) either from the evaluated model or by locating `Directory.Packages.props` in the directory hierarchy.|
+| ID     | Requirement                                                                                                                                                                                                                                                                                         |
+| ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FR-1.1 | Parse the `.sln` file to enumerate projects, using `Microsoft.Build.Construction.SolutionFile` as today.                                                                                                                                                                                            |
+| FR-1.2 | For each project, evaluate the fully-resolved MSBuild model (not raw XML) so that properties inherited from `Directory.Build.props`, `Directory.Build.targets`, and other import chains are visible. Use `Microsoft.Build.Evaluation.ProjectCollection` for this.                                   |
+| FR-1.3 | Enumerate the target frameworks to process from the `targets` keys in each project's `project.assets.json`. These are the frameworks that were actually restored and are the authoritative source. MSBuild-evaluated `TargetFramework`/`TargetFrameworks` properties are not used for this purpose. |
+| FR-1.4 | Detect whether Central Package Management is active (`ManagePackageVersionsCentrally == true`) either from the evaluated model or by locating `Directory.Packages.props` in the directory hierarchy.                                                                                                |
 
 ### FR-2: Package Version Resolution
 
-|ID|Requirement|
-|------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-|FR-2.1|**Sole strategy — `project.assets.json` reader.** Parse `obj/project.assets.json` using `NuGet.ProjectModel.LockFileUtilities.GetLockFile()`. Read the `targets` section for the relevant target framework to obtain the authoritative, fully-resolved package closure. This source embodies NuGet's "nearest wins" conflict resolution, CPM version pins, and `Directory.Build.props` property evaluation — all handled by the prior `dotnet restore` run.|
-|FR-2.2|If `project.assets.json` is absent or its format version is less than 3, abort with a clear error message instructing the user to run `dotnet restore` first. No fallback to remote feeds.|
-|FR-2.3|Clearly distinguish **explicit** references (present in `project.frameworks[tf].dependencies` in the assets file) from **transitive** references (present in `targets[tf]` but not in the explicit set).|
-|FR-2.4|When a package version differs from what one or more transitive paths requested, record the conflict for display in the diagram and summary.|
-|FR-2.5|`Directory.Build.props` and `Directory.Packages.props` require no special handling — their effects are already baked into `project.assets.json` by the restore. Document this clearly in code comments.|
+| ID     | Requirement                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FR-2.1 | **Sole strategy — `project.assets.json` reader.** Parse `obj/project.assets.json` using `NuGet.ProjectModel.LockFileUtilities.GetLockFile()`. Read the `targets` section for the relevant target framework to obtain the authoritative, fully-resolved package closure. This source embodies NuGet's "nearest wins" conflict resolution, CPM version pins, and `Directory.Build.props` property evaluation — all handled by the prior `dotnet restore` run. |
+| FR-2.2 | If `project.assets.json` is absent or its format version is less than 3, abort with a clear error message instructing the user to run `dotnet restore` first. No fallback to remote feeds.                                                                                                                                                                                                                                                                  |
+| FR-2.3 | Clearly distinguish **explicit** references (present in `project.frameworks[tf].dependencies` in the assets file) from **transitive** references (present in `targets[tf]` but not in the explicit set).                                                                                                                                                                                                                                                    |
+| FR-2.4 | When a package version differs from what one or more transitive paths requested, record the conflict for display in the diagram and summary.                                                                                                                                                                                                                                                                                                                |
+| FR-2.5 | `Directory.Build.props` and `Directory.Packages.props` require no special handling — their effects are already baked into `project.assets.json` by the restore. Document this clearly in code comments.                                                                                                                                                                                                                                                     |
 
 ### FR-3: Diagram Output — D2 (existing behaviour retained)
 
-|ID|Requirement|
-|------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-|FR-3.1|Retain all D2 generation logic including direction, fill style, group name/alias, and multi-version package grouping.|
-|FR-3.2|Retain support for rendering D2 files to PNG, SVG, and PDF via the `d2` CLI.|
-|FR-3.3|When a package has multiple versions in the solution (i.e., different projects resolved different winning versions), annotate the diagram node to make this visible (current behaviour).|
+| ID     | Requirement                                                                                                                                                                              |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FR-3.1 | Retain all D2 generation logic including direction, fill style, group name/alias, and multi-version package grouping.                                                                    |
+| FR-3.2 | Retain support for rendering D2 files to PNG, SVG, and PDF via the `d2` CLI.                                                                                                             |
+| FR-3.3 | When a package has multiple versions in the solution (i.e., different projects resolved different winning versions), annotate the diagram node to make this visible (current behaviour). |
 
 ### FR-4: Diagram Output — Mermaid (new)
 
-|ID|Requirement|
-|------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-|FR-4.1|Add Mermaid diagram generation to `GeneratorDiagramOptions` using a `formats` collection (array) with values: `D2` and/or `Mermaid` (`D2` default). The legacy single `format` field and `Both` enum value are removed.|
-|FR-4.2|When `formats` includes `Mermaid`, generate a `.mmd` file per project scope (individual / all) using Mermaid `flowchart` syntax, mirroring the same relationships and styling as the D2 output.|
-|FR-4.3|Apply node styling to framework, explicit package, and transitive package nodes using Mermaid's `style` directive, mapping from the existing `FrameworkStyle`, `PackageStyle`, and `TransitiveStyle` fill/opacity configuration.|
-|FR-4.4|Mermaid `.mmd` file generation must not require any external binary or network call.|
-|FR-4.5|The existing `imageFormats` config option is shared across both D2 and Mermaid output. Both renderers support `png`, `svg`, and `pdf` (D2 via the `d2` CLI; Mermaid via [mermaid-cli](https://github.com/mermaid-js/mermaid-cli), `mmdc`). When Mermaid image output is requested, `mmdc` must be available on `PATH` — it is a prerequisite, not optional.|
-|FR-4.6|Mermaid labels with multiple lines must render correctly using `<br>` line breaks (not escaped newlines), ensuring version text appears on separate lines in Mermaid-compatible renderers.|
-|FR-4.7|Mermaid subgraphs that contain all emitted nodes must explicitly declare `direction` inside the `subgraph` block to preserve configured orientation (`LR` / `RL` / `TB` / `BT`).|
-|FR-4.8|When exporting images for both D2 and Mermaid, generated files must be placed into renderer-specific subfolders under the target framework output folder (`d2/` and `mmd/`) while keeping the original base diagram name, to make the preferred format easier to find and avoid collisions.|
-|FR-4.9|On Windows, Mermaid image export must invoke `mmdc` via `cmd.exe /c` to correctly resolve `.cmd` executables on `PATH` (`PATHEXT` behavior).|
+| ID     | Requirement                                                                                                                                                                                                                                                                                                                                                 |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FR-4.1 | Add Mermaid diagram generation to `GeneratorDiagramOptions` using a `formats` collection (array) with values: `D2` and/or `Mermaid` (`D2` default). The legacy single `format` field and `Both` enum value are removed.                                                                                                                                     |
+| FR-4.2 | When `formats` includes `Mermaid`, generate a `.mmd` file per project scope (individual / all) using Mermaid `flowchart` syntax, mirroring the same relationships and styling as the D2 output.                                                                                                                                                             |
+| FR-4.3 | Apply node styling to framework, explicit package, and transitive package nodes using Mermaid's `style` directive, mapping from the existing `FrameworkStyle`, `PackageStyle`, and `TransitiveStyle` fill/opacity configuration.                                                                                                                            |
+| FR-4.4 | Mermaid `.mmd` file generation must not require any external binary or network call.                                                                                                                                                                                                                                                                        |
+| FR-4.5 | The existing `imageFormats` config option is shared across both D2 and Mermaid output. Both renderers support `png`, `svg`, and `pdf` (D2 via the `d2` CLI; Mermaid via [mermaid-cli](https://github.com/mermaid-js/mermaid-cli), `mmdc`). When Mermaid image output is requested, `mmdc` must be available on `PATH` — it is a prerequisite, not optional. |
+| FR-4.6 | Mermaid labels with multiple lines must render correctly using `<br>` line breaks (not escaped newlines), ensuring version text appears on separate lines in Mermaid-compatible renderers.                                                                                                                                                                  |
+| FR-4.7 | Mermaid subgraphs that contain all emitted nodes must explicitly declare `direction` inside the `subgraph` block to preserve configured orientation (`LR` / `RL` / `TB` / `BT`).                                                                                                                                                                            |
+| FR-4.8 | When exporting images for both D2 and Mermaid, generated files must be placed into renderer-specific subfolders under the target framework output folder (`d2/` and `mmd/`) while keeping the original base diagram name, to make the preferred format easier to find and avoid collisions.                                                                 |
+| FR-4.9 | On Windows, Mermaid image export must invoke `mmdc` via `cmd.exe /c` to correctly resolve `.cmd` executables on `PATH` (`PATHEXT` behavior).                                                                                                                                                                                                                |
 
 ### FR-5: Dependency Summary Report
 
-|ID|Requirement|
-|------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-|FR-5.1|Retain the existing `Dependency Summary.md` format.|
-|FR-5.2|When version conflicts are detected (same package, different winning versions across projects), add a **Version Conflicts** section to the summary listing the package, each project's resolved version, and the paths that requested a different version.|
-|FR-5.3|Add `.NET 10.0` badge support to `TargetFrameworkBadges`.|
+| ID     | Requirement                                                                                                                                                                                                                                                |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FR-5.1 | Retain the existing `Dependency Summary.md` format.                                                                                                                                                                                                        |
+| FR-5.2 | When version conflicts are detected (same package, different winning versions across projects), add a **Version Conflicts** section to the summary listing the package, each project's resolved version, and the paths that requested a different version. |
+| FR-5.3 | Add `.NET 10.0` badge support to `TargetFrameworkBadges`.                                                                                                                                                                                                  |
 
 ### FR-6: Configuration Schema
 
-|ID|Requirement|
-|------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-|FR-6.1|`packageFeeds` and `targetFrameworks` are both removed from `DependencyGeneratorConfig` and `appsettings.json` in v4. These are deliberate breaking changes: feed resolution is gone, and target frameworks are now auto-discovered from each project's assets file. Existing config files will need to remove both fields from the root `options` object.|
-|FR-6.2|Replace `diagram.format` (single value) with `diagram.formats` (array of values: `"d2"`, `"mermaid"`). At least one value must be defined; empty arrays are invalid.|
-|FR-6.3|Replace direction values `"left"`, `"right"`, `"up"`, `"down"` with standard flow notation `"LR"`, `"RL"`, `"TB"`, `"BT"`.|
-|FR-6.4|Add a new optional `packagesToExclude` string array under `projects`. Each entry is an exact package ID (case-insensitive). Any matching package is omitted from all diagrams and the summary report. Transitive dependencies reachable only through excluded packages are also omitted; those reachable via another non-excluded path are retained. Defaults to an empty array (no exclusions).|
+| ID     | Requirement                                                                                                                                                                                                                                                                                                                                                                                      |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| FR-6.1 | `packageFeeds` and `targetFrameworks` are both removed from `DependencyGeneratorConfig` and `appsettings.json` in v4. These are deliberate breaking changes: feed resolution is gone, and target frameworks are now auto-discovered from each project's assets file. Existing config files will need to remove both fields from the root `options` object.                                       |
+| FR-6.2 | Replace `diagram.format` (single value) with `diagram.formats` (array of values: `"d2"`, `"mermaid"`). At least one value must be defined; empty arrays are invalid.                                                                                                                                                                                                                             |
+| FR-6.3 | Replace direction values `"left"`, `"right"`, `"up"`, `"down"` with standard flow notation `"LR"`, `"RL"`, `"TB"`, `"BT"`.                                                                                                                                                                                                                                                                       |
+| FR-6.4 | Add a new optional `packagesToExclude` string array under `projects`. Each entry is an exact package ID (case-insensitive). Any matching package is omitted from all diagrams and the summary report. Transitive dependencies reachable only through excluded packages are also omitted; those reachable via another non-excluded path are retained. Defaults to an empty array (no exclusions). |
 
 ---
 
 ## 5. Non-Functional Requirements
 
-|ID|Requirement|
-|-----|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-|NFR-1|Target frameworks: `net8.0`, `net9.0`, `net10.0` (matching the current library).|
-|NFR-2|No new mandatory runtime dependencies beyond those already used. `NuGet.ProjectModel` (already a transitive dependency of `NuGet.Protocol`) must be added as an explicit dependency.|
-|NFR-3|All public API types remain in the same namespaces.|
-|NFR-4|Unit tests are required for the entire engine and are deferred to the final stage of the rewrite. The test project will be created by the author, who will specify the test framework and assertion libraries at that point. **When implementation of the engine is complete, prompt the author to create the test project before writing any tests.** Coverage must include: assets-file parsing, explicit vs. transitive classification, CPM project output, `Directory.Build.props` output, stale/missing file error path, and cross-project conflict detection.|
-|NFR-5|The tool must produce identical output to v3 for projects that have no `Directory.Build.props`, no CPM, and have `project.assets.json` available. **Success criteria:** (1) Run v4 against the existing Sample project and confirm its output matches the v3-generated output already committed to the repository (verified by no Git diff). (2) The author will create a second sample project that uses both `Directory.Build.props` and `Directory.Packages.props` (CPM); run v4 against it and commit its output as the baseline. Subsequent runs must produce no Git diff, confirming deterministic output for CPM/`Directory.Build.props` scenarios.|
-|NFR-6|Processing a 20-project solution should complete in under 30 seconds when using the `project.assets.json` primary strategy (no network I/O).|
+| ID    | Requirement                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| NFR-1 | Target frameworks: `net8.0`, `net9.0`, `net10.0` (matching the current library).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| NFR-2 | No new mandatory runtime dependencies beyond those already used. `NuGet.ProjectModel` (already a transitive dependency of `NuGet.Protocol`) must be added as an explicit dependency.                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| NFR-3 | All public API types remain in the same namespaces.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| NFR-4 | Unit tests are required for the entire engine and are deferred to the final stage of the rewrite. The test project will be created by the author, who will specify the test framework and assertion libraries at that point. **When implementation of the engine is complete, prompt the author to create the test project before writing any tests.** Coverage must include: assets-file parsing, explicit vs. transitive classification, CPM project output, `Directory.Build.props` output, stale/missing file error path, and cross-project conflict detection.                                                                                        |
+| NFR-5 | The tool must produce identical output to v3 for projects that have no `Directory.Build.props`, no CPM, and have `project.assets.json` available. **Success criteria:** (1) Run v4 against the existing Sample project and confirm its output matches the v3-generated output already committed to the repository (verified by no Git diff). (2) The author will create a second sample project that uses both `Directory.Build.props` and `Directory.Packages.props` (CPM); run v4 against it and commit its output as the baseline. Subsequent runs must produce no Git diff, confirming deterministic output for CPM/`Directory.Build.props` scenarios. |
+| NFR-6 | Processing a 20-project solution should complete in under 30 seconds when using the `project.assets.json` primary strategy (no network I/O).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 
 ---
 
@@ -199,11 +199,11 @@ To distinguish direct (explicit) from transitive references, cross-reference `lo
 
 ### 6.2 Conflict Reporting
 
-When multiple projects in a solution resolve the same package to _different_ winning versions, the tool should flag this. This is a cross-project comparison, distinct from NuGet's own within-project conflict resolution. The multi-project comparison logic currently exists in `DependencyGenerator.GetDeepOrderedDistinctPackageDependencies()` and should be retained; the improvement is that each project's winning version now comes from the assets file and is therefore authoritative.
+When multiple projects in a solution resolve the same package to _different_ winning versions, the tool should flag this. This is a cross-project comparison, distinct from NuGet's own within-project conflict resolution. The multi-project comparison logic in `DependencyGenerator.GetDeepOrderedDistinctPackageDependencies()` is retained, and each project's winning version is sourced from the assets file as the authoritative input.
 
 ### 6.3 `Directory.Build.props` and MSBuild Evaluation
 
-MSBuild evaluation is used only to enumerate projects and read `TargetFramework`/`TargetFrameworks` — information needed to select the correct target from the assets file. Replace raw `ProjectRootElement.Open()` with a full MSBuild evaluation via `ProjectCollection`:
+MSBuild evaluation is used to read evaluated `ProjectReference` and `FrameworkReference` items for the active target framework (including import-chain contributions from `Directory.Build.props` / `Directory.Build.targets`). Target frameworks to process are discovered from `project.assets.json`, not from MSBuild properties. Replace raw `ProjectRootElement.Open()` with a full MSBuild evaluation via `ProjectCollection`:
 
 ```csharp
 using var projectCollection = new ProjectCollection();
@@ -215,13 +215,13 @@ var project = projectCollection.LoadProject(
     },
     toolsVersion: null);
 
-var targetFramework = project.GetPropertyValue("TargetFramework");
-var targetFrameworks = project.GetPropertyValue("TargetFrameworks");
+var projectReferences = project.GetItems("ProjectReference");
+var frameworkReferences = project.GetItems("FrameworkReference");
 ```
 
 This automatically traverses `Directory.Build.props` imports through the standard MSBuild import chain without any custom file-search logic. `Directory.Packages.props` similarly requires no special handling here — its effect is already baked into the assets file.
 
-> **Note on SDK resolution.** `Microsoft.Build.Evaluation.ProjectCollection` on .NET requires that `MSBuildLocator` (from `Microsoft.Build.Locator`) or an explicit SDK path be registered before loading projects. This is already a concern in the current codebase and the rewrite must ensure the SDK path is correctly located before any `ProjectCollection` use.
+> **Note on SDK resolution.** `Microsoft.Build.Evaluation.ProjectCollection` on .NET requires that `MSBuildLocator` (from `Microsoft.Build.Locator`) or an explicit SDK path be registered before loading projects. Resolver bootstrap must occur before parser construction, and registration must remain idempotent when re-checked during parsing.
 
 ### 6.4 Central Package Management (`Directory.Packages.props`)
 
@@ -247,16 +247,16 @@ flowchart LR
 
 Key mapping from D2 to Mermaid:
 
-|D2 concept|Mermaid equivalent|
-|------------------|-------------------------------------------------------------|
-|`direction: left`|`flowchart LR`|
-|`direction: right`|`flowchart RL`|
-|`direction: up`|`flowchart BT`|
-|`direction: down`|`flowchart TB`|
-|`group { }`|`subgraph`|
-|`.style.fill`|`style nodeId fill:#RRGGBB`|
-|`.style.opacity`|`style nodeId opacity:0.8` (CSS, supported in most renderers)|
-|`A <- B`|`B --> A`|
+| D2 concept         | Mermaid equivalent                                            |
+| ------------------ | ------------------------------------------------------------- |
+| `direction: left`  | `flowchart LR`                                                |
+| `direction: right` | `flowchart RL`                                                |
+| `direction: up`    | `flowchart BT`                                                |
+| `direction: down`  | `flowchart TB`                                                |
+| `group { }`        | `subgraph`                                                    |
+| `.style.fill`      | `style nodeId fill:#RRGGBB`                                   |
+| `.style.opacity`   | `style nodeId opacity:0.8` (CSS, supported in most renderers) |
+| `A <- B`           | `B --> A`                                                     |
 
 Node IDs must be sanitised (letters, digits, hyphens only) identically to D2's alias generation. Node labels use `<br>` for Mermaid line breaks.
 
@@ -457,19 +457,19 @@ SlnDependencyDiagramGenerator/
 │   └── NugetPackageFeed.cs          (DELETED)
 │
 ├── Parser/
-│   ├── SolutionParser.cs            (updated: MSBuild evaluation instead of raw XML)
+│   ├── SolutionParser.cs            (MSBuild evaluation instead of raw XML)
 │   ├── ProjectAssetReader.cs        (NEW: reads project.assets.json via NuGet.ProjectModel)
 │   └── ...existing models unchanged...
 │
 ├── Generator/
-│   ├── DependencyGenerator.cs       (updated: orchestration, assets-file prerequisite check)
+│   ├── DependencyGenerator.cs       (orchestration, assets-file prerequisite check)
 │   ├── DependencyGraphModel.cs      (NEW: shared intermediate representation for renderers)
 │   ├── D2DiagramRenderer.cs         (extracted from DependencyGenerator — D2 rendering)
 │   ├── MermaidDiagramRenderer.cs    (NEW: Mermaid rendering)
-│   ├── SummaryDependencyGenerator.cs (updated: version conflict section)
+│   ├── SummaryDependencyGenerator.cs (version conflict section)
 │   └── DiagramImageFormat.cs
 │
-├── Validators/                      (updated: packageFeeds validator deleted)
+├── Validators/                      (packageFeeds validator deleted)
 └── Exceptions/                      (unchanged)
 ```
 
@@ -505,34 +505,34 @@ A targeted rewrite (rather than incremental patching) is recommended for the fol
 
 ## 10. Milestones
 
-|Milestone|Scope|
-|-------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-|M1 — Foundation|`ProjectAssetReader` implementation + unit tests; updated `SolutionParser` using MSBuild evaluation; assets-file prerequisite check in `DependencyGenerator`|
-|M2 — Rendering|`DependencyGraphModel` intermediate representation; `D2DiagramRenderer` extracted; `MermaidDiagramRenderer` added; `DiagramFormat` config option|
-|M3 — Summary + config|Version-conflict section in `Dependency Summary.md`; `.NET 10.0` badge; remove `NugetPackageFeed` and `targetFrameworks` config fields and associated validators; remaining config validation updates|
-|M4 — Integration + sample|Sample updated to exercise CPM and `Directory.Build.props` (after restore); Mermaid output; full end-to-end test against the solution itself|
+| Milestone                 | Scope                                                                                                                                                                                                 |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M1 — Foundation           | `ProjectAssetReader` implementation + unit tests; updated `SolutionParser` using MSBuild evaluation; assets-file prerequisite check in `DependencyGenerator`                                          |
+| M2 — Rendering            | `DependencyGraphModel` intermediate representation; `D2DiagramRenderer` extracted; `MermaidDiagramRenderer` added; `DiagramFormat` config option                                                      |
+| M3 — Summary + config     | Version-conflict section in `Dependency Summary.md`; `.NET 10.0` badge; remove `NugetPackageFeed` and `targetFrameworks` config fields and associated validators; remaining config validation updates |
+| M4 — Integration + sample | Sample updated to exercise CPM and `Directory.Build.props` (after restore); Mermaid output; full end-to-end test against the solution itself                                                          |
 
 ---
 
 ## 11. Decisions
 
-|#|Question|Decision|
-|---|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-|D-1|Should Mermaid output be in `.mmd` (standard extension) or `.md` (for GitHub inline rendering)? Both could be offered.|Use `.mmd`.|
-|D-2|The `d2` CLI invocation uses `AllOverIt.Process`. Should this be replaced with a direct `System.Diagnostics.Process` call to reduce the `AllOverIt` dependency surface?|Retain `AllOverIt.Process` — no change to the existing approach.|
-|D-3|`MSBuildLocator` must be called before any MSBuild type is loaded. Should the library enforce this contract with a clear `DependencyGenerator.Initialize()` step, or document it as a caller responsibility?|Enforce it. The library exposes a mandatory `DependencyGenerator.Initialize()` call; attempting to construct `DependencyGenerator` without calling it first throws a clear exception. The method must be idempotent to guard against double-registration.|
+| #   | Question                                                                                                                                                                                                     | Decision                                                                                                                                                                                         |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| D-1 | Should Mermaid output be in `.mmd` (standard extension) or `.md` (for GitHub inline rendering)? Both could be offered.                                                                                       | Use `.mmd`.                                                                                                                                                                                      |
+| D-2 | The `d2` CLI invocation uses `AllOverIt.Process`. Should this be replaced with a direct `System.Diagnostics.Process` call to reduce the `AllOverIt` dependency surface?                                      | Retain `AllOverIt.Process` — no change to the existing approach.                                                                                                                                 |
+| D-3 | `MSBuildLocator` must be called before any MSBuild type is loaded. Should the library enforce this contract with a clear `DependencyGenerator.Initialize()` step, or document it as a caller responsibility? | Enforce it internally. `DependencyGenerator` bootstraps resolver initialization before parser construction and parsing performs an idempotent re-check. No public `Initialize()` API is exposed. |
 
 ---
 
 ## Appendix A — NuGet SDK Packages Required
 
-|Package|Purpose|Already referenced?|
-|-------------------------|----------------------------------------------------------|------------------------------------------------|
-|`NuGet.Protocol`|`NuGetFramework` (framework parsing)|Yes — retained|
-|`NuGet.ProjectModel`|`LockFileUtilities`, `PackageSpec`, `LockFileTarget`|No — add explicitly|
-|`NuGet.Versioning`|`NuGetVersion` (version comparison for conflict reporting)|Yes (transitive) — make explicit|
-|`Microsoft.Build`|`ProjectCollection`, `Project`|Yes|
-|`Microsoft.Build.Locator`|SDK path registration|No — add (already required by `Microsoft.Build`)|
+| Package                   | Purpose                                                    | Already referenced?                              |
+| ------------------------- | ---------------------------------------------------------- | ------------------------------------------------ |
+| `NuGet.Protocol`          | `NuGetFramework` (framework parsing)                       | Yes — retained                                   |
+| `NuGet.ProjectModel`      | `LockFileUtilities`, `PackageSpec`, `LockFileTarget`       | No — add explicitly                              |
+| `NuGet.Versioning`        | `NuGetVersion` (version comparison for conflict reporting) | Yes (transitive) — make explicit                 |
+| `Microsoft.Build`         | `ProjectCollection`, `Project`                             | Yes                                              |
+| `Microsoft.Build.Locator` | SDK path registration                                      | No — add (already required by `Microsoft.Build`) |
 
 `NuGet.Resolver` is **not** required. `NuGet.Protocol`'s feed-query classes (`DependencyInfoResource`, `SourceRepository`, `SourceCacheContext`) are no longer called at runtime and may be removed as a dependency if `NuGet.ProjectModel` does not transitively require them — check at implementation time.
 

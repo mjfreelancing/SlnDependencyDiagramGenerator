@@ -3,6 +3,7 @@
         <TargetFramework>net10.0</TargetFramework>
     </PropertyGroup>
     <ItemGroup>
+        <!--These are intentionally different versions to demonstrate a conflict when both packages are used in the same project.-->
         <PackageReference Include="AllOverIt" Version="9.2.0" />
         <PackageReference Include="NuGet.Protocol" Version="7.3.1" />
     </ItemGroup>

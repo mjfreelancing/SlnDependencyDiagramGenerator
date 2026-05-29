@@ -1,8 +1,7 @@
 ﻿namespace SlnDependencyDiagramGenerator.Config;
 
-/// <summary>Provides configuration options that specify which projects for a specified solution are parsed,
-/// where each project nuget dependency is resolved from, how deep the dependency graph is resolved, how the diagram
-/// will be styled, and where the diagrams and images will be exported to.</summary>
+/// <summary>Provides configuration options that specify which projects in a solution are processed,
+/// how dependency depth and diagram styling are applied, and where diagram/source outputs are exported.</summary>
 public sealed class DependencyGeneratorConfig
 {
     /// <summary>Specifies project related options that determine which projects for a given solution

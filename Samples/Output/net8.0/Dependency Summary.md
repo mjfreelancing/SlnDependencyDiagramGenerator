@@ -10,10 +10,13 @@
 * AllOverIt.Assertion v9.2.1
 * AllOverIt.Validation v9.2.1
 * FluentValidation v12.1.1
+* Microsoft.Build.Locator v1.11.2
 * Microsoft.Extensions.DependencyInjection.Abstractions v10.0.8
+* Microsoft.NETCore.App
 * Newtonsoft.Json v13.0.3
 * NuGet.Configuration v7.6.0
 * NuGet.DependencyResolver.Core v7.6.0
+* NuGet.Frameworks v7.6.0
 * NuGet.LibraryModel v7.6.0
 * NuGet.Packaging v7.6.0
 * NuGet.ProjectModel v7.6.0
