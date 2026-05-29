@@ -52,7 +52,7 @@ internal sealed class TargetFrameworkBadgeProvider
         return badge;
     }
 
-    /// <summary>Gets the color for a base moniker, assigning one on first use via round-robin.</summary>
+    /// <summary>Returns the color for a base moniker, assigning one on first use via round-robin.</summary>
     /// <param name="baseMoniker">The base target framework moniker.</param>
     /// <returns>The hex color code assigned to the base moniker.</returns>
     private string GetColor(string baseMoniker)
@@ -83,9 +83,9 @@ internal sealed class TargetFrameworkBadgeProvider
             : $"{baseMoniker}-{profile}";
     }
 
-            /// <summary>Builds the Shields.io message segment from a normalized framework moniker.</summary>
-            /// <param name="normalizedFramework">The normalized framework moniker.</param>
-            /// <returns>The message portion used in the badge URL.</returns>
+    /// <summary>Builds the Shields.io message segment from a normalized framework moniker.</summary>
+    /// <param name="normalizedFramework">The normalized framework moniker.</param>
+    /// <returns>The message portion used in the badge URL.</returns>
     private static string BuildBadgeMessage(string normalizedFramework)
     {
         var baseMoniker = GetBaseMoniker(normalizedFramework);
@@ -103,7 +103,7 @@ internal sealed class TargetFrameworkBadgeProvider
         return $"{message}--{profile}";
     }
 
-    /// <summary>Gets the base moniker component (text before the first hyphen).</summary>
+    /// <summary>Returns the base moniker component (text before the first hyphen).</summary>
     /// <param name="framework">The target framework moniker.</param>
     /// <returns>The base moniker.</returns>
     private static string GetBaseMoniker(string framework)
@@ -115,9 +115,9 @@ internal sealed class TargetFrameworkBadgeProvider
             : framework[..separator];
     }
 
-            /// <summary>Extracts the profile family from the suffix of a framework moniker.</summary>
-            /// <param name="framework">The target framework moniker.</param>
-            /// <returns>The lower-cased leading alphabetic profile family, or an empty string when absent.</returns>
+    /// <summary>Extracts the profile family from the suffix of a framework moniker.</summary>
+    /// <param name="framework">The target framework moniker.</param>
+    /// <returns>The lower-cased leading alphabetic profile family, or an empty string when absent.</returns>
     private static string GetProfileFamily(string framework)
     {
         var separator = framework.IndexOf('-');

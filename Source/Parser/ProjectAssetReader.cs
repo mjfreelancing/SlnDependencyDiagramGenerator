@@ -20,7 +20,7 @@ internal sealed class ProjectAssetReader
     private readonly Dictionary<string, LockFile> _lockFileCache = new(StringComparer.OrdinalIgnoreCase);
 
     // Returns the target frameworks available in the project's assets file (non-RID targets only).
-    /// <summary>Gets all target frameworks from a project's assets file.</summary>
+    /// <summary>Returns all target frameworks declared in a project's assets file.</summary>
     /// <param name="projectPath">The project file path.</param>
     /// <returns>The target frameworks defined in the assets file.</returns>
     public string[] GetTargetFrameworks(string projectPath)

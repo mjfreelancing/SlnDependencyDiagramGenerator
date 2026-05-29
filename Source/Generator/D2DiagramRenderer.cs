@@ -19,7 +19,7 @@ internal sealed class D2DiagramRenderer : DiagramRendererBase
     /// <inheritdoc />
     public override string Render(DependencyGraphModel model)
     {
-        // Build once, render once: shared graph semantics come from the base class IR builder.
+        // Shared graph semantics come from the base class IR builder.
         var ir = BuildIntermediateRepresentation(model);
         var sb = new StringBuilder();
 

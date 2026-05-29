@@ -36,7 +36,7 @@ public sealed partial class DependencyGenerator
     private readonly DependencyGeneratorConfig _configuration;
     private readonly IColorConsoleLogger _logger;
 
-    /// <summary>Constructor.</summary>
+    /// <summary>Initializes a new dependency generator instance.</summary>
     /// <param name="configuration">The dependency generator configuration options.</param>
     /// <param name="logger">A console logger that provides progress information during the processing of projects and generation of diagrams.</param>
     public DependencyGenerator(DependencyGeneratorConfig configuration, IColorConsoleLogger logger)
@@ -47,7 +47,7 @@ public sealed partial class DependencyGenerator
         AssertConfiguration();
     }
 
-    /// <summary>Initiates the process of parsing the solution projects and diagram generation.</summary>
+    /// <summary>Generates dependency summaries, diagram files, and optional images for each discovered target framework.</summary>
     /// <returns>A <see cref="Task"/> that completes when the diagram generation has completed.</returns>
     public async Task CreateDiagramsAsync()
     {

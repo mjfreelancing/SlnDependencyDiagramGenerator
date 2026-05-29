@@ -1,25 +1,16 @@
 ﻿using SlnDependencyDiagramGenerator.Config;
-using System.Collections.Generic;
 using System.IO;
 
 namespace SlnDependencyDiagramGenerator.Generator;
-
-/// <summary>Implemented by every diagram renderer. Takes a resolved <see cref="DependencyGraphModel"/>
-/// and returns the text content of the diagram file.</summary>
-internal interface IDiagramRenderer
-{
-    /// <summary>Renders the dependency graph and returns the file content as a string.</summary>
-    string Render(DependencyGraphModel model);
-
-    /// <summary>The file extension for this renderer's output (without the leading dot), e.g. "d2" or "mmd".</summary>
-    string FileExtension { get; }
-}
 
 /// <summary>Shared helpers used by all renderer implementations.</summary>
 internal abstract class DiagramRendererBase : IDiagramRenderer
 {
     /// <summary>The diagram options used while rendering output.</summary>
     protected readonly GeneratorDiagramOptions Options;
+
+    /// <inheritdoc />
+    public abstract string FileExtension { get; }
 
     /// <summary>Initializes a new renderer base instance.</summary>
     /// <param name="options">The diagram options.</param>
@@ -31,11 +22,8 @@ internal abstract class DiagramRendererBase : IDiagramRenderer
     /// <inheritdoc />
     public abstract string Render(DependencyGraphModel model);
 
-    /// <inheritdoc />
-    public abstract string FileExtension { get; }
-
-    /// <summary>Returns the D2 / Mermaid node ID for a project name:
-    /// dots replaced with hyphens, lower-cased, prefixed with the group alias.</summary>
+    /// <summary>Returns the project node ID by sanitizing the project name (dots replaced with hyphens, lower-cased)
+    /// and prefixing it with the group alias when grouping is enabled.</summary>
     protected string ProjectAlias(string projectName)
     {
         var sanitisedProjectName = Sanitise(projectName);
@@ -45,11 +33,11 @@ internal abstract class DiagramRendererBase : IDiagramRenderer
             : sanitisedProjectName;
     }
 
-    /// <summary>Returns a safe node ID with no group prefix — used for framework nodes and standalone IDs.</summary>
+    /// <summary>Returns a normalized node ID by replacing dots with hyphens and converting to lower-case; no group prefix is applied.</summary>
     protected static string Sanitise(string name)
         => name.Replace(".", "-").ToLowerInvariant();
 
-    /// <summary>Returns the node ID for a package, handling the multi-version grouping case.</summary>
+    /// <summary>Returns the node ID for a package, optionally nesting it under a multi-version package group when grouping is enabled.</summary>
     protected static string PackageAlias(PackageNode pkg, DependencyGraphModel model, bool groupingEnabled)
     {
         var baseAlias = $"{pkg.Name}_{pkg.Version}".Replace(".", "-").ToLowerInvariant();
@@ -76,7 +64,7 @@ internal abstract class DiagramRendererBase : IDiagramRenderer
         _ => "down"   // TB
     };
 
-    /// <summary>Gets a project name from a project path.</summary>
+    /// <summary>Extracts the project name from a project path.</summary>
     /// <param name="path">The project path.</param>
     /// <returns>The project name without file extension.</returns>
     protected static string GetProjectName(string path)

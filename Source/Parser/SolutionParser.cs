@@ -52,10 +52,9 @@ internal sealed class SolutionParser
 
         var excludeSet = new HashSet<string>(excludePackages, StringComparer.OrdinalIgnoreCase);
 
-        return FilterAndOrderProjects(solutionFilePath, regexToInclude, regexToExclude)
+        return [.. FilterAndOrderProjects(solutionFilePath, regexToInclude, regexToExclude)
             .Where(project => _assetReader.HasTargetFramework(project.AbsolutePath, targetFramework))
-            .Select(project => BuildSolutionProject(project, targetFramework, maxTransitiveDepth, excludeSet))
-            .ToArray();
+            .Select(project => BuildSolutionProject(project, targetFramework, maxTransitiveDepth, excludeSet))];
     }
 
     /// <summary>Converts a target framework moniker into a sortable version number.</summary>
@@ -74,10 +73,7 @@ internal sealed class SolutionParser
     /// <param name="regexToInclude">Regex patterns used to include projects.</param>
     /// <param name="regexToExclude">Regex patterns used to exclude projects.</param>
     /// <returns>The filtered and ordered project list.</returns>
-    private IEnumerable<ProjectInSolution> FilterAndOrderProjects(
-        string solutionFilePath,
-        string[] regexToInclude,
-        string[] regexToExclude)
+    private IEnumerable<ProjectInSolution> FilterAndOrderProjects(string solutionFilePath, string[] regexToInclude, string[] regexToExclude)
     {
         if (!_solutionFiles.TryGetValue(solutionFilePath, out var solutionFile))
         {
@@ -112,11 +108,8 @@ internal sealed class SolutionParser
     /// <param name="maxTransitiveDepth">The maximum transitive package depth to include.</param>
     /// <param name="excludePackages">Package IDs to exclude from package resolution.</param>
     /// <returns>The resolved solution project.</returns>
-    private SolutionProject BuildSolutionProject(
-        ProjectInSolution projectInSolution,
-        string targetFramework,
-        int maxTransitiveDepth,
-        HashSet<string> excludePackages)
+    private SolutionProject BuildSolutionProject(ProjectInSolution projectInSolution, string targetFramework,
+        int maxTransitiveDepth, HashSet<string> excludePackages)
     {
         var projectPath = projectInSolution.AbsolutePath;
         var projectFolder = Path.GetDirectoryName(projectPath)!;
@@ -152,13 +145,11 @@ internal sealed class SolutionParser
         };
     }
 
-    /// <summary>Gets project references from raw project XML item groups.</summary>
+    /// <summary>Extracts project references from raw project XML item groups.</summary>
     /// <param name="projectFolder">The base project folder used to resolve relative paths.</param>
     /// <param name="itemGroups">The project XML item groups.</param>
     /// <returns>The resolved project references.</returns>
-    private static List<ProjectReference> GetProjectReferences(
-        string projectFolder,
-        IEnumerable<ProjectItemGroupElement> itemGroups)
+    private static List<ProjectReference> GetProjectReferences(string projectFolder, IEnumerable<ProjectItemGroupElement> itemGroups)
     {
         return itemGroups
             .SelectMany(group => group.Items)
@@ -174,11 +165,10 @@ internal sealed class SolutionParser
             });
     }
 
-    /// <summary>Gets framework references from raw project XML item groups.</summary>
+    /// <summary>Extracts framework references from raw project XML item groups.</summary>
     /// <param name="itemGroups">The project XML item groups.</param>
     /// <returns>The framework references.</returns>
-    private static IReadOnlyCollection<FrameworkReference> GetFrameworkReferences(
-        IEnumerable<ProjectItemGroupElement> itemGroups)
+    private static IReadOnlyCollection<FrameworkReference> GetFrameworkReferences(IEnumerable<ProjectItemGroupElement> itemGroups)
     {
         return itemGroups
             .SelectMany(group => group.Items)
