@@ -114,7 +114,7 @@ conflicts.style.opacity: 0.75
 
 ## App
 
-![](https://img.shields.io/badge/.NET-10.0-6EBE50.svg)
+![](https://img.shields.io/badge/.NET-10.0-55A9EE.svg)
 
 ### Dependencies
 
@@ -132,7 +132,7 @@ conflicts.style.opacity: 0.75
 
 ## LibV1
 
-![](https://img.shields.io/badge/.NET-10.0-6EBE50.svg)
+![](https://img.shields.io/badge/.NET-10.0-55A9EE.svg)
 
 ### Dependencies
 
@@ -147,7 +147,7 @@ conflicts.style.opacity: 0.75
 
 ## LibV2
 
-![](https://img.shields.io/badge/.NET-10.0-6EBE50.svg)
+![](https://img.shields.io/badge/.NET-10.0-55A9EE.svg)
 
 ### Dependencies
 

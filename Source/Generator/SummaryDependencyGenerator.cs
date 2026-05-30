@@ -14,8 +14,6 @@ internal static class SummaryDependencyGenerator
 {
     private sealed record ConflictEntry(string ProjectName, string Version, string[] RequestedVersionPaths);
 
-    private static readonly TargetFrameworkBadgeProvider BadgeProvider = new();
-
     /// <summary>The markdown output filename.</summary>
     public const string MarkdownFilename = "Dependency Summary.md";
 
@@ -25,6 +23,7 @@ internal static class SummaryDependencyGenerator
     public static string CreateContent(IDictionary<string, SolutionProject> solutionProjects)
     {
         var sb = new StringBuilder();
+        var badgeProvider = new TargetFrameworkBadgeProvider();
 
         sb.AppendLine("# Dependency Summary");
         sb.AppendLine();
@@ -68,14 +67,16 @@ internal static class SummaryDependencyGenerator
             sb.AppendLine();
         }
 
-        foreach (var solutionProject in solutionProjects)
+        var orderedSolutionProjects = solutionProjects.OrderBy(project => project.Key, StringComparer.OrdinalIgnoreCase);
+
+        foreach (var solutionProject in orderedSolutionProjects)
         {
             var project = Path.GetFileNameWithoutExtension(solutionProject.Value.Path);
 
             sb.AppendLine($"## {project}");
             sb.AppendLine();
 
-            var frameworkBadges = GetTargetFrameworkBadges(solutionProject);
+            var frameworkBadges = GetTargetFrameworkBadges(solutionProject, badgeProvider);
             var projectBadges = string.Join(" ", frameworkBadges);
 
             sb.AppendLine(projectBadges);
@@ -218,14 +219,14 @@ internal static class SummaryDependencyGenerator
             : $"Via {string.Join(" -> ", activePath[..^1])} requested {packageReference.Name} {packageReference.RequestedVersionRange}, resolved v{packageReference.Version}";
     }
 
-    private static List<string> GetTargetFrameworkBadges(KeyValuePair<string, SolutionProject> solutionProject)
+    private static List<string> GetTargetFrameworkBadges(KeyValuePair<string, SolutionProject> solutionProject, TargetFrameworkBadgeProvider badgeProvider)
     {
         var frameworkBadges = new List<string>();
         var seenBadges = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        foreach (var framework in solutionProject.Value.TargetFrameworks)
+        foreach (var framework in solutionProject.Value.TargetFrameworks.Order(StringComparer.OrdinalIgnoreCase))
         {
-            var badge = BadgeProvider.GetBadge(framework);
+            var badge = badgeProvider.GetBadge(framework);
 
             if (seenBadges.Add(badge))
             {
