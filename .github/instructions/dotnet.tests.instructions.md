@@ -15,7 +15,10 @@ applyTo: "**/*Tests/**/*.cs"
 
 ### Conventions
 
-- Use xUnit naming and structure consistent with the repository.
+- Use fixture-style test classes and verb-first test method names.
+- Prefer outer test classes named `<Type>Fixture` and nested classes grouped by the method or scenario under test.
+- Name test methods with a `Should_...` prefix and sentence-style underscores, for example `Should_Return_No_Validation_Errors` or `Should_Throw_When_Input_Is_Invalid`.
+- Keep xUnit attributes (`[Fact]`, `[Theory]`) but do not force xUnit's default naming style when a clearer repository convention exists.
 - Keep test method order aligned with the implementation logic order when practical (for example, log/assert-first tests should appear before later-branch tests in the same fixture).
 - Keep assertion style consistent within each test project.
 - Keep reusable helpers in a shared test utility project when they are cross-project.
