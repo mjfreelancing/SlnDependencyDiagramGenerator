@@ -1,4 +1,5 @@
-﻿using AllOverIt.Logging;
+﻿using AllOverIt.Extensions;
+using AllOverIt.Logging;
 using FluentValidation;
 using Microsoft.Extensions.Configuration;
 using SlnDependencyDiagramGenerator.Config;
@@ -92,7 +93,7 @@ internal class Program
 
         // When configured, layer appsettings.<variant>.json over appsettings.json,
         // similar to environment-specific config behavior.
-        if (!string.IsNullOrWhiteSpace(configurationSelection.ConfigVariant))
+        if (!configurationSelection.ConfigVariant.IsNullOrEmpty())
         {
             var variantFile = $"appsettings.{configurationSelection.ConfigVariant}.json";
             configurationBuilder.AddJsonFile(variantFile, true, false);
