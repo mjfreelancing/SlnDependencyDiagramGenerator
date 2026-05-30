@@ -38,6 +38,7 @@ This [example](./Sample/Output/net9.0/slndependencydiagramgenerator.png) has bee
 - Generates diagrams in D2 (`.d2`) and/or Mermaid (`.mmd`) formats.
 - Exports diagram images as `png`, `svg`, and `pdf`.
 - Writes renderer-specific output under each target framework folder (for example `d2` and `mmd`) to avoid name collisions.
+- Uses normalized file-safe diagram base names (lowercase slug) for generated diagram and image file names.
 - Produces a Markdown dependency summary and highlights multi-version package usage across projects.
 
 ## Configuration
@@ -169,6 +170,7 @@ Specifies export path and image format options.
   being processed.
 - **RootPath**: The relative or fully-qualified export root path for the generated diagram files and images.
   A sub-folder will be created for each target framework processed, and then per diagram renderer.
+- Generated diagram and image file names use normalized file-safe base names (for example, `My Group-All` becomes `my-group-all`).
 - **ImageFormats**: The diagram image formats to create. Can be empty, or one or more of "png", "svg", "pdf".
 
 ### Tooling Requirements

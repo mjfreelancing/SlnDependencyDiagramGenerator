@@ -171,6 +171,50 @@ internal static class IntegrationTestHarness
             .OrderBy(fileName => fileName, StringComparer.OrdinalIgnoreCase)];
     }
 
+    public static SortedDictionary<string, string> CollectExportSnapshot(string exportRoot)
+    {
+        var snapshot = new SortedDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var targetFramework in GetTargetFrameworkDirectories(exportRoot))
+        {
+            var targetFrameworkRoot = Path.Combine(exportRoot, targetFramework);
+            var summaryPath = Path.Combine(targetFrameworkRoot, SummaryDependencyGenerator.MarkdownFilename);
+
+            if (File.Exists(summaryPath))
+            {
+                snapshot[$"{targetFramework}/{SummaryDependencyGenerator.MarkdownFilename}"] = File.ReadAllText(summaryPath);
+            }
+
+            AddDiagramFilesToSnapshot(snapshot, targetFrameworkRoot, targetFramework, "d2", "d2");
+            AddDiagramFilesToSnapshot(snapshot, targetFrameworkRoot, targetFramework, "mmd", "mmd");
+        }
+
+        return snapshot;
+    }
+
+    private static void AddDiagramFilesToSnapshot(SortedDictionary<string, string> snapshot, string targetFrameworkRoot,
+        string targetFramework, string formatFolder, string extension)
+    {
+        var formatRoot = Path.Combine(targetFrameworkRoot, formatFolder);
+
+        if (!Directory.Exists(formatRoot))
+        {
+            return;
+        }
+
+        foreach (var filePath in Directory.GetFiles(formatRoot, $"*.{extension}").OrderBy(fileName => fileName, StringComparer.OrdinalIgnoreCase))
+        {
+            var fileName = Path.GetFileName(filePath);
+
+            if (fileName is null)
+            {
+                continue;
+            }
+
+            snapshot[$"{targetFramework}/{formatFolder}/{fileName}"] = File.ReadAllText(filePath);
+        }
+    }
+
     public static async Task<SolutionProject[]> ParseFixtureAsync(string fixtureName, string extension, string targetFramework,
         string[] regexToInclude, string[] regexToExclude, string[] excludePackages, string[] excludeFrameworks, int maxTransitiveDepth)
     {

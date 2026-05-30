@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace SlnDependencyDiagramGenerator.Renderers;
@@ -172,7 +173,9 @@ internal abstract class DiagramRendererBase : IDiagramRenderer
 
     private string GetDiagramAliasId(string alias, bool includeProjectGroupPrefix)
     {
-        alias = alias.Replace(".", "-").ToLowerInvariant();
+        alias = Regex.Replace(alias, "[^A-Za-z0-9]+", "-")
+            .Trim('-')
+            .ToLowerInvariant();
 
         return includeProjectGroupPrefix
             ? $"{Options.GroupNameAlias}.{alias}"

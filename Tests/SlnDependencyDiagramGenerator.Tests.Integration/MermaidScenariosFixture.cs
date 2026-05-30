@@ -17,7 +17,7 @@ public class MermaidScenariosFixture
 
             using var scenarioRun = await IntegrationTestHarness.RunGeneratorAsync(options);
 
-            var allDiagram = IntegrationTestHarness.ReadDiagramFile(scenarioRun.ExportRoot, "net10.0", "mmd", "basic group-all.mmd");
+            var allDiagram = IntegrationTestHarness.ReadDiagramFile(scenarioRun.ExportRoot, "net10.0", "mmd", "basic-group-all.mmd");
 
             allDiagram.ShouldNotContain("subgraph basic[\"Basic Group\"]");
         }
@@ -31,7 +31,7 @@ public class MermaidScenariosFixture
 
             using var scenarioRun = await IntegrationTestHarness.RunGeneratorAsync(options);
 
-            var allDiagram = IntegrationTestHarness.ReadDiagramFile(scenarioRun.ExportRoot, "net10.0", "mmd", "basic group-all.mmd");
+            var allDiagram = IntegrationTestHarness.ReadDiagramFile(scenarioRun.ExportRoot, "net10.0", "mmd", "basic-group-all.mmd");
 
             allDiagram.ShouldContain("subgraph basic[\"Basic Group\"]");
         }
@@ -45,7 +45,7 @@ public class MermaidScenariosFixture
 
             using var scenarioRun = await IntegrationTestHarness.RunGeneratorAsync(options);
 
-            var allDiagram = IntegrationTestHarness.ReadDiagramFile(scenarioRun.ExportRoot, "net10.0", "mmd", "basic group-all.mmd");
+            var allDiagram = IntegrationTestHarness.ReadDiagramFile(scenarioRun.ExportRoot, "net10.0", "mmd", "basic-group-all.mmd");
 
             allDiagram.ShouldContain("flowchart TB");
         }
@@ -59,7 +59,7 @@ public class MermaidScenariosFixture
 
             using var scenarioRun = await IntegrationTestHarness.RunGeneratorAsync(options);
 
-            var allDiagram = IntegrationTestHarness.ReadDiagramFile(scenarioRun.ExportRoot, "net10.0", "mmd", "framework group-all.mmd");
+            var allDiagram = IntegrationTestHarness.ReadDiagramFile(scenarioRun.ExportRoot, "net10.0", "mmd", "framework-group-all.mmd");
 
             allDiagram.ShouldContain("style microsoft-aspnetcore-app fill:#ABC123");
         }
@@ -74,7 +74,7 @@ public class MermaidScenariosFixture
 
             using var scenarioRun = await IntegrationTestHarness.RunGeneratorAsync(options);
 
-            var allDiagram = IntegrationTestHarness.ReadDiagramFile(scenarioRun.ExportRoot, "net10.0", "mmd", "transitive group-all.mmd");
+            var allDiagram = IntegrationTestHarness.ReadDiagramFile(scenarioRun.ExportRoot, "net10.0", "mmd", "transitive-group-all.mmd");
 
             allDiagram.ShouldNotContain("microsoft-extensions-http_9-0-0 -->");
         }
@@ -89,7 +89,7 @@ public class MermaidScenariosFixture
 
             using var scenarioRun = await IntegrationTestHarness.RunGeneratorAsync(options);
 
-            var allDiagram = IntegrationTestHarness.ReadDiagramFile(scenarioRun.ExportRoot, "net10.0", "mmd", "transitive group-all.mmd");
+            var allDiagram = IntegrationTestHarness.ReadDiagramFile(scenarioRun.ExportRoot, "net10.0", "mmd", "transitive-group-all.mmd");
 
             allDiagram.ShouldContain("microsoft-extensions-http_9-0-0 -->");
         }

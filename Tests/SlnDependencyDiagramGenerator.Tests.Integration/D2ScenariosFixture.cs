@@ -17,7 +17,7 @@ public class D2ScenariosFixture
 
             using var scenarioRun = await IntegrationTestHarness.RunGeneratorAsync(options);
 
-            var allDiagram = IntegrationTestHarness.ReadDiagramFile(scenarioRun.ExportRoot, "net10.0", "d2", "basic group-all.d2");
+            var allDiagram = IntegrationTestHarness.ReadDiagramFile(scenarioRun.ExportRoot, "net10.0", "d2", "basic-group-all.d2");
 
             allDiagram.ShouldNotContain("basic: Basic Group");
         }
@@ -31,7 +31,7 @@ public class D2ScenariosFixture
 
             using var scenarioRun = await IntegrationTestHarness.RunGeneratorAsync(options);
 
-            var allDiagram = IntegrationTestHarness.ReadDiagramFile(scenarioRun.ExportRoot, "net10.0", "d2", "basic group-all.d2");
+            var allDiagram = IntegrationTestHarness.ReadDiagramFile(scenarioRun.ExportRoot, "net10.0", "d2", "basic-group-all.d2");
 
             allDiagram.ShouldContain("basic: Basic Group");
         }
@@ -45,7 +45,7 @@ public class D2ScenariosFixture
 
             using var scenarioRun = await IntegrationTestHarness.RunGeneratorAsync(options);
 
-            var allDiagram = IntegrationTestHarness.ReadDiagramFile(scenarioRun.ExportRoot, "net10.0", "d2", "basic group-all.d2");
+            var allDiagram = IntegrationTestHarness.ReadDiagramFile(scenarioRun.ExportRoot, "net10.0", "d2", "basic-group-all.d2");
 
             allDiagram.ShouldContain("direction: down");
         }
@@ -59,7 +59,7 @@ public class D2ScenariosFixture
 
             using var scenarioRun = await IntegrationTestHarness.RunGeneratorAsync(options);
 
-            var allDiagram = IntegrationTestHarness.ReadDiagramFile(scenarioRun.ExportRoot, "net10.0", "d2", "framework group-all.d2");
+            var allDiagram = IntegrationTestHarness.ReadDiagramFile(scenarioRun.ExportRoot, "net10.0", "d2", "framework-group-all.d2");
 
             allDiagram.ShouldContain("microsoft-aspnetcore-app.style.fill: \"#123ABC\"");
         }
@@ -73,7 +73,7 @@ public class D2ScenariosFixture
 
             using var scenarioRun = await IntegrationTestHarness.RunGeneratorAsync(options);
 
-            var net10AllDiagram = IntegrationTestHarness.ReadDiagramFile(scenarioRun.ExportRoot, "net10.0", "d2", "basic group-all.d2");
+            var net10AllDiagram = IntegrationTestHarness.ReadDiagramFile(scenarioRun.ExportRoot, "net10.0", "d2", "basic-group-all.d2");
 
             net10AllDiagram.ShouldContain("dapper_2-1-35.style.fill: \"#0A0B0C\"");
         }
@@ -88,7 +88,7 @@ public class D2ScenariosFixture
 
             using var scenarioRun = await IntegrationTestHarness.RunGeneratorAsync(options);
 
-            var allDiagram = IntegrationTestHarness.ReadDiagramFile(scenarioRun.ExportRoot, "net10.0", "d2", "transitive group-all.d2");
+            var allDiagram = IntegrationTestHarness.ReadDiagramFile(scenarioRun.ExportRoot, "net10.0", "d2", "transitive-group-all.d2");
 
             allDiagram.ShouldNotContain("<- microsoft-extensions-http_9-0-0");
         }
@@ -103,7 +103,7 @@ public class D2ScenariosFixture
 
             using var scenarioRun = await IntegrationTestHarness.RunGeneratorAsync(options);
 
-            var allDiagram = IntegrationTestHarness.ReadDiagramFile(scenarioRun.ExportRoot, "net10.0", "d2", "transitive group-all.d2");
+            var allDiagram = IntegrationTestHarness.ReadDiagramFile(scenarioRun.ExportRoot, "net10.0", "d2", "transitive-group-all.d2");
 
             allDiagram.ShouldContain("<- microsoft-extensions-http_9-0-0");
         }

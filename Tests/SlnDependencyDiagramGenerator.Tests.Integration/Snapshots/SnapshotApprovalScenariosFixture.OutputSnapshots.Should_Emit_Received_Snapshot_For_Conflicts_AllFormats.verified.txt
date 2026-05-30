@@ -1,0 +1,244 @@
+﻿{
+  net10.0/d2/app.d2:
+direction: left
+
+conflicts: Conflicts Group
+newtonsoft-json-group: ""
+conflicts.app: App
+microsoft-netcore-app: Microsoft.NETCore.App
+conflicts.libv1: LibV1
+newtonsoft-json-group.newtonsoft-json_12-0-3: Newtonsoft.Json\nv12.0.3
+conflicts.libv2: LibV2
+newtonsoft-json-group.newtonsoft-json_13-0-3: Newtonsoft.Json\nv13.0.3
+microsoft-netcore-app <- conflicts.app
+conflicts.libv1 <- conflicts.app
+newtonsoft-json-group.newtonsoft-json_12-0-3 <- conflicts.libv1
+conflicts.libv2 <- conflicts.app
+newtonsoft-json-group.newtonsoft-json_13-0-3 <- conflicts.libv2
+microsoft-netcore-app <- conflicts.libv1
+microsoft-netcore-app <- conflicts.libv2
+microsoft-netcore-app.style.fill: "#102030"
+microsoft-netcore-app.style.opacity: 0.8
+newtonsoft-json-group.newtonsoft-json_12-0-3.style.fill: "#405060"
+newtonsoft-json-group.newtonsoft-json_12-0-3.style.opacity: 0.8
+newtonsoft-json-group.newtonsoft-json_13-0-3.style.fill: "#405060"
+newtonsoft-json-group.newtonsoft-json_13-0-3.style.opacity: 0.8
+conflicts.style.fill: "#DDEEFF"
+conflicts.style.opacity: 0.75
+newtonsoft-json-group.style.fill: "#DDEEFF"
+newtonsoft-json-group.style.opacity: 0.75
+
+,
+  net10.0/d2/conflicts-group-all.d2:
+direction: left
+
+conflicts: Conflicts Group
+newtonsoft-json-group: ""
+conflicts.app: App
+microsoft-netcore-app: Microsoft.NETCore.App
+conflicts.libv1: LibV1
+newtonsoft-json-group.newtonsoft-json_12-0-3: Newtonsoft.Json\nv12.0.3
+conflicts.libv2: LibV2
+newtonsoft-json-group.newtonsoft-json_13-0-3: Newtonsoft.Json\nv13.0.3
+microsoft-netcore-app <- conflicts.app
+conflicts.libv1 <- conflicts.app
+newtonsoft-json-group.newtonsoft-json_12-0-3 <- conflicts.libv1
+conflicts.libv2 <- conflicts.app
+newtonsoft-json-group.newtonsoft-json_13-0-3 <- conflicts.libv2
+microsoft-netcore-app <- conflicts.libv1
+microsoft-netcore-app <- conflicts.libv2
+microsoft-netcore-app.style.fill: "#102030"
+microsoft-netcore-app.style.opacity: 0.8
+newtonsoft-json-group.newtonsoft-json_12-0-3.style.fill: "#405060"
+newtonsoft-json-group.newtonsoft-json_12-0-3.style.opacity: 0.8
+newtonsoft-json-group.newtonsoft-json_13-0-3.style.fill: "#405060"
+newtonsoft-json-group.newtonsoft-json_13-0-3.style.opacity: 0.8
+conflicts.style.fill: "#DDEEFF"
+conflicts.style.opacity: 0.75
+newtonsoft-json-group.style.fill: "#DDEEFF"
+newtonsoft-json-group.style.opacity: 0.75
+
+,
+  net10.0/d2/libv1.d2:
+direction: left
+
+conflicts: Conflicts Group
+conflicts.libv1: LibV1
+microsoft-netcore-app: Microsoft.NETCore.App
+newtonsoft-json_12-0-3: Newtonsoft.Json\nv12.0.3
+microsoft-netcore-app <- conflicts.libv1
+newtonsoft-json_12-0-3 <- conflicts.libv1
+microsoft-netcore-app.style.fill: "#102030"
+microsoft-netcore-app.style.opacity: 0.8
+newtonsoft-json_12-0-3.style.fill: "#405060"
+newtonsoft-json_12-0-3.style.opacity: 0.8
+conflicts.style.fill: "#DDEEFF"
+conflicts.style.opacity: 0.75
+
+,
+  net10.0/d2/libv2.d2:
+direction: left
+
+conflicts: Conflicts Group
+conflicts.libv2: LibV2
+microsoft-netcore-app: Microsoft.NETCore.App
+newtonsoft-json_13-0-3: Newtonsoft.Json\nv13.0.3
+microsoft-netcore-app <- conflicts.libv2
+newtonsoft-json_13-0-3 <- conflicts.libv2
+microsoft-netcore-app.style.fill: "#102030"
+microsoft-netcore-app.style.opacity: 0.8
+newtonsoft-json_13-0-3.style.fill: "#405060"
+newtonsoft-json_13-0-3.style.opacity: 0.8
+conflicts.style.fill: "#DDEEFF"
+conflicts.style.opacity: 0.75
+
+,
+  net10.0/Dependency Summary.md:
+# Dependency Summary
+
+## Cross-Project Version Conflicts
+
+### Newtonsoft.Json
+
+| Project | Resolved | Conflict Details |
+|---------|----------|----------------------|
+| LibV1 | 12.0.3 | Project requested Newtonsoft.Json [12.0.3, ), resolved v12.0.3 |
+| LibV2 | 13.0.3 | Project requested Newtonsoft.Json [13.0.3, ), resolved v13.0.3 |
+
+
+<br>
+
+---
+
+<br>
+
+## App
+
+![](https://img.shields.io/badge/.NET-10.0-6EBE50.svg)
+
+### Dependencies
+
+* LibV1
+* LibV2
+* Microsoft.NETCore.App
+* Newtonsoft.Json v12.0.3
+* Newtonsoft.Json v13.0.3
+
+<br>
+
+---
+
+<br>
+
+## LibV1
+
+![](https://img.shields.io/badge/.NET-10.0-6EBE50.svg)
+
+### Dependencies
+
+* Microsoft.NETCore.App
+* Newtonsoft.Json v12.0.3
+
+<br>
+
+---
+
+<br>
+
+## LibV2
+
+![](https://img.shields.io/badge/.NET-10.0-6EBE50.svg)
+
+### Dependencies
+
+* Microsoft.NETCore.App
+* Newtonsoft.Json v13.0.3
+
+<br>
+
+---
+
+<br>
+
+,
+  net10.0/mmd/app.mmd:
+flowchart LR
+  subgraph conflicts["Conflicts Group"]
+    direction LR
+    conflicts_app["App"]
+    conflicts_libv1["LibV1"]
+    conflicts_libv2["LibV2"]
+  end
+  microsoft-netcore-app["Microsoft.NETCore.App"]
+  subgraph newtonsoft-json-group["Newtonsoft.Json"]
+      newtonsoft-json-group_newtonsoft-json_12-0-3["Newtonsoft.Json<br>v12.0.3"]
+      newtonsoft-json-group_newtonsoft-json_13-0-3["Newtonsoft.Json<br>v13.0.3"]
+    end
+  conflicts_app --> microsoft-netcore-app
+  conflicts_app --> conflicts_libv1
+  conflicts_libv1 --> newtonsoft-json-group_newtonsoft-json_12-0-3
+  conflicts_app --> conflicts_libv2
+  conflicts_libv2 --> newtonsoft-json-group_newtonsoft-json_13-0-3
+  conflicts_libv1 --> microsoft-netcore-app
+  conflicts_libv2 --> microsoft-netcore-app
+  style conflicts fill:#DDEEFF,stroke:#DDEEFF,stroke-width:1px,opacity:0.75
+  style newtonsoft-json-group fill:#DDEEFF,stroke:#DDEEFF,stroke-width:1px,opacity:0.75
+  style microsoft-netcore-app fill:#102030,opacity:0.8
+  style newtonsoft-json-group_newtonsoft-json_12-0-3 fill:#405060,opacity:0.8
+  style newtonsoft-json-group_newtonsoft-json_13-0-3 fill:#405060,opacity:0.8
+,
+  net10.0/mmd/conflicts-group-all.mmd:
+flowchart LR
+  subgraph conflicts["Conflicts Group"]
+    direction LR
+    conflicts_app["App"]
+    conflicts_libv1["LibV1"]
+    conflicts_libv2["LibV2"]
+  end
+  microsoft-netcore-app["Microsoft.NETCore.App"]
+  subgraph newtonsoft-json-group["Newtonsoft.Json"]
+      newtonsoft-json-group_newtonsoft-json_12-0-3["Newtonsoft.Json<br>v12.0.3"]
+      newtonsoft-json-group_newtonsoft-json_13-0-3["Newtonsoft.Json<br>v13.0.3"]
+    end
+  conflicts_app --> microsoft-netcore-app
+  conflicts_app --> conflicts_libv1
+  conflicts_libv1 --> newtonsoft-json-group_newtonsoft-json_12-0-3
+  conflicts_app --> conflicts_libv2
+  conflicts_libv2 --> newtonsoft-json-group_newtonsoft-json_13-0-3
+  conflicts_libv1 --> microsoft-netcore-app
+  conflicts_libv2 --> microsoft-netcore-app
+  style conflicts fill:#DDEEFF,stroke:#DDEEFF,stroke-width:1px,opacity:0.75
+  style newtonsoft-json-group fill:#DDEEFF,stroke:#DDEEFF,stroke-width:1px,opacity:0.75
+  style microsoft-netcore-app fill:#102030,opacity:0.8
+  style newtonsoft-json-group_newtonsoft-json_12-0-3 fill:#405060,opacity:0.8
+  style newtonsoft-json-group_newtonsoft-json_13-0-3 fill:#405060,opacity:0.8
+,
+  net10.0/mmd/libv1.mmd:
+flowchart LR
+  subgraph conflicts["Conflicts Group"]
+    direction LR
+    conflicts_libv1["LibV1"]
+  end
+  microsoft-netcore-app["Microsoft.NETCore.App"]
+  newtonsoft-json_12-0-3["Newtonsoft.Json<br>v12.0.3"]
+  conflicts_libv1 --> microsoft-netcore-app
+  conflicts_libv1 --> newtonsoft-json_12-0-3
+  style conflicts fill:#DDEEFF,stroke:#DDEEFF,stroke-width:1px,opacity:0.75
+  style microsoft-netcore-app fill:#102030,opacity:0.8
+  style newtonsoft-json_12-0-3 fill:#405060,opacity:0.8
+,
+  net10.0/mmd/libv2.mmd:
+flowchart LR
+  subgraph conflicts["Conflicts Group"]
+    direction LR
+    conflicts_libv2["LibV2"]
+  end
+  microsoft-netcore-app["Microsoft.NETCore.App"]
+  newtonsoft-json_13-0-3["Newtonsoft.Json<br>v13.0.3"]
+  conflicts_libv2 --> microsoft-netcore-app
+  conflicts_libv2 --> newtonsoft-json_13-0-3
+  style conflicts fill:#DDEEFF,stroke:#DDEEFF,stroke-width:1px,opacity:0.75
+  style microsoft-netcore-app fill:#102030,opacity:0.8
+  style newtonsoft-json_13-0-3 fill:#405060,opacity:0.8
+
+}
