@@ -22,7 +22,7 @@ For each discovered target framework, the generator can process both individual 
 After gathering all of the information, the generator will produce a 'Dependency Summary' in markdown format,
 along with one or more [D2](https://d2lang.org/) (`.d2`) and/or [Mermaid](https://mermaid.js.org/) (`.mmd`) diagram files, as well as either `png`, `svg`, or `pdf` diagrams.
 
-This [example](./Sample/Output/net9.0/slndependencydiagramgenerator.png) has been produced from the solution in this repository.
+This [example](./Samples/Output/net9.0/d2/slndependencydiagramgenerator.png) has been produced from the solution in this repository.
 
 ## Features
 
@@ -262,72 +262,17 @@ sequenceDiagram
   Generator-->>App: Generation complete
 ```
 
-## Sample Project
+## Samples
 
-The `DiagramGeneratorSample` project in the `Samples` folder demonstrates the generator running against the solution that contains it. It targets `net10.0` and produces output under `Sample/Output`.
+The repository includes a full runnable sample setup under `Samples/`, including:
 
-### Projects in Scope
+- `DiagramGeneratorSample` (console host used to run the generator)
+- `NugetConflictSample` (intentionally conflicting package versions)
+- `Output/` (generated example artifacts by target framework)
 
-The solution contains two projects matched by the sample's `regexToInclude` pattern:
+For detailed documentation of project intent, dependency choices (including intentionally older/conflicting package versions), configuration variants, launch settings, run commands, and troubleshooting, see:
 
-- **SlnDependencyDiagramGenerator** — the library itself, targeting `net8.0`, `net9.0`, and `net10.0`.
-- **NugetConflictSample** — a minimal project included solely to introduce a cross-project NuGet version conflict into the dependency summary. It targets `net10.0` only.
-
-> **Note:** The cross-project version conflict table in `Dependency Summary.md` will only appear in the `net10.0` output folder. The `net8.0` and `net9.0` summaries contain no conflict section because `NugetConflictSample` is not part of those target framework graphs.
-
-### Configuration Files
-
-`appsettings.json` is the base configuration. It defines all project paths, filters, diagram styles, and export options. The `formats` array is intentionally left empty — no diagram files are generated when running with the base file alone.
-
-> **Why empty `formats` in the base?** `Microsoft.Extensions.Configuration` merges JSON arrays by index; a shorter array in a variant cannot shrink a longer one from the base. Keeping `formats` empty in the base ensures the variant file is the sole source of truth for which diagram formats are generated.
-
-Three variant files layer on top of the base to set `formats` and, where relevant, grouping behavior:
-
-| Variant file            | `SETTINGS_VARIANT` value | What it overrides                         |
-| ----------------------- | ------------------------ | ----------------------------------------- |
-| `appsettings.d2.json`   | `d2`                     | `formats: ["d2"]`, grouping enabled       |
-| `appsettings.mmd.json`  | `mmd`                    | `formats: ["mermaid"]`, grouping disabled |
-| `appsettings.both.json` | `both`                   | `formats: ["d2", "mermaid"]`              |
-
-### Running With Settings
-
-Use one of the following approaches.
-
-1.  **Variant-based run** (`SETTINGS_VARIANT` environment variable)
-
-    Set `SETTINGS_VARIANT` to `d2`, `mmd`, or `both` to layer `appsettings.{variant}.json` over `appsettings.json`.
-    For Visual Studio / VS Code debug runs, set this in `Samples/DiagramGeneratorSample/Properties/launchSettings.json`.
-
-    ```json
-    "environmentVariables": {
-      "SETTINGS_VARIANT": "d2"
-    }
-    ```
-
-    ```shell
-    # PowerShell
-    $env:SETTINGS_VARIANT = "d2"
-    dotnet run --project Samples/DiagramGeneratorSample
-
-    # cmd
-    set SETTINGS_VARIANT=mmd
-    dotnet run --project Samples/DiagramGeneratorSample
-    ```
-
-    If `SETTINGS_VARIANT` is not set, the base file is used as-is. Since `formats` is empty in `appsettings.json`, no diagram files are produced and only `Dependency Summary.md` is written.
-
-2.  **Standalone custom file** (`--configFile`)
-
-    Use `appsettings.json` as a baseline template, copy it to a new file (for example `appsettings.custom.json`), edit that copy, and run with `--configFile`.
-
-    ```shell
-    # PowerShell
-    dotnet run --project Samples/DiagramGeneratorSample -- --configFile Samples/DiagramGeneratorSample/appsettings.custom.json
-    ```
-
-    `--configFile` loads only the file you provide as the primary configuration source; it does not implicitly merge with `appsettings.json`.
-
-    Recommended usage is to leave `SETTINGS_VARIANT` unset when using `--configFile` so the custom file remains fully self-contained and predictable.
+- [Samples/README.md](./Samples/README.md)
 
 ## Limitations
 
