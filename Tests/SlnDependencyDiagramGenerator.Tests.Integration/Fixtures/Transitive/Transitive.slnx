@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="AppConsole/AppConsole.csproj" />
+  <Project Path="CoreLib/CoreLib.csproj" />
+</Solution>

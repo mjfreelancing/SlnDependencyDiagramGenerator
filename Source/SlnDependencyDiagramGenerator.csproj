@@ -74,5 +74,10 @@
     <ItemGroup>
       <Folder Include="Renderers\D2\" />
       <Folder Include="Renderers\Mermaid\" />
-    </ItemGroup>    
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="SlnDependencyDiagramGenerator.Tests.Unit" />
+        <InternalsVisibleTo Include="SlnDependencyDiagramGenerator.Tests.Integration" />
+    </ItemGroup>
 </Project>
