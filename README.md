@@ -17,7 +17,7 @@ As large applications grow, awareness of dependencies diminishes. Hidden transit
 
 Project and framework references are read from the evaluated MSBuild project model (including imports and conditions such as `Directory.Build.props` / `Directory.Build.targets`), while package references are resolved from `obj/project.assets.json` (generated during restore/build). This utility requires those assets files to exist before it runs. Using the assets file means the output reflects NuGet's resolved versions, including Central Package Management and `Directory.Build.props` evaluation.
 
-For each discovered target framework, the generator can process both individual projects and the full solution scope, with configurable transitive package depth and package exclusions.
+For each discovered target framework, the generator can process both individual projects and the full solution scope, with configurable transitive package depth and package/framework exclusions.
 
 After gathering all of the information, the generator will produce a 'Dependency Summary' in markdown format,
 along with one or more [D2](https://d2lang.org/) (`.d2`) and/or [Mermaid](https://mermaid.js.org/) (`.mmd`) diagram files, as well as either `png`, `svg`, or `pdf` diagrams.
@@ -34,6 +34,7 @@ This [example](./Sample/Output/net9.0/slndependencydiagramgenerator.png) has bee
 - Separates explicit and transitive package dependencies with configurable transitive depth per scope.
 - Supports per-scope generation for individual projects and the full solution graph.
 - Supports package-level exclusions via `projects.packagesToExclude`.
+- Supports framework-level exclusions via `projects.frameworksToExclude`.
 - Generates diagrams in D2 (`.d2`) and/or Mermaid (`.mmd`) formats.
 - Exports diagram images as `png`, `svg`, and `pdf`.
 - Writes renderer-specific output under each target framework folder (for example `d2` and `mmd`) to avoid name collisions.
@@ -59,6 +60,8 @@ package, binding the configuration from its `appsettings.json` file.
       "regexToExclude": [],
 
       "packagesToExclude": ["Microsoft.Build", "Microsoft.SourceLink.GitHub"],
+
+      "frameworksToExclude": ["Microsoft.NETCore.App"],
 
       "individual": {
         "enabled": true,
@@ -125,6 +128,7 @@ package dependency graph.
 - **RegexToInclude**: One or more regex patterns to match solution projects to be processed.
 - **RegexToExclude**: One or more optional regex patterns to exclude matched projects.
 - **PackagesToExclude**: Optional package IDs to exclude from diagrams and summary output (case-insensitive).
+- **FrameworksToExclude**: Optional framework reference IDs to exclude from diagrams and summary output (case-insensitive).
 - **Individual**: Specifies options specific to the processing of individual projects in a solution.
 - **All**: Specifies options specific to the processing of all projects in the solution (collectively).
 

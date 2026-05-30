@@ -51,13 +51,14 @@ internal sealed partial class SolutionParser
     /// <param name="regexToInclude">Regex patterns used to include projects.</param>
     /// <param name="regexToExclude">Regex patterns used to exclude projects.</param>
     /// <param name="excludePackages">Package IDs to exclude from package resolution.</param>
+    /// <param name="excludeFrameworks">Framework reference IDs to exclude from framework resolution.</param>
     /// <param name="targetFramework">The target framework to parse.</param>
     /// <param name="maxTransitiveDepth">The maximum transitive package depth to include.</param>
     /// <returns>
     /// The parsed project models for the requested target framework.
     /// </returns>
     public SolutionProject[] Parse(string solutionFilePath, string[] regexToInclude, string[] regexToExclude,
-        string[] excludePackages, string targetFramework, int maxTransitiveDepth)
+        string[] excludePackages, string[] excludeFrameworks, string targetFramework, int maxTransitiveDepth)
     {
         solutionFilePath = Path.GetFullPath(solutionFilePath);
 
@@ -66,10 +67,11 @@ internal sealed partial class SolutionParser
         MsBuildSdkResolver.EnsureInitialized();
 
         var excludeSet = new HashSet<string>(excludePackages, StringComparer.OrdinalIgnoreCase);
+        var excludeFrameworkSet = new HashSet<string>(excludeFrameworks, StringComparer.OrdinalIgnoreCase);
 
         return [.. FilterAndOrderProjects(solutionFilePath, regexToInclude, regexToExclude)
             .Where(project => _assetReader.HasTargetFramework(project.AbsolutePath, targetFramework))
-            .Select(project => BuildSolutionProject(project, targetFramework, maxTransitiveDepth, excludeSet))];
+            .Select(project => BuildSolutionProject(project, targetFramework, maxTransitiveDepth, excludeSet, excludeFrameworkSet))];
     }
 
     /// <summary>
@@ -135,11 +137,12 @@ internal sealed partial class SolutionParser
     /// <param name="targetFramework">The target framework to resolve packages for.</param>
     /// <param name="maxTransitiveDepth">The maximum transitive package depth to include.</param>
     /// <param name="excludePackages">Package IDs to exclude from package resolution.</param>
+    /// <param name="excludeFrameworks">Framework reference IDs to exclude from framework resolution.</param>
     /// <returns>
     /// The resolved project model used by downstream diagram and summary generation.
     /// </returns>
     private SolutionProject BuildSolutionProject(ProjectInSolution projectInSolution, string targetFramework,
-        int maxTransitiveDepth, HashSet<string> excludePackages)
+        int maxTransitiveDepth, HashSet<string> excludePackages, HashSet<string> excludeFrameworks)
     {
         var projectPath = projectInSolution.AbsolutePath;
 
@@ -167,7 +170,7 @@ internal sealed partial class SolutionParser
         try
         {
             projectReferences = GetProjectReferences(evaluatedProject);
-            frameworkReferences = GetFrameworkReferences(evaluatedProject);
+            frameworkReferences = GetFrameworkReferences(evaluatedProject, excludeFrameworks);
         }
         catch (Exception exception)
         {
@@ -218,13 +221,15 @@ internal sealed partial class SolutionParser
     /// Extracts <c>FrameworkReference</c> items from an evaluated project.
     /// </summary>
     /// <param name="project">The evaluated project for the active target framework.</param>
+    /// <param name="excludeFrameworks">Framework reference IDs to exclude.</param>
     /// <returns>
     /// The framework references for the active target framework.
     /// </returns>
-    private static FrameworkReference[] GetFrameworkReferences(Project project)
+    private static FrameworkReference[] GetFrameworkReferences(Project project, HashSet<string> excludeFrameworks)
     {
         return [.. project.Items
             .Where(item => item.ItemType.Equals("FrameworkReference", StringComparison.OrdinalIgnoreCase))
+            .Where(item => !excludeFrameworks.Contains(item.EvaluatedInclude))
             .Select(item => new FrameworkReference { Name = item.EvaluatedInclude })];
     }
 

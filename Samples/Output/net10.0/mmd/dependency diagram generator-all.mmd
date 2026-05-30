@@ -5,7 +5,6 @@ flowchart LR
     ddg_slndependencydiagramgenerator["SlnDependencyDiagramGenerator"]
     ddg_nugetconflictsample["NugetConflictSample"]
   end
-  microsoft-netcore-app["Microsoft.NETCore.App"]
   microsoft-extensions-configuration_10-0-8["Microsoft.Extensions.Configuration<br>v10.0.8"]
   microsoft-extensions-configuration-abstractions_10-0-8["Microsoft.Extensions.Configuration.Abstractions<br>v10.0.8"]
   microsoft-extensions-primitives_10-0-8["Microsoft.Extensions.Primitives<br>v10.0.8"]
@@ -36,7 +35,6 @@ flowchart LR
       nuget-packaging-group_nuget-packaging_7-6-0["NuGet.Packaging<br>v7.6.0"]
       nuget-packaging-group_nuget-packaging_7-3-1["NuGet.Packaging<br>v7.3.1"]
     end
-  ddg_diagramgeneratorsample --> microsoft-netcore-app
   ddg_diagramgeneratorsample --> microsoft-extensions-configuration_10-0-8
   microsoft-extensions-configuration_10-0-8 --> microsoft-extensions-configuration-abstractions_10-0-8
   microsoft-extensions-configuration_10-0-8 --> microsoft-extensions-primitives_10-0-8
@@ -61,8 +59,6 @@ flowchart LR
   nuget-projectmodel_7-6-0 --> nuget-dependencyresolver-core_7-6-0
   ddg_slndependencydiagramgenerator --> nuget-protocol-group_nuget-protocol_7-6-0
   nuget-protocol-group_nuget-protocol_7-6-0 --> nuget-packaging-group_nuget-packaging_7-6-0
-  ddg_slndependencydiagramgenerator --> microsoft-netcore-app
-  ddg_nugetconflictsample --> microsoft-netcore-app
   ddg_nugetconflictsample --> alloverit-group_alloverit_9-2-0
   alloverit-group_alloverit_9-2-0 --> alloverit-assertion-group_alloverit-assertion_9-2-0
   ddg_nugetconflictsample --> nuget-protocol-group_nuget-protocol_7-3-1
@@ -72,7 +68,6 @@ flowchart LR
   style alloverit-assertion-group fill:#E7EBFC,stroke:#E7EBFC,stroke-width:1px,opacity:1
   style nuget-protocol-group fill:#E7EBFC,stroke:#E7EBFC,stroke-width:1px,opacity:1
   style nuget-packaging-group fill:#E7EBFC,stroke:#E7EBFC,stroke-width:1px,opacity:1
-  style microsoft-netcore-app fill:#ECCBC0,opacity:0.8
   style microsoft-extensions-configuration_10-0-8 fill:#ADD8E6,opacity:0.8
   style microsoft-extensions-configuration-abstractions_10-0-8 fill:#FFEC96,opacity:0.8
   style microsoft-extensions-primitives_10-0-8 fill:#FFEC96,opacity:0.8

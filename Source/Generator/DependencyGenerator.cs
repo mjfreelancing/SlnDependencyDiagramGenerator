@@ -69,6 +69,7 @@ public sealed class DependencyGenerator
         var regexToInclude = _configuration.Projects.RegexToInclude;
         var regexToExclude = _configuration.Projects.RegexToExclude;
         var excludePackages = _configuration.Projects.PackagesToExclude;
+        var excludeFrameworks = _configuration.Projects.FrameworksToExclude;
         var solutionPath = _configuration.Projects.SolutionPath;
 
         // Must run before creating SolutionParser because NuGet.ProjectModel can trigger
@@ -97,7 +98,8 @@ public sealed class DependencyGenerator
 
         foreach (var targetFramework in targetFrameworks)
         {
-            var allProjects = solutionParser.Parse(solutionPath, regexToInclude, regexToExclude, excludePackages, targetFramework, maxTransitiveDepth);
+            var allProjects = solutionParser.Parse(solutionPath, regexToInclude, regexToExclude,
+                excludePackages, excludeFrameworks, targetFramework, maxTransitiveDepth);
 
             if (allProjects.Length == 0)
             {

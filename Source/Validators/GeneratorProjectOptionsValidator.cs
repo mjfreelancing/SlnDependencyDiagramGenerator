@@ -36,6 +36,7 @@ internal sealed class GeneratorProjectOptionsValidator : ValidatorBase<Generator
         RuleFor(model => model.RegexToInclude).IsNotEmpty();
         RuleFor(model => model.RegexToExclude).NotNull();
         RuleFor(model => model.PackagesToExclude).NotNull();
+        RuleFor(model => model.FrameworksToExclude).NotNull();
 
         RuleFor(model => model.Individual).NotNull();
         RuleFor(model => model.All).NotNull();

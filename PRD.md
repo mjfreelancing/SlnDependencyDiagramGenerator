@@ -142,6 +142,7 @@ Only D2 and rendered D2 images (PNG/SVG/PDF) are produced. Mermaid is a widely s
 | FR-6.2 | Replace `diagram.format` (single value) with `diagram.formats` (array of values: `"d2"`, `"mermaid"`). At least one value must be defined; empty arrays are invalid.                                                                                                                                                                                                                             |
 | FR-6.3 | Replace direction values `"left"`, `"right"`, `"up"`, `"down"` with standard flow notation `"LR"`, `"RL"`, `"TB"`, `"BT"`.                                                                                                                                                                                                                                                                       |
 | FR-6.4 | Add a new optional `packagesToExclude` string array under `projects`. Each entry is an exact package ID (case-insensitive). Any matching package is omitted from all diagrams and the summary report. Transitive dependencies reachable only through excluded packages are also omitted; those reachable via another non-excluded path are retained. Defaults to an empty array (no exclusions). |
+| FR-6.5 | Add a new optional `frameworksToExclude` string array under `projects`. Each entry is an exact framework reference ID (case-insensitive). Any matching framework reference is omitted from all diagrams and the summary report. Defaults to an empty array (no exclusions).                                                                                                                      |
 
 ---
 
@@ -326,6 +327,7 @@ After:
       "regexToInclude": ["\\\\.*\\.csproj"],
       "regexToExclude": [],
       "packagesToExclude": ["Microsoft.Build", "Microsoft.SourceLink.GitHub"],
+      "frameworksToExclude": ["Microsoft.NETCore.App"],
       "individual": {
         "enabled": true,
         "includeDependencies": true,

@@ -43,7 +43,6 @@
 * Microsoft.Extensions.FileProviders.Abstractions v10.0.8
 * Microsoft.Extensions.FileProviders.Physical v10.0.8
 * Microsoft.Extensions.Primitives v10.0.8
-* Microsoft.NETCore.App
 * Newtonsoft.Json v13.0.3
 * NuGet.Configuration v7.6.0
 * NuGet.DependencyResolver.Core v7.6.0
@@ -70,7 +69,6 @@
 
 * AllOverIt v9.2.0
 * AllOverIt.Assertion v9.2.0
-* Microsoft.NETCore.App
 * Newtonsoft.Json v13.0.3
 * NuGet.Configuration v7.3.1
 * NuGet.Packaging v7.3.1
@@ -96,7 +94,6 @@
 * FluentValidation v12.1.1
 * Microsoft.Build.Locator v1.11.2
 * Microsoft.Extensions.DependencyInjection.Abstractions v10.0.8
-* Microsoft.NETCore.App
 * Newtonsoft.Json v13.0.3
 * NuGet.Configuration v7.6.0
 * NuGet.DependencyResolver.Core v7.6.0

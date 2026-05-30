@@ -3,7 +3,6 @@ flowchart LR
     direction LR
     ddg_slndependencydiagramgenerator["SlnDependencyDiagramGenerator"]
   end
-  microsoft-netcore-app["Microsoft.NETCore.App"]
   alloverit_9-2-1["AllOverIt<br>v9.2.1"]
   alloverit-assertion_9-2-1["AllOverIt.Assertion<br>v9.2.1"]
   alloverit-validation_9-2-1["AllOverIt.Validation<br>v9.2.1"]
@@ -20,7 +19,6 @@ flowchart LR
   newtonsoft-json_13-0-3["Newtonsoft.Json<br>v13.0.3"]
   nuget-versioning_7-6-0["NuGet.Versioning<br>v7.6.0"]
   system-security-cryptography-pkcs_8-0-1["System.Security.Cryptography.Pkcs<br>v8.0.1"]
-  ddg_slndependencydiagramgenerator --> microsoft-netcore-app
   ddg_slndependencydiagramgenerator --> alloverit_9-2-1
   alloverit_9-2-1 --> alloverit-assertion_9-2-1
   ddg_slndependencydiagramgenerator --> alloverit-validation_9-2-1
@@ -41,7 +39,6 @@ flowchart LR
   nuget-packaging_7-6-0 --> nuget-versioning_7-6-0
   nuget-packaging_7-6-0 --> system-security-cryptography-pkcs_8-0-1
   style ddg fill:#E7EBFC,stroke:#E7EBFC,stroke-width:1px,opacity:1
-  style microsoft-netcore-app fill:#ECCBC0,opacity:0.8
   style alloverit_9-2-1 fill:#ADD8E6,opacity:0.8
   style alloverit-assertion_9-2-1 fill:#FFEC96,opacity:0.8
   style alloverit-validation_9-2-1 fill:#ADD8E6,opacity:0.8

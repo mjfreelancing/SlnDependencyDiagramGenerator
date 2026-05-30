@@ -34,6 +34,9 @@ public sealed class GeneratorProjectOptions
     /// Transitive dependencies reachable only through excluded packages are also omitted.</summary>
     public string[] PackagesToExclude { get; init; } = [];
 
+    /// <summary>One or more (optional) framework reference IDs to exclude from diagram and summary output (case-insensitive).</summary>
+    public string[] FrameworksToExclude { get; init; } = [];
+
     /// <summary>Specifies options specific to the processing of individual projects in a solution.</summary>
     public ProjectScope Individual { get; set; }
 
