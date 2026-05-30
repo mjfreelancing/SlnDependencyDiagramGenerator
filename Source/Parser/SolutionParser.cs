@@ -1,13 +1,14 @@
 ﻿using AllOverIt.Extensions;
-using Microsoft.Build.Construction;
 using Microsoft.Build.Evaluation;
 using SlnDependencyDiagramGenerator.Exceptions;
+using SlnDependencyDiagramGenerator.Parser.Resolvers;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace SlnDependencyDiagramGenerator.Parser;
 
@@ -17,8 +18,21 @@ internal sealed partial class SolutionParser
     [GeneratedRegex(@"^[a-z]+(\d+\.\d+)", RegexOptions.IgnoreCase, "en-AU")]
     private static partial Regex TargetFrameworkRegex();
 
-    private readonly Dictionary<string, SolutionFile> _solutionFiles = [];
+    private bool _hasCachedProjects;
+    private string _cachedSolutionFilePath = string.Empty;
+    private IReadOnlyList<SolutionProjectDescriptor> _cachedProjects = [];
+    private readonly Dictionary<string, ISolutionProjectResolver> _solutionProjectResolvers;
     private readonly ProjectAssetReader _assetReader = new();
+
+    /// <summary>Initializes a new parser instance.</summary>
+    public SolutionParser()
+    {
+        _solutionProjectResolvers = new Dictionary<string, ISolutionProjectResolver>(StringComparer.OrdinalIgnoreCase)
+        {
+            [".sln"] = new SlnSolutionProjectResolver(),
+            [".slnx"] = new SlnxSolutionProjectResolver()
+        };
+    }
 
     /// <summary>
     /// Discovers the set of target frameworks that should be processed for the selected projects.
@@ -30,17 +44,18 @@ internal sealed partial class SolutionParser
     /// A distinct, ordered list of base target frameworks (for example, <c>net10.0</c>),
     /// discovered from each matching project's assets file.
     /// </returns>
-    public string[] DiscoverTargetFrameworks(string solutionFilePath, string[] regexToInclude, string[] regexToExclude)
+    public async Task<string[]> DiscoverTargetFrameworksAsync(string solutionFilePath, string[] regexToInclude, string[] regexToExclude)
     {
         solutionFilePath = Path.GetFullPath(solutionFilePath);
 
-        return FilterAndOrderProjects(solutionFilePath, regexToInclude, regexToExclude)
+        var projects = await FilterAndOrderProjectsAsync(solutionFilePath, regexToInclude, regexToExclude).ConfigureAwait(false);
+
+        return [.. projects
             .SelectMany(project => _assetReader.GetTargetFrameworks(project.AbsolutePath))
             .Select(targetFramework => targetFramework.Split('-')[0])      // strip platform suffix (e.g. net10.0-windows10.0.19041 -> net10.0)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(TfmSortVersion)
-            .ThenBy(targetFramework => targetFramework, StringComparer.OrdinalIgnoreCase)
-            .ToArray();
+            .ThenBy(targetFramework => targetFramework, StringComparer.OrdinalIgnoreCase)];
     }
 
     /// <summary>
@@ -57,7 +72,7 @@ internal sealed partial class SolutionParser
     /// <returns>
     /// The parsed project models for the requested target framework.
     /// </returns>
-    public SolutionProject[] Parse(string solutionFilePath, string[] regexToInclude, string[] regexToExclude,
+    public async Task<SolutionProject[]> ParseAsync(string solutionFilePath, string[] regexToInclude, string[] regexToExclude,
         string[] excludePackages, string[] excludeFrameworks, string targetFramework, int maxTransitiveDepth)
     {
         solutionFilePath = Path.GetFullPath(solutionFilePath);
@@ -69,7 +84,9 @@ internal sealed partial class SolutionParser
         var excludeSet = new HashSet<string>(excludePackages, StringComparer.OrdinalIgnoreCase);
         var excludeFrameworkSet = new HashSet<string>(excludeFrameworks, StringComparer.OrdinalIgnoreCase);
 
-        return [.. FilterAndOrderProjects(solutionFilePath, regexToInclude, regexToExclude)
+        var projects = await FilterAndOrderProjectsAsync(solutionFilePath, regexToInclude, regexToExclude).ConfigureAwait(false);
+
+        return [.. projects
             .Where(project => _assetReader.HasTargetFramework(project.AbsolutePath, targetFramework))
             .Select(project => BuildSolutionProject(project, targetFramework, maxTransitiveDepth, excludeSet, excludeFrameworkSet))];
     }
@@ -100,21 +117,15 @@ internal sealed partial class SolutionParser
     /// <returns>
     /// The filtered and alphabetically ordered set of MSBuild-format projects.
     /// </returns>
-    private IEnumerable<ProjectInSolution> FilterAndOrderProjects(string solutionFilePath, string[] regexToInclude, string[] regexToExclude)
+    private async Task<IReadOnlyList<SolutionProjectDescriptor>> FilterAndOrderProjectsAsync(string solutionFilePath,
+        string[] regexToInclude, string[] regexToExclude)
     {
-        if (!_solutionFiles.TryGetValue(solutionFilePath, out var solutionFile))
-        {
-            solutionFile = SolutionFile.Parse(solutionFilePath);
-            _solutionFiles.Add(solutionFilePath, solutionFile);
-        }
+        var solutionProjects = await GetSolutionProjectsAsync(solutionFilePath).ConfigureAwait(false);
 
         var includeRegexes = regexToInclude.SelectToArray(regex => new Regex(regex));
         var excludeRegexes = regexToExclude.SelectToArray(regex => new Regex(regex));
 
-        return solutionFile.ProjectsInOrder
-            .Where(project =>
-                project.ProjectType == SolutionProjectType.KnownToBeMSBuildFormat ||
-                project.ProjectType == SolutionProjectType.WebProject)
+        return [.. solutionProjects
             .Where(project =>
             {
                 var include = includeRegexes.Any(regex => regex.Matches(project.AbsolutePath).Count > 0);
@@ -126,14 +137,52 @@ internal sealed partial class SolutionParser
 
                 return !excludeRegexes.Any(regex => regex.Matches(project.AbsolutePath).Count > 0);
             })
-            .OrderBy(item => item.ProjectName);
+            .OrderBy(item => item.ProjectName)];
     }
 
+    /// <summary>
+    /// Loads project entries from a supported solution format.
+    /// </summary>
+    /// <param name="solutionFilePath">The full solution file path.</param>
+    /// <returns>The project entries available in the solution.</returns>
+    /// <exception cref="DependencyGeneratorException">Thrown when the extension is unsupported or the solution cannot be parsed.</exception>
+    private async Task<IReadOnlyList<SolutionProjectDescriptor>> GetSolutionProjectsAsync(string solutionFilePath)
+    {
+        if (_hasCachedProjects && string.Equals(_cachedSolutionFilePath, solutionFilePath, StringComparison.OrdinalIgnoreCase))
+        {
+            return _cachedProjects;
+        }
+
+        var extension = Path.GetExtension(solutionFilePath);
+
+        if (!_solutionProjectResolvers.TryGetValue(extension, out var resolver))
+        {
+            var supportedExtensions = string.Join(", ", _solutionProjectResolvers.Keys.OrderBy(item => item, StringComparer.OrdinalIgnoreCase));
+            throw new DependencyGeneratorException($"Unsupported solution extension '{extension}'. Supported extensions are {supportedExtensions}. Path: {solutionFilePath}");
+        }
+
+        IReadOnlyList<SolutionProjectDescriptor> solutionProjects;
+
+        try
+        {
+            solutionProjects = await resolver.GetProjectsAsync(solutionFilePath).ConfigureAwait(false);
+        }
+        catch (Exception exception)
+        {
+            throw CreateSolutionParseException(solutionFilePath, exception);
+        }
+
+        _cachedSolutionFilePath = solutionFilePath;
+        _cachedProjects = solutionProjects;
+        _hasCachedProjects = true;
+
+        return solutionProjects;
+    }
     /// <summary>
     /// Builds a <see cref="SolutionProject"/> by combining evaluated MSBuild references and
     /// assets-resolved package dependencies for one target framework.
     /// </summary>
-    /// <param name="projectInSolution">The project entry from the solution file.</param>
+    /// <param name="solutionProject">The project entry from the solution file.</param>
     /// <param name="targetFramework">The target framework to resolve packages for.</param>
     /// <param name="maxTransitiveDepth">The maximum transitive package depth to include.</param>
     /// <param name="excludePackages">Package IDs to exclude from package resolution.</param>
@@ -141,10 +190,10 @@ internal sealed partial class SolutionParser
     /// <returns>
     /// The resolved project model used by downstream diagram and summary generation.
     /// </returns>
-    private SolutionProject BuildSolutionProject(ProjectInSolution projectInSolution, string targetFramework,
+    private SolutionProject BuildSolutionProject(SolutionProjectDescriptor solutionProject, string targetFramework,
         int maxTransitiveDepth, HashSet<string> excludePackages, HashSet<string> excludeFrameworks)
     {
-        var projectPath = projectInSolution.AbsolutePath;
+        var projectPath = solutionProject.AbsolutePath;
 
         // Evaluate the project for the current target framework so imported/conditioned items
         // from Directory.Build.props/targets are included in ProjectReference and FrameworkReference.
@@ -186,13 +235,33 @@ internal sealed partial class SolutionParser
 
         return new SolutionProject
         {
-            Name = projectInSolution.ProjectName,
+            Name = solutionProject.ProjectName,
             Path = projectPath,
             TargetFrameworks = allTargetFrameworks,
             ProjectReferences = projectReferences,
             FrameworkReferences = frameworkReferences,
             PackageReferences = packageReferences
         };
+    }
+
+    /// <summary>
+    /// Creates a diagnostic-rich parser exception for malformed or unreadable solution files.
+    /// </summary>
+    /// <param name="solutionFilePath">The solution path being parsed when the failure occurred.</param>
+    /// <param name="exception">The underlying exception thrown while parsing the solution file.</param>
+    /// <returns>A <see cref="DependencyGeneratorException"/> that includes solution path and underlying parser diagnostics.</returns>
+    private static DependencyGeneratorException CreateSolutionParseException(string solutionFilePath, Exception exception)
+    {
+        var extension = Path.GetExtension(solutionFilePath);
+        var builder = new StringBuilder();
+
+        builder.AppendLine($"Failed to parse solution file '{solutionFilePath}'.");
+        builder.AppendLine($"Detected format: {extension}");
+        builder.AppendLine();
+        builder.AppendLine("Underlying exception:");
+        builder.AppendLine(exception.ToString());
+
+        return new DependencyGeneratorException(builder.ToString(), exception);
     }
 
     /// <summary>

@@ -79,7 +79,9 @@ public sealed class DependencyGenerator
         var solutionParser = new SolutionParser();
 
         // Target frameworks are auto-discovered from each project's project.assets.json
-        var targetFrameworks = solutionParser.DiscoverTargetFrameworks(solutionPath, regexToInclude, regexToExclude);
+        var targetFrameworks = await solutionParser
+            .DiscoverTargetFrameworksAsync(solutionPath, regexToInclude, regexToExclude)
+            .ConfigureAwait(false);
 
         if (targetFrameworks.Length == 0)
         {
@@ -98,8 +100,9 @@ public sealed class DependencyGenerator
 
         foreach (var targetFramework in targetFrameworks)
         {
-            var allProjects = solutionParser.Parse(solutionPath, regexToInclude, regexToExclude,
-                excludePackages, excludeFrameworks, targetFramework, maxTransitiveDepth);
+            var allProjects = await solutionParser
+                .ParseAsync(solutionPath, regexToInclude, regexToExclude, excludePackages, excludeFrameworks, targetFramework, maxTransitiveDepth)
+                .ConfigureAwait(false);
 
             if (allProjects.Length == 0)
             {

@@ -13,7 +13,7 @@ Generates D2 and Mermaid diagram files and images for a Visual Studio Solution.
 
 As large applications grow, awareness of dependencies diminishes. Hidden transitive relationships, framework-specific package resolution, and cross-project coupling make it difficult to answer simple questions like "what depends on what?" and "where will a package change have impact?"
 
-`SlnDependencyDiagramGenerator` solves this by parsing a Visual Studio Solution (`.sln`), filtering projects by include/exclude regex rules, and building dependency graphs for each selected target framework.
+`SlnDependencyDiagramGenerator` solves this by parsing a Visual Studio Solution (`.sln` or `.slnx`), filtering projects by include/exclude regex rules, and building dependency graphs for each selected target framework.
 
 Project and framework references are read from the evaluated MSBuild project model (including imports and conditions such as `Directory.Build.props` / `Directory.Build.targets`), while package references are resolved from `obj/project.assets.json` (generated during restore/build). This utility requires those assets files to exist before it runs. Using the assets file means the output reflects NuGet's resolved versions, including Central Package Management and `Directory.Build.props` evaluation.
 
@@ -26,7 +26,7 @@ This [example](./Sample/Output/net9.0/slndependencydiagramgenerator.png) has bee
 
 ## Features
 
-- Parses Visual Studio solutions and filters projects using include/exclude regex rules.
+- Parses Visual Studio solutions (`.sln` and `.slnx`) and filters projects using include/exclude regex rules.
 - Resolves project and framework references from evaluated MSBuild items, including references introduced via `Directory.Build.props` / `Directory.Build.targets`.
 - Resolves package graphs from `obj/project.assets.json` (post-restore/build), matching NuGet's resolved package versions.
 - Implicitly supports Central Package Management (`Directory.Packages.props`) and `Directory.Build.props` evaluation because dependencies are read from restore/build-generated assets files.
@@ -124,7 +124,7 @@ An explanation of each section is provided below.
 Specifies project related options that determine which projects for a given solution are resolved and the depth of their
 package dependency graph.
 
-- **SolutionPath**: The relative or fully-qualified path to the solution file to be parsed.
+- **SolutionPath**: The relative or fully-qualified path to the solution file to be parsed (`.sln` or `.slnx`).
 - **RegexToInclude**: One or more regex patterns to match solution projects to be processed.
 - **RegexToExclude**: One or more optional regex patterns to exclude matched projects.
 - **PackagesToExclude**: Optional package IDs to exclude from diagrams and summary output (case-insensitive).
@@ -180,6 +180,8 @@ Specifies export path and image format options.
 
 Target frameworks are auto-discovered from each matching project's `obj/project.assets.json` file.
 Run `dotnet restore` or build the solution before generating diagrams so these files are present.
+
+Malformed or unreadable solution files (`.sln` or `.slnx`) fail fast with a clear error message; no fallback parsing is attempted.
 
 ## Architecture
 
@@ -329,3 +331,16 @@ Use one of the following approaches.
 
 - The solution must be restored or built before generation so each project's `obj/project.assets.json` is available.
 - Package dependency results reflect the latest available assets state; if `obj/project.assets.json` is stale or missing, run `dotnet restore` (or build) before generation.
+
+## References
+
+The solution parsing behavior implemented in this project is based on the following sources:
+
+- `.sln` parser API used by this project:
+  - [Microsoft.Build.Construction.SolutionFile](https://learn.microsoft.com/en-us/dotnet/api/microsoft.build.construction.solutionfile)
+- `.sln` file format and load semantics:
+  - [Solution (.sln) file](https://learn.microsoft.com/en-us/visualstudio/extensibility/internals/solution-dot-sln-file?view=vs-2022)
+- `.sln` and `.slnx` serializer/model library used by this project:
+  - [Microsoft.VisualStudio.SolutionPersistence (NuGet)](https://www.nuget.org/packages/Microsoft.VisualStudio.SolutionPersistence/)
+  - [microsoft/vs-solutionpersistence (GitHub)](https://github.com/microsoft/vs-solutionpersistence)
+  - [Project README (features and API entry points)](https://github.com/microsoft/vs-solutionpersistence/blob/main/README.md)

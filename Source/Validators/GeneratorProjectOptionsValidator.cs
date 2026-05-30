@@ -26,6 +26,15 @@ internal sealed class GeneratorProjectOptionsValidator : ValidatorBase<Generator
             RuleFor(model => model.SolutionPath)
                 .Must(path =>
                 {
+                    var extension = Path.GetExtension(path);
+                    return extension.Equals(".sln", System.StringComparison.OrdinalIgnoreCase) ||
+                           extension.Equals(".slnx", System.StringComparison.OrdinalIgnoreCase);
+                })
+                .WithMessage("SolutionPath must reference a .sln or .slnx file.");
+
+            RuleFor(model => model.SolutionPath)
+                .Must(path =>
+                {
                     var solutionFilePath = Path.GetFullPath(path);
                     return Path.Exists(solutionFilePath);
                 })
