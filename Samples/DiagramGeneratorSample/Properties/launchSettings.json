@@ -1,8 +1,11 @@
-{
+﻿{
     "profiles": {
         "DiagramGeneratorSample": {
             "commandName": "Project",
-            "commandLineArgs": ""       // "--configFile <PATH_TO_CONFIG_FILE>"
+            "environmentVariables": {
+                // Use d2, mmd or both to use the corresponding appsettings.{format}.json file(s) to configure diagram generation options and styles.
+                "SETTINGS_VARIANT": "both"
+            }
         }
     }
 }

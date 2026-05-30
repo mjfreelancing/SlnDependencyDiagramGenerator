@@ -1,9 +1,5 @@
 flowchart LR
-  subgraph ddg["Dependency Diagram Generator"]
-    direction LR
-    ddg_diagramgeneratorsample["DiagramGeneratorSample"]
-    ddg_slndependencydiagramgenerator["SlnDependencyDiagramGenerator"]
-  end
+  diagramgeneratorsample["DiagramGeneratorSample"]
   microsoft-extensions-configuration_10-0-8["Microsoft.Extensions.Configuration<br>v10.0.8"]
   microsoft-extensions-configuration-abstractions_10-0-8["Microsoft.Extensions.Configuration.Abstractions<br>v10.0.8"]
   microsoft-extensions-primitives_10-0-8["Microsoft.Extensions.Primitives<br>v10.0.8"]
@@ -12,6 +8,7 @@ flowchart LR
   microsoft-extensions-configuration-fileextensions_10-0-8["Microsoft.Extensions.Configuration.FileExtensions<br>v10.0.8"]
   microsoft-extensions-fileproviders-abstractions_10-0-8["Microsoft.Extensions.FileProviders.Abstractions<br>v10.0.8"]
   microsoft-extensions-fileproviders-physical_10-0-8["Microsoft.Extensions.FileProviders.Physical<br>v10.0.8"]
+  slndependencydiagramgenerator["SlnDependencyDiagramGenerator"]
   alloverit_9-2-1["AllOverIt<br>v9.2.1"]
   alloverit-assertion_9-2-1["AllOverIt.Assertion<br>v9.2.1"]
   alloverit-validation_9-2-1["AllOverIt.Validation<br>v9.2.1"]
@@ -28,14 +25,14 @@ flowchart LR
   newtonsoft-json_13-0-3["Newtonsoft.Json<br>v13.0.3"]
   nuget-versioning_7-6-0["NuGet.Versioning<br>v7.6.0"]
   system-security-cryptography-pkcs_8-0-1["System.Security.Cryptography.Pkcs<br>v8.0.1"]
-  ddg_diagramgeneratorsample --> microsoft-extensions-configuration_10-0-8
+  diagramgeneratorsample --> microsoft-extensions-configuration_10-0-8
   microsoft-extensions-configuration_10-0-8 --> microsoft-extensions-configuration-abstractions_10-0-8
   microsoft-extensions-configuration-abstractions_10-0-8 --> microsoft-extensions-primitives_10-0-8
   microsoft-extensions-configuration_10-0-8 --> microsoft-extensions-primitives_10-0-8
-  ddg_diagramgeneratorsample --> microsoft-extensions-configuration-binder_10-0-8
+  diagramgeneratorsample --> microsoft-extensions-configuration-binder_10-0-8
   microsoft-extensions-configuration-binder_10-0-8 --> microsoft-extensions-configuration_10-0-8
   microsoft-extensions-configuration-binder_10-0-8 --> microsoft-extensions-configuration-abstractions_10-0-8
-  ddg_diagramgeneratorsample --> microsoft-extensions-configuration-json_10-0-8
+  diagramgeneratorsample --> microsoft-extensions-configuration-json_10-0-8
   microsoft-extensions-configuration-json_10-0-8 --> microsoft-extensions-configuration_10-0-8
   microsoft-extensions-configuration-json_10-0-8 --> microsoft-extensions-configuration-abstractions_10-0-8
   microsoft-extensions-configuration-json_10-0-8 --> microsoft-extensions-configuration-fileextensions_10-0-8
@@ -46,27 +43,26 @@ flowchart LR
   microsoft-extensions-configuration-fileextensions_10-0-8 --> microsoft-extensions-primitives_10-0-8
   microsoft-extensions-configuration-json_10-0-8 --> microsoft-extensions-fileproviders-abstractions_10-0-8
   microsoft-extensions-fileproviders-abstractions_10-0-8 --> microsoft-extensions-primitives_10-0-8
-  ddg_diagramgeneratorsample --> ddg_slndependencydiagramgenerator
-  ddg_slndependencydiagramgenerator --> alloverit_9-2-1
+  diagramgeneratorsample --> slndependencydiagramgenerator
+  slndependencydiagramgenerator --> alloverit_9-2-1
   alloverit_9-2-1 --> alloverit-assertion_9-2-1
-  ddg_slndependencydiagramgenerator --> alloverit-validation_9-2-1
+  slndependencydiagramgenerator --> alloverit-validation_9-2-1
   alloverit-validation_9-2-1 --> alloverit_9-2-1
   alloverit-validation_9-2-1 --> fluentvalidation_12-1-1
   alloverit-validation_9-2-1 --> microsoft-extensions-dependencyinjection-abstractions_10-0-8
-  ddg_slndependencydiagramgenerator --> microsoft-build-locator_1-11-2
-  ddg_slndependencydiagramgenerator --> nuget-frameworks_7-6-0
-  ddg_slndependencydiagramgenerator --> nuget-projectmodel_7-6-0
+  slndependencydiagramgenerator --> microsoft-build-locator_1-11-2
+  slndependencydiagramgenerator --> nuget-frameworks_7-6-0
+  slndependencydiagramgenerator --> nuget-projectmodel_7-6-0
   nuget-projectmodel_7-6-0 --> nuget-dependencyresolver-core_7-6-0
   nuget-dependencyresolver-core_7-6-0 --> nuget-configuration_7-6-0
   nuget-dependencyresolver-core_7-6-0 --> nuget-librarymodel_7-6-0
   nuget-dependencyresolver-core_7-6-0 --> nuget-protocol_7-6-0
-  ddg_slndependencydiagramgenerator --> nuget-protocol_7-6-0
+  slndependencydiagramgenerator --> nuget-protocol_7-6-0
   nuget-protocol_7-6-0 --> nuget-packaging_7-6-0
   nuget-packaging_7-6-0 --> newtonsoft-json_13-0-3
   nuget-packaging_7-6-0 --> nuget-configuration_7-6-0
   nuget-packaging_7-6-0 --> nuget-versioning_7-6-0
   nuget-packaging_7-6-0 --> system-security-cryptography-pkcs_8-0-1
-  style ddg fill:#E7EBFC,stroke:#E7EBFC,stroke-width:1px,opacity:1
   style microsoft-extensions-configuration_10-0-8 fill:#ADD8E6,opacity:0.8
   style microsoft-extensions-configuration-abstractions_10-0-8 fill:#FFEC96,opacity:0.8
   style microsoft-extensions-primitives_10-0-8 fill:#FFEC96,opacity:0.8

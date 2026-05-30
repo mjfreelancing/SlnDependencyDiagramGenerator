@@ -1,8 +1,5 @@
 flowchart LR
-  subgraph ddg["Dependency Diagram Generator"]
-    direction LR
-    ddg_slndependencydiagramgenerator["SlnDependencyDiagramGenerator"]
-  end
+  slndependencydiagramgenerator["SlnDependencyDiagramGenerator"]
   alloverit_9-2-1["AllOverIt<br>v9.2.1"]
   alloverit-assertion_9-2-1["AllOverIt.Assertion<br>v9.2.1"]
   alloverit-validation_9-2-1["AllOverIt.Validation<br>v9.2.1"]
@@ -14,19 +11,18 @@ flowchart LR
   nuget-dependencyresolver-core_7-6-0["NuGet.DependencyResolver.Core<br>v7.6.0"]
   nuget-protocol_7-6-0["NuGet.Protocol<br>v7.6.0"]
   nuget-packaging_7-6-0["NuGet.Packaging<br>v7.6.0"]
-  ddg_slndependencydiagramgenerator --> alloverit_9-2-1
+  slndependencydiagramgenerator --> alloverit_9-2-1
   alloverit_9-2-1 --> alloverit-assertion_9-2-1
-  ddg_slndependencydiagramgenerator --> alloverit-validation_9-2-1
+  slndependencydiagramgenerator --> alloverit-validation_9-2-1
   alloverit-validation_9-2-1 --> alloverit_9-2-1
   alloverit-validation_9-2-1 --> fluentvalidation_12-1-1
   alloverit-validation_9-2-1 --> microsoft-extensions-dependencyinjection-abstractions_10-0-8
-  ddg_slndependencydiagramgenerator --> microsoft-build-locator_1-11-2
-  ddg_slndependencydiagramgenerator --> nuget-frameworks_7-6-0
-  ddg_slndependencydiagramgenerator --> nuget-projectmodel_7-6-0
+  slndependencydiagramgenerator --> microsoft-build-locator_1-11-2
+  slndependencydiagramgenerator --> nuget-frameworks_7-6-0
+  slndependencydiagramgenerator --> nuget-projectmodel_7-6-0
   nuget-projectmodel_7-6-0 --> nuget-dependencyresolver-core_7-6-0
-  ddg_slndependencydiagramgenerator --> nuget-protocol_7-6-0
+  slndependencydiagramgenerator --> nuget-protocol_7-6-0
   nuget-protocol_7-6-0 --> nuget-packaging_7-6-0
-  style ddg fill:#E7EBFC,stroke:#E7EBFC,stroke-width:1px,opacity:1
   style alloverit_9-2-1 fill:#ADD8E6,opacity:0.8
   style alloverit-assertion_9-2-1 fill:#FFEC96,opacity:0.8
   style alloverit-validation_9-2-1 fill:#ADD8E6,opacity:0.8

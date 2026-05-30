@@ -12,14 +12,16 @@ namespace DiagramGeneratorSample;
 
 internal class Program
 {
+    private sealed record ConfigurationSelection(string ConfigFile, string ConfigVariant);
+
     private static async Task Main(string[] args)
     {
         var logger = new ColorConsoleLogger();
-        var configFile = GetConfigFilename(args);
+        var configurationSelection = GetConfigurationSelection(args);
 
         try
         {
-            var options = GetGeneratorConfig(configFile);
+            var options = GetGeneratorConfig(configurationSelection);
             var generator = new DependencyGenerator(options, logger);
 
             await generator.CreateDiagramsAsync();
@@ -45,7 +47,7 @@ internal class Program
         catch (Exception exception) when (exception is InvalidOperationException or FormatException or
                                                        ArgumentException or InvalidDataException)
         {
-            WriteConfigurationError(logger, configFile, exception);
+            WriteConfigurationError(logger, configurationSelection.ConfigFile, exception);
         }
         catch (Exception exception)
         {
@@ -55,28 +57,48 @@ internal class Program
         }
     }
 
-    private static string GetConfigFilename(string[] args)
+    private static ConfigurationSelection GetConfigurationSelection(string[] args)
     {
-        var configFile = "appsettings.json";
+        string configFile = null;
 
-        if (args.Length == 2 && args[0].Equals("--configFile", StringComparison.InvariantCultureIgnoreCase))
+        for (var index = 0; index < args.Length - 1; index++)
         {
-            configFile = args[1];
+            if (args[index].Equals("--configFile", StringComparison.InvariantCultureIgnoreCase))
+            {
+                configFile = args[index + 1];
+            }
         }
 
-        return configFile;
+        configFile ??= "appsettings.json";
+
+        // Read the optional variant from the environment (e.g. set via launchSettings.json).
+        // When set, appsettings.<variant>.json is layered over appsettings.json.
+        var configVariant = Environment.GetEnvironmentVariable("SETTINGS_VARIANT");
+
+        return new ConfigurationSelection(configFile, configVariant);
     }
 
-    private static DependencyGeneratorConfig GetGeneratorConfig(string configFile)
+    private static DependencyGeneratorConfig GetGeneratorConfig(ConfigurationSelection configurationSelection)
     {
-        configFile = Path.GetFullPath(configFile);
+        var configFile = Path.GetFullPath(configurationSelection.ConfigFile);
+        var configDirectory = Path.GetDirectoryName(configFile) ?? AppDomain.CurrentDomain.BaseDirectory;
+        var configFileName = Path.GetFileName(configFile);
 
         var generatorConfig = new DependencyGeneratorConfig();
 
-        var configuration = new ConfigurationBuilder()
-            .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
-            .AddJsonFile(configFile, false, false)
-            .Build();
+        var configurationBuilder = new ConfigurationBuilder()
+            .SetBasePath(configDirectory)
+            .AddJsonFile(configFileName, false, false);
+
+        // When configured, layer appsettings.<variant>.json over appsettings.json,
+        // similar to environment-specific config behavior.
+        if (!string.IsNullOrWhiteSpace(configurationSelection.ConfigVariant))
+        {
+            var variantFile = $"appsettings.{configurationSelection.ConfigVariant}.json";
+            configurationBuilder.AddJsonFile(variantFile, true, false);
+        }
+
+        var configuration = configurationBuilder.Build();
 
         configuration.Bind("options", generatorConfig);
 
@@ -85,6 +107,8 @@ internal class Program
 
     private static void WriteConfigurationError(ColorConsoleLogger logger, string configFile, Exception exception)
     {
+        configFile ??= "appsettings.json";
+
         logger
             .WriteLine()
             .WriteLine(ConsoleColor.Red, "Failed to load configuration.")
