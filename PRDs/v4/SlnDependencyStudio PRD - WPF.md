@@ -2,7 +2,7 @@
 
 **Date:** May 2026  
 **Status:** Draft  
-**Scope:** WPF desktop application for authoring, running, and managing dependency-diagram projects backed by `SlnDependencyDiagramGenerator`
+**Scope:** WPF desktop application for authoring, running, and managing dependency-diagram projects backed by `SlnDependencyDiagramGenerator`, with shared contracts aligned to `PRDs/v4/SlnDependencyStudio PRD - Shared Contracts.md` and `PRDs/v4/SlnDependencyStudio PRD - CLI.md`
 
 ---
 
@@ -22,7 +22,7 @@ The first release is explicitly Windows 10-only, targeting `net10.0-windows10.0.
 
 1. Provide a WPF desktop application for configuring and running dependency generation jobs.
 2. Use dependency injection and ReactiveUI throughout the application, with ReactiveUI used as the MVVM foundation for view-model state, commands, menu enablement, validation, and other UI behavior.
-3. Reuse `SlnDependencyDiagramGenerator` through a project reference rather than a published NuGet package.
+3. Reuse `SlnDependencyDiagramGenerator` through shared contracts and conditional dependency mode support: local project references for development and package references for release validation.
 4. Support a first-class saved document concept called a **dependency project**.
 5. Make complex configuration approachable without hiding important options from advanced users.
 6. Detect `d2` and Mermaid CLI availability and expose related options only when those tools are available. When not available, the option should still be shown but not actionable, or otherwise made obvious. This will cater for visibility of future formats.
@@ -30,6 +30,10 @@ The first release is explicitly Windows 10-only, targeting `net10.0-windows10.0.
 8. Keep the architecture extensible so future features can be added without rewriting the shell.
 9. Standardise the UI stack on `MahApps.Metro` with the `MaterialDesignThemes.MahApps` bridge for a professional, consistent Windows desktop experience.
 10. Support an optional pre-generation command step (for example BAT, PS1, or EXE) so users can run prerequisite actions such as rebuilds before diagram generation.
+11. Treat WPF and CLI as first-class delivery targets in the same release, with shared document and orchestration contracts.
+12. Keep WPF Windows-only while preserving a cross-platform-compatible shared core so CLI can run on non-Windows environments.
+13. Support dual dependency modes for local and release builds so projects can use local project references during development and package references for release validation.
+14. Provide predictable PowerShell-based release scripts so tagged releases are reproducible and low-risk.
 
 ### Non-Goals
 
@@ -69,6 +73,8 @@ The application hosts the `SlnDependencyDiagramGenerator` library directly and a
 | FR-1.4 | The application shall be structured to support future expansion without changing the saved dependency project file format unnecessarily.                                                                                   |
 | FR-1.5 | The first release shall target Windows 10 only.                                                                                                                                                                            |
 | FR-1.6 | The application shall target `net10.0-windows10.0.19041`.                                                                                                                                                                  |
+| FR-1.7 | The solution structure shall reserve room for multiple frontends by placing the WPF application under a dedicated `Wpf` sub-folder within the studio solution area.                                                        |
+| FR-1.8 | A shared project shall exist for dependency-project contracts and orchestration-facing models consumed by both WPF and CLI frontends.                                                                                      |
 
 ### FR-2: Dependency Project Lifecycle
 
@@ -144,19 +150,19 @@ Requirements for this format:
 
 ### FR-6: Generator Integration
 
-| ID      | Requirement                                                                                                                                                                                         |
-| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| FR-6.1  | The application shall reference `SlnDependencyDiagramGenerator` as a project reference.                                                                                                             |
-| FR-6.2  | The application shall validate configuration before invoking generation.                                                                                                                            |
-| FR-6.3  | The application shall execute generation through an application service layer rather than directly from the view.                                                                                   |
-| FR-6.4  | The application shall present success, warning, and failure outcomes clearly after generation completes.                                                                                            |
-| FR-6.5  | The application shall provide an action to open Windows File Explorer at the export root for the most recent run.                                                                                   |
-| FR-6.6  | The application shall make clear that generated `.d2` and `.mmd` files are stored in renderer-specific subfolders under the target framework output folder.                                         |
-| FR-6.7  | The generation workflow shall support an optional pre-generation command that executes before diagram generation starts.                                                                            |
-| FR-6.8  | The pre-generation command shall support at least executable files and common script entry points used in Windows workflows, including `.bat` and `.ps1`.                                           |
-| FR-6.9  | If configured, pre-generation command success or failure shall be evaluated before diagram generation, with behavior controlled by a per-project continue-on-failure option.                        |
-| FR-6.10 | The generation workflow shall support user-initiated cancellation end-to-end, including propagation of cancellation through the application service layer and into `SlnDependencyDiagramGenerator`. |
-| FR-6.11 | Full cancellation support in `SlnDependencyDiagramGenerator`, including automated tests, shall be implemented before SlnDependencyStudio application implementation begins.                         |
+| ID      | Requirement                                                                                                                                                                                                 |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FR-6.1  | The application shall reference `SlnDependencyDiagramGenerator` through a conditional dependency mode that supports project references for local development and package references for release validation. |
+| FR-6.2  | The application shall validate configuration before invoking generation.                                                                                                                                    |
+| FR-6.3  | The application shall execute generation through an application service layer rather than directly from the view.                                                                                           |
+| FR-6.4  | The application shall present success, warning, and failure outcomes clearly after generation completes.                                                                                                    |
+| FR-6.5  | The application shall provide an action to open Windows File Explorer at the export root for the most recent run.                                                                                           |
+| FR-6.6  | The application shall make clear that generated `.d2` and `.mmd` files are stored in renderer-specific subfolders under the target framework output folder.                                                 |
+| FR-6.7  | The generation workflow shall support an optional pre-generation command that executes before diagram generation starts.                                                                                    |
+| FR-6.8  | The pre-generation command shall support at least executable files and common script entry points used in Windows workflows, including `.bat` and `.ps1`.                                                   |
+| FR-6.9  | If configured, pre-generation command success or failure shall be evaluated before diagram generation, with behavior controlled by a per-project continue-on-failure option.                                |
+| FR-6.10 | The generation workflow shall support user-initiated cancellation end-to-end, including propagation of cancellation through the application service layer and into `SlnDependencyDiagramGenerator`.         |
+| FR-6.11 | Full cancellation support in `SlnDependencyDiagramGenerator`, including automated tests, shall be implemented before SlnDependencyStudio application implementation begins.                                 |
 
 ### FR-7: CLI Tool Detection and Gating
 
@@ -204,6 +210,18 @@ The following features are valuable and should be considered as planned-but-not-
 5. Inline regex tester against the loaded solution.
 6. Open project in Visual Studio or VS Code from a selected result or node-driven context.
 7. Snapshot history or diff support for dependency projects and outputs.
+
+### FR-11: Multi-Frontend Delivery and Build Modes
+
+| ID      | Requirement                                                                                                                                                                                                                      |
+| ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FR-11.1 | The WPF and CLI deliverables shall be treated as first-class artifacts for the same release train, even if implementation sequencing differs.                                                                                    |
+| FR-11.2 | The dependency project document contract (schema, serialization, defaults, and migration behavior) shall be implemented in shared code consumed by both frontends.                                                               |
+| FR-11.3 | The WPF implementation shall not introduce frontend-specific behavior into shared orchestration code that would prevent CLI parity.                                                                                              |
+| FR-11.4 | Build configuration shall support a conditional dependency mode switch (for example, `UseLocalGeneratorProjectRefs`) so local builds can use `ProjectReference` and release builds can use `PackageReference` for the generator. |
+| FR-11.5 | CI and release validation shall execute in both dependency modes to detect project-reference vs package-reference drift before tagging.                                                                                          |
+| FR-11.6 | PowerShell release scripts shall produce predictable release outputs and enforce the selected dependency mode explicitly.                                                                                                        |
+| FR-11.7 | This WPF PRD and `PRDs/v4/SlnDependencyStudio PRD - CLI.md` shall cross-reference `PRDs/v4/SlnDependencyStudio PRD - Shared Contracts.md` so document-format and pipeline behavior remain aligned across both frontends.         |
 
 ---
 
@@ -279,8 +297,9 @@ The UI layer should remain thin. Page, window, and form code-behind should be mi
 The existing `AllOverIt.ReactiveUI` and `AllOverIt.ReactiveUI.Wpf` projects demonstrate useful patterns already aligned with the requested stack:
 
 1. `ActivatableViewModel` provides an activation-friendly base class.
-2. `ViewFactory` and WPF registration extensions support DI-backed view creation.
+2. `ViewFactory` and WPF registration extensions such as `RegisterWindowTransient<TViewModel, TView>()` and `RegisterUserControlTransient<TViewModel, TView>()` support DI-backed view creation.
 3. `ReactiveWindowViewHandler` and `ViewRegistry` patterns provide a path for window/dialog orchestration if the application grows beyond a single shell window.
+4. The `ViewRegistryDemo` shows a concrete ReactiveUI v23 startup sequence using `RxAppBuilder.CreateReactiveUIBuilder()`, followed by `.WithCoreServices()`, `.WithWpf()`, and `.BuildApp()`, which is worth following when the studio bootstraps ReactiveUI.
 
 These packages should be considered supportive infrastructure rather than mandatory abstraction for every feature. The application should use them where they reduce boilerplate and match the final navigation model.
 
@@ -320,13 +339,16 @@ The application should be designed for automated end-to-end UI testing using sta
 
 ### 7.9 DI Registration Convention
 
-The established pattern (studied from the POT project at `C:\Data\Dev\GitHub\mjfreelancing\POT\Source\Server`) uses the following conventions and **must be followed in SlnDependencyStudio**.
+`AllOverIt.DependencyInjection` provides the auto-registration mechanism used throughout the codebase. The pattern below is taken directly from its public demo (`AllOverIt.DependencyInjection/Demos/AutoRegistrationDemo` and `ExternalDependencies`) and **must be followed in SlnDependencyStudio**.
 
 #### Marker interfaces for lifetime
 
-Two empty marker interfaces live in a shared project (analogous to `Pot.Shared`) and are used as lifetime anchors for auto-registration:
+Three empty marker interfaces act as lifetime anchors. Any class that should be auto-registered implements the appropriate one:
 
 ```csharp
+// IStudioTransientDependency.cs
+public interface IStudioTransientDependency;
+
 // IStudioScopedDependency.cs
 public interface IStudioScopedDependency;
 
@@ -334,57 +356,105 @@ public interface IStudioScopedDependency;
 public interface IStudioSingletonDependency;
 ```
 
-Any service that should be scoped implements `IStudioScopedDependency`; any service that should be singleton implements `IStudioSingletonDependency`. This lets `AllOverIt.DependencyInjection` auto-register entire assemblies by scanning for implementors of each marker.
+`AllOverIt.DependencyInjection` scans an assembly for all concrete classes that implement the requested service type and registers them against that type automatically.
 
 #### Assembly anchor (DependencyRegistrar)
 
-Each project that contains auto-registered services declares a minimal internal sealed class that inherits `ServiceRegistrarBase`. This class is used solely as a compile-time assembly anchor for the scanner — it contains no members:
+Each participating project declares one minimal sealed class that inherits `ServiceRegistrarBase` (from `AllOverIt.DependencyInjection`). It contains no members — its only purpose is to give the scanner a type by which it can locate the correct assembly:
 
 ```csharp
-// DependencyRegistrar.cs
-internal sealed class DependencyRegistrar : ServiceRegistrarBase;
+// DependencyRegistrar.cs  (mirrors ExternalRegistrar in the AllOverIt demo)
+internal sealed class DependencyRegistrar : ServiceRegistrarBase
+{
+}
+```
+
+This is exactly the pattern used in the `ExternalDependencies` demo project:
+
+```csharp
+// From AllOverIt.DependencyInjection demo — ExternalDependencies/ExternalRegistrar.cs
+public sealed class ExternalRegistrar : ServiceRegistrarBase
+{
+}
 ```
 
 #### Feature/module grouping via extension methods
 
-Registration is grouped by feature or concern inside **`static` extension methods on `IServiceCollection`** (or the host builder type where appropriate). Each group lives in an `Extensions/ServiceCollectionExtensions.cs` file within the relevant feature or project folder. The entry-point call in startup (`Program` / `App` / `Host` bootstrapper) then reads as a flat chain of descriptive `Add…` calls that clearly document what has been composed:
+Registration is grouped by feature or concern inside **`static` extension methods on `IServiceCollection`**. Each group lives in an `Extensions/ServiceCollectionExtensions.cs` file within the relevant feature or project folder. The startup bootstrapper then composes everything as a flat, self-documenting chain:
 
 ```csharp
 host.Services
-    .AddAppDependencies()      // scoped + singleton auto-registration for the app assembly
-    .AddDataDependencies()     // scoped + singleton auto-registration for the data assembly
+    .AddStudioDependencies()   // scoped + singleton auto-registration for the main assembly
     .AddLogging()              // Serilog + AllOverIt.Serilog sinks
     .AddDiagramGeneration()    // generator pipeline services
     .AddSettingsPersistence()  // settings load/save
     .AddToolDetection();       // CLI tool discovery
 ```
 
-Each `Add…` method is responsible for its own group only; it must not reach into another group's concerns. Methods chain and return `IServiceCollection` (or the builder type) so they can be fluently composed.
+Each `Add…` method is responsible for its own group only and must not reach into another group's concerns. Every method returns `IServiceCollection` so calls can be chained fluently.
 
 #### Auto-registration call shape
 
-Within a given `Add…` method, `AutoRegisterScoped` and `AutoRegisterSingleton` are called with a filter that excludes the marker interface itself to prevent spurious registrations:
+Three generic overloads are available from `AllOverIt.DependencyInjection.Extensions` — `AutoRegisterTransient`, `AutoRegisterScoped`, and `AutoRegisterSingleton` — all sharing the same signature shape. A filter lambda is supplied to exclude the marker interface itself from being registered as a service type:
 
 ```csharp
-public static IServiceCollection AddAppDependencies(this IServiceCollection services)
+public static IServiceCollection AddStudioDependencies(this IServiceCollection services)
 {
+    services.AutoRegisterTransient<DependencyRegistrar, IStudioTransientDependency>(config =>
+    {
+        config.Filter((serviceType, implementationType) => serviceType != typeof(IStudioTransientDependency));
+    });
+
     services.AutoRegisterScoped<DependencyRegistrar, IStudioScopedDependency>(config =>
     {
-        config.Filter((serviceType, _) => serviceType != typeof(IStudioScopedDependency));
+        config.Filter((serviceType, implementationType) => serviceType != typeof(IStudioScopedDependency));
     });
 
     services.AutoRegisterSingleton<DependencyRegistrar, IStudioSingletonDependency>(config =>
     {
-        config.Filter((serviceType, _) => serviceType != typeof(IStudioSingletonDependency));
+        config.Filter((serviceType, implementationType) => serviceType != typeof(IStudioSingletonDependency));
     });
 
     return services;
 }
 ```
 
+This mirrors the call in the `AutoRegistrationDemo` entry point:
+
+```csharp
+// From AllOverIt.DependencyInjection demo — AutoRegistrationDemo/Program.cs
+services
+    .AutoRegisterSingleton<ExternalRegistrar, IRepository>()
+    .Decorate<IRepository, DecoratedRepository>();
+```
+
+#### Filtering additional interfaces (ISP)
+
+When a class implements multiple interfaces — as is common when Interface Segregation Principle is applied — the scanner will attempt to register the implementation against _every_ interface it finds, including ones that should never be resolved through this mechanism (for example, generic validation interfaces). The filter lambda can handle this by checking for generic type definitions and explicitly excluding those that are not wanted:
+
+```csharp
+services.AutoRegisterScoped<DependencyRegistrar, IStudioScopedDependency>(config =>
+{
+    config.Filter((serviceType, implementationType) =>
+    {
+        if (serviceType.IsGenericType)
+        {
+            var genericTypeDefinition = serviceType.GetGenericTypeDefinition();
+
+            // Only filter out the generic interfaces we know should not be auto-registered
+            return !(genericTypeDefinition == typeof(IValidator<>) || genericTypeDefinition == typeof(ValidatorBase<>));
+        }
+
+        return serviceType != typeof(IStudioScopedDependency);
+    });
+});
+```
+
+The pattern is: return `true` to keep the registration, `false` to suppress it. The non-generic base case always suppresses the marker interface itself; the generic case suppresses any specific open-generic interfaces that should be registered by other means (such as FluentValidation's own scanner).
+
 #### Options / configuration binding
 
-Configuration sections are bound using `ConfigureOptions<TSetup>()` (a setup class that implements `IConfigureOptions<T>`) and then exposed for direct injection (without `IOptions<T>` wrapping) via a small shared helper:
+Configuration sections are bound using `ConfigureOptions<TSetup>()` (a setup class implementing `IConfigureOptions<T>`) and then exposed for direct injection without `IOptions<T>` wrapping via a shared `AddSingletonFromOptions<T>()` extension helper:
 
 ```csharp
 services
@@ -392,14 +462,55 @@ services
     .AddSingletonFromOptions<GeneratorOptions>();
 ```
 
-`AddSingletonFromOptions<T>()` is a one-liner extension method (following the `Pot.Shared` pattern) that resolves `IOptions<T>.Value` and registers the result as a singleton `T`.
+`AddSingletonFromOptions<T>()` is a one-liner extension method on `IServiceCollection` that resolves `IOptions<T>.Value` and registers the unwrapped instance as a singleton `T`. Defining it once and reusing it avoids repeating the same `IOptions<T>` unwrapping boilerplate at every call site.
 
 #### Key rules
 
-- **No registration scattered in constructors or property setters** — all composition happens in the `Add…` extension methods.
+- **No registration logic outside `Add…` extension methods** — all composition happens in these methods; constructors and properties must not perform registration.
 - **One `ServiceCollectionExtensions.cs` per feature folder** — this is the single place to add or remove registrations for that feature.
-- **Marker interface filtering** — always filter out the marker interface itself so it is not registered as a service type.
-- **`AllOverIt.DependencyInjection` is required** — `AutoRegisterScoped` and `AutoRegisterSingleton` come from that library; confirm availability via Context7 before implementation.
+- **Always filter out the marker interface itself** — prevents the marker from being registered as a service type in its own right.
+- **Filter generics explicitly when ISP is applied** — if a class implements multiple interfaces including generic ones that belong to a different registration mechanism, suppress those in the filter lambda as shown above.
+- **`AllOverIt.DependencyInjection` NuGet package is required** — `ServiceRegistrarBase`, `AutoRegisterTransient`, `AutoRegisterScoped`, and `AutoRegisterSingleton` all come from this package.
+
+### 7.10 Validation Strategy
+
+`ReactiveUI.Validation` remains the primary validation surface for view-model state and UI feedback in the WPF app. `AllOverIt.Validation` is still worth noting as a public helper for cases where validation is not purely UI-driven and we want to register invokable validators through DI.
+
+The package exposes two useful host-level entry points:
+
+1. `AddValidationInvoker()` for validators that can be constructed and used as singletons.
+2. `AddLifetimeValidationInvoker()` for validators that need scoped dependencies.
+
+The validation demos also show two registration styles that may be useful if the app needs them later:
+
+1. Auto-registering `IValidator<>` implementations through `AllOverIt.DependencyInjection` using the open-generic registration path.
+2. Binding options with `AllOverIt.Validation.Options` so `AddOptions<T>()` can call `UseFluentValidation()` and validate configuration on startup.
+
+`AllOverIt.Validation` also provides `ValidatorBase<T>` and `ValidationContextExtensions.SetContextData()` / `GetContextData()` to keep validators stateless while still passing extra context into a validation request. This is worth noting if any studio validation rule later depends on external state beyond the edited model itself.
+
+That options-validation helper is probably less central to the WPF shell than it is to server apps, but it is still a valid fit if the studio later wants startup validation for persisted application settings or tool configuration.
+
+### 7.11 WPF Helpers
+
+`AllOverIt.Wpf` is more of a supporting utility package than a core application dependency, but it has a couple of useful primitives for a desktop shell:
+
+1. `UIThread` and the related awaitable helpers make explicit UI-thread marshaling easier when a feature needs to switch contexts outside of ReactiveUI's normal scheduling.
+2. `WindowWrapper` and the `WrapWindow()` extension provide direct control over window chrome, including enabling, disabling, or hiding standard caption buttons.
+
+For `SlnDependencyStudio`, these helpers should be treated as optional implementation aids rather than the primary architecture. ReactiveUI and the WPF dispatcher still remain the main composition and UI-thread model, but `AllOverIt.Wpf` is worth keeping in mind if the shell needs more direct window control or background-thread coordination.
+
+### 7.12 Cross-Frontend Guardrails (WPF + CLI)
+
+Shared requirements are documented in `PRDs/v4/SlnDependencyStudio PRD - Shared Contracts.md`. If any overlap in this WPF PRD conflicts with the shared-contracts PRD or CLI PRD, implementation must pause and the conflict must be raised to the product owner for explicit alignment before proceeding.
+
+To keep both frontends first-class and avoid parity drift, the WPF project shall follow these guardrails:
+
+1. Shared contracts first: dependency-project schema, serialization, defaults, and migration behavior live in shared code before frontend-specific behavior is finalized.
+2. Shared orchestration first: generation request/response contracts and cancellation semantics live in shared/application code and are reused by WPF and CLI.
+3. Frontend boundaries: WPF-only concerns (views, visual state, interaction affordances) remain in WPF code and do not leak into shared or CLI-consumed layers.
+4. Dual dependency mode discipline: local development can use project references while release validation and publishing use package references under an explicit build switch.
+5. Deterministic release automation: release scripts must run a predictable build/test/package path and verify both dependency modes before tag-ready outputs are produced.
+6. Sequencing safety: if implementation order ever creates risk to shared contracts, CLI/headless pipeline work may be implemented before WPF feature completion to preserve cross-frontend parity.
 
 ---
 
@@ -459,16 +570,20 @@ This is the baseline visual stack for implementation and should be treated as a 
 
 ## 10. Non-Functional Requirements
 
-| ID    | Requirement                                                                                                                  |
-| ----- | ---------------------------------------------------------------------------------------------------------------------------- |
-| NFR-1 | The application shall be maintainable and extensible so new generator capabilities can be surfaced with minimal redesign.    |
-| NFR-2 | The codebase shall follow professional engineering practices despite being a hobby project.                                  |
-| NFR-3 | Runtime failures caused by missing external tools or invalid configuration shall be explicit and user-understandable.        |
-| NFR-4 | The UI shall remain responsive during generation.                                                                            |
-| NFR-5 | The application shall not require publishing the core generator package independently before studio development can proceed. |
-| NFR-6 | The application shall persist settings and dependency project data using file-based storage.                                 |
-| NFR-7 | The first release shall prioritise transparency and correctness over visual novelty or non-essential animation.              |
-| NFR-8 | The first release shall support Windows 10 only.                                                                             |
+| ID     | Requirement                                                                                                                  |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| NFR-1  | The application shall be maintainable and extensible so new generator capabilities can be surfaced with minimal redesign.    |
+| NFR-2  | The codebase shall follow professional engineering practices despite being a hobby project.                                  |
+| NFR-3  | Runtime failures caused by missing external tools or invalid configuration shall be explicit and user-understandable.        |
+| NFR-4  | The UI shall remain responsive during generation.                                                                            |
+| NFR-5  | The application shall not require publishing the core generator package independently before studio development can proceed. |
+| NFR-6  | The application shall persist settings and dependency project data using file-based storage.                                 |
+| NFR-7  | The first release shall prioritise transparency and correctness over visual novelty or non-essential animation.              |
+| NFR-8  | The first release shall support Windows 10 only.                                                                             |
+| NFR-9  | Shared code consumed by WPF and CLI shall remain frontend-agnostic and avoid direct dependencies on WPF assemblies.          |
+| NFR-10 | Release builds shall be reproducible through checked-in PowerShell scripts rather than ad-hoc manual command sequences.      |
+| NFR-11 | Package-reference and project-reference build modes shall both remain healthy in CI.                                         |
+| NFR-12 | This PRD shall remain aligned with `PRDs/v4/SlnDependencyStudio PRD - Shared Contracts.md` and `PRDs/v4/SlnDependencyStudio PRD - CLI.md` for shared schema and orchestration behavior. |
 
 ---
 
@@ -479,7 +594,7 @@ This is the baseline visual stack for implementation and should be treated as a 
 3. A user can edit the generator configuration and save the dependency project to disk.
 4. A user can configure the default folder for dependency project files in application settings.
 5. The application detects whether `d2` and Mermaid tooling are available and disables unsupported options accordingly.
-6. The application runs generation using the project-referenced `SlnDependencyDiagramGenerator` code.
+6. The application runs generation using `SlnDependencyDiagramGenerator` through the configured dependency mode (project-reference local mode or package-reference release mode).
 7. All CLI output produced during generation is visible in the UI.
 8. After generation, the user can open Windows File Explorer at the export root.
 9. The dependency project format includes project name and description metadata and is versioned for future growth.
@@ -487,6 +602,11 @@ This is the baseline visual stack for implementation and should be treated as a 
 11. While generation is in progress, configuration editing controls are disabled via ReactiveUI state binding and a cancel action remains available.
 12. User cancellation stops generation without leaving the application in an inconsistent state.
 13. While generation is in progress, the app cannot be closed from the main window.
+14. The dependency project file written by WPF is loadable by CLI without schema-specific adaptation code in either frontend.
+15. Shared generation orchestration behavior (including cancellation semantics) is consistent across WPF and CLI runs.
+16. Build automation supports both local project-reference mode and package-reference release mode via explicit configuration.
+17. Release PowerShell scripts produce predictable build outputs and fail fast on dependency-mode drift.
+18. This WPF PRD and `PRDs/v4/SlnDependencyStudio PRD - CLI.md` both align with `PRDs/v4/SlnDependencyStudio PRD - Shared Contracts.md` for shared-contract ownership.
 
 ---
 
@@ -507,11 +627,14 @@ The following decisions are still open and should be resolved before implementat
 Create a focused implementation plan for Milestone 1 covering:
 
 1. Prerequisite: implement full cancellation support in `SlnDependencyDiagramGenerator` and complete automated cancellation tests.
-2. Project scaffolding and startup composition.
-3. Dependency project document model and serialization.
-4. Settings persistence.
-5. Shell layout and navigation.
-6. Tool detection service.
-7. Generation service with streamed output and cancellation wiring.
+2. Studio solution scaffolding with dedicated frontend folders and shared-contract project boundaries.
+3. Shared dependency-project document model, serialization, defaults, and migration behavior.
+4. Shared generation orchestration contracts and service abstractions for WPF and CLI reuse.
+5. Conditional dependency-mode wiring (`ProjectReference` for local development, `PackageReference` for release validation).
+6. PowerShell build/release script design that enforces predictable, repeatable outputs and validates both dependency modes.
+7. WPF shell layout and navigation.
+8. Tool detection service.
+9. Generation service with streamed output and cancellation wiring.
+10. Companion CLI PRD and shared-contract PRD cross-reference alignment.
 
 This PRD should remain a living draft while additional features are discussed.
