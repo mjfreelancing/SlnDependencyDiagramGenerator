@@ -25,8 +25,8 @@ The first release is explicitly Windows 10-only, targeting `net10.0-windows10.0.
 3. Reuse `SlnDependencyDiagramGenerator` through shared contracts and conditional dependency mode support: local project references for development and package references for release validation.
 4. Support a first-class saved document concept called a **dependency project**.
 5. Make complex configuration approachable without hiding important options from advanced users.
-6. Detect `d2` and Mermaid CLI availability and expose related options only when those tools are available. When not available, the option should still be shown but not actionable, or otherwise made obvious. This will cater for visibility of future formats.
-7. Surface all generator and CLI output in real time while generation is running. If the generator requires callbacks or events for progress / discovery notifications then this should be considered and can be added while the application is under development. The user must confirm all extension considerations.
+6. Detect `d2` and Mermaid CLI availability and clearly show which tools are supported by the application versus which tools are installed on the current machine.
+7. Surface all non-artifact run output in real time through application logging while generation is running, without requiring callback/event expansion in the initial release.
 8. Keep the architecture extensible so future features can be added without rewriting the shell.
 9. Standardise the UI stack on `MahApps.Metro` with the `MaterialDesignThemes.MahApps` bridge for a professional, consistent Windows desktop experience.
 10. Support an optional pre-generation command step (for example BAT, PS1, or EXE) so users can run prerequisite actions such as rebuilds before diagram generation.
@@ -34,6 +34,8 @@ The first release is explicitly Windows 10-only, targeting `net10.0-windows10.0.
 12. Keep WPF Windows-only while preserving a cross-platform-compatible shared core so CLI can run on non-Windows environments.
 13. Support dual dependency modes for local and release builds so projects can use local project references during development and package references for release validation.
 14. Provide predictable PowerShell-based release scripts so tagged releases are reproducible and low-risk.
+15. Maintain a structured evidence-capture document for user-guide content so implementation knowledge is retained as features evolve.
+16. Prioritize PRD and checklist maintenance during implementation, with user-guide authoring treated as a secondary end-phase focus.
 
 ### Non-Goals
 
@@ -128,41 +130,48 @@ Requirements for this format:
 
 ### FR-4: Configuration Editing
 
-| ID     | Requirement                                                                                                                                                                                                                                                  |
-| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| FR-4.1 | The user shall be able to edit all supported `DependencyGeneratorConfig` properties through the UI.                                                                                                                                                          |
-| FR-4.2 | The UI shall support solution path selection, include/exclude patterns, package/framework exclusions, per-scope enablement, transitive depth, grouping options, styling, output path, clear-contents behaviour, diagram formats, and image formats.          |
-| FR-4.3 | Configuration sections shall be organised into a clean, user-approved grouping of common and advanced settings so the UI remains approachable without hiding important capabilities. The exact show/hide boundaries shall be approved before implementation. |
-| FR-4.4 | Validation errors shall be presented inline and before generation starts, using ReactiveUI.Validation for validation binding and UI control state presentation wherever practical.                                                                           |
-| FR-4.5 | The UI shall support browsing for solution files, dependency project files, and export folders.                                                                                                                                                              |
-| FR-4.6 | The UI shall support starting from defaults or cloning from an existing dependency project as a faster authoring path.                                                                                                                                       |
+| ID     | Requirement                                                                                                                                                                                                                                                                                                                                                          |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FR-4.1 | The user shall be able to edit all supported `DependencyGeneratorConfig` properties through the UI.                                                                                                                                                                                                                                                                  |
+| FR-4.2 | The UI shall support solution path selection, include/exclude patterns, package/framework exclusions, per-scope enablement, transitive depth, grouping options, styling, output path, clear-contents behaviour, diagram formats, and image formats.                                                                                                                  |
+| FR-4.3 | Configuration sections shall be organised into a clean, user-approved grouping of common and advanced settings so the UI remains approachable without hiding important capabilities. All supported settings shall remain discoverable and reachable in the UI, similar to VS Code's categorized settings experience, even if some sections are collapsed by default. |
+| FR-4.4 | Validation errors shall be presented inline and before generation starts, using ReactiveUI.Validation for validation binding and UI control state presentation wherever practical.                                                                                                                                                                                   |
+| FR-4.5 | The UI shall support browsing for solution files, dependency project files, and export folders.                                                                                                                                                                                                                                                                      |
+| FR-4.6 | The UI shall support starting from defaults or cloning from an existing dependency project as a faster authoring path.                                                                                                                                                                                                                                               |
 
 ### FR-5: Application Settings
 
-| ID     | Requirement                                                                                                               |
-| ------ | ------------------------------------------------------------------------------------------------------------------------- |
-| FR-5.1 | The application shall store user-scoped settings in a settings file rather than the Windows registry.                     |
-| FR-5.2 | Settings shall include a default location for loading and saving dependency project files.                                |
-| FR-5.3 | Settings shall include a browse workflow for selecting the default dependency project folder.                             |
-| FR-5.4 | Settings should also support recent files and window-state persistence if that is adopted in the implementation.          |
-| FR-5.5 | Settings shall support explicit overrides for required external tool locations when PATH-based discovery is insufficient. |
-| FR-5.6 | The settings mechanism shall be chosen so additional user preferences can be added without redesigning persistence.       |
+| ID     | Requirement                                                                                                                                                                     |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FR-5.1 | The application shall store user-scoped settings in a settings file rather than the Windows registry.                                                                           |
+| FR-5.2 | Settings shall include a default location for loading and saving dependency project files.                                                                                      |
+| FR-5.3 | Settings shall include a browse workflow for selecting the default dependency project folder.                                                                                   |
+| FR-5.4 | Settings shall support recent files and window-state persistence.                                                                                                               |
+| FR-5.5 | Settings shall support explicit overrides for required external tool locations when PATH-based discovery is insufficient.                                                       |
+| FR-5.6 | The settings mechanism shall be chosen so additional user preferences can be added without redesigning persistence.                                                             |
+| FR-5.7 | User-scoped settings shall be stored in file-based AppData storage rather than the Windows registry.                                                                            |
+| FR-5.8 | Durable user preferences and transient application state shall be stored separately, with recent files and window state treated as application state rather than core settings. |
+| FR-5.9 | Application settings shall include runtime log-file retention in days, user-configurable with a default value of 30 days.                                                       |
 
 ### FR-6: Generator Integration
 
-| ID      | Requirement                                                                                                                                                                                                 |
-| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| FR-6.1  | The application shall reference `SlnDependencyDiagramGenerator` through a conditional dependency mode that supports project references for local development and package references for release validation. |
-| FR-6.2  | The application shall validate configuration before invoking generation.                                                                                                                                    |
-| FR-6.3  | The application shall execute generation through an application service layer rather than directly from the view.                                                                                           |
-| FR-6.4  | The application shall present success, warning, and failure outcomes clearly after generation completes.                                                                                                    |
-| FR-6.5  | The application shall provide an action to open Windows File Explorer at the export root for the most recent run.                                                                                           |
-| FR-6.6  | The application shall make clear that generated `.d2` and `.mmd` files are stored in renderer-specific subfolders under the target framework output folder.                                                 |
-| FR-6.7  | The generation workflow shall support an optional pre-generation command that executes before diagram generation starts.                                                                                    |
-| FR-6.8  | The pre-generation command shall support at least executable files and common script entry points used in Windows workflows, including `.bat` and `.ps1`.                                                   |
-| FR-6.9  | If configured, pre-generation command success or failure shall be evaluated before diagram generation, with behavior controlled by a per-project continue-on-failure option.                                |
-| FR-6.10 | The generation workflow shall support user-initiated cancellation end-to-end, including propagation of cancellation through the application service layer and into `SlnDependencyDiagramGenerator`.         |
-| FR-6.11 | Full cancellation support in `SlnDependencyDiagramGenerator`, including automated tests, shall be implemented before SlnDependencyStudio application implementation begins.                                 |
+| ID      | Requirement                                                                                                                                                                                                                                                              |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| FR-6.1  | The application shall reference `SlnDependencyDiagramGenerator` through a conditional dependency mode that supports project references for local development and package references for release validation.                                                              |
+| FR-6.2  | The application shall validate configuration before invoking generation.                                                                                                                                                                                                 |
+| FR-6.3  | The application shall execute generation through an application service layer rather than directly from the view.                                                                                                                                                        |
+| FR-6.4  | The application shall present success, warning, and failure outcomes clearly after generation completes.                                                                                                                                                                 |
+| FR-6.5  | The application shall provide an action to open Windows File Explorer at the export root for the most recent run.                                                                                                                                                        |
+| FR-6.6  | The application shall make clear that generated `.d2` and `.mmd` files are stored in renderer-specific subfolders under the target framework output folder.                                                                                                              |
+| FR-6.7  | The generation workflow shall support an optional pre-generation command that executes before diagram generation starts.                                                                                                                                                 |
+| FR-6.8  | The pre-generation command shall support at least executable files and common script entry points used in Windows workflows, including `.bat` and `.ps1`.                                                                                                                |
+| FR-6.9  | If configured, pre-generation command success or failure shall be evaluated before diagram generation, with behavior controlled by a per-project continue-on-failure option.                                                                                             |
+| FR-6.10 | The generation workflow shall support user-initiated cancellation end-to-end, including propagation of cancellation through the application service layer and into `SlnDependencyDiagramGenerator`.                                                                      |
+| FR-6.11 | Full cancellation support in `SlnDependencyDiagramGenerator`, including automated tests, shall be implemented before SlnDependencyStudio application implementation begins.                                                                                              |
+| FR-6.12 | If WPF pre-validation requires new public generator interfaces, shared service contracts, or internal refactoring, that requirement shall be raised explicitly and implemented properly rather than worked around with ad-hoc hacks.                                     |
+| FR-6.13 | The application shall support a pre-generation analysis step that reports all projects discovered from the configured solution path, and then classifies each project as included or excluded based on include/exclude regex and related filters before generation runs. |
+| FR-6.14 | Pre-generation analysis shall include export-tool readiness checks for configured output types and clearly indicate missing required tools for the current machine.                                                                                                      |
+| FR-6.15 | If pre-generation analysis requires new public generator interfaces, shared service contracts, or internal refactoring, that requirement shall be raised explicitly and implemented properly rather than worked around with ad-hoc hacks.                                |
 
 ### FR-7: CLI Tool Detection and Gating
 
@@ -175,53 +184,53 @@ Requirements for this format:
 | FR-7.5 | The application shall provide a visible tool-status view that shows whether each CLI was found and, where possible, the resolved executable path or version.                                                                     |
 | FR-7.6 | The user shall be able to manually re-scan for CLI tools without restarting the application.                                                                                                                                     |
 | FR-7.7 | The user shall be able to browse for and save explicit executable paths for required tools when those tools are not discoverable through PATH.                                                                                   |
+| FR-7.8 | The user shall be allowed to configure dependency projects regardless of tool availability on the current machine.                                                                                                               |
 
 ### FR-8: Generation Output Experience
 
-| ID     | Requirement                                                                                                                                                                              |
-| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| FR-8.1 | The application shall display all output generated during the run pipeline, including output from pre-generation commands and CLI output from `d2` and `mmdc`.                           |
-| FR-8.2 | Output shall stream in real time while generation is in progress.                                                                                                                        |
-| FR-8.3 | Standard output and error output should be visually distinguishable.                                                                                                                     |
-| FR-8.4 | The user shall be able to review the complete output from the most recent run without leaving the application.                                                                           |
-| FR-8.5 | The generation view shall expose the most recent export root and provide an action to open it in Windows File Explorer.                                                                  |
-| FR-8.6 | The first release shall not require an in-app diagram preview.                                                                                                                           |
-| FR-8.7 | While generation is in progress, ReactiveUI command/state binding shall disable configuration editing and generation-adjacent UI controls, while keeping cancel-related actions enabled. |
-| FR-8.8 | While generation is in progress, the application shall prevent the main window from closing.                                                                                             |
+| ID     | Requirement                                                                                                                                                                                                    |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FR-8.1 | The application shall display all non-artifact run output generated during the pipeline through the application logger, including output from pre-generation commands and tool execution from `d2` and `mmdc`. |
+| FR-8.2 | Output shall stream in real time while generation is in progress.                                                                                                                                              |
+| FR-8.3 | Log severity and source shall be visually distinguishable in the output view.                                                                                                                                  |
+| FR-8.4 | The user shall be able to review the complete output from the most recent run without leaving the application.                                                                                                 |
+| FR-8.5 | The generation view shall expose the most recent export root and provide an action to open it in Windows File Explorer.                                                                                        |
+| FR-8.6 | The first release shall not require an in-app diagram preview.                                                                                                                                                 |
+| FR-8.7 | While generation is in progress, ReactiveUI command/state binding shall disable configuration editing and generation-adjacent UI controls, while keeping cancel-related actions enabled.                       |
+| FR-8.8 | While generation is in progress, the application shall prevent the main window from closing.                                                                                                                   |
 
 ### FR-9: Navigation and Productivity
 
-| ID     | Requirement                                                                                                                                   |
-| ------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| FR-9.1 | The shell should follow an IDE-style layout suitable for technical users.                                                                     |
-| FR-9.2 | The application should provide keyboard shortcuts for common operations including new, open, save, save-as, generate, and open output folder. |
-| FR-9.3 | The application should surface an obvious empty state when no dependency project is loaded.                                                   |
-| FR-9.4 | The application should present recent projects prominently.                                                                                   |
-| FR-9.5 | The application should expose validation status per major configuration section.                                                              |
+| ID     | Requirement                                                                                                                                  |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| FR-9.1 | The shell shall follow an IDE-style layout suitable for technical users.                                                                     |
+| FR-9.2 | The application shall provide keyboard shortcuts for common operations including new, open, save, save-as, generate, and open output folder. |
+| FR-9.3 | The application shall surface an obvious empty state when no dependency project is loaded.                                                   |
+| FR-9.4 | The application shall present recent projects prominently.                                                                                   |
+| FR-9.5 | The application shall expose validation status per major configuration section.                                                              |
 
-### FR-10: Candidate Value-Add Features
+### FR-10: Pre-Generation Analysis Feedback
 
-The following features are valuable and should be considered as planned-but-not-committed scope unless explicitly promoted into the initial implementation:
-
-1. NuGet conflict detector panel.
-2. Solution statistics dashboard.
-3. Search and navigate panel for projects/packages.
-4. Export presets for commonly used output combinations.
-5. Inline regex tester against the loaded solution.
-6. Open project in Visual Studio or VS Code from a selected result or node-driven context.
-7. Snapshot history or diff support for dependency projects and outputs.
+| ID      | Requirement                                                                                                                                                                                       |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FR-10.1 | The UI shall present pre-generation analysis feedback before execution, including parse results, included projects, and excluded projects, with clear reasons where available.                    |
+| FR-10.2 | The first release shall treat this analysis view as a configuration-and-generation aid and not as a general-purpose node navigation surface.                                                      |
+| FR-10.3 | The analysis view shall explicitly separate: all projects discovered, projects included for generation, projects excluded from generation, and tool-readiness status for configured export types. |
 
 ### FR-11: Multi-Frontend Delivery and Build Modes
 
-| ID      | Requirement                                                                                                                                                                                                                      |
-| ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| FR-11.1 | The WPF and CLI deliverables shall be treated as first-class artifacts for the same release train, even if implementation sequencing differs.                                                                                    |
-| FR-11.2 | The dependency project document contract (schema, serialization, defaults, and migration behavior) shall be implemented in shared code consumed by both frontends.                                                               |
-| FR-11.3 | The WPF implementation shall not introduce frontend-specific behavior into shared orchestration code that would prevent CLI parity.                                                                                              |
-| FR-11.4 | Build configuration shall support a conditional dependency mode switch (for example, `UseLocalGeneratorProjectRefs`) so local builds can use `ProjectReference` and release builds can use `PackageReference` for the generator. |
-| FR-11.5 | CI and release validation shall execute in both dependency modes to detect project-reference vs package-reference drift before tagging.                                                                                          |
-| FR-11.6 | PowerShell release scripts shall produce predictable release outputs and enforce the selected dependency mode explicitly.                                                                                                        |
-| FR-11.7 | This WPF PRD and `PRDs/v4/SlnDependencyStudio PRD - CLI.md` shall cross-reference `PRDs/v4/SlnDependencyStudio PRD - Shared Contracts.md` so document-format and pipeline behavior remain aligned across both frontends.         |
+| ID       | Requirement                                                                                                                                                                                                                      |
+| -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FR-11.1  | The WPF and CLI deliverables shall be treated as first-class artifacts for the same release train, even if implementation sequencing differs.                                                                                    |
+| FR-11.2  | The dependency project document contract (schema, serialization, defaults, and migration behavior) shall be implemented in shared code consumed by both frontends.                                                               |
+| FR-11.3  | The WPF implementation shall not introduce frontend-specific behavior into shared orchestration code that would prevent CLI parity.                                                                                              |
+| FR-11.4  | Build configuration shall support a conditional dependency mode switch (for example, `UseLocalGeneratorProjectRefs`) so local builds can use `ProjectReference` and release builds can use `PackageReference` for the generator. |
+| FR-11.5  | CI and release validation shall execute in both dependency modes to detect project-reference vs package-reference drift before tagging.                                                                                          |
+| FR-11.6  | PowerShell release scripts shall produce predictable release outputs and enforce the selected dependency mode explicitly.                                                                                                        |
+| FR-11.7  | This WPF PRD and `PRDs/v4/SlnDependencyStudio PRD - CLI.md` shall cross-reference `PRDs/v4/SlnDependencyStudio PRD - Shared Contracts.md` so document-format and pipeline behavior remain aligned across both frontends.         |
+| FR-11.8  | The WPF project shall create and maintain a documentation-evidence file that captures user-guide-relevant implementation notes, including class, method, and file references where useful for accurate end-user guidance.        |
+| FR-11.9  | Documentation-evidence content shall be updated whenever PRD requirements change so guidance inputs remain synchronized with approved behavior.                                                                                  |
+| FR-11.10 | During active implementation, PRD and checklist maintenance shall remain the primary documentation focus; user-guide drafting shall be a secondary focus near release hardening.                                                 |
 
 ---
 
@@ -331,7 +340,7 @@ Any third-party library used by the application shall be checked against Context
 
 ### 7.7 Logging Strategy
 
-The application should use Serilog as the primary application logger so logs can be captured both on disk and in the UI. The recommended approach is a rolling file sink for durable review, plus an in-memory or observable sink for live presentation inside the app. The existing `AllOverIt.Serilog` helpers are a good fit for the UI side of this requirement, especially the observable sink and circular-buffer sink patterns.
+The application shall use Serilog as the primary runtime output channel for generator and tool execution diagnostics. For the first release, runtime output shall be captured through an in-memory sink used by the UI output panel and also persisted through a rolling file sink for troubleshooting past runs. Log-file retention shall be user-configurable in application settings with a default value of 30 days. Diagram and image files produced by generation remain the primary generation artifacts. The existing `AllOverIt.Serilog` helpers are a good fit for the UI side of this requirement, especially the observable sink and circular-buffer sink patterns.
 
 ### 7.8 Automated UI Testing
 
@@ -570,20 +579,22 @@ This is the baseline visual stack for implementation and should be treated as a 
 
 ## 10. Non-Functional Requirements
 
-| ID     | Requirement                                                                                                                  |
-| ------ | ---------------------------------------------------------------------------------------------------------------------------- |
-| NFR-1  | The application shall be maintainable and extensible so new generator capabilities can be surfaced with minimal redesign.    |
-| NFR-2  | The codebase shall follow professional engineering practices despite being a hobby project.                                  |
-| NFR-3  | Runtime failures caused by missing external tools or invalid configuration shall be explicit and user-understandable.        |
-| NFR-4  | The UI shall remain responsive during generation.                                                                            |
-| NFR-5  | The application shall not require publishing the core generator package independently before studio development can proceed. |
-| NFR-6  | The application shall persist settings and dependency project data using file-based storage.                                 |
-| NFR-7  | The first release shall prioritise transparency and correctness over visual novelty or non-essential animation.              |
-| NFR-8  | The first release shall support Windows 10 only.                                                                             |
-| NFR-9  | Shared code consumed by WPF and CLI shall remain frontend-agnostic and avoid direct dependencies on WPF assemblies.          |
-| NFR-10 | Release builds shall be reproducible through checked-in PowerShell scripts rather than ad-hoc manual command sequences.      |
-| NFR-11 | Package-reference and project-reference build modes shall both remain healthy in CI.                                         |
+| ID     | Requirement                                                                                                                                                                             |
+| ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| NFR-1  | The application shall be maintainable and extensible so new generator capabilities can be surfaced with minimal redesign.                                                               |
+| NFR-2  | The codebase shall follow professional engineering practices despite being a hobby project.                                                                                             |
+| NFR-3  | Runtime failures caused by missing external tools or invalid configuration shall be explicit and user-understandable.                                                                   |
+| NFR-4  | The UI shall remain responsive during generation.                                                                                                                                       |
+| NFR-5  | The application shall not require publishing the core generator package independently before studio development can proceed.                                                            |
+| NFR-6  | The application shall persist settings and dependency project data using file-based storage.                                                                                            |
+| NFR-7  | The first release shall prioritise transparency and correctness over visual novelty or non-essential animation.                                                                         |
+| NFR-8  | The first release shall support Windows 10 only.                                                                                                                                        |
+| NFR-9  | Shared code consumed by WPF and CLI shall remain frontend-agnostic and avoid direct dependencies on WPF assemblies.                                                                     |
+| NFR-10 | Release builds shall be reproducible through checked-in PowerShell scripts rather than ad-hoc manual command sequences.                                                                 |
+| NFR-11 | Package-reference and project-reference build modes shall both remain healthy in CI.                                                                                                    |
 | NFR-12 | This PRD shall remain aligned with `PRDs/v4/SlnDependencyStudio PRD - Shared Contracts.md` and `PRDs/v4/SlnDependencyStudio PRD - CLI.md` for shared schema and orchestration behavior. |
+| NFR-13 | A documentation-evidence artifact for future user guides shall be maintained in sync with PRD evolution and implementation changes.                                                     |
+| NFR-14 | Documentation effort prioritization shall be: PRDs and checklists first, user-guide authoring second.                                                                                   |
 
 ---
 
@@ -595,7 +606,7 @@ This is the baseline visual stack for implementation and should be treated as a 
 4. A user can configure the default folder for dependency project files in application settings.
 5. The application detects whether `d2` and Mermaid tooling are available and disables unsupported options accordingly.
 6. The application runs generation using `SlnDependencyDiagramGenerator` through the configured dependency mode (project-reference local mode or package-reference release mode).
-7. All CLI output produced during generation is visible in the UI.
+7. All non-artifact run output produced during generation is visible in the UI via the logger-backed output panel.
 8. After generation, the user can open Windows File Explorer at the export root.
 9. The dependency project format includes project name and description metadata and is versioned for future growth.
 10. If configured, the pre-generation command runs before diagram generation and its output is visible in the same run log.
@@ -607,22 +618,16 @@ This is the baseline visual stack for implementation and should be treated as a 
 16. Build automation supports both local project-reference mode and package-reference release mode via explicit configuration.
 17. Release PowerShell scripts produce predictable build outputs and fail fast on dependency-mode drift.
 18. This WPF PRD and `PRDs/v4/SlnDependencyStudio PRD - CLI.md` both align with `PRDs/v4/SlnDependencyStudio PRD - Shared Contracts.md` for shared-contract ownership.
+19. A WPF documentation-evidence file exists and is updated alongside PRD changes with enough implementation detail to support accurate user-guide generation.
+20. Documentation prioritization is observable: PRD/checklist updates are maintained during development, while user-guide drafting is deferred to end-phase hardening.
+21. Any pre-validation requirement that exposes a missing generator interface or shared contract is surfaced as an explicit requirement and not solved with a temporary hack.
+22. Pre-generation analysis shows all discovered projects and clearly classifies included and excluded projects based on configured filters before generation executes.
+23. Pre-generation analysis reports export-tool readiness for configured output types and clearly identifies missing required tools on the current machine without blocking configuration editing.
+24. Runtime output is available live in the logger-backed UI output panel and persisted to rolling log files with user-configurable retention defaulting to 30 days.
 
 ---
 
-## 12. Open Questions
-
-The following decisions are still open and should be resolved before implementation planning is finalised:
-
-1. What settings persistence mechanism should be used: custom JSON in AppData, `Jot`, or another file-based approach?
-2. Which configuration fields should be visible by default versus grouped behind collapsible or advanced sections, if any?
-3. Should recent files and window state be part of the first implementation or follow soon after?
-4. Which of the candidate value-add features should be promoted into the initial milestone versus deferred?
-5. Should the tool include a NuGet advisory or package-upgrade feature later, or stay entirely offline/local?
-
----
-
-## 13. Recommended Next Step
+## 12. Recommended Next Step
 
 Create a focused implementation plan for Milestone 1 covering:
 
@@ -636,5 +641,6 @@ Create a focused implementation plan for Milestone 1 covering:
 8. Tool detection service.
 9. Generation service with streamed output and cancellation wiring.
 10. Companion CLI PRD and shared-contract PRD cross-reference alignment.
+11. Documentation workflow setup: create and maintain a WPF documentation-evidence file, define checklist scaffolding, and enforce PRD/checklist-first documentation cadence with user-guide drafting deferred to end-phase.
 
 This PRD should remain a living draft while additional features are discussed.

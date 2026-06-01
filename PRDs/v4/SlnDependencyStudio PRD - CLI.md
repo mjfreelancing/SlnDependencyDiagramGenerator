@@ -30,6 +30,8 @@ The CLI should target cross-platform execution and be designed so it can be pack
 8. Support release automation through checked-in PowerShell scripts to reduce tag/release surprises.
 9. Keep cross-platform compatibility as a first-class constraint for CLI and shared code.
 10. Prepare packaging for optional `.NET global tool` consumption when stable.
+11. Maintain a structured documentation-evidence artifact to capture implementation details that can later be transformed into accurate user guides.
+12. Prioritize PRD and checklist maintenance during implementation, with user-guide authoring treated as a secondary end-phase focus.
 
 ### Non-Goals
 
@@ -63,17 +65,21 @@ The CLI shall consume shared contracts and services that are also consumed by WP
 
 ### FR-1: CLI Host and Command Surface
 
-| ID     | Requirement                                                                                                            |
-| ------ | ---------------------------------------------------------------------------------------------------------------------- |
-| FR-1.1 | The application shall be a cross-platform .NET console application.                                                    |
-| FR-1.2 | The CLI shall accept a dependency-project file path as primary input.                                                  |
-| FR-1.3 | The CLI shall provide a command to validate a dependency-project file without running generation.                      |
-| FR-1.4 | The CLI shall provide a command to execute generation from a dependency-project file.                                  |
-| FR-1.5 | The CLI shall provide a command to print effective run configuration (resolved paths and key options) for diagnostics. |
-| FR-1.6 | The CLI shall support non-interactive operation suitable for CI environments.                                          |
-| FR-1.7 | The CLI shall return deterministic exit codes for success, validation failure, cancellation, and runtime failure.      |
-| FR-1.8 | The CLI command surface and output contract shall be versioned/documented to reduce automation breakage risk.          |
-| FR-1.9 | The studio solution structure shall support multiple frontends with dedicated WPF and CLI frontend folders/projects plus shared frontend-agnostic projects. |
+| ID      | Requirement                                                                                                                                                                                                           |
+| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FR-1.1  | The application shall be a cross-platform .NET console application.                                                                                                                                                   |
+| FR-1.2  | The CLI shall accept a dependency-project file path as primary input.                                                                                                                                                 |
+| FR-1.3  | The CLI shall provide a command to validate a dependency-project file without running generation.                                                                                                                     |
+| FR-1.4  | The CLI shall provide a command to execute generation from a dependency-project file.                                                                                                                                 |
+| FR-1.5  | The CLI shall provide a command to print effective run configuration (resolved paths and key options) for diagnostics.                                                                                                |
+| FR-1.6  | The CLI shall support non-interactive operation suitable for CI environments.                                                                                                                                         |
+| FR-1.7  | The CLI shall return deterministic exit codes for success, validation failure, cancellation, and runtime failure.                                                                                                     |
+| FR-1.8  | The CLI command surface and output contract shall be versioned/documented to reduce automation breakage risk.                                                                                                         |
+| FR-1.9  | The studio solution structure shall support multiple frontends with dedicated WPF and CLI frontend folders/projects plus shared frontend-agnostic projects.                                                           |
+| FR-1.10 | The CLI host should support an entry-point class pattern (for example, `App : ConsoleAppBase`) so application behavior can be composed outside `Program.Main`.                                                        |
+| FR-1.11 | The CLI shall support a clearly defined dependency-project configuration file argument and, where appropriate, documented aliases or defaults so the entry point remains predictable for scripts and the global tool. |
+| FR-1.12 | The CLI command names and argument conventions shall be documented and treated as stable automation contracts once released.                                                                                          |
+| FR-1.13 | The CLI shall remain file/argument driven for core operation and shall not require a separate settings file to run.                                                                                                   |
 
 ### FR-2: Dependency Project Contract Compatibility
 
@@ -86,13 +92,14 @@ The CLI shall consume shared contracts and services that are also consumed by WP
 
 ### FR-3: Generator Integration
 
-| ID     | Requirement                                                                                                                             |
-| ------ | --------------------------------------------------------------------------------------------------------------------------------------- |
-| FR-3.1 | The CLI shall execute generation through shared application services, not direct frontend-specific orchestration.                       |
-| FR-3.2 | The CLI shall support optional pre-generation command execution using the dependency-project settings.                                  |
-| FR-3.3 | The CLI shall apply configured continue-on-failure behavior for pre-generation command outcomes.                                        |
-| FR-3.4 | End-to-end cancellation shall propagate through CLI host, shared orchestration, and `SlnDependencyDiagramGenerator`.                    |
-| FR-3.5 | Cancellation support in `SlnDependencyDiagramGenerator`, including automated tests, remains a prerequisite for full CLI implementation. |
+| ID     | Requirement                                                                                                                                                                                                                          |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| FR-3.1 | The CLI shall execute generation through shared application services, not direct frontend-specific orchestration.                                                                                                                    |
+| FR-3.2 | The CLI shall support optional pre-generation command execution using the dependency-project settings.                                                                                                                               |
+| FR-3.3 | The CLI shall apply configured continue-on-failure behavior for pre-generation command outcomes.                                                                                                                                     |
+| FR-3.4 | End-to-end cancellation shall propagate through CLI host, shared orchestration, and `SlnDependencyDiagramGenerator`.                                                                                                                 |
+| FR-3.5 | Cancellation support in `SlnDependencyDiagramGenerator`, including automated tests, remains a prerequisite for full CLI implementation.                                                                                              |
+| FR-3.6 | If CLI pre-validation requires new public generator interfaces, shared service contracts, or internal refactoring, that requirement shall be raised explicitly and implemented properly rather than worked around with ad-hoc hacks. |
 
 ### FR-4: Tool Detection and Resolution
 
@@ -105,23 +112,28 @@ The CLI shall consume shared contracts and services that are also consumed by WP
 
 ### FR-5: Output, Logging, and Exit Behavior
 
-| ID     | Requirement                                                                                                    |
-| ------ | -------------------------------------------------------------------------------------------------------------- |
-| FR-5.1 | The CLI shall stream generation and pre-generation output in real time.                                        |
-| FR-5.2 | The CLI shall separate standard output and error output channels.                                              |
-| FR-5.3 | The CLI shall produce concise human-readable output by default and optionally support structured logging mode. |
-| FR-5.4 | The CLI shall surface cancellation and failure reasons clearly.                                                |
-| FR-5.5 | Exit code mapping shall be stable and documented.                                                              |
+| ID     | Requirement                                                                                                                   |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| FR-5.1 | The CLI shall stream generation and pre-generation output in real time.                                                       |
+| FR-5.2 | The CLI shall separate standard output and error output channels.                                                             |
+| FR-5.3 | The CLI shall produce concise human-readable output by default and shall support logging for diagnostics and troubleshooting. |
+| FR-5.4 | The CLI shall surface cancellation and failure reasons clearly.                                                               |
+| FR-5.5 | Exit code mapping shall be stable and documented.                                                                             |
+| FR-5.6 | The diagnostics path shall be generator and application logging, with a null logger fallback when no logger is supplied.      |
+| FR-5.7 | The CLI shall expose logging categories and verbosity levels sufficient for troubleshooting and operational diagnostics.      |
 
 ### FR-6: Multi-Frontend Delivery and Shared Ownership
 
-| ID     | Requirement                                                                                                                                                 |
-| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| FR-6.1 | WPF and CLI shall ship as first-class deliverables in the same release train, even if internal implementation order differs.                                |
-| FR-6.2 | Shared contracts and shared orchestration services shall be owned as common assets and not duplicated in frontend-specific projects.                        |
-| FR-6.3 | Frontend-specific behavior shall remain in frontend projects; shared and application layers shall be frontend-agnostic.                                     |
+| ID     | Requirement                                                                                                                                                                                                         |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FR-6.1 | WPF and CLI shall ship as first-class deliverables in the same release train, even if internal implementation order differs.                                                                                        |
+| FR-6.2 | Shared contracts and shared orchestration services shall be owned as common assets and not duplicated in frontend-specific projects.                                                                                |
+| FR-6.3 | Frontend-specific behavior shall remain in frontend projects; shared and application layers shall be frontend-agnostic.                                                                                             |
 | FR-6.4 | This CLI PRD and `PRDs/v4/SlnDependencyStudio PRD - WPF.md` shall cross-reference `PRDs/v4/SlnDependencyStudio PRD - Shared Contracts.md` and remain aligned for shared contract ownership and parity expectations. |
-| FR-6.5 | If sequencing risk appears, CLI or headless shared pipeline work may be implemented before remaining WPF feature work to protect parity.                    |
+| FR-6.5 | If sequencing risk appears, CLI or headless shared pipeline work may be implemented before remaining WPF feature work to protect parity.                                                                            |
+| FR-6.6 | The CLI project shall create and maintain a documentation-evidence file that captures user-guide-relevant implementation notes, with class, method, and file references where useful for accurate user instruction. |
+| FR-6.7 | Documentation-evidence content shall be updated whenever PRD requirements change so guidance inputs remain synchronized with approved behavior.                                                                     |
+| FR-6.8 | During active implementation, PRD and checklist maintenance shall remain the primary documentation focus; user-guide drafting shall be a secondary focus near release hardening.                                    |
 
 ### FR-7: Dependency Mode and Build Validation
 
@@ -144,12 +156,13 @@ The CLI shall consume shared contracts and services that are also consumed by WP
 
 ### FR-9: Release Automation
 
-| ID     | Requirement                                                                                                  |
-| ------ | ------------------------------------------------------------------------------------------------------------ |
-| FR-9.1 | Checked-in PowerShell scripts shall drive release builds predictably for CLI artifacts.                      |
-| FR-9.2 | Release scripts shall enforce selected dependency mode explicitly and fail on mismatch.                      |
-| FR-9.3 | Release scripts shall perform parity checks relevant to shared contracts before producing tag-ready outputs. |
-| FR-9.4 | Release scripts shall avoid hidden machine-local assumptions wherever practical.                             |
+| ID     | Requirement                                                                                                                                             |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FR-9.1 | Checked-in PowerShell scripts shall drive release builds predictably for CLI artifacts.                                                                 |
+| FR-9.2 | Release scripts shall enforce selected dependency mode explicitly and fail on mismatch.                                                                 |
+| FR-9.3 | Release scripts shall perform parity checks relevant to shared contracts before producing tag-ready outputs.                                            |
+| FR-9.4 | Release scripts shall avoid hidden machine-local assumptions wherever practical.                                                                        |
+| FR-9.5 | Release and automation guidance shall document the trust boundaries and security expectations for external pre-generation commands, including CI usage. |
 
 ---
 
@@ -182,6 +195,9 @@ The CLI shall consume shared contracts and services that are also consumed by WP
 1. Use .NET hosting and `IServiceCollection` composition in CLI startup.
 2. Keep command parsing and frontend-specific concerns in CLI project only.
 3. Reuse shared orchestration services consumed by WPF.
+4. Prefer `AllOverIt.GenericHost` for hosted console composition where it reduces boilerplate, especially `GenericHost.CreateConsoleHostBuilder<TConsoleApp>()` with an `IConsoleApp`/`ConsoleAppBase` implementation.
+
+The `AllOverIt.GenericHost` demo at `Demos/AllOverIt.GenericHost/HostedConsoleAppDemo` shows this pattern with `Program.cs` hosting `App : ConsoleAppBase`, which aligns with the desired "move entry point behavior to a class" approach.
 
 ### 7.2 Shared Contracts and Boundaries
 
@@ -240,12 +256,13 @@ Use the same tool-detection conventions as WPF and the core library:
 
 ### Required or Strongly Recommended
 
-| Package                         | Purpose                          | Notes                                          |
-| ------------------------------- | -------------------------------- | ---------------------------------------------- |
-| `Microsoft.Extensions.Hosting`  | Startup/composition              | Aligns with WPF and shared services.           |
-| `AllOverIt.Process`             | Tool discovery/process execution | Aligns with generator/tool detection strategy. |
-| `AllOverIt.DependencyInjection` | DI auto-registration/decorators  | Matches established registration pattern.      |
-| `FluentValidation`              | Declarative validation rules     | Shared rule style across frontends.            |
+| Package                         | Purpose                          | Notes                                                                                                      |
+| ------------------------------- | -------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `Microsoft.Extensions.Hosting`  | Startup/composition              | Aligns with WPF and shared services.                                                                       |
+| `AllOverIt.GenericHost`         | Hosted console app composition   | Enables `Program` thinness via `GenericHost.CreateConsoleHostBuilder<TConsoleApp>()` and `ConsoleAppBase`. |
+| `AllOverIt.Process`             | Tool discovery/process execution | Aligns with generator/tool detection strategy.                                                             |
+| `AllOverIt.DependencyInjection` | DI auto-registration/decorators  | Matches established registration pattern.                                                                  |
+| `FluentValidation`              | Declarative validation rules     | Shared rule style across frontends.                                                                        |
 
 ### Good Candidates
 
@@ -259,16 +276,18 @@ Use the same tool-detection conventions as WPF and the core library:
 
 ## 10. Non-Functional Requirements
 
-| ID    | Requirement                                                                                                      |
-| ----- | ---------------------------------------------------------------------------------------------------------------- |
-| NFR-1 | CLI shall remain cross-platform where external tool dependencies allow.                                          |
-| NFR-2 | Shared code consumed by WPF and CLI shall remain frontend-agnostic.                                              |
-| NFR-3 | Runtime failures shall be explicit and script-friendly.                                                          |
-| NFR-4 | Build and test pipelines shall validate both dependency modes.                                                   |
-| NFR-5 | Release outputs shall be reproducible via checked-in PowerShell scripts.                                         |
-| NFR-6 | CLI command and exit-code behavior shall be stable and version-aware.                                            |
-| NFR-7 | Shared contract and orchestration behavior shall remain aligned with `PRDs/v4/SlnDependencyStudio PRD - Shared Contracts.md` and `PRDs/v4/SlnDependencyStudio PRD - WPF.md`. |
-| NFR-8 | Pre-generation command execution must be treated as trusted-input behavior and documented accordingly.           |
+| ID     | Requirement                                                                                                                                                                  |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| NFR-1  | CLI shall remain cross-platform where external tool dependencies allow.                                                                                                      |
+| NFR-2  | Shared code consumed by WPF and CLI shall remain frontend-agnostic.                                                                                                          |
+| NFR-3  | Runtime failures shall be explicit and script-friendly.                                                                                                                      |
+| NFR-4  | Build and test pipelines shall validate both dependency modes.                                                                                                               |
+| NFR-5  | Release outputs shall be reproducible via checked-in PowerShell scripts.                                                                                                     |
+| NFR-6  | CLI command and exit-code behavior shall be stable and version-aware.                                                                                                        |
+| NFR-7  | Shared contract and orchestration behavior shall remain aligned with `PRDs/v4/SlnDependencyStudio PRD - Shared Contracts.md` and `PRDs/v4/SlnDependencyStudio PRD - WPF.md`. |
+| NFR-8  | Pre-generation command execution must be treated as trusted-input behavior and documented accordingly.                                                                       |
+| NFR-9  | A CLI documentation-evidence artifact for future user guides shall be maintained in sync with PRD evolution and implementation changes.                                      |
+| NFR-10 | Documentation effort prioritization shall be: PRDs and checklists first, user-guide authoring second.                                                                        |
 
 ---
 
@@ -286,20 +305,13 @@ Use the same tool-detection conventions as WPF and the core library:
 10. PowerShell release scripts produce predictable, tag-ready artifacts.
 11. CLI architecture remains compatible with `.NET tool` packaging.
 12. This CLI PRD and `PRDs/v4/SlnDependencyStudio PRD - WPF.md` remain aligned with `PRDs/v4/SlnDependencyStudio PRD - Shared Contracts.md` on shared contract ownership and parity rules.
+13. A CLI documentation-evidence file exists and is updated alongside PRD changes with enough implementation detail to support accurate user-guide generation.
+14. Documentation prioritization is observable: PRD/checklist updates are maintained during development, while user-guide drafting is deferred to end-phase hardening.
+15. Any pre-validation requirement that exposes a missing generator interface or shared contract is surfaced as an explicit requirement and not solved with a temporary hack.
 
 ---
 
-## 12. Open Questions
-
-1. Should global tool packaging be included in the first public release or immediately after stabilization?
-2. Which command names and argument conventions should be considered stable for long-term automation compatibility?
-3. Should structured machine-readable output (for example JSON) be included in Milestone 1 or added after baseline command stability?
-4. Should CLI maintain its own lightweight settings file for defaults and overrides, or remain fully file/argument driven?
-5. What is the final policy for external pre-generation commands in CI regarding security and trust boundaries?
-
----
-
-## 13. Recommended Next Step
+## 12. Recommended Next Step
 
 Create a focused implementation plan for CLI Milestone 1 covering:
 
@@ -311,5 +323,6 @@ Create a focused implementation plan for CLI Milestone 1 covering:
 6. Add deterministic PowerShell release scripts for CLI build/package flows.
 7. Add parity tests that run shared golden dependency-project files through WPF and CLI paths.
 8. Prepare optional `.NET tool` packaging settings and release gates.
+9. Documentation workflow setup: create and maintain a CLI documentation-evidence file, define checklist scaffolding, and enforce PRD/checklist-first documentation cadence with user-guide drafting deferred to end-phase.
 
 This PRD should remain a living draft while command surface, packaging policy, and shared parity tests are finalized.
