@@ -108,15 +108,6 @@ If any shared requirement appears to conflict between this document and a fronte
 
 ---
 
-## 11. Global Tool Readiness Contract
-
-1. CLI architecture must remain compatible with `.NET tool` packaging.
-2. Tool packaging is permitted once command surface and compatibility tests are stable.
-3. Packaging metadata and release scripts must be deterministic.
-4. Global tool documentation must clearly explain install/update/version behavior.
-
----
-
 ## 12. Testing and Parity Contract
 
 1. Shared golden dependency-project files should be used to verify parity.

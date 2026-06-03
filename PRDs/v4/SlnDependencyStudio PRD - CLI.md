@@ -12,7 +12,7 @@
 
 The CLI is a first-class deliverable in the same release train as WPF. Shared document contracts, orchestration behavior, cancellation semantics, and dependency-mode discipline must remain consistent across both frontends.
 
-The CLI should target cross-platform execution and be designed so it can be packaged as a `.NET tool` when command surface and compatibility are stable.
+The CLI should target cross-platform execution.
 
 ---
 
@@ -29,7 +29,7 @@ The CLI should target cross-platform execution and be designed so it can be pack
 7. Support conditional dependency mode: local `ProjectReference` for development and `PackageReference` for release validation.
 8. Support release automation through checked-in PowerShell scripts to reduce tag/release surprises.
 9. Keep cross-platform compatibility as a first-class constraint for CLI and shared code.
-10. Prepare packaging for optional `.NET global tool` consumption when stable.
+10. Prepare packaging considerations when command surface and compatibility are stable.
 11. Maintain a structured documentation-evidence artifact to capture implementation details that can later be transformed into accurate user guides.
 12. Prioritize PRD and checklist maintenance during implementation, with user-guide authoring treated as a secondary end-phase focus.
 
@@ -65,21 +65,21 @@ The CLI shall consume shared contracts and services that are also consumed by WP
 
 ### FR-1: CLI Host and Command Surface
 
-| ID      | Requirement                                                                                                                                                                                                           |
-| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| FR-1.1  | The application shall be a cross-platform .NET console application.                                                                                                                                                   |
-| FR-1.2  | The CLI shall accept a dependency-project file path as primary input.                                                                                                                                                 |
-| FR-1.3  | The CLI shall provide a command to validate a dependency-project file without running generation.                                                                                                                     |
-| FR-1.4  | The CLI shall provide a command to execute generation from a dependency-project file.                                                                                                                                 |
-| FR-1.5  | The CLI shall provide a command to print effective run configuration (resolved paths and key options) for diagnostics.                                                                                                |
-| FR-1.6  | The CLI shall support non-interactive operation suitable for CI environments.                                                                                                                                         |
-| FR-1.7  | The CLI shall return deterministic exit codes for success, validation failure, cancellation, and runtime failure.                                                                                                     |
-| FR-1.8  | The CLI command surface and output contract shall be versioned/documented to reduce automation breakage risk.                                                                                                         |
-| FR-1.9  | The studio solution structure shall support multiple frontends with dedicated WPF and CLI frontend folders/projects plus shared frontend-agnostic projects.                                                           |
-| FR-1.10 | The CLI host should support an entry-point class pattern (for example, `App : ConsoleAppBase`) so application behavior can be composed outside `Program.Main`.                                                        |
-| FR-1.11 | The CLI shall support a clearly defined dependency-project configuration file argument and, where appropriate, documented aliases or defaults so the entry point remains predictable for scripts and the global tool. |
-| FR-1.12 | The CLI command names and argument conventions shall be documented and treated as stable automation contracts once released.                                                                                          |
-| FR-1.13 | The CLI shall remain file/argument driven for core operation and shall not require a separate settings file to run.                                                                                                   |
+| ID      | Requirement                                                                                                                                                                                       |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FR-1.1  | The application shall be a cross-platform .NET console application.                                                                                                                               |
+| FR-1.2  | The CLI shall accept a dependency-project file path as primary input.                                                                                                                             |
+| FR-1.3  | The CLI shall provide a command to validate a dependency-project file without running generation.                                                                                                 |
+| FR-1.4  | The CLI shall provide a command to execute generation from a dependency-project file.                                                                                                             |
+| FR-1.5  | The CLI shall provide a command to print effective run configuration (resolved paths and key options) for diagnostics.                                                                            |
+| FR-1.6  | The CLI shall support non-interactive operation suitable for CI environments.                                                                                                                     |
+| FR-1.7  | The CLI shall return deterministic exit codes for success, validation failure, cancellation, and runtime failure.                                                                                 |
+| FR-1.8  | The CLI command surface and output contract shall be versioned/documented to reduce automation breakage risk.                                                                                     |
+| FR-1.9  | The studio solution structure shall support multiple frontends with dedicated WPF and CLI frontend folders/projects plus shared frontend-agnostic projects.                                       |
+| FR-1.10 | The CLI host should support an entry-point class pattern (for example, `App : ConsoleAppBase`) so application behavior can be composed outside `Program.Main`.                                    |
+| FR-1.11 | The CLI shall support a clearly defined dependency-project configuration file argument and, where appropriate, documented aliases or defaults so the entry point remains predictable for scripts. |
+| FR-1.12 | The CLI command names and argument conventions shall be documented and treated as stable automation contracts once released.                                                                      |
+| FR-1.13 | The CLI shall remain file/argument driven for core operation and shall not require a separate settings file to run.                                                                               |
 
 ### FR-2: Dependency Project Contract Compatibility
 
@@ -144,15 +144,6 @@ The CLI shall consume shared contracts and services that are also consumed by WP
 | FR-7.3 | Release validation mode shall support package references to generator packages.                                       |
 | FR-7.4 | CI shall execute build and tests in both dependency modes to detect drift before release tagging.                     |
 | FR-7.5 | Drift between project-reference and package-reference modes shall be treated as a release blocker.                    |
-
-### FR-8: Packaging and Global Tool Readiness
-
-| ID     | Requirement                                                                                                        |
-| ------ | ------------------------------------------------------------------------------------------------------------------ |
-| FR-8.1 | The CLI project shall be structured so it can be packed as a `.NET tool` without architectural redesign.           |
-| FR-8.2 | Tool packaging metadata (command name, versioning, package output) shall be deterministic and scriptable.          |
-| FR-8.3 | Global tool packaging may be released once command surface and compatibility tests are stable.                     |
-| FR-8.4 | Installation and usage documentation for local tool and global tool modes shall be provided before public release. |
 
 ### FR-9: Release Automation
 
@@ -303,7 +294,7 @@ Use the same tool-detection conventions as WPF and the core library:
 8. Build automation supports local project-reference and release package-reference modes.
 9. CI validates both dependency modes and fails on drift.
 10. PowerShell release scripts produce predictable, tag-ready artifacts.
-11. CLI architecture remains compatible with `.NET tool` packaging.
+11. CLI architecture remains compatible with established packaging and distribution practices.
 12. This CLI PRD and `PRDs/v4/SlnDependencyStudio PRD - WPF.md` remain aligned with `PRDs/v4/SlnDependencyStudio PRD - Shared Contracts.md` on shared contract ownership and parity rules.
 13. A CLI documentation-evidence file exists and is updated alongside PRD changes with enough implementation detail to support accurate user-guide generation.
 14. Documentation prioritization is observable: PRD/checklist updates are maintained during development, while user-guide drafting is deferred to end-phase hardening.
@@ -322,7 +313,7 @@ Create a focused implementation plan for CLI Milestone 1 covering:
 5. Implement dual dependency-mode support and CI matrix validation.
 6. Add deterministic PowerShell release scripts for CLI build/package flows.
 7. Add parity tests that run shared golden dependency-project files through WPF and CLI paths.
-8. Prepare optional `.NET tool` packaging settings and release gates.
+8. Prepare packaging settings and release gates as needed.
 9. Documentation workflow setup: create and maintain a CLI documentation-evidence file, define checklist scaffolding, and enforce PRD/checklist-first documentation cadence with user-guide drafting deferred to end-phase.
 
 This PRD should remain a living draft while command surface, packaging policy, and shared parity tests are finalized.
