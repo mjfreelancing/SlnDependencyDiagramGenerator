@@ -6,8 +6,8 @@
 
 **Companion PRDs:**
 
-1. `PRDs/v4/SlnDependencyStudio PRD - WPF.md`
-2. `PRDs/v4/SlnDependencyStudio PRD - CLI.md`
+1. `PRDs/v4/Studio/SlnDependencyStudio PRD - WPF.md`
+2. `PRDs/v4/Studio/SlnDependencyStudio PRD - CLI.md`
 
 ---
 

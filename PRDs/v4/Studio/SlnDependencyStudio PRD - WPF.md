@@ -2,7 +2,7 @@
 
 **Date:** May 2026  
 **Status:** Draft  
-**Scope:** WPF desktop application for authoring, running, and managing dependency-diagram projects backed by `SlnDependencyDiagramGenerator`, with shared contracts aligned to `PRDs/v4/SlnDependencyStudio PRD - Shared Contracts.md` and `PRDs/v4/SlnDependencyStudio PRD - CLI.md`
+**Scope:** WPF desktop application for authoring, running, and managing dependency-diagram projects backed by `SlnDependencyDiagramGenerator`, with shared contracts aligned to `PRDs/v4/Studio/SlnDependencyStudio PRD - Shared Contracts.md` and `PRDs/v4/Studio/SlnDependencyStudio PRD - CLI.md`
 
 ---
 
@@ -227,7 +227,7 @@ Requirements for this format:
 | FR-11.4  | Build configuration shall support a conditional dependency mode switch (for example, `UseLocalGeneratorProjectRefs`) so local builds can use `ProjectReference` and release builds can use `PackageReference` for the generator. |
 | FR-11.5  | CI and release validation shall execute in both dependency modes to detect project-reference vs package-reference drift before tagging.                                                                                          |
 | FR-11.6  | PowerShell release scripts shall produce predictable release outputs and enforce the selected dependency mode explicitly.                                                                                                        |
-| FR-11.7  | This WPF PRD and `PRDs/v4/SlnDependencyStudio PRD - CLI.md` shall cross-reference `PRDs/v4/SlnDependencyStudio PRD - Shared Contracts.md` so document-format and pipeline behavior remain aligned across both frontends.         |
+| FR-11.7  | This WPF PRD and `PRDs/v4/Studio/SlnDependencyStudio PRD - CLI.md` shall cross-reference `PRDs/v4/Studio/SlnDependencyStudio PRD - Shared Contracts.md` so document-format and pipeline behavior remain aligned across both frontends.         |
 | FR-11.8  | The WPF project shall create and maintain a documentation-evidence file that captures user-guide-relevant implementation notes, including class, method, and file references where useful for accurate end-user guidance.        |
 | FR-11.9  | Documentation-evidence content shall be updated whenever PRD requirements change so guidance inputs remain synchronized with approved behavior.                                                                                  |
 | FR-11.10 | During active implementation, PRD and checklist maintenance shall remain the primary documentation focus; user-guide drafting shall be a secondary focus near release hardening.                                                 |
@@ -510,7 +510,7 @@ For `SlnDependencyStudio`, these helpers should be treated as optional implement
 
 ### 7.12 Cross-Frontend Guardrails (WPF + CLI)
 
-Shared requirements are documented in `PRDs/v4/SlnDependencyStudio PRD - Shared Contracts.md`. If any overlap in this WPF PRD conflicts with the shared-contracts PRD or CLI PRD, implementation must pause and the conflict must be raised to the product owner for explicit alignment before proceeding.
+Shared requirements are documented in `PRDs/v4/Studio/SlnDependencyStudio PRD - Shared Contracts.md`. If any overlap in this WPF PRD conflicts with the shared-contracts PRD or CLI PRD, implementation must pause and the conflict must be raised to the product owner for explicit alignment before proceeding.
 
 To keep both frontends first-class and avoid parity drift, the WPF project shall follow these guardrails:
 
@@ -592,7 +592,7 @@ This is the baseline visual stack for implementation and should be treated as a 
 | NFR-9  | Shared code consumed by WPF and CLI shall remain frontend-agnostic and avoid direct dependencies on WPF assemblies.                                                                     |
 | NFR-10 | Release builds shall be reproducible through checked-in PowerShell scripts rather than ad-hoc manual command sequences.                                                                 |
 | NFR-11 | Package-reference and project-reference build modes shall both remain healthy in CI.                                                                                                    |
-| NFR-12 | This PRD shall remain aligned with `PRDs/v4/SlnDependencyStudio PRD - Shared Contracts.md` and `PRDs/v4/SlnDependencyStudio PRD - CLI.md` for shared schema and orchestration behavior. |
+| NFR-12 | This PRD shall remain aligned with `PRDs/v4/Studio/SlnDependencyStudio PRD - Shared Contracts.md` and `PRDs/v4/Studio/SlnDependencyStudio PRD - CLI.md` for shared schema and orchestration behavior. |
 | NFR-13 | A documentation-evidence artifact for future user guides shall be maintained in sync with PRD evolution and implementation changes.                                                     |
 | NFR-14 | Documentation effort prioritization shall be: PRDs and checklists first, user-guide authoring second.                                                                                   |
 
@@ -617,7 +617,7 @@ This is the baseline visual stack for implementation and should be treated as a 
 15. Shared generation orchestration behavior (including cancellation semantics) is consistent across WPF and CLI runs.
 16. Build automation supports both local project-reference mode and package-reference release mode via explicit configuration.
 17. Release PowerShell scripts produce predictable build outputs and fail fast on dependency-mode drift.
-18. This WPF PRD and `PRDs/v4/SlnDependencyStudio PRD - CLI.md` both align with `PRDs/v4/SlnDependencyStudio PRD - Shared Contracts.md` for shared-contract ownership.
+18. This WPF PRD and `PRDs/v4/Studio/SlnDependencyStudio PRD - CLI.md` both align with `PRDs/v4/Studio/SlnDependencyStudio PRD - Shared Contracts.md` for shared-contract ownership.
 19. A WPF documentation-evidence file exists and is updated alongside PRD changes with enough implementation detail to support accurate user-guide generation.
 20. Documentation prioritization is observable: PRD/checklist updates are maintained during development, while user-guide drafting is deferred to end-phase hardening.
 21. Any pre-validation requirement that exposes a missing generator interface or shared contract is surfaced as an explicit requirement and not solved with a temporary hack.

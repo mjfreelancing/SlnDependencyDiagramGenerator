@@ -2,7 +2,7 @@
 
 **Date:** May 2026  
 **Status:** Draft  
-**Scope:** Cross-platform CLI application for running dependency-diagram projects produced by SlnDependencyStudio WPF, backed by `SlnDependencyDiagramGenerator`, with shared contracts aligned to `PRDs/v4/SlnDependencyStudio PRD - Shared Contracts.md` and `PRDs/v4/SlnDependencyStudio PRD - WPF.md`
+**Scope:** Cross-platform CLI application for running dependency-diagram projects produced by SlnDependencyStudio WPF, backed by `SlnDependencyDiagramGenerator`, with shared contracts aligned to `PRDs/v4/Studio/SlnDependencyStudio PRD - Shared Contracts.md` and `PRDs/v4/Studio/SlnDependencyStudio PRD - WPF.md`
 
 ---
 
@@ -129,7 +129,7 @@ The CLI shall consume shared contracts and services that are also consumed by WP
 | FR-6.1 | WPF and CLI shall ship as first-class deliverables in the same release train, even if internal implementation order differs.                                                                                        |
 | FR-6.2 | Shared contracts and shared orchestration services shall be owned as common assets and not duplicated in frontend-specific projects.                                                                                |
 | FR-6.3 | Frontend-specific behavior shall remain in frontend projects; shared and application layers shall be frontend-agnostic.                                                                                             |
-| FR-6.4 | This CLI PRD and `PRDs/v4/SlnDependencyStudio PRD - WPF.md` shall cross-reference `PRDs/v4/SlnDependencyStudio PRD - Shared Contracts.md` and remain aligned for shared contract ownership and parity expectations. |
+| FR-6.4 | This CLI PRD and `PRDs/v4/Studio/SlnDependencyStudio PRD - WPF.md` shall cross-reference `PRDs/v4/Studio/SlnDependencyStudio PRD - Shared Contracts.md` and remain aligned for shared contract ownership and parity expectations. |
 | FR-6.5 | If sequencing risk appears, CLI or headless shared pipeline work may be implemented before remaining WPF feature work to protect parity.                                                                            |
 | FR-6.6 | The CLI project shall create and maintain a documentation-evidence file that captures user-guide-relevant implementation notes, with class, method, and file references where useful for accurate user instruction. |
 | FR-6.7 | Documentation-evidence content shall be updated whenever PRD requirements change so guidance inputs remain synchronized with approved behavior.                                                                     |
@@ -222,7 +222,7 @@ The same DI conventions as WPF apply:
 
 ### 7.6 Cross-Frontend Guardrails (CLI + WPF)
 
-Shared requirements are documented in `PRDs/v4/SlnDependencyStudio PRD - Shared Contracts.md`. If any overlap in this CLI PRD conflicts with the shared-contracts PRD or WPF PRD, implementation must pause and the conflict must be raised to the product owner for explicit alignment before proceeding.
+Shared requirements are documented in `PRDs/v4/Studio/SlnDependencyStudio PRD - Shared Contracts.md`. If any overlap in this CLI PRD conflicts with the shared-contracts PRD or WPF PRD, implementation must pause and the conflict must be raised to the product owner for explicit alignment before proceeding.
 
 1. Shared contracts first: finalize shared schema and orchestration contracts before frontend divergence.
 2. Shared orchestration first: run-path semantics should be shared and frontend-agnostic.
@@ -275,7 +275,7 @@ Use the same tool-detection conventions as WPF and the core library:
 | NFR-4  | Build and test pipelines shall validate both dependency modes.                                                                                                               |
 | NFR-5  | Release outputs shall be reproducible via checked-in PowerShell scripts.                                                                                                     |
 | NFR-6  | CLI command and exit-code behavior shall be stable and version-aware.                                                                                                        |
-| NFR-7  | Shared contract and orchestration behavior shall remain aligned with `PRDs/v4/SlnDependencyStudio PRD - Shared Contracts.md` and `PRDs/v4/SlnDependencyStudio PRD - WPF.md`. |
+| NFR-7  | Shared contract and orchestration behavior shall remain aligned with `PRDs/v4/Studio/SlnDependencyStudio PRD - Shared Contracts.md` and `PRDs/v4/Studio/SlnDependencyStudio PRD - WPF.md`. |
 | NFR-8  | Pre-generation command execution must be treated as trusted-input behavior and documented accordingly.                                                                       |
 | NFR-9  | A CLI documentation-evidence artifact for future user guides shall be maintained in sync with PRD evolution and implementation changes.                                      |
 | NFR-10 | Documentation effort prioritization shall be: PRDs and checklists first, user-guide authoring second.                                                                        |
@@ -295,7 +295,7 @@ Use the same tool-detection conventions as WPF and the core library:
 9. CI validates both dependency modes and fails on drift.
 10. PowerShell release scripts produce predictable, tag-ready artifacts.
 11. CLI architecture remains compatible with established packaging and distribution practices.
-12. This CLI PRD and `PRDs/v4/SlnDependencyStudio PRD - WPF.md` remain aligned with `PRDs/v4/SlnDependencyStudio PRD - Shared Contracts.md` on shared contract ownership and parity rules.
+12. This CLI PRD and `PRDs/v4/Studio/SlnDependencyStudio PRD - WPF.md` remain aligned with `PRDs/v4/Studio/SlnDependencyStudio PRD - Shared Contracts.md` on shared contract ownership and parity rules.
 13. A CLI documentation-evidence file exists and is updated alongside PRD changes with enough implementation detail to support accurate user-guide generation.
 14. Documentation prioritization is observable: PRD/checklist updates are maintained during development, while user-guide drafting is deferred to end-phase hardening.
 15. Any pre-validation requirement that exposes a missing generator interface or shared contract is surfaced as an explicit requirement and not solved with a temporary hack.
@@ -306,7 +306,7 @@ Use the same tool-detection conventions as WPF and the core library:
 
 Create a focused implementation plan for CLI Milestone 1 covering:
 
-1. Finalize shared dependency-project contract ownership with alignment to `PRDs/v4/SlnDependencyStudio PRD - Shared Contracts.md` and `PRDs/v4/SlnDependencyStudio PRD - WPF.md`.
+1. Finalize shared dependency-project contract ownership with alignment to `PRDs/v4/Studio/SlnDependencyStudio PRD - Shared Contracts.md` and `PRDs/v4/Studio/SlnDependencyStudio PRD - WPF.md`.
 2. Define command surface and exit-code contract.
 3. Implement shared orchestration integration and cancellation propagation.
 4. Implement layered tool detection with cross-platform behavior.
