@@ -22,7 +22,7 @@ The first release is explicitly Windows 10-only, targeting `net10.0-windows10.0.
 
 1. Provide a WPF desktop application for configuring and running dependency generation jobs.
 2. Use dependency injection and ReactiveUI throughout the application, with ReactiveUI used as the MVVM foundation for view-model state, commands, menu enablement, validation, and other UI behavior.
-3. Reuse `SlnDependencyDiagramGenerator` through shared contracts and conditional dependency mode support: local project references for development and package references for release validation.
+3. Reuse `SlnDependencyDiagramGenerator` through shared contracts; the WPF and CLI frontends shall use `ProjectReference` to the generator for all builds.
 4. Support a first-class saved document concept called a **dependency project**.
 5. Make complex configuration approachable without hiding important options from advanced users.
 6. Detect `d2` and Mermaid CLI availability and clearly show which tools are supported by the application versus which tools are installed on the current machine.
@@ -32,7 +32,7 @@ The first release is explicitly Windows 10-only, targeting `net10.0-windows10.0.
 10. Support an optional pre-generation command step (for example BAT, PS1, or EXE) so users can run prerequisite actions such as rebuilds before diagram generation.
 11. Treat WPF and CLI as first-class delivery targets in the same release, with shared document and orchestration contracts.
 12. Keep WPF Windows-only while preserving a cross-platform-compatible shared core so CLI can run on non-Windows environments.
-13. Support dual dependency modes for local and release builds so projects can use local project references during development and package references for release validation.
+13. Use `ProjectReference` to `SlnDependencyDiagramGenerator` for development and release builds.
 14. Provide predictable PowerShell-based release scripts so tagged releases are reproducible and low-risk.
 15. Maintain a structured evidence-capture document for user-guide content so implementation knowledge is retained as features evolve.
 16. Prioritize PRD and checklist maintenance during implementation, with user-guide authoring treated as a secondary end-phase focus.
@@ -157,7 +157,7 @@ Requirements for this format:
 
 | ID      | Requirement                                                                                                                                                                                                                                                              |
 | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| FR-6.1  | The application shall reference `SlnDependencyDiagramGenerator` through a conditional dependency mode that supports project references for local development and package references for release validation.                                                              |
+| FR-6.1  | The application shall reference `SlnDependencyDiagramGenerator` via a `ProjectReference`.                                                                                                                                                                                |
 | FR-6.2  | The application shall validate configuration before invoking generation.                                                                                                                                                                                                 |
 | FR-6.3  | The application shall execute generation through an application service layer rather than directly from the view.                                                                                                                                                        |
 | FR-6.4  | The application shall present success, warning, and failure outcomes clearly after generation completes.                                                                                                                                                                 |
@@ -175,16 +175,17 @@ Requirements for this format:
 
 ### FR-7: CLI Tool Detection and Gating
 
-| ID     | Requirement                                                                                                                                                                                                                      |
-| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| FR-7.1 | The application shall detect whether required external tools are available before enabling dependent options.                                                                                                                    |
-| FR-7.2 | Detection shall use a layered resolution strategy that checks explicit tool-path overrides first, then process-locating via `where` or `which` using `AllOverIt.Process`, and then any additional supported discovery mechanism. |
-| FR-7.3 | If `d2` is not available, D2 image-export options that depend on the CLI shall be disabled and explained.                                                                                                                        |
-| FR-7.4 | If Mermaid image export requires `mmdc` and it is not available, Mermaid image-export options shall be disabled and explained.                                                                                                   |
-| FR-7.5 | The application shall provide a visible tool-status view that shows whether each CLI was found and, where possible, the resolved executable path or version.                                                                     |
-| FR-7.6 | The user shall be able to manually re-scan for CLI tools without restarting the application.                                                                                                                                     |
-| FR-7.7 | The user shall be able to browse for and save explicit executable paths for required tools when those tools are not discoverable through PATH.                                                                                   |
-| FR-7.8 | The user shall be allowed to configure dependency projects regardless of tool availability on the current machine.                                                                                                               |
+| ID     | Requirement                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FR-7.1 | The application shall detect whether required external tools are available before enabling dependent options.                                                                                                                                                                                                                                                                                                                                                                                                         |
+| FR-7.2 | Detection shall use a layered resolution strategy that checks explicit tool-path overrides first, then process-locating via `where` or `which` using `AllOverIt.Process`, and then any additional supported discovery mechanism.                                                                                                                                                                                                                                                                                      |
+| FR-7.3 | If `d2` is not available, D2 image-export options that depend on the CLI shall be disabled and explained.                                                                                                                                                                                                                                                                                                                                                                                                             |
+| FR-7.4 | If Mermaid image export requires `mmdc` and it is not available, Mermaid image-export options shall be disabled and explained.                                                                                                                                                                                                                                                                                                                                                                                        |
+| FR-7.5 | The application shall provide a visible tool-status view that shows whether each CLI was found and, where possible, the resolved executable path or version.                                                                                                                                                                                                                                                                                                                                                          |
+| FR-7.6 | The user shall be able to manually re-scan for CLI tools without restarting the application.                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| FR-7.7 | The user shall be able to browse for and save explicit executable paths for required tools when those tools are not discoverable through PATH.                                                                                                                                                                                                                                                                                                                                                                        |
+| FR-7.8 | The user shall be allowed to configure dependency projects regardless of tool availability on the current machine.                                                                                                                                                                                                                                                                                                                                                                                                    |
+| FR-7.9 | Tool-specific handling must follow the Single Responsibility Principle: the application shall not embed ad-hoc checks for `d2`, `mmdc`, or other specific renderers. Instead, provide pluggable handler objects that encapsulate discovery, invocation, and diagnostics. These handlers shall be created and composed via DI and may be surfaced by a factory configured with a dictionary of supported diagram types; the factory may know supported types but must not hard-code implementation invocation details. |
 
 ### FR-8: Generation Output Experience
 
@@ -219,18 +220,16 @@ Requirements for this format:
 
 ### FR-11: Multi-Frontend Delivery and Build Modes
 
-| ID       | Requirement                                                                                                                                                                                                                      |
-| -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| FR-11.1  | The WPF and CLI deliverables shall be treated as first-class artifacts for the same release train, even if implementation sequencing differs.                                                                                    |
-| FR-11.2  | The dependency project document contract (schema, serialization, defaults, and migration behavior) shall be implemented in shared code consumed by both frontends.                                                               |
-| FR-11.3  | The WPF implementation shall not introduce frontend-specific behavior into shared orchestration code that would prevent CLI parity.                                                                                              |
-| FR-11.4  | Build configuration shall support a conditional dependency mode switch (for example, `UseLocalGeneratorProjectRefs`) so local builds can use `ProjectReference` and release builds can use `PackageReference` for the generator. |
-| FR-11.5  | CI and release validation shall execute in both dependency modes to detect project-reference vs package-reference drift before tagging.                                                                                          |
-| FR-11.6  | PowerShell release scripts shall produce predictable release outputs and enforce the selected dependency mode explicitly.                                                                                                        |
-| FR-11.7  | This WPF PRD and `PRDs/v4/Studio/SlnDependencyStudio PRD - CLI.md` shall cross-reference `PRDs/v4/Studio/SlnDependencyStudio PRD - Shared Contracts.md` so document-format and pipeline behavior remain aligned across both frontends.         |
-| FR-11.8  | The WPF project shall create and maintain a documentation-evidence file that captures user-guide-relevant implementation notes, including class, method, and file references where useful for accurate end-user guidance.        |
-| FR-11.9  | Documentation-evidence content shall be updated whenever PRD requirements change so guidance inputs remain synchronized with approved behavior.                                                                                  |
-| FR-11.10 | During active implementation, PRD and checklist maintenance shall remain the primary documentation focus; user-guide drafting shall be a secondary focus near release hardening.                                                 |
+| ID      | Requirement                                                                                                                                                                                                                            |
+| ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FR-11.1 | The WPF and CLI deliverables shall be treated as first-class artifacts for the same release train, even if implementation sequencing differs.                                                                                          |
+| FR-11.2 | The dependency project document contract (schema, serialization, defaults, and migration behavior) shall be implemented in shared code consumed by both frontends.                                                                     |
+| FR-11.3 | The WPF implementation shall not introduce frontend-specific behavior into shared orchestration code that would prevent CLI parity.                                                                                                    |
+| FR-11.4 | Build configuration shall support using a `ProjectReference` to `SlnDependencyDiagramGenerator` for the WPF and CLI frontends.                                                                                                         |
+| FR-11.5 | This WPF PRD and `PRDs/v4/Studio/SlnDependencyStudio PRD - CLI.md` shall cross-reference `PRDs/v4/Studio/SlnDependencyStudio PRD - Shared Contracts.md` so document-format and pipeline behavior remain aligned across both frontends. |
+| FR-11.6 | The WPF project shall create and maintain a documentation-evidence file that captures user-guide-relevant implementation notes, including class, method, and file references where useful for accurate end-user guidance.              |
+| FR-11.7 | Documentation-evidence content shall be updated whenever PRD requirements change so guidance inputs remain synchronized with approved behavior.                                                                                        |
+| FR-11.8 | During active implementation, PRD and checklist maintenance shall remain the primary documentation focus; user-guide drafting shall be a secondary focus near release hardening.                                                       |
 
 ---
 
@@ -517,8 +516,8 @@ To keep both frontends first-class and avoid parity drift, the WPF project shall
 1. Shared contracts first: dependency-project schema, serialization, defaults, and migration behavior live in shared code before frontend-specific behavior is finalized.
 2. Shared orchestration first: generation request/response contracts and cancellation semantics live in shared/application code and are reused by WPF and CLI.
 3. Frontend boundaries: WPF-only concerns (views, visual state, interaction affordances) remain in WPF code and do not leak into shared or CLI-consumed layers.
-4. Dual dependency mode discipline: local development can use project references while release validation and publishing use package references under an explicit build switch.
-5. Deterministic release automation: release scripts must run a predictable build/test/package path and verify both dependency modes before tag-ready outputs are produced.
+4. Dependency-mode discipline: use `ProjectReference` to `SlnDependencyDiagramGenerator` for both frontends.
+5. Deterministic release automation: release scripts must run a predictable build/test/package path before tag-ready outputs are produced.
 6. Sequencing safety: if implementation order ever creates risk to shared contracts, CLI/headless pipeline work may be implemented before WPF feature completion to preserve cross-frontend parity.
 
 ---
@@ -579,22 +578,22 @@ This is the baseline visual stack for implementation and should be treated as a 
 
 ## 10. Non-Functional Requirements
 
-| ID     | Requirement                                                                                                                                                                             |
-| ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| NFR-1  | The application shall be maintainable and extensible so new generator capabilities can be surfaced with minimal redesign.                                                               |
-| NFR-2  | The codebase shall follow professional engineering practices despite being a hobby project.                                                                                             |
-| NFR-3  | Runtime failures caused by missing external tools or invalid configuration shall be explicit and user-understandable.                                                                   |
-| NFR-4  | The UI shall remain responsive during generation.                                                                                                                                       |
-| NFR-5  | The application shall not require publishing the core generator package independently before studio development can proceed.                                                            |
-| NFR-6  | The application shall persist settings and dependency project data using file-based storage.                                                                                            |
-| NFR-7  | The first release shall prioritise transparency and correctness over visual novelty or non-essential animation.                                                                         |
-| NFR-8  | The first release shall support Windows 10 only.                                                                                                                                        |
-| NFR-9  | Shared code consumed by WPF and CLI shall remain frontend-agnostic and avoid direct dependencies on WPF assemblies.                                                                     |
-| NFR-10 | Release builds shall be reproducible through checked-in PowerShell scripts rather than ad-hoc manual command sequences.                                                                 |
-| NFR-11 | Package-reference and project-reference build modes shall both remain healthy in CI.                                                                                                    |
+| ID     | Requirement                                                                                                                                                                                           |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| NFR-1  | The application shall be maintainable and extensible so new generator capabilities can be surfaced with minimal redesign.                                                                             |
+| NFR-2  | The codebase shall follow professional engineering practices despite being a hobby project.                                                                                                           |
+| NFR-3  | Runtime failures caused by missing external tools or invalid configuration shall be explicit and user-understandable.                                                                                 |
+| NFR-4  | The UI shall remain responsive during generation.                                                                                                                                                     |
+| NFR-5  | The application shall not require publishing the core generator package independently before studio development can proceed.                                                                          |
+| NFR-6  | The application shall persist settings and dependency project data using file-based storage.                                                                                                          |
+| NFR-7  | The first release shall prioritise transparency and correctness over visual novelty or non-essential animation.                                                                                       |
+| NFR-8  | The first release shall support Windows 10 only.                                                                                                                                                      |
+| NFR-9  | Shared code consumed by WPF and CLI shall remain frontend-agnostic and avoid direct dependencies on WPF assemblies.                                                                                   |
+| NFR-10 | Release builds shall be reproducible through checked-in PowerShell scripts rather than ad-hoc manual command sequences.                                                                               |
+| NFR-11 | Build pipelines shall remain healthy for project-reference builds.                                                                                                                                    |
 | NFR-12 | This PRD shall remain aligned with `PRDs/v4/Studio/SlnDependencyStudio PRD - Shared Contracts.md` and `PRDs/v4/Studio/SlnDependencyStudio PRD - CLI.md` for shared schema and orchestration behavior. |
-| NFR-13 | A documentation-evidence artifact for future user guides shall be maintained in sync with PRD evolution and implementation changes.                                                     |
-| NFR-14 | Documentation effort prioritization shall be: PRDs and checklists first, user-guide authoring second.                                                                                   |
+| NFR-13 | A documentation-evidence artifact for future user guides shall be maintained in sync with PRD evolution and implementation changes.                                                                   |
+| NFR-14 | Documentation effort prioritization shall be: PRDs and checklists first, user-guide authoring second.                                                                                                 |
 
 ---
 
@@ -605,7 +604,7 @@ This is the baseline visual stack for implementation and should be treated as a 
 3. A user can edit the generator configuration and save the dependency project to disk.
 4. A user can configure the default folder for dependency project files in application settings.
 5. The application detects whether `d2` and Mermaid tooling are available and disables unsupported options accordingly.
-6. The application runs generation using `SlnDependencyDiagramGenerator` through the configured dependency mode (project-reference local mode or package-reference release mode).
+6. The application runs generation using `SlnDependencyDiagramGenerator` via `ProjectReference`.
 7. All non-artifact run output produced during generation is visible in the UI via the logger-backed output panel.
 8. After generation, the user can open Windows File Explorer at the export root.
 9. The dependency project format includes project name and description metadata and is versioned for future growth.
@@ -615,8 +614,8 @@ This is the baseline visual stack for implementation and should be treated as a 
 13. While generation is in progress, the app cannot be closed from the main window.
 14. The dependency project file written by WPF is loadable by CLI without schema-specific adaptation code in either frontend.
 15. Shared generation orchestration behavior (including cancellation semantics) is consistent across WPF and CLI runs.
-16. Build automation supports both local project-reference mode and package-reference release mode via explicit configuration.
-17. Release PowerShell scripts produce predictable build outputs and fail fast on dependency-mode drift.
+16. Build automation supports project-reference-based builds.
+17. Release PowerShell scripts produce predictable build outputs and fail fast on parity issues.
 18. This WPF PRD and `PRDs/v4/Studio/SlnDependencyStudio PRD - CLI.md` both align with `PRDs/v4/Studio/SlnDependencyStudio PRD - Shared Contracts.md` for shared-contract ownership.
 19. A WPF documentation-evidence file exists and is updated alongside PRD changes with enough implementation detail to support accurate user-guide generation.
 20. Documentation prioritization is observable: PRD/checklist updates are maintained during development, while user-guide drafting is deferred to end-phase hardening.
@@ -635,8 +634,8 @@ Create a focused implementation plan for Milestone 1 covering:
 2. Studio solution scaffolding with dedicated frontend folders and shared-contract project boundaries.
 3. Shared dependency-project document model, serialization, defaults, and migration behavior.
 4. Shared generation orchestration contracts and service abstractions for WPF and CLI reuse.
-5. Conditional dependency-mode wiring (`ProjectReference` for local development, `PackageReference` for release validation).
-6. PowerShell build/release script design that enforces predictable, repeatable outputs and validates both dependency modes.
+5. Dependency wiring: use `ProjectReference` for both development and release builds.
+6. PowerShell build/release script design that enforces predictable, repeatable outputs and validates project-reference builds.
 7. WPF shell layout and navigation.
 8. Tool detection service.
 9. Generation service with streamed output and cancellation wiring.

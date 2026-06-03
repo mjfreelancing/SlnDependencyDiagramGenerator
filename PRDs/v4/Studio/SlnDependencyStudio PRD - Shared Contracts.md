@@ -90,21 +90,16 @@ If any shared requirement appears to conflict between this document and a fronte
 
 ## 9. Build Mode Contract
 
-1. Build configuration supports conditional dependency modes (for example `UseLocalGeneratorProjectRefs`).
-2. Local development mode may use `ProjectReference` to local generator source.
-3. Release validation mode must support `PackageReference` to generator packages.
-4. CI must validate both modes continuously.
-5. Drift between modes is a release blocker.
+1. Build configuration shall use `ProjectReference` to `SlnDependencyDiagramGenerator` for both frontends.
 
 ---
 
 ## 10. Release Automation Contract
 
 1. Release builds are driven by checked-in PowerShell scripts.
-2. Scripts must set and validate dependency mode explicitly.
-3. Scripts must run predictable build/test/package paths.
-4. Scripts must fail fast on parity or dependency-mode drift.
-5. Release outputs should be deterministic and tag-ready.
+2. Scripts must run predictable build/test/package paths for project-reference builds.
+3. Scripts must fail fast on parity issues affecting cross-frontend behavior.
+4. Release outputs should be deterministic and tag-ready.
 
 ---
 
