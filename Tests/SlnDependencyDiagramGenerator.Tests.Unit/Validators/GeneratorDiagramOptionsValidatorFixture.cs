@@ -261,6 +261,24 @@ public class GeneratorDiagramOptionsValidatorFixture
         }
 
         [Fact]
+        public void Should_Return_An_Error_When_Fill_Style_Fill_Is_Null()
+        {
+            var frameworkStyle = new GeneratorDiagramOptions.FillStyle
+            {
+                Fill = null!,
+                Opacity = 0.8
+            };
+
+            var model = CreateValidModel(frameworkStyle: frameworkStyle);
+
+            var validator = new GeneratorDiagramOptionsValidator();
+            var result = validator.Validate(model);
+
+            result.IsValid.ShouldBeFalse();
+            result.Errors.ShouldContain(item => item.PropertyName == "FrameworkStyle.Fill");
+        }
+
+        [Fact]
         public void Should_Return_An_Error_When_Fill_Style_Fill_Is_Empty()
         {
             var frameworkStyle = new GeneratorDiagramOptions.FillStyle
@@ -278,13 +296,35 @@ public class GeneratorDiagramOptionsValidatorFixture
             result.Errors.ShouldContain(item => item.PropertyName == "FrameworkStyle.Fill");
         }
 
-        [Fact]
-        public void Should_Return_An_Error_When_Fill_Style_Opacity_Is_Zero()
+        [Theory]
+        [InlineData(0.0)]
+        [InlineData(0.5)]
+        [InlineData(1.0)]
+        public void Should_Return_No_Errors_When_Fill_Style_Opacity_Is_Within_Range(double opacity)
         {
             var frameworkStyle = new GeneratorDiagramOptions.FillStyle
             {
                 Fill = "#FFFFFF",
-                Opacity = 0
+                Opacity = opacity
+            };
+
+            var model = CreateValidModel(frameworkStyle: frameworkStyle);
+
+            var validator = new GeneratorDiagramOptionsValidator();
+            var result = validator.Validate(model);
+
+            result.IsValid.ShouldBeTrue();
+        }
+
+        [Theory]
+        [InlineData(-0.1)]
+        [InlineData(1.1)]
+        public void Should_Return_An_Error_When_Fill_Style_Opacity_Is_Out_Of_Range(double opacity)
+        {
+            var frameworkStyle = new GeneratorDiagramOptions.FillStyle
+            {
+                Fill = "#FFFFFF",
+                Opacity = opacity
             };
 
             var model = CreateValidModel(frameworkStyle: frameworkStyle);

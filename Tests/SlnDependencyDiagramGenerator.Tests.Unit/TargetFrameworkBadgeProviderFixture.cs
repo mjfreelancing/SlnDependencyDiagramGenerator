@@ -74,5 +74,15 @@ public class TargetFrameworkBadgeProviderFixture
             net10Badge.ShouldContain("-55A9EE.svg");
             net10WindowsBadge.ShouldContain("-55A9EE.svg");
         }
+
+        [Fact]
+        public void Should_Return_A_NetStandard2_1_Badge_With_Blue_Color()
+        {
+            var provider = new TargetFrameworkBadgeProvider();
+
+            var badge = provider.GetBadge("netstandard2.1");
+
+            badge.ShouldBe("![](https://img.shields.io/badge/.NET-standard2.1-55A9EE.svg)");
+        }
     }
 }
