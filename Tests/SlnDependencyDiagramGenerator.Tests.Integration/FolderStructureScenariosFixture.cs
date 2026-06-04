@@ -2,6 +2,7 @@ using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Generator;
 using SlnDependencyDiagramGenerator.Tests.Integration.Support;
 using Shouldly;
+using System.Threading;
 
 namespace SlnDependencyDiagramGenerator.Tests.Integration;
 
@@ -77,7 +78,7 @@ public class FolderStructureScenariosFixture
             var firstRunConfig = IntegrationTestHarness.CreateConfig(solutionPath, tempDirectory.DirectoryPath, options);
             var firstRunGenerator = new DependencyGenerator(firstRunConfig, NSubstitute.Substitute.For<AllOverIt.Logging.IColorConsoleLogger>());
 
-            await firstRunGenerator.CreateDiagramsAsync();
+            await firstRunGenerator.CreateDiagramsAsync(CancellationToken.None);
 
             var staleFilePath = Path.Combine(tempDirectory.DirectoryPath, "net10.0", "stale.tmp");
             await File.WriteAllTextAsync(staleFilePath, "stale");
@@ -85,7 +86,7 @@ public class FolderStructureScenariosFixture
             var secondRunConfig = IntegrationTestHarness.CreateConfig(solutionPath, tempDirectory.DirectoryPath, options);
             var secondRunGenerator = new DependencyGenerator(secondRunConfig, NSubstitute.Substitute.For<AllOverIt.Logging.IColorConsoleLogger>());
 
-            await secondRunGenerator.CreateDiagramsAsync();
+            await secondRunGenerator.CreateDiagramsAsync(CancellationToken.None);
 
             File.Exists(staleFilePath).ShouldBeFalse();
         }

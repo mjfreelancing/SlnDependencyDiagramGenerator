@@ -1,5 +1,6 @@
 ﻿using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Generator;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SlnDependencyDiagramGenerator.Renderers;
@@ -20,7 +21,8 @@ internal interface IDiagramRenderer
     /// <param name="imageExportEnabled">
     /// <see langword="true"/> when image export is requested; otherwise <see langword="false"/>.
     /// </param>
-    Task ValidateRequiredToolsAsync(bool imageExportEnabled);
+    /// <param name="cancellationToken">The cancellation token.</param>
+    Task ValidateRequiredToolsAsync(bool imageExportEnabled, CancellationToken cancellationToken);
 
     /// <summary>
     /// Renders and writes the diagram file, and optionally exports images.
@@ -30,8 +32,9 @@ internal interface IDiagramRenderer
     /// <param name="projectScope">The current project scope name (individual project or grouped-all scope).</param>
     /// <param name="model">The resolved dependency graph model.</param>
     /// <param name="imageFormats">The optional image formats to export.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     Task CreateDiagramArtifactsAsync(string targetFramework, string exportPath, string projectScope,
-        DependencyGraphModel model, DiagramImageFormat[] imageFormats);
+        DependencyGraphModel model, DiagramImageFormat[] imageFormats, CancellationToken cancellationToken);
 
     /// <summary>
     /// Renders the dependency graph and returns the diagram file content.

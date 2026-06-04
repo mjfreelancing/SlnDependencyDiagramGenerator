@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SlnDependencyDiagramGenerator.Generator;
@@ -54,8 +55,10 @@ public sealed class DependencyGenerator
 
     /// <summary>Generates dependency summaries, diagram files, and optional images for each discovered target framework.</summary>
     /// <returns>A <see cref="Task"/> that completes when the diagram generation has completed.</returns>
-    public async Task CreateDiagramsAsync()
+    public async Task CreateDiagramsAsync(CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         var individualTransitiveDepth = _configuration.Projects.Individual.Enabled
             ? _configuration.Projects.Individual.TransitiveDepth
             : 0;
@@ -80,7 +83,7 @@ public sealed class DependencyGenerator
 
         // Target frameworks are auto-discovered from each project's project.assets.json
         var targetFrameworks = await solutionParser
-            .DiscoverTargetFrameworksAsync(solutionPath, regexToInclude, regexToExclude)
+            .DiscoverTargetFrameworksAsync(solutionPath, regexToInclude, regexToExclude, cancellationToken)
             .ConfigureAwait(false);
 
         if (targetFrameworks.Length == 0)
@@ -96,12 +99,25 @@ public sealed class DependencyGenerator
 
         // Make sure the required diagram generation tools are available before starting
         // to process projects, so we don't do unnecessary work if they're not present.
-        await ValidateRequiredToolsAsync(renderers).ConfigureAwait(false);
+        await ValidateRequiredToolsAsync(renderers, cancellationToken).ConfigureAwait(false);
 
         foreach (var targetFramework in targetFrameworks)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var parseRequest = new SolutionParseRequest
+            {
+                SolutionFilePath = solutionPath,
+                RegexToInclude = regexToInclude,
+                RegexToExclude = regexToExclude,
+                ExcludePackages = excludePackages,
+                ExcludeFrameworks = excludeFrameworks,
+                TargetFramework = targetFramework,
+                MaxTransitiveDepth = maxTransitiveDepth
+            };
+
             var allProjects = await solutionParser
-                .ParseAsync(solutionPath, regexToInclude, regexToExclude, excludePackages, excludeFrameworks, targetFramework, maxTransitiveDepth)
+                .ParseAsync(parseRequest, cancellationToken)
                 .ConfigureAwait(false);
 
             if (allProjects.Length == 0)
@@ -150,16 +166,16 @@ public sealed class DependencyGenerator
                 ClearFolder(exportPath);
             }
 
-            await ExportAsSummary(exportPath, solutionProjects).ConfigureAwait(false);
+            await ExportAsSummaryAsync(exportPath, solutionProjects, cancellationToken).ConfigureAwait(false);
 
             if (_configuration.Projects.Individual.Enabled)
             {
-                await ExportAsIndividual(targetFramework, exportPath, solutionProjects, renderers).ConfigureAwait(false);
+                await ExportAsIndividualAsync(targetFramework, exportPath, solutionProjects, renderers, cancellationToken).ConfigureAwait(false);
             }
 
             if (_configuration.Projects.All.Enabled)
             {
-                await ExportAsAll(targetFramework, exportPath, solutionProjects, renderers).ConfigureAwait(false);
+                await ExportAsAllAsync(targetFramework, exportPath, solutionProjects, renderers, cancellationToken).ConfigureAwait(false);
             }
         }
     }
@@ -174,14 +190,18 @@ public sealed class DependencyGenerator
         }
     }
 
-    private async Task ExportAsIndividual(string targetFramework, string exportPath, IDictionary<string, SolutionProject> solutionProjects,
-        IDiagramRenderer[] renderers)
+    private async Task ExportAsIndividualAsync(string targetFramework, string exportPath, IDictionary<string, SolutionProject> solutionProjects,
+        IDiagramRenderer[] renderers, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         var includeDependencies = _configuration.Projects.Individual.IncludeDependencies;
         var transitiveDepth = _configuration.Projects.Individual.TransitiveDepth;
 
         foreach (var scopedProject in solutionProjects.Values)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var packagesWithMultipleVersions = GetDeepOrderedDistinctPackageDependencies(scopedProject, solutionProjects, kvp => kvp.Count() > 1)
                 .ToDictionary(kvp => kvp.Key, kvp => GetDiagramPackageGroupId(kvp.Key));
 
@@ -189,17 +209,20 @@ public sealed class DependencyGenerator
 
             foreach (var renderer in renderers)
             {
-                await renderer.CreateDiagramArtifactsAsync(targetFramework, exportPath, scopedProject.Name, model,
-                    _configuration.Export.ImageFormats).ConfigureAwait(false);
+                await renderer
+                    .CreateDiagramArtifactsAsync(targetFramework, exportPath, scopedProject.Name, model, _configuration.Export.ImageFormats, cancellationToken)
+                    .ConfigureAwait(false);
             }
 
             _logger.WriteLine();
         }
     }
 
-    private async Task ExportAsAll(string targetFramework, string exportPath, IDictionary<string, SolutionProject> solutionProjects,
-        IDiagramRenderer[] renderers)
+    private async Task ExportAsAllAsync(string targetFramework, string exportPath, IDictionary<string, SolutionProject> solutionProjects,
+        IDiagramRenderer[] renderers, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         var includeDependencies = _configuration.Projects.All.IncludeDependencies;
         var transitiveDepth = _configuration.Projects.All.TransitiveDepth;
 
@@ -217,8 +240,11 @@ public sealed class DependencyGenerator
 
         foreach (var renderer in renderers)
         {
-            await renderer.CreateDiagramArtifactsAsync(targetFramework, exportPath, $"{_configuration.Diagram.GroupName}-All", model,
-                _configuration.Export.ImageFormats).ConfigureAwait(false);
+            var projectScope = $"{_configuration.Diagram.GroupName}-All";
+
+            await renderer
+                .CreateDiagramArtifactsAsync(targetFramework, exportPath, projectScope, model, _configuration.Export.ImageFormats, cancellationToken)
+                .ConfigureAwait(false);
         }
 
         _logger.WriteLine();
@@ -354,8 +380,10 @@ public sealed class DependencyGenerator
         };
     }
 
-    private async Task ExportAsSummary(string exportPath, IDictionary<string, SolutionProject> solutionProjects)
+    private async Task ExportAsSummaryAsync(string exportPath, IDictionary<string, SolutionProject> solutionProjects, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         var content = SummaryDependencyGenerator.CreateContent(solutionProjects);
 
         var filename = Path.Combine(exportPath, SummaryDependencyGenerator.MarkdownFilename);
@@ -365,7 +393,9 @@ public sealed class DependencyGenerator
             .Write(ConsoleColor.Yellow, filename)
             .Write("{forecolor:white}...");
 
-        await File.WriteAllTextAsync(filename, content);
+        await File
+            .WriteAllTextAsync(filename, content, cancellationToken)
+            .ConfigureAwait(false);
 
         _logger.WriteLine("{forecolor:green}Done");
         _logger.WriteLine();
@@ -513,13 +543,15 @@ public sealed class DependencyGenerator
         }
     }
 
-    private async Task ValidateRequiredToolsAsync(IDiagramRenderer[] renderers)
+    private async Task ValidateRequiredToolsAsync(IDiagramRenderer[] renderers, CancellationToken cancellationToken)
     {
         var imageExportEnabled = _configuration.Export.ImageFormats.Length > 0;
 
         foreach (var renderer in renderers)
         {
-            await renderer.ValidateRequiredToolsAsync(imageExportEnabled).ConfigureAwait(false);
+            await renderer
+                .ValidateRequiredToolsAsync(imageExportEnabled, cancellationToken)
+                .ConfigureAwait(false);
         }
     }
 

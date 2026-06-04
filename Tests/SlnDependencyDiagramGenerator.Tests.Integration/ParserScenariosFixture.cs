@@ -240,7 +240,7 @@ public class ParserScenariosFixture
             string[] excludeRegex = [];
 
             var exception = await Should.ThrowAsync<DependencyGeneratorException>(
-                async () => await parser.DiscoverTargetFrameworksAsync(malformedSolutionPath, includeRegex, excludeRegex));
+                async () => await parser.DiscoverTargetFrameworksAsync(malformedSolutionPath, includeRegex, excludeRegex, CancellationToken.None));
 
             exception.Message.ShouldContain("Failed to parse solution file");
             exception.Message.ShouldContain("Malformed.sln");
@@ -259,7 +259,7 @@ public class ParserScenariosFixture
             string[] excludeRegex = [];
 
             var exception = await Should.ThrowAsync<DependencyGeneratorException>(
-                async () => await parser.DiscoverTargetFrameworksAsync(malformedSolutionPath, includeRegex, excludeRegex));
+                async () => await parser.DiscoverTargetFrameworksAsync(malformedSolutionPath, includeRegex, excludeRegex, CancellationToken.None));
 
             exception.Message.ShouldContain("Failed to parse solution file");
             exception.Message.ShouldContain("Malformed.slnx");

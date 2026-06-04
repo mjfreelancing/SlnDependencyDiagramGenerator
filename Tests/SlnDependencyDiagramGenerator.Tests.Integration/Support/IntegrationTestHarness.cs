@@ -3,6 +3,7 @@ using NSubstitute;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Generator;
 using SlnDependencyDiagramGenerator.Parser;
+using System.Threading;
 
 namespace SlnDependencyDiagramGenerator.Tests.Integration.Support;
 
@@ -76,7 +77,7 @@ internal static class IntegrationTestHarness
         var configuration = CreateConfig(solutionPath, tempDirectory.DirectoryPath, options);
         var generator = new DependencyGenerator(configuration, Substitute.For<IColorConsoleLogger>());
 
-        await generator.CreateDiagramsAsync();
+        await generator.CreateDiagramsAsync(CancellationToken.None);
 
         return new ScenarioRunResult(tempDirectory);
     }
@@ -223,8 +224,18 @@ internal static class IntegrationTestHarness
         var parser = new SolutionParser();
         var solutionPath = GetFixtureSolutionPath(fixtureName, extension);
 
-        return await parser.ParseAsync(solutionPath, regexToInclude, regexToExclude, excludePackages, excludeFrameworks,
-            targetFramework, maxTransitiveDepth);
+        var parseRequest = new SolutionParseRequest
+        {
+            SolutionFilePath = solutionPath,
+            RegexToInclude = regexToInclude,
+            RegexToExclude = regexToExclude,
+            ExcludePackages = excludePackages,
+            ExcludeFrameworks = excludeFrameworks,
+            TargetFramework = targetFramework,
+            MaxTransitiveDepth = maxTransitiveDepth
+        };
+
+        return await parser.ParseAsync(parseRequest, CancellationToken.None);
     }
 
     public static async Task<string[]> DiscoverFixtureTargetFrameworksAsync(string fixtureName, string extension,
@@ -235,7 +246,7 @@ internal static class IntegrationTestHarness
         var parser = new SolutionParser();
         var solutionPath = GetFixtureSolutionPath(fixtureName, extension);
 
-        return await parser.DiscoverTargetFrameworksAsync(solutionPath, regexToInclude, regexToExclude);
+        return await parser.DiscoverTargetFrameworksAsync(solutionPath, regexToInclude, regexToExclude, CancellationToken.None);
     }
 
     public static DependencyGenerator CreateGenerator(string solutionPath, string exportRoot, string groupName, string groupAlias)

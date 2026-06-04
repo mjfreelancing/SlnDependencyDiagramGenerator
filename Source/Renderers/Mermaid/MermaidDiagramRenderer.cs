@@ -8,6 +8,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SlnDependencyDiagramGenerator.Renderers.Mermaid;
@@ -16,6 +17,7 @@ namespace SlnDependencyDiagramGenerator.Renderers.Mermaid;
 internal sealed class MermaidDiagramRenderer : DiagramRendererBase
 {
     private const string MermaidCliToolName = "mmdc";
+    private const string ToolNotFoundMessage = "'mmdc' was not found on PATH. See: https://github.com/mermaid-js/mermaid-cli#installation";
 
     /// <inheritdoc />
     public override string FileExtension => "mmd";
@@ -29,15 +31,14 @@ internal sealed class MermaidDiagramRenderer : DiagramRendererBase
     }
 
     /// <inheritdoc />
-    public override async Task ValidateRequiredToolsAsync(bool imageExportEnabled)
+    public override async Task ValidateRequiredToolsAsync(bool imageExportEnabled, CancellationToken cancellationToken)
     {
         if (!imageExportEnabled)
         {
             return;
         }
 
-        await EnsureToolAvailableAsync(MermaidCliToolName,
-            "'mmdc' was not found on PATH. See: https://github.com/mermaid-js/mermaid-cli#installation").ConfigureAwait(false);
+        await EnsureToolAvailableAsync(MermaidCliToolName, ToolNotFoundMessage, cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
@@ -140,7 +141,7 @@ internal sealed class MermaidDiagramRenderer : DiagramRendererBase
     }
 
     /// <inheritdoc />
-    protected override async Task ExportImageFileAsync(string diagramFileName, DiagramImageFormat format)
+    protected override async Task ExportImageFileAsync(string diagramFileName, DiagramImageFormat format, CancellationToken cancellationToken)
     {
         var imageFileName = Path.ChangeExtension(diagramFileName, format.ToString().ToLowerInvariant());
 
@@ -170,7 +171,9 @@ internal sealed class MermaidDiagramRenderer : DiagramRendererBase
             })
             .BuildProcessExecutor();
 
-        _ = await mmdProcess.ExecuteAsync().ConfigureAwait(false);
+        _ = await mmdProcess
+            .ExecuteAsync(cancellationToken)
+            .ConfigureAwait(false);
 
         stopwatch.Stop();
 

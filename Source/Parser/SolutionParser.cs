@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SlnDependencyDiagramGenerator.Parser;
@@ -40,15 +41,17 @@ internal sealed partial class SolutionParser
     /// <param name="solutionFilePath">The solution path.</param>
     /// <param name="regexToInclude">Regex patterns used to include projects.</param>
     /// <param name="regexToExclude">Regex patterns used to exclude projects.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>
     /// A distinct, ordered list of base target frameworks (for example, <c>net10.0</c>),
     /// discovered from each matching project's assets file.
     /// </returns>
-    public async Task<string[]> DiscoverTargetFrameworksAsync(string solutionFilePath, string[] regexToInclude, string[] regexToExclude)
+    public async Task<string[]> DiscoverTargetFrameworksAsync(string solutionFilePath, string[] regexToInclude, string[] regexToExclude,
+        CancellationToken cancellationToken)
     {
         solutionFilePath = Path.GetFullPath(solutionFilePath);
 
-        var projects = await FilterAndOrderProjectsAsync(solutionFilePath, regexToInclude, regexToExclude).ConfigureAwait(false);
+        var projects = await FilterAndOrderProjectsAsync(solutionFilePath, regexToInclude, regexToExclude, cancellationToken).ConfigureAwait(false);
 
         return [.. projects
             .SelectMany(project => _assetReader.GetTargetFrameworks(project.AbsolutePath))
@@ -62,33 +65,29 @@ internal sealed partial class SolutionParser
     /// Parses all matching projects that include the requested target framework and resolves
     /// their project, framework, and package dependencies.
     /// </summary>
-    /// <param name="solutionFilePath">The solution path.</param>
-    /// <param name="regexToInclude">Regex patterns used to include projects.</param>
-    /// <param name="regexToExclude">Regex patterns used to exclude projects.</param>
-    /// <param name="excludePackages">Package IDs to exclude from package resolution.</param>
-    /// <param name="excludeFrameworks">Framework reference IDs to exclude from framework resolution.</param>
-    /// <param name="targetFramework">The target framework to parse.</param>
-    /// <param name="maxTransitiveDepth">The maximum transitive package depth to include.</param>
+    /// <param name="request">The parse request parameters.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>
     /// The parsed project models for the requested target framework.
     /// </returns>
-    public async Task<SolutionProject[]> ParseAsync(string solutionFilePath, string[] regexToInclude, string[] regexToExclude,
-        string[] excludePackages, string[] excludeFrameworks, string targetFramework, int maxTransitiveDepth)
+    public async Task<SolutionProject[]> ParseAsync(SolutionParseRequest request, CancellationToken cancellationToken)
     {
-        solutionFilePath = Path.GetFullPath(solutionFilePath);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var solutionFilePath = Path.GetFullPath(request.SolutionFilePath);
 
         // SDK-style project evaluation requires a registered MSBuild instance so SDK resolvers
         // can locate Microsoft.NET.Sdk and related toolset components.
         MsBuildSdkResolver.EnsureInitialized();
 
-        var excludeSet = new HashSet<string>(excludePackages, StringComparer.OrdinalIgnoreCase);
-        var excludeFrameworkSet = new HashSet<string>(excludeFrameworks, StringComparer.OrdinalIgnoreCase);
+        var excludeSet = new HashSet<string>(request.ExcludePackages, StringComparer.OrdinalIgnoreCase);
+        var excludeFrameworkSet = new HashSet<string>(request.ExcludeFrameworks, StringComparer.OrdinalIgnoreCase);
 
-        var projects = await FilterAndOrderProjectsAsync(solutionFilePath, regexToInclude, regexToExclude).ConfigureAwait(false);
+        var projects = await FilterAndOrderProjectsAsync(solutionFilePath, request.RegexToInclude, request.RegexToExclude, cancellationToken).ConfigureAwait(false);
 
         return [.. projects
-            .Where(project => _assetReader.HasTargetFramework(project.AbsolutePath, targetFramework))
-            .Select(project => BuildSolutionProject(project, targetFramework, maxTransitiveDepth, excludeSet, excludeFrameworkSet))];
+            .Where(project => _assetReader.HasTargetFramework(project.AbsolutePath, request.TargetFramework))
+            .Select(project => BuildSolutionProject(project, request.TargetFramework, request.MaxTransitiveDepth, excludeSet, excludeFrameworkSet))];
     }
 
     /// <summary>
@@ -118,9 +117,9 @@ internal sealed partial class SolutionParser
     /// The filtered and alphabetically ordered set of MSBuild-format projects.
     /// </returns>
     private async Task<IReadOnlyList<SolutionProjectDescriptor>> FilterAndOrderProjectsAsync(string solutionFilePath,
-        string[] regexToInclude, string[] regexToExclude)
+        string[] regexToInclude, string[] regexToExclude, CancellationToken cancellationToken)
     {
-        var solutionProjects = await GetSolutionProjectsAsync(solutionFilePath).ConfigureAwait(false);
+        var solutionProjects = await GetSolutionProjectsAsync(solutionFilePath, cancellationToken).ConfigureAwait(false);
 
         var includeRegexes = regexToInclude.SelectToArray(regex => new Regex(regex));
         var excludeRegexes = regexToExclude.SelectToArray(regex => new Regex(regex));
@@ -144,9 +143,10 @@ internal sealed partial class SolutionParser
     /// Loads project entries from a supported solution format.
     /// </summary>
     /// <param name="solutionFilePath">The full solution file path.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The project entries available in the solution.</returns>
     /// <exception cref="DependencyGeneratorException">Thrown when the extension is unsupported or the solution cannot be parsed.</exception>
-    private async Task<IReadOnlyList<SolutionProjectDescriptor>> GetSolutionProjectsAsync(string solutionFilePath)
+    private async Task<IReadOnlyList<SolutionProjectDescriptor>> GetSolutionProjectsAsync(string solutionFilePath, CancellationToken cancellationToken)
     {
         if (_hasCachedProjects && string.Equals(_cachedSolutionFilePath, solutionFilePath, StringComparison.OrdinalIgnoreCase))
         {
@@ -165,7 +165,7 @@ internal sealed partial class SolutionParser
 
         try
         {
-            solutionProjects = await resolver.GetProjectsAsync(solutionFilePath).ConfigureAwait(false);
+            solutionProjects = await resolver.GetProjectsAsync(solutionFilePath, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception exception)
         {

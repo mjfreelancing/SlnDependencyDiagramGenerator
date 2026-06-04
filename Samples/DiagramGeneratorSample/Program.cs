@@ -7,6 +7,7 @@ using SlnDependencyDiagramGenerator.Exceptions;
 using SlnDependencyDiagramGenerator.Generator;
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace DiagramGeneratorSample;
@@ -25,7 +26,7 @@ internal class Program
             var options = GetGeneratorConfig(configurationSelection);
             var generator = new DependencyGenerator(options, logger);
 
-            await generator.CreateDiagramsAsync();
+            await generator.CreateDiagramsAsync(CancellationToken.None);
 
             logger
                 .Write(ConsoleColor.Green, "The solution '")

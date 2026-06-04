@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SlnDependencyDiagramGenerator.Renderers.D2;
@@ -17,6 +18,7 @@ namespace SlnDependencyDiagramGenerator.Renderers.D2;
 internal sealed class D2DiagramRenderer : DiagramRendererBase
 {
     private const string D2ToolName = "d2";
+    private const string ToolNotFoundMessage = "'d2' was not found on PATH. See: https://d2lang.com/tour/install";
 
     /// <inheritdoc />
     public override string FileExtension => "d2";
@@ -30,15 +32,14 @@ internal sealed class D2DiagramRenderer : DiagramRendererBase
     }
 
     /// <inheritdoc />
-    public override async Task ValidateRequiredToolsAsync(bool imageExportEnabled)
+    public override async Task ValidateRequiredToolsAsync(bool imageExportEnabled, CancellationToken cancellationToken)
     {
         if (!imageExportEnabled)
         {
             return;
         }
 
-        await EnsureToolAvailableAsync(D2ToolName,
-            "'d2' was not found on PATH. See: https://d2lang.com/tour/install").ConfigureAwait(false);
+        await EnsureToolAvailableAsync(D2ToolName, ToolNotFoundMessage, cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
@@ -117,7 +118,7 @@ internal sealed class D2DiagramRenderer : DiagramRendererBase
     }
 
     /// <inheritdoc />
-    protected override async Task ExportImageFileAsync(string diagramFileName, DiagramImageFormat format)
+    protected override async Task ExportImageFileAsync(string diagramFileName, DiagramImageFormat format, CancellationToken cancellationToken)
     {
         var imageFileName = Path.ChangeExtension(diagramFileName, format.ToString().ToLowerInvariant());
 
@@ -149,7 +150,7 @@ internal sealed class D2DiagramRenderer : DiagramRendererBase
             })
             .BuildProcessExecutor();
 
-        _ = await d2Process.ExecuteAsync().ConfigureAwait(false);
+        _ = await d2Process.ExecuteAsync(cancellationToken).ConfigureAwait(false);
 
         stopwatch.Stop();
 

@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SlnDependencyDiagramGenerator.Renderers;
@@ -41,12 +42,14 @@ internal abstract class DiagramRendererBase : IDiagramRenderer
     public abstract string Render(DependencyGraphModel model);
 
     /// <inheritdoc />
-    public virtual Task ValidateRequiredToolsAsync(bool imageExportEnabled) => Task.CompletedTask;
+    public virtual Task ValidateRequiredToolsAsync(bool imageExportEnabled, CancellationToken cancellationToken) => Task.CompletedTask;
 
     /// <inheritdoc />
     public async Task CreateDiagramArtifactsAsync(string targetFramework, string exportPath, string projectScope,
-        DependencyGraphModel model, DiagramImageFormat[] imageFormats)
+        DependencyGraphModel model, DiagramImageFormat[] imageFormats, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         var content = Render(model);
         var baseName = GetDiagramAliasId(projectScope, includeProjectGroupPrefix: false);
         var rendererExportPath = Path.Combine(exportPath, FileExtension);
@@ -59,29 +62,33 @@ internal abstract class DiagramRendererBase : IDiagramRenderer
               .Write(ConsoleColor.Yellow, Path.GetFileName(fileName))
               .Write("{forecolor:white}...");
 
-        await File.WriteAllTextAsync(fileName, content).ConfigureAwait(false);
+        await File
+            .WriteAllTextAsync(fileName, content, cancellationToken)
+            .ConfigureAwait(false);
 
         Logger.WriteLine("{forecolor:green}Done");
 
         foreach (var format in imageFormats)
         {
-            await ExportImageFileAsync(fileName, format).ConfigureAwait(false);
+            await ExportImageFileAsync(fileName, format, cancellationToken).ConfigureAwait(false);
         }
     }
 
     /// <summary>Exports an image for the generated diagram text file.</summary>
     /// <param name="diagramFileName">The source diagram file path.</param>
     /// <param name="format">The desired image format.</param>
-    protected abstract Task ExportImageFileAsync(string diagramFileName, DiagramImageFormat format);
+    /// <param name="cancellationToken">The cancellation token.</param>
+    protected abstract Task ExportImageFileAsync(string diagramFileName, DiagramImageFormat format, CancellationToken cancellationToken);
 
     /// <summary>
     /// Throws when a required external tool is not available on PATH.
     /// </summary>
     /// <param name="toolName">The command/tool name to check.</param>
     /// <param name="missingToolMessage">The error message for a missing tool.</param>
-    protected static async Task EnsureToolAvailableAsync(string toolName, string missingToolMessage)
+    /// <param name="cancellationToken">The cancellation token.</param>
+    protected static async Task EnsureToolAvailableAsync(string toolName, string missingToolMessage, CancellationToken cancellationToken)
     {
-        if (!await IsToolAvailableAsync(toolName).ConfigureAwait(false))
+        if (!await IsToolAvailableAsync(toolName, cancellationToken).ConfigureAwait(false))
         {
             throw new DependencyGeneratorException(missingToolMessage);
         }
@@ -149,7 +156,7 @@ internal abstract class DiagramRendererBase : IDiagramRenderer
         return diagramRepresentation;
     }
 
-    private static async Task<bool> IsToolAvailableAsync(string toolName)
+    private static async Task<bool> IsToolAvailableAsync(string toolName, CancellationToken cancellationToken)
     {
         var locator = OperatingSystem.IsWindows() ? "where" : "which";
 
@@ -161,7 +168,9 @@ internal abstract class DiagramRendererBase : IDiagramRenderer
                 .WithArguments(toolName)
                 .BuildProcessExecutor();
 
-            var result = await executor.ExecuteBufferedAsync().ConfigureAwait(false);
+            var result = await executor
+                .ExecuteBufferedAsync(cancellationToken)
+                .ConfigureAwait(false);
 
             return result.ExitCode == 0;
         }

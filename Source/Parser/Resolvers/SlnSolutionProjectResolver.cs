@@ -1,6 +1,7 @@
 ﻿using Microsoft.Build.Construction;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SlnDependencyDiagramGenerator.Parser.Resolvers;
@@ -12,8 +13,10 @@ internal sealed class SlnSolutionProjectResolver : ISolutionProjectResolver
     public string Extension => ".sln";
 
     /// <inheritdoc />
-    public Task<IReadOnlyList<SolutionProjectDescriptor>> GetProjectsAsync(string solutionFilePath)
+    public Task<IReadOnlyList<SolutionProjectDescriptor>> GetProjectsAsync(string solutionFilePath, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         var solutionFile = SolutionFile.Parse(solutionFilePath);
 
         IReadOnlyList<SolutionProjectDescriptor> projects = [.. solutionFile.ProjectsInOrder

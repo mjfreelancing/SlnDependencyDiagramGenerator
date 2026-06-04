@@ -16,12 +16,12 @@ internal sealed class SlnxSolutionProjectResolver : ISolutionProjectResolver
     public string Extension => ".slnx";
 
     /// <inheritdoc />
-    public async Task<IReadOnlyList<SolutionProjectDescriptor>> GetProjectsAsync(string solutionFilePath)
+    public async Task<IReadOnlyList<SolutionProjectDescriptor>> GetProjectsAsync(string solutionFilePath, CancellationToken cancellationToken)
     {
         var serializer = SolutionSerializers.GetSerializerByMoniker(solutionFilePath)
             ?? throw new InvalidOperationException($"No solution serializer is available for path '{solutionFilePath}'.");
 
-        var solutionModel = await serializer.OpenAsync(solutionFilePath, CancellationToken.None).ConfigureAwait(false);
+        var solutionModel = await serializer.OpenAsync(solutionFilePath, cancellationToken).ConfigureAwait(false);
         var solutionDirectory = Path.GetDirectoryName(solutionFilePath) ?? string.Empty;
 
         return [.. solutionModel.SolutionProjects
