@@ -1,7 +1,7 @@
 ﻿namespace SlnDependencyDiagramGenerator.Parser;
 
 /// <summary>Represents a project discovered from the solution and its resolved dependencies.</summary>
-internal sealed class SolutionProject
+public sealed class SolutionProject
 {
     /// <summary>The project name without file extension.</summary>
     public string Name { get; init; }

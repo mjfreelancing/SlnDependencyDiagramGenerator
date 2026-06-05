@@ -1,5 +1,6 @@
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Generator;
+using SlnDependencyDiagramGenerator.Generator.Discovery;
 using SlnDependencyDiagramGenerator.Tests.Integration.Support;
 using Shouldly;
 using System.Threading;
@@ -76,7 +77,8 @@ public class FolderStructureScenariosFixture
 
             var solutionPath = IntegrationTestHarness.GetFixtureSolutionPath("Basic", ".slnx");
             var firstRunConfig = IntegrationTestHarness.CreateConfig(solutionPath, tempDirectory.DirectoryPath, options);
-            var firstRunGenerator = new DependencyGenerator(firstRunConfig, NSubstitute.Substitute.For<AllOverIt.Logging.IColorConsoleLogger>());
+            var firstRunDiscovery = new ProjectDiscoveryService();
+            var firstRunGenerator = new DependencyGenerator(firstRunConfig, firstRunDiscovery, NSubstitute.Substitute.For<AllOverIt.Logging.IColorConsoleLogger>());
 
             await firstRunGenerator.CreateDiagramsAsync(CancellationToken.None);
 
@@ -84,7 +86,8 @@ public class FolderStructureScenariosFixture
             await File.WriteAllTextAsync(staleFilePath, "stale");
 
             var secondRunConfig = IntegrationTestHarness.CreateConfig(solutionPath, tempDirectory.DirectoryPath, options);
-            var secondRunGenerator = new DependencyGenerator(secondRunConfig, NSubstitute.Substitute.For<AllOverIt.Logging.IColorConsoleLogger>());
+            var secondRunDiscovery = new ProjectDiscoveryService();
+            var secondRunGenerator = new DependencyGenerator(secondRunConfig, secondRunDiscovery, NSubstitute.Substitute.For<AllOverIt.Logging.IColorConsoleLogger>());
 
             await secondRunGenerator.CreateDiagramsAsync(CancellationToken.None);
 

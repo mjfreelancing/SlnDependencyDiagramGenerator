@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Exceptions;
 using SlnDependencyDiagramGenerator.Generator;
+using SlnDependencyDiagramGenerator.Generator.Discovery;
 using System;
 using System.IO;
 using System.Threading;
@@ -24,7 +25,8 @@ internal class Program
         try
         {
             var options = GetGeneratorConfig(configurationSelection);
-            var generator = new DependencyGenerator(options, logger);
+            var projectDiscovery = new ProjectDiscoveryService();
+            var generator = new DependencyGenerator(options, projectDiscovery, logger);
 
             await generator.CreateDiagramsAsync(CancellationToken.None);
 

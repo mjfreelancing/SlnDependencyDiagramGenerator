@@ -2,6 +2,7 @@ using AllOverIt.Logging;
 using NSubstitute;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Generator;
+using SlnDependencyDiagramGenerator.Generator.Discovery;
 using SlnDependencyDiagramGenerator.Tests.Integration.Support;
 using Shouldly;
 using System.Threading;
@@ -22,7 +23,8 @@ public class CancellationScenariosFixture
 
             var solutionPath = IntegrationTestHarness.GetFixtureSolutionPath("Basic", ".slnx");
             var configuration = IntegrationTestHarness.CreateConfig(solutionPath, tempDirectory.DirectoryPath, options);
-            var generator = new DependencyGenerator(configuration, Substitute.For<IColorConsoleLogger>());
+            var projectDiscovery = new ProjectDiscoveryService();
+            var generator = new DependencyGenerator(configuration, projectDiscovery, Substitute.For<IColorConsoleLogger>());
 
             using var cancellationTokenSource = new CancellationTokenSource();
             cancellationTokenSource.Cancel();

@@ -1,7 +1,7 @@
 ﻿namespace SlnDependencyDiagramGenerator.Parser;
 
 /// <summary>Represents an explicit or transitive package dependency.</summary>
-internal sealed class PackageReference
+public sealed class PackageReference
 {
     /// <summary>Indicates whether the package is a transitive dependency.</summary>
     public bool IsTransitive { get; }

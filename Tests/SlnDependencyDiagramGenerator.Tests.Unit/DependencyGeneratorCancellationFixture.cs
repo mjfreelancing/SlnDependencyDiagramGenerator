@@ -2,6 +2,7 @@ using AllOverIt.Logging;
 using NSubstitute;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Generator;
+using SlnDependencyDiagramGenerator.Generator.Discovery;
 using SlnDependencyDiagramGenerator.Tests.Unit.Support;
 using Shouldly;
 using System;
@@ -31,7 +32,8 @@ public class DependencyGeneratorCancellationFixture
                     .WithSolutionPath(tempSlnPath)
                     .Build();
 
-                var generator = new DependencyGenerator(config, Substitute.For<IColorConsoleLogger>());
+                var projectDiscovery = new ProjectDiscoveryService();
+                var generator = new DependencyGenerator(config, projectDiscovery, Substitute.For<IColorConsoleLogger>());
 
                 using var cancellationTokenSource = new CancellationTokenSource();
                 cancellationTokenSource.Cancel();

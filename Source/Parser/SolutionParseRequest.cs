@@ -1,7 +1,7 @@
 namespace SlnDependencyDiagramGenerator.Parser;
 
 /// <summary>Request parameters for <see cref="SolutionParser.ParseAsync"/>.</summary>
-internal sealed class SolutionParseRequest
+public sealed class SolutionParseRequest
 {
     /// <summary>The solution path.</summary>
     public required string SolutionFilePath { get; init; }

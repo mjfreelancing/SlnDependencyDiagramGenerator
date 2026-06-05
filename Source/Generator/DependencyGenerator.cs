@@ -6,6 +6,7 @@ using AllOverIt.Patterns.Specification.Extensions;
 using AllOverIt.Validation.Extensions;
 using FluentValidation;
 using SlnDependencyDiagramGenerator.Config;
+using SlnDependencyDiagramGenerator.Generator.Discovery;
 using SlnDependencyDiagramGenerator.Generator.Nodes;
 using SlnDependencyDiagramGenerator.Parser;
 using SlnDependencyDiagramGenerator.Renderers;
@@ -40,14 +41,17 @@ public sealed class DependencyGenerator
     private readonly record struct PackageVersion(string Name, string Version);
 
     private readonly DependencyGeneratorConfig _configuration;
+    private readonly IProjectDiscoveryService _projectDiscovery;
     private readonly IColorConsoleLogger _logger;
 
     /// <summary>Initializes a new dependency generator instance.</summary>
     /// <param name="configuration">The dependency generator configuration options.</param>
+    /// <param name="projectDiscovery">The project discovery service used for parsing solutions and resolving dependencies.</param>
     /// <param name="logger">A console logger that provides progress information during the processing of projects and generation of diagrams.</param>
-    public DependencyGenerator(DependencyGeneratorConfig configuration, IColorConsoleLogger logger)
+    public DependencyGenerator(DependencyGeneratorConfig configuration, IProjectDiscoveryService projectDiscovery, IColorConsoleLogger logger)
     {
         _configuration = configuration.WhenNotNull();
+        _projectDiscovery = projectDiscovery.WhenNotNull();
         _logger = logger.WhenNotNull();
 
         AssertConfiguration();
@@ -75,14 +79,8 @@ public sealed class DependencyGenerator
         var excludeFrameworks = _configuration.Projects.FrameworksToExclude;
         var solutionPath = _configuration.Projects.SolutionPath;
 
-        // Must run before creating SolutionParser because NuGet.ProjectModel can trigger
-        // Microsoft.Build assembly resolution during parser construction.
-        MsBuildSdkResolver.EnsureInitialized();
-
-        var solutionParser = new SolutionParser();
-
         // Target frameworks are auto-discovered from each project's project.assets.json
-        var targetFrameworks = await solutionParser
+        var targetFrameworks = await _projectDiscovery
             .DiscoverTargetFrameworksAsync(solutionPath, regexToInclude, regexToExclude, cancellationToken)
             .ConfigureAwait(false);
 
@@ -116,8 +114,8 @@ public sealed class DependencyGenerator
                 MaxTransitiveDepth = maxTransitiveDepth
             };
 
-            var allProjects = await solutionParser
-                .ParseAsync(parseRequest, cancellationToken)
+            var allProjects = await _projectDiscovery
+                .ParseProjectsAsync(parseRequest, cancellationToken)
                 .ConfigureAwait(false);
 
             if (allProjects.Length == 0)

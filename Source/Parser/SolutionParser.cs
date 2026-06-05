@@ -28,6 +28,10 @@ internal sealed partial class SolutionParser
     /// <summary>Initializes a new parser instance.</summary>
     public SolutionParser()
     {
+        // SDK-style project evaluation requires a registered MSBuild instance so SDK resolvers
+        // can locate Microsoft.NET.Sdk and related toolset components.
+        MsBuildSdkResolver.EnsureInitialized();
+
         _solutionProjectResolvers = new Dictionary<string, ISolutionProjectResolver>(StringComparer.OrdinalIgnoreCase)
         {
             [".sln"] = new SlnSolutionProjectResolver(),
@@ -75,10 +79,6 @@ internal sealed partial class SolutionParser
         cancellationToken.ThrowIfCancellationRequested();
 
         var solutionFilePath = Path.GetFullPath(request.SolutionFilePath);
-
-        // SDK-style project evaluation requires a registered MSBuild instance so SDK resolvers
-        // can locate Microsoft.NET.Sdk and related toolset components.
-        MsBuildSdkResolver.EnsureInitialized();
 
         var excludeSet = new HashSet<string>(request.ExcludePackages, StringComparer.OrdinalIgnoreCase);
         var excludeFrameworkSet = new HashSet<string>(request.ExcludeFrameworks, StringComparer.OrdinalIgnoreCase);

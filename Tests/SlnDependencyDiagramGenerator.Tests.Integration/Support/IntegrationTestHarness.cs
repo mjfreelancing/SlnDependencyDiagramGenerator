@@ -2,6 +2,7 @@
 using NSubstitute;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Generator;
+using SlnDependencyDiagramGenerator.Generator.Discovery;
 using SlnDependencyDiagramGenerator.Parser;
 using System.Threading;
 
@@ -75,7 +76,7 @@ internal static class IntegrationTestHarness
         var tempDirectory = CreateTempDirectory(options.FixtureName.ToLowerInvariant());
         var solutionPath = GetFixtureSolutionPath(options.FixtureName, options.SolutionExtension);
         var configuration = CreateConfig(solutionPath, tempDirectory.DirectoryPath, options);
-        var generator = new DependencyGenerator(configuration, Substitute.For<IColorConsoleLogger>());
+        var generator = new DependencyGenerator(configuration, new ProjectDiscoveryService(), Substitute.For<IColorConsoleLogger>());
 
         await generator.CreateDiagramsAsync(CancellationToken.None);
 
@@ -219,9 +220,7 @@ internal static class IntegrationTestHarness
     public static async Task<SolutionProject[]> ParseFixtureAsync(string fixtureName, string extension, string targetFramework,
         string[] regexToInclude, string[] regexToExclude, string[] excludePackages, string[] excludeFrameworks, int maxTransitiveDepth)
     {
-        MsBuildSdkResolver.EnsureInitialized();
-
-        var parser = new SolutionParser();
+        var discovery = new ProjectDiscoveryService();
         var solutionPath = GetFixtureSolutionPath(fixtureName, extension);
 
         var parseRequest = new SolutionParseRequest
@@ -235,18 +234,16 @@ internal static class IntegrationTestHarness
             MaxTransitiveDepth = maxTransitiveDepth
         };
 
-        return await parser.ParseAsync(parseRequest, CancellationToken.None);
+        return await discovery.ParseProjectsAsync(parseRequest, CancellationToken.None);
     }
 
     public static async Task<string[]> DiscoverFixtureTargetFrameworksAsync(string fixtureName, string extension,
         string[] regexToInclude, string[] regexToExclude)
     {
-        MsBuildSdkResolver.EnsureInitialized();
-
-        var parser = new SolutionParser();
+        var discovery = new ProjectDiscoveryService();
         var solutionPath = GetFixtureSolutionPath(fixtureName, extension);
 
-        return await parser.DiscoverTargetFrameworksAsync(solutionPath, regexToInclude, regexToExclude, CancellationToken.None);
+        return await discovery.DiscoverTargetFrameworksAsync(solutionPath, regexToInclude, regexToExclude, CancellationToken.None);
     }
 
     public static DependencyGenerator CreateGenerator(string solutionPath, string exportRoot, string groupName, string groupAlias)
@@ -259,7 +256,8 @@ internal static class IntegrationTestHarness
 
         var configuration = CreateConfig(solutionPath, exportRoot, options);
 
-        return new DependencyGenerator(configuration, Substitute.For<IColorConsoleLogger>());
+        var projectDiscovery = new ProjectDiscoveryService();
+        return new DependencyGenerator(configuration, projectDiscovery, Substitute.For<IColorConsoleLogger>());
     }
 
     public static DisposableTempDirectory CreateTempDirectory(string name)
