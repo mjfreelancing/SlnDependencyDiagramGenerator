@@ -3,6 +3,7 @@ using NSubstitute;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Generator;
 using SlnDependencyDiagramGenerator.Generator.Discovery;
+using SlnDependencyDiagramGenerator.Generator.ToolDetection;
 using SlnDependencyDiagramGenerator.Tests.Integration.Support;
 using Shouldly;
 using System.Threading;
@@ -23,14 +24,13 @@ public class CancellationScenariosFixture
 
             var solutionPath = IntegrationTestHarness.GetFixtureSolutionPath("Basic", ".slnx");
             var configuration = IntegrationTestHarness.CreateConfig(solutionPath, tempDirectory.DirectoryPath, options);
-            var projectDiscovery = new ProjectDiscoveryService();
-            var generator = new DependencyGenerator(configuration, projectDiscovery, Substitute.For<IColorConsoleLogger>());
+            var generator = new DependencyGenerator();
 
             using var cancellationTokenSource = new CancellationTokenSource();
             cancellationTokenSource.Cancel();
 
             var exception = await Should.ThrowAsync<OperationCanceledException>(() =>
-                generator.CreateDiagramsAsync(cancellationTokenSource.Token));
+                generator.CreateDiagramsAsync(configuration, cancellationTokenSource.Token));
 
             exception.ShouldNotBeNull();
         }

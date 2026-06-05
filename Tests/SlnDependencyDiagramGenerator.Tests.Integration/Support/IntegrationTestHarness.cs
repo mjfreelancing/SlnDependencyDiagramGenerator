@@ -3,6 +3,7 @@ using NSubstitute;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Generator;
 using SlnDependencyDiagramGenerator.Generator.Discovery;
+using SlnDependencyDiagramGenerator.Generator.ToolDetection;
 using SlnDependencyDiagramGenerator.Parser;
 using System.Threading;
 
@@ -76,9 +77,9 @@ internal static class IntegrationTestHarness
         var tempDirectory = CreateTempDirectory(options.FixtureName.ToLowerInvariant());
         var solutionPath = GetFixtureSolutionPath(options.FixtureName, options.SolutionExtension);
         var configuration = CreateConfig(solutionPath, tempDirectory.DirectoryPath, options);
-        var generator = new DependencyGenerator(configuration, new ProjectDiscoveryService(), Substitute.For<IColorConsoleLogger>());
+        var generator = new DependencyGenerator();
 
-        await generator.CreateDiagramsAsync(CancellationToken.None);
+        await generator.CreateDiagramsAsync(configuration, CancellationToken.None);
 
         return new ScenarioRunResult(tempDirectory);
     }
@@ -244,20 +245,6 @@ internal static class IntegrationTestHarness
         var solutionPath = GetFixtureSolutionPath(fixtureName, extension);
 
         return await discovery.DiscoverTargetFrameworksAsync(solutionPath, regexToInclude, regexToExclude, CancellationToken.None);
-    }
-
-    public static DependencyGenerator CreateGenerator(string solutionPath, string exportRoot, string groupName, string groupAlias)
-    {
-        var options = new GeneratorScenarioOptions
-        {
-            GroupName = groupName,
-            GroupNameAlias = groupAlias
-        };
-
-        var configuration = CreateConfig(solutionPath, exportRoot, options);
-
-        var projectDiscovery = new ProjectDiscoveryService();
-        return new DependencyGenerator(configuration, projectDiscovery, Substitute.For<IColorConsoleLogger>());
     }
 
     public static DisposableTempDirectory CreateTempDirectory(string name)

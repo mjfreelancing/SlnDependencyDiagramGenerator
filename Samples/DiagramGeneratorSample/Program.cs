@@ -6,6 +6,7 @@ using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Exceptions;
 using SlnDependencyDiagramGenerator.Generator;
 using SlnDependencyDiagramGenerator.Generator.Discovery;
+using SlnDependencyDiagramGenerator.Generator.ToolDetection;
 using System;
 using System.IO;
 using System.Threading;
@@ -25,10 +26,9 @@ internal class Program
         try
         {
             var options = GetGeneratorConfig(configurationSelection);
-            var projectDiscovery = new ProjectDiscoveryService();
-            var generator = new DependencyGenerator(options, projectDiscovery, logger);
+            var generator = new DependencyGenerator();
 
-            await generator.CreateDiagramsAsync(CancellationToken.None);
+            await generator.CreateDiagramsAsync(options, CancellationToken.None);
 
             logger
                 .Write(ConsoleColor.Green, "The solution '")

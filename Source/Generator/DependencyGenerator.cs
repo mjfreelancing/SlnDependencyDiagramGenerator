@@ -8,6 +8,7 @@ using FluentValidation;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Generator.Discovery;
 using SlnDependencyDiagramGenerator.Generator.Nodes;
+using SlnDependencyDiagramGenerator.Generator.ToolDetection;
 using SlnDependencyDiagramGenerator.Parser;
 using SlnDependencyDiagramGenerator.Renderers;
 using SlnDependencyDiagramGenerator.Renderers.D2;
@@ -40,44 +41,53 @@ public sealed class DependencyGenerator
 {
     private readonly record struct PackageVersion(string Name, string Version);
 
-    private readonly DependencyGeneratorConfig _configuration;
     private readonly IProjectDiscoveryService _projectDiscovery;
+    private readonly IToolDetectionService _toolDetection;
     private readonly IColorConsoleLogger _logger;
 
-    /// <summary>Initializes a new dependency generator instance.</summary>
-    /// <param name="configuration">The dependency generator configuration options.</param>
-    /// <param name="projectDiscovery">The project discovery service used for parsing solutions and resolving dependencies.</param>
-    /// <param name="logger">A console logger that provides progress information during the processing of projects and generation of diagrams.</param>
-    public DependencyGenerator(DependencyGeneratorConfig configuration, IProjectDiscoveryService projectDiscovery, IColorConsoleLogger logger)
+    /// <summary>Initializes a new dependency generator with default service implementations.
+    /// Intended for simple usage where DI is not required.</summary>
+    public DependencyGenerator()
+        : this(new ProjectDiscoveryService(), new ToolDetectionService(), new ColorConsoleLogger())
     {
-        _configuration = configuration.WhenNotNull();
-        _projectDiscovery = projectDiscovery.WhenNotNull();
-        _logger = logger.WhenNotNull();
+    }
 
-        AssertConfiguration();
+    /// <summary>Initializes a new dependency generator instance with explicitly provided services (for DI).</summary>
+    /// <param name="projectDiscovery">The project discovery service used for parsing solutions and resolving dependencies.</param>
+    /// <param name="toolDetection">The tool detection service used for checking external CLI tool availability.</param>
+    /// <param name="logger">A console logger that provides progress information during the processing of projects and generation of diagrams.</param>
+    public DependencyGenerator(IProjectDiscoveryService projectDiscovery, IToolDetectionService toolDetection, IColorConsoleLogger logger)
+    {
+        _projectDiscovery = projectDiscovery.WhenNotNull();
+        _toolDetection = toolDetection.WhenNotNull();
+        _logger = logger.WhenNotNull();
     }
 
     /// <summary>Generates dependency summaries, diagram files, and optional images for each discovered target framework.</summary>
+    /// <param name="configuration">The dependency generator configuration options.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A <see cref="Task"/> that completes when the diagram generation has completed.</returns>
-    public async Task CreateDiagramsAsync(CancellationToken cancellationToken)
+    public async Task CreateDiagramsAsync(DependencyGeneratorConfig configuration, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var individualTransitiveDepth = _configuration.Projects.Individual.Enabled
-            ? _configuration.Projects.Individual.TransitiveDepth
+        AssertConfiguration(configuration);
+
+        var individualTransitiveDepth = configuration.Projects.Individual.Enabled
+            ? configuration.Projects.Individual.TransitiveDepth
             : 0;
 
-        var allTransitiveDepth = _configuration.Projects.All.Enabled
-            ? _configuration.Projects.All.TransitiveDepth
+        var allTransitiveDepth = configuration.Projects.All.Enabled
+            ? configuration.Projects.All.TransitiveDepth
             : 0;
 
         var maxTransitiveDepth = Math.Max(individualTransitiveDepth, allTransitiveDepth);
 
-        var regexToInclude = _configuration.Projects.RegexToInclude;
-        var regexToExclude = _configuration.Projects.RegexToExclude;
-        var excludePackages = _configuration.Projects.PackagesToExclude;
-        var excludeFrameworks = _configuration.Projects.FrameworksToExclude;
-        var solutionPath = _configuration.Projects.SolutionPath;
+        var regexToInclude = configuration.Projects.RegexToInclude;
+        var regexToExclude = configuration.Projects.RegexToExclude;
+        var excludePackages = configuration.Projects.PackagesToExclude;
+        var excludeFrameworks = configuration.Projects.FrameworksToExclude;
+        var solutionPath = configuration.Projects.SolutionPath;
 
         // Target frameworks are auto-discovered from each project's project.assets.json
         var targetFrameworks = await _projectDiscovery
@@ -93,11 +103,11 @@ public sealed class DependencyGenerator
             return;
         }
 
-        var renderers = GetRenderers();
+        var renderers = GetRenderers(configuration);
 
-        // Make sure the required diagram generation tools are available before starting
-        // to process projects, so we don't do unnecessary work if they're not present.
-        await ValidateRequiredToolsAsync(renderers, cancellationToken).ConfigureAwait(false);
+        // Check tool availability and log warnings before processing projects,
+        // so failures are visible early even if generation continues.
+        await LogToolAvailabilityAsync(configuration, cancellationToken).ConfigureAwait(false);
 
         foreach (var targetFramework in targetFrameworks)
         {
@@ -120,10 +130,10 @@ public sealed class DependencyGenerator
 
             if (allProjects.Length == 0)
             {
-                var includeRegexList = string.Join(", ", _configuration.Projects.RegexToInclude);
+                var includeRegexList = string.Join(", ", configuration.Projects.RegexToInclude);
 
-                var excludeRegexList = _configuration.Projects.RegexToExclude.Length > 0
-                    ? string.Join(", ", _configuration.Projects.RegexToExclude)
+                var excludeRegexList = configuration.Projects.RegexToExclude.Length > 0
+                    ? string.Join(", ", configuration.Projects.RegexToExclude)
                     : "<none>";
 
                 _logger
@@ -155,25 +165,25 @@ public sealed class DependencyGenerator
 
             var solutionProjects = allProjects.ToDictionary(project => project.Name, project => project);
 
-            var exportPath = Path.Combine(_configuration.Export.RootPath, targetFramework);
+            var exportPath = Path.Combine(configuration.Export.RootPath, targetFramework);
 
             Directory.CreateDirectory(exportPath);
 
-            if (_configuration.Export.ClearContents)
+            if (configuration.Export.ClearContents)
             {
                 ClearFolder(exportPath);
             }
 
             await ExportAsSummaryAsync(exportPath, solutionProjects, cancellationToken).ConfigureAwait(false);
 
-            if (_configuration.Projects.Individual.Enabled)
+            if (configuration.Projects.Individual.Enabled)
             {
-                await ExportAsIndividualAsync(targetFramework, exportPath, solutionProjects, renderers, cancellationToken).ConfigureAwait(false);
+                await ExportAsIndividualAsync(configuration, targetFramework, exportPath, solutionProjects, renderers, cancellationToken).ConfigureAwait(false);
             }
 
-            if (_configuration.Projects.All.Enabled)
+            if (configuration.Projects.All.Enabled)
             {
-                await ExportAsAllAsync(targetFramework, exportPath, solutionProjects, renderers, cancellationToken).ConfigureAwait(false);
+                await ExportAsAllAsync(configuration, targetFramework, exportPath, solutionProjects, renderers, cancellationToken).ConfigureAwait(false);
             }
         }
     }
@@ -188,13 +198,13 @@ public sealed class DependencyGenerator
         }
     }
 
-    private async Task ExportAsIndividualAsync(string targetFramework, string exportPath, IDictionary<string, SolutionProject> solutionProjects,
+    private async Task ExportAsIndividualAsync(DependencyGeneratorConfig configuration, string targetFramework, string exportPath, IDictionary<string, SolutionProject> solutionProjects,
         IDiagramRenderer[] renderers, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var includeDependencies = _configuration.Projects.Individual.IncludeDependencies;
-        var transitiveDepth = _configuration.Projects.Individual.TransitiveDepth;
+        var includeDependencies = configuration.Projects.Individual.IncludeDependencies;
+        var transitiveDepth = configuration.Projects.Individual.TransitiveDepth;
 
         foreach (var scopedProject in solutionProjects.Values)
         {
@@ -208,7 +218,7 @@ public sealed class DependencyGenerator
             foreach (var renderer in renderers)
             {
                 await renderer
-                    .CreateDiagramArtifactsAsync(targetFramework, exportPath, scopedProject.Name, model, _configuration.Export.ImageFormats, cancellationToken)
+                    .CreateDiagramArtifactsAsync(targetFramework, exportPath, scopedProject.Name, model, configuration.Export.ImageFormats, cancellationToken)
                     .ConfigureAwait(false);
             }
 
@@ -216,13 +226,13 @@ public sealed class DependencyGenerator
         }
     }
 
-    private async Task ExportAsAllAsync(string targetFramework, string exportPath, IDictionary<string, SolutionProject> solutionProjects,
+    private async Task ExportAsAllAsync(DependencyGeneratorConfig configuration, string targetFramework, string exportPath, IDictionary<string, SolutionProject> solutionProjects,
         IDiagramRenderer[] renderers, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var includeDependencies = _configuration.Projects.All.IncludeDependencies;
-        var transitiveDepth = _configuration.Projects.All.TransitiveDepth;
+        var includeDependencies = configuration.Projects.All.IncludeDependencies;
+        var transitiveDepth = configuration.Projects.All.TransitiveDepth;
 
         // Calculated from assets-resolved package graphs across the selected project scope.
         // This flags cross-project version divergence (same package id, different resolved versions).
@@ -238,19 +248,19 @@ public sealed class DependencyGenerator
 
         foreach (var renderer in renderers)
         {
-            var projectScope = $"{_configuration.Diagram.GroupName}-All";
+            var projectScope = $"{configuration.Diagram.GroupName}-All";
 
             await renderer
-                .CreateDiagramArtifactsAsync(targetFramework, exportPath, projectScope, model, _configuration.Export.ImageFormats, cancellationToken)
+                .CreateDiagramArtifactsAsync(targetFramework, exportPath, projectScope, model, configuration.Export.ImageFormats, cancellationToken)
                 .ConfigureAwait(false);
         }
 
         _logger.WriteLine();
     }
 
-    private IDiagramRenderer[] GetRenderers()
+    private IDiagramRenderer[] GetRenderers(DependencyGeneratorConfig configuration)
     {
-        var diagramOptions = _configuration.Diagram;
+        var diagramOptions = configuration.Diagram;
 
         return [.. diagramOptions.Formats
             .Distinct()
@@ -541,21 +551,32 @@ public sealed class DependencyGenerator
         }
     }
 
-    private async Task ValidateRequiredToolsAsync(IDiagramRenderer[] renderers, CancellationToken cancellationToken)
+    private async Task LogToolAvailabilityAsync(DependencyGeneratorConfig configuration, CancellationToken cancellationToken)
     {
-        var imageExportEnabled = _configuration.Export.ImageFormats.Length > 0;
-
-        foreach (var renderer in renderers)
+        if (configuration.Export.ImageFormats.Length == 0)
         {
-            await renderer
-                .ValidateRequiredToolsAsync(imageExportEnabled, cancellationToken)
-                .ConfigureAwait(false);
+            return;
+        }
+
+        var readiness = await _toolDetection
+            .CheckConfiguredToolsAsync(configuration.Export.ImageFormats, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (!readiness.AllRequiredToolsAvailable)
+        {
+            foreach (var status in readiness.ToolStatuses)
+            {
+                if (!status.IsAvailable)
+                {
+                    _logger.WriteLine(ConsoleColor.Red, status.ErrorMessage ?? $"'{status.ToolName}' is not available.");
+                }
+            }
         }
     }
 
-    private void AssertConfiguration()
+    private static void AssertConfiguration(DependencyGeneratorConfig configuration)
     {
         var validator = new DependencyGeneratorConfigValidator();
-        validator.ValidateAndThrow(_configuration);
+        validator.ValidateAndThrow(configuration);
     }
 }

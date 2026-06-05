@@ -1,12 +1,11 @@
 ﻿using AllOverIt.Assertion;
 using AllOverIt.Logging;
-using AllOverIt.Process;
-using AllOverIt.Process.Extensions;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Exceptions;
 using SlnDependencyDiagramGenerator.Generator;
 using SlnDependencyDiagramGenerator.Generator.IntermediateRepresentation;
 using SlnDependencyDiagramGenerator.Generator.Nodes;
+using SlnDependencyDiagramGenerator.Generator.ToolDetection;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -81,17 +80,15 @@ internal abstract class DiagramRendererBase : IDiagramRenderer
     protected abstract Task ExportImageFileAsync(string diagramFileName, DiagramImageFormat format, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Throws when a required external tool is not available on PATH.
+    /// Throws when a required external tool is not available on PATH. Delegates to the shared
+    /// <see cref="ToolDetectionService"/> for cross-platform tool lookup.
     /// </summary>
     /// <param name="toolName">The command/tool name to check.</param>
     /// <param name="missingToolMessage">The error message for a missing tool.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    protected static async Task EnsureToolAvailableAsync(string toolName, string missingToolMessage, CancellationToken cancellationToken)
+    protected static Task EnsureToolAvailableAsync(string toolName, string missingToolMessage, CancellationToken cancellationToken)
     {
-        if (!await IsToolAvailableAsync(toolName, cancellationToken).ConfigureAwait(false))
-        {
-            throw new DependencyGeneratorException(missingToolMessage);
-        }
+        return ToolDetectionService.EnsureToolAvailableAsync(toolName, missingToolMessage, cancellationToken);
     }
 
     /// <summary>Returns elapsed time text with two decimal places in seconds.</summary>
@@ -154,30 +151,6 @@ internal abstract class DiagramRendererBase : IDiagramRenderer
         }
 
         return diagramRepresentation;
-    }
-
-    private static async Task<bool> IsToolAvailableAsync(string toolName, CancellationToken cancellationToken)
-    {
-        var locator = OperatingSystem.IsWindows() ? "where" : "which";
-
-        try
-        {
-            using var executor = ProcessBuilder
-                .For(locator)
-                .WithNoWindow()
-                .WithArguments(toolName)
-                .BuildProcessExecutor();
-
-            var result = await executor
-                .ExecuteBufferedAsync(cancellationToken)
-                .ConfigureAwait(false);
-
-            return result.ExitCode == 0;
-        }
-        catch
-        {
-            return false;
-        }
     }
 
     private string GetDiagramAliasId(string alias, bool includeProjectGroupPrefix)

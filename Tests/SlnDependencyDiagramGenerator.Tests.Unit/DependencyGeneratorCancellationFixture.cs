@@ -3,6 +3,7 @@ using NSubstitute;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Generator;
 using SlnDependencyDiagramGenerator.Generator.Discovery;
+using SlnDependencyDiagramGenerator.Generator.ToolDetection;
 using SlnDependencyDiagramGenerator.Tests.Unit.Support;
 using Shouldly;
 using System;
@@ -32,14 +33,13 @@ public class DependencyGeneratorCancellationFixture
                     .WithSolutionPath(tempSlnPath)
                     .Build();
 
-                var projectDiscovery = new ProjectDiscoveryService();
-                var generator = new DependencyGenerator(config, projectDiscovery, Substitute.For<IColorConsoleLogger>());
+                var generator = new DependencyGenerator();
 
                 using var cancellationTokenSource = new CancellationTokenSource();
                 cancellationTokenSource.Cancel();
 
                 var exception = await Should.ThrowAsync<OperationCanceledException>(() =>
-                    generator.CreateDiagramsAsync(cancellationTokenSource.Token));
+                    generator.CreateDiagramsAsync(config, cancellationTokenSource.Token));
 
                 exception.ShouldNotBeNull();
             }

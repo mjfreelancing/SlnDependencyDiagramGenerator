@@ -14,7 +14,7 @@ namespace SlnDependencyDiagramGenerator.Generator.Discovery;
 
 /// <summary>Provides project discovery and parsing services by wrapping SolutionParser
 /// and solution project resolvers.</summary>
-public sealed class ProjectDiscoveryService : IProjectDiscoveryService
+internal sealed class ProjectDiscoveryService : IProjectDiscoveryService
 {
     private readonly SolutionParser _solutionParser = new();
 
