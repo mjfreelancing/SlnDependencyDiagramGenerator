@@ -12,6 +12,7 @@ applyTo: "**/*.cs"
 - Use clear naming and cohesive feature-level organization.
 - Avoid one-letter variable names unless loop/index intent is obvious.
 - Keep methods focused and avoid unnecessary abstraction.
+- One class per file. Nested types, records, and enums that are logically part of the enclosing type are exempt.
 - Keep method and constructor signatures compact: start on one line and fit as many parameters as comfortable; wrap at a natural breaking point (after a comma or after the opening parenthesis) when the line would become too long. Continuation lines should be indented one level.
 - Follow member-ordering conventions consistently within each project:
   - Place nested types above constants, fields, and properties.
@@ -50,6 +51,7 @@ applyTo: "**/*.cs"
 ### Constructor and Method Signature Ordering
 
 - When injecting services via constructor, the logging interface (when required) is always the **last** injected parameter.
+- Classes with multiple constructors should chain to a single primary constructor where possible, rather than duplicating field assignments in each constructor body.
 - The `private readonly` backing fields for injected services must be listed in the **same order** as the corresponding constructor parameters.
 - For method calls, `CancellationToken` (when required) is always the **last** argument, unless a language-enforced positional constraint prevents it (e.g. `[CallerMemberName] string callerName = ""` must appear after the token).
 
