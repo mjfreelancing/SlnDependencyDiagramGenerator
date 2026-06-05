@@ -12,7 +12,7 @@ applyTo: "**/*.cs"
 - Use clear naming and cohesive feature-level organization.
 - Avoid one-letter variable names unless loop/index intent is obvious.
 - Keep methods focused and avoid unnecessary abstraction.
-- Keep method and constructor signatures reasonably compact for readability; wrap parameters when needed for clarity.
+- Keep method and constructor signatures compact: start on one line and fit as many parameters as comfortable; wrap at a natural breaking point (after a comma or after the opening parenthesis) when the line would become too long. Continuation lines should be indented one level.
 - Follow member-ordering conventions consistently within each project:
   - Place nested types above constants, fields, and properties.
   - Place constants before other fields; place static readonly fields before instance fields.
@@ -46,6 +46,12 @@ applyTo: "**/*.cs"
 ### C# Architecture
 
 - Keep handlers thin: validate, map input, call service, map result.
+
+### Constructor and Method Signature Ordering
+
+- When injecting services via constructor, the logging interface (when required) is always the **last** injected parameter.
+- The `private readonly` backing fields for injected services must be listed in the **same order** as the corresponding constructor parameters.
+- For method calls, `CancellationToken` (when required) is always the **last** argument, unless a language-enforced positional constraint prevents it (e.g. `[CallerMemberName] string callerName = ""` must appear after the token).
 
 ## Expansion Notes
 
