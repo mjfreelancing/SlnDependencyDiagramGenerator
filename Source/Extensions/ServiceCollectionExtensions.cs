@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using SlnDependencyDiagramGenerator.Generator;
 using SlnDependencyDiagramGenerator.Generator.Discovery;
+using SlnDependencyDiagramGenerator.Generator.ToolDetection;
 using SlnDependencyDiagramGenerator.Renderers;
 using SlnDependencyDiagramGenerator.Renderers.D2;
 using SlnDependencyDiagramGenerator.Renderers.Mermaid;
@@ -16,6 +18,8 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddSlnDependencyGenerator(this IServiceCollection services)
     {
         services.TryAddScoped<IProjectDiscoveryService, ProjectDiscoveryService>();
+        services.TryAddScoped<IToolDetectionService, ToolDetectionService>();
+        services.TryAddScoped<DependencyGenerator>();
         services.TryAddScoped<IDiagramRenderer, D2DiagramRenderer>();
         services.TryAddScoped<IDiagramRenderer, MermaidDiagramRenderer>();
 

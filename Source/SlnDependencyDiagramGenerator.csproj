@@ -33,6 +33,7 @@
         <PackageReference Include="AllOverIt" Version="9.2.1" />
         <PackageReference Include="AllOverIt.Validation" Version="9.2.1" />
         <PackageReference Include="Microsoft.Build.Locator" Version="1.11.2" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.8" />
 
         <!--
             MSBuildLocator loads a compatible MSBuild toolset at runtime.
