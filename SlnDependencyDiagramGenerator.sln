@@ -74,6 +74,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Studio", "Studio", "{E7FC63
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SlnDependencyStudio.Shared", "Studio\SlnDependencyStudio.Shared\SlnDependencyStudio.Shared.csproj", "{B488BE01-3AFE-4657-B82D-CC0C3F982169}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Generator", "Generator", "{73BAE748-6149-4F41-92FA-EA42E1F376F2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -353,6 +355,7 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
+		{0510903E-8DDB-4A13-842E-5167D7475925} = {73BAE748-6149-4F41-92FA-EA42E1F376F2}
 		{51976E9F-9C04-47D1-8805-33CAF139D711} = {D3D38A3A-CC56-4723-89E1-AB7741D0CAF3}
 		{1248A3C1-2D87-94BF-3DBF-CD9BB5EFB137} = {D3D38A3A-CC56-4723-89E1-AB7741D0CAF3}
 		{1019B2DF-75C9-4FB7-A126-66DFEE65991B} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
