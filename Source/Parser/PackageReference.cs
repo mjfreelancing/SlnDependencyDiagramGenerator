@@ -10,10 +10,10 @@ public sealed class PackageReference
     public int Depth { get; }
 
     /// <summary>The package identifier.</summary>
-    public string Name { get; init; }
+    public string Name { get; init; } = string.Empty;
 
     /// <summary>The resolved package version.</summary>
-    public string Version { get; init; }
+    public string Version { get; init; } = string.Empty;
 
     /// <summary>
     /// The version range requested by the parent dependency edge.
@@ -21,7 +21,7 @@ public sealed class PackageReference
     /// <remarks>
     /// This is <see langword="null"/> for explicit package references.
     /// </remarks>
-    public string RequestedVersionRange { get; init; }
+    public string? RequestedVersionRange { get; init; }
 
     /// <summary>
     /// Indicates whether the parent edge requested a specific version that differs from the resolved version.
@@ -29,7 +29,7 @@ public sealed class PackageReference
     public bool RequestedDifferentVersion { get; init; }
 
     /// <summary>The transitive package dependencies.</summary>
-    public PackageReference[] TransitiveReferences { get; init; }
+    public PackageReference[] TransitiveReferences { get; init; } = [];
 
     /// <summary>Initializes a new explicit package reference.</summary>
     public PackageReference()

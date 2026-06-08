@@ -1,7 +1,7 @@
 using SlnDependencyDiagramGenerator.Tests.Integration.Support;
 using Shouldly;
 
-namespace SlnDependencyDiagramGenerator.Tests.Integration;
+namespace SlnDependencyDiagramGenerator.Tests.Integration.Generator;
 
 public class SummaryScenariosFixture
 {

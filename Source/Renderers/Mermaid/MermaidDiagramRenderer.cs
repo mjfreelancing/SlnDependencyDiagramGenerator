@@ -91,7 +91,8 @@ internal sealed class MermaidDiagramRenderer : DiagramRendererBase
 
             foreach (var groupNodeAlias in group.NodeAliases)
             {
-                var groupNode = FindNode(diagramRepresentation, groupNodeAlias);
+                // Group node aliases always reference nodes already in the IR, so FindNode never misses.
+                var groupNode = FindNode(diagramRepresentation, groupNodeAlias)!;
                 var safeNodeAlias = MermaidSafeAlias(groupNode.Alias);
                 var groupNodeLabel = GetMermaidLabel(groupNode);
 
@@ -180,7 +181,7 @@ internal sealed class MermaidDiagramRenderer : DiagramRendererBase
         Logger.WriteLine(ConsoleColor.Green, $"Done ({FormatElapsed(stopwatch.Elapsed)})");
     }
 
-    private static DiagramIrNode FindNode(DiagramIntermediateRepresentation diagramRepresentation, string alias)
+    private static DiagramIrNode? FindNode(DiagramIntermediateRepresentation diagramRepresentation, string alias)
     {
         foreach (var node in diagramRepresentation.Nodes)
         {

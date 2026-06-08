@@ -113,6 +113,7 @@ internal sealed partial class SolutionParser
     /// <param name="solutionFilePath">The solution path.</param>
     /// <param name="regexToInclude">Regex patterns used to include projects.</param>
     /// <param name="regexToExclude">Regex patterns used to exclude projects.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>
     /// The filtered and alphabetically ordered set of MSBuild-format projects.
     /// </returns>

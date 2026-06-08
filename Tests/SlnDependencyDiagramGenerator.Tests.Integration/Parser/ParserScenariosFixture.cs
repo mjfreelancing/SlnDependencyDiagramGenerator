@@ -3,7 +3,7 @@ using SlnDependencyDiagramGenerator.Parser;
 using SlnDependencyDiagramGenerator.Tests.Integration.Support;
 using Shouldly;
 
-namespace SlnDependencyDiagramGenerator.Tests.Integration;
+namespace SlnDependencyDiagramGenerator.Tests.Integration.Parser;
 
 public class ParserScenariosFixture
 {

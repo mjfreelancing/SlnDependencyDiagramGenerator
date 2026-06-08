@@ -1,7 +1,7 @@
 using SlnDependencyDiagramGenerator.Generator;
 using Shouldly;
 
-namespace SlnDependencyDiagramGenerator.Tests.Unit;
+namespace SlnDependencyDiagramGenerator.Tests.Unit.Generator;
 
 public class TargetFrameworkBadgeProviderFixture
 {

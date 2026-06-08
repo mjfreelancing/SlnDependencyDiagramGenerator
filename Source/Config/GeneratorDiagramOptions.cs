@@ -23,7 +23,7 @@ public sealed class GeneratorDiagramOptions
     public sealed class FillStyle
     {
         /// <summary>The CSS or RGB fill color.</summary>
-        public string Fill { get; set; }
+        public string Fill { get; set; } = string.Empty;
 
         /// <summary>The opacity. This should be a value between 0 and 1.</summary>
         public double Opacity { get; set; }
@@ -60,12 +60,12 @@ public sealed class GeneratorDiagramOptions
     public FillStyle TransitiveStyle { get; init; } = new();
 
     /// <summary>The name (title) to use for the group of projects parsed.</summary>
-    public string GroupName { get; set; }
+    public string GroupName { get; set; } = string.Empty;
 
     /// <summary>The alias used to represent the project group in generated diagram files.
     /// This prefix is not visible in diagram image output, but is required to visually
     /// group projects together in D2 and Mermaid output.</summary>
-    public string GroupNameAlias { get; set; }
+    public string GroupNameAlias { get; set; } = string.Empty;
 
     /// <summary>Grouping behavior and style options applied across all diagram formats.</summary>
     public GroupingOptions Grouping { get; init; } = new();

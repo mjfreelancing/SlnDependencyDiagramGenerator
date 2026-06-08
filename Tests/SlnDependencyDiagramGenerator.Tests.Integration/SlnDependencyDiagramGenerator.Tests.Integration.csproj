@@ -24,6 +24,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\Source\SlnDependencyDiagramGenerator.csproj" />
+        <ProjectReference Include="..\..\Studio\SlnDependencyStudio.Shared\SlnDependencyStudio.Shared.csproj" />
     </ItemGroup>
 
     <!--

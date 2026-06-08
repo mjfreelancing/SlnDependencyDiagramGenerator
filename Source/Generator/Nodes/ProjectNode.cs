@@ -4,7 +4,7 @@
 internal sealed class ProjectNode
 {
     /// <summary>The project name (no extension).</summary>
-    public string Name { get; init; }
+    public string Name { get; init; } = string.Empty;
 
     /// <summary>Framework references declared by this project.</summary>
     public FrameworkNode[] FrameworkReferences { get; init; } = [];

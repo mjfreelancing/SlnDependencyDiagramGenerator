@@ -4,5 +4,5 @@
 public sealed class FrameworkReference
 {
     /// <summary>The framework reference name.</summary>
-    public string Name { get; init; }
+    public string Name { get; init; } = string.Empty;
 }

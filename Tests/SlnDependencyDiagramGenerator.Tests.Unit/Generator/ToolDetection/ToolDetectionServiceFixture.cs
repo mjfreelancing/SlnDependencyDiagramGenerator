@@ -4,7 +4,7 @@ using Shouldly;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SlnDependencyDiagramGenerator.Tests.Unit;
+namespace SlnDependencyDiagramGenerator.Tests.Unit.Generator.ToolDetection;
 
 public class ToolDetectionServiceFixture
 {

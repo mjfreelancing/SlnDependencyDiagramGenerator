@@ -61,7 +61,7 @@ internal sealed class DiagramIntermediateRepresentation
     /// <param name="alias">Renderer-neutral node alias.</param>
     /// <param name="label">Display label for the node.</param>
     /// <param name="version">Optional package version (used by package nodes).</param>
-    public void AddNode(string alias, string label, string version = null)
+    public void AddNode(string alias, string label, string? version = null)
     {
         if (_nodesByAlias.ContainsKey(alias))
         {
@@ -140,7 +140,7 @@ internal sealed class DiagramIntermediateRepresentation
     }
 
     /// <summary>Returns the group alias for a node alias, or <see langword="null"/> when ungrouped.</summary>
-    public string GetNodeGroupAlias(string nodeAlias)
+    public string? GetNodeGroupAlias(string nodeAlias)
     {
         return _nodeToGroup.TryGetValue(nodeAlias, out var groupAlias)
             ? groupAlias

@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using AllOverIt.Logging;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using SlnDependencyDiagramGenerator.Generator;
 using SlnDependencyDiagramGenerator.Generator.Discovery;
@@ -17,6 +18,7 @@ public static class ServiceCollectionExtensions
     /// <returns>The service collection, for chaining.</returns>
     public static IServiceCollection AddSlnDependencyGenerator(this IServiceCollection services)
     {
+        services.TryAddScoped<IColorConsoleLogger, ColorConsoleLogger>();
         services.TryAddScoped<IProjectDiscoveryService, ProjectDiscoveryService>();
         services.TryAddScoped<IToolDetectionService, ToolDetectionService>();
         services.TryAddScoped<DependencyGenerator>();

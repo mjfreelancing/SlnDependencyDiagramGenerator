@@ -90,7 +90,7 @@ internal static class MsBuildSdkResolver
     {
         var loadedAssembly = AppDomain.CurrentDomain
             .GetAssemblies()
-            .FirstOrDefault(assembly => assembly.GetName().Name.Equals("Microsoft.Build", StringComparison.OrdinalIgnoreCase));
+            .FirstOrDefault(assembly => assembly.GetName().Name!.Equals("Microsoft.Build", StringComparison.OrdinalIgnoreCase));
 
         var loadedAssemblyName = loadedAssembly?.FullName ?? "<not loaded>";
         var loadedAssemblyPath = loadedAssembly?.Location ?? "<not loaded>";

@@ -4,10 +4,10 @@
 internal sealed class PackageNode
 {
     /// <summary>The package identifier.</summary>
-    public string Name { get; init; }
+    public string Name { get; init; } = string.Empty;
 
     /// <summary>The resolved package version.</summary>
-    public string Version { get; init; }
+    public string Version { get; init; } = string.Empty;
 
     /// <summary>Indicates whether the package is transitive.</summary>
     public bool IsTransitive { get; init; }

@@ -3,87 +3,83 @@ using NSubstitute;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Generator;
 using SlnDependencyDiagramGenerator.Generator.Nodes;
-using SlnDependencyDiagramGenerator.Renderers.Mermaid;
+using SlnDependencyDiagramGenerator.Renderers.D2;
 using Shouldly;
 using System.Collections.Generic;
 
-namespace SlnDependencyDiagramGenerator.Tests.Unit;
+namespace SlnDependencyDiagramGenerator.Tests.Unit.Renderers.D2;
 
-public class MermaidDiagramRendererFixture
+public class D2DiagramRendererFixture
 {
-    public class Render : MermaidDiagramRendererFixture
+    public class Render : D2DiagramRendererFixture
     {
         [Fact]
         public void Should_Render_A_Grouped_Graph_With_Custom_Direction_And_Styles()
         {
-            var renderer = new MermaidDiagramRenderer(CreateGroupedOptions(), Substitute.For<IColorConsoleLogger>());
+            var renderer = new D2DiagramRenderer(CreateGroupedOptions(), Substitute.For<IColorConsoleLogger>());
 
             var content = renderer.Render(CreateGroupedModel());
 
-            content.ShouldContain("flowchart TB");
-            content.ShouldContain("  subgraph test[\"All Projects\"]");
-            content.ShouldContain("    direction TB");
-            content.ShouldContain("    test_appconsole[\"AppConsole\"]");
-            content.ShouldContain("  subgraph newtonsoft-json-group[\"Newtonsoft.Json\"]");
-            content.ShouldContain("      newtonsoft-json-group_newtonsoft-json_13-0-3[\"Newtonsoft.Json<br>v13.0.3\"]");
-            content.ShouldContain("      newtonsoft-json-group_newtonsoft-json_12-0-3[\"Newtonsoft.Json<br>v12.0.3\"]");
-            content.ShouldContain("  microsoft-aspnetcore-app[\"Microsoft.AspNetCore.App\"]");
-            content.ShouldContain("  test_appconsole --> microsoft-aspnetcore-app");
-            content.ShouldContain("  test_appconsole --> newtonsoft-json-group_newtonsoft-json_13-0-3");
-            content.ShouldContain("  newtonsoft-json-group_newtonsoft-json_13-0-3 --> newtonsoft-json-group_newtonsoft-json_12-0-3");
-            content.ShouldContain("  style test fill:#DDEEFF,stroke:#DDEEFF,stroke-width:1px,opacity:0.75");
-            content.ShouldContain("  style newtonsoft-json-group fill:#DDEEFF,stroke:#DDEEFF,stroke-width:1px,opacity:0.75");
-            content.ShouldContain("  style microsoft-aspnetcore-app fill:#102030,opacity:0.8");
-            content.ShouldContain("  style newtonsoft-json-group_newtonsoft-json_13-0-3 fill:#405060,opacity:0.8");
-            content.ShouldContain("  style newtonsoft-json-group_newtonsoft-json_12-0-3 fill:#708090,opacity:0.8");
+            content.ShouldContain("direction: up");
+            content.ShouldContain("test: All Projects");
+            content.ShouldContain("newtonsoft-json-group: \"\"");
+            content.ShouldContain("test.appconsole: AppConsole");
+            content.ShouldContain("microsoft-aspnetcore-app: Microsoft.AspNetCore.App");
+            content.ShouldContain("newtonsoft-json-group.newtonsoft-json_13-0-3: Newtonsoft.Json");
+            content.ShouldContain("v13.0.3");
+            content.ShouldContain("newtonsoft-json-group.newtonsoft-json_12-0-3: Newtonsoft.Json");
+            content.ShouldContain("v12.0.3");
+            content.ShouldContain("microsoft-aspnetcore-app.style.fill: \"#102030\"");
+            content.ShouldContain("newtonsoft-json-group.newtonsoft-json_13-0-3.style.fill: \"#405060\"");
+            content.ShouldContain("newtonsoft-json-group.newtonsoft-json_12-0-3.style.fill: \"#708090\"");
+            content.ShouldContain("test.style.fill: \"#DDEEFF\"");
+            content.ShouldContain("newtonsoft-json-group.style.fill: \"#DDEEFF\"");
         }
 
         [Fact]
         public void Should_Render_Multiple_Project_And_Package_Groups_With_Shared_Project_References()
         {
-            var renderer = new MermaidDiagramRenderer(CreateExpandedGroupedOptions(), Substitute.For<IColorConsoleLogger>());
+            var renderer = new D2DiagramRenderer(CreateExpandedGroupedOptions(), Substitute.For<IColorConsoleLogger>());
 
             var content = renderer.Render(CreateExpandedGroupedModel());
 
-            content.ShouldContain("flowchart LR");
-            content.ShouldContain("  subgraph test[\"All Projects\"]");
-            content.ShouldContain("    direction LR");
-            content.ShouldContain("    test_appconsole[\"AppConsole\"]");
-            content.ShouldContain("    test_libcore[\"LibCore\"]");
-            content.ShouldContain("  subgraph newtonsoft-json-group[\"Newtonsoft.Json\"]");
-            content.ShouldContain("  subgraph serilog-group[\"Serilog\"]");
-            content.ShouldContain("      newtonsoft-json-group_newtonsoft-json_13-0-3[\"Newtonsoft.Json<br>v13.0.3\"]");
-            content.ShouldContain("      newtonsoft-json-group_newtonsoft-json_12-0-3[\"Newtonsoft.Json<br>v12.0.3\"]");
-            content.ShouldContain("      serilog-group_serilog_3-1-1[\"Serilog<br>v3.1.1\"]");
-            content.ShouldContain("      serilog-group_serilog_2-12-0[\"Serilog<br>v2.12.0\"]");
-            content.ShouldContain("  test_appconsole --> test_libcore");
-            content.ShouldContain("  test_appconsole --> newtonsoft-json-group_newtonsoft-json_13-0-3");
-            content.ShouldContain("  test_libcore --> serilog-group_serilog_3-1-1");
-            content.ShouldContain("  style newtonsoft-json-group fill:#DDEEFF,stroke:#DDEEFF,stroke-width:1px,opacity:0.75");
-            content.ShouldContain("  style serilog-group fill:#DDEEFF,stroke:#DDEEFF,stroke-width:1px,opacity:0.75");
-            content.ShouldContain("  style newtonsoft-json-group_newtonsoft-json_13-0-3 fill:#405060,opacity:0.8");
-            content.ShouldContain("  style serilog-group_serilog_3-1-1 fill:#405060,opacity:0.8");
+            content.ShouldContain("direction: left");
+            content.ShouldContain("test.appconsole: AppConsole");
+            content.ShouldContain("test.libcore: LibCore");
+            content.ShouldContain("newtonsoft-json-group: \"\"");
+            content.ShouldContain("serilog-group: \"\"");
+            content.ShouldContain("newtonsoft-json-group.newtonsoft-json_13-0-3: Newtonsoft.Json");
+            content.ShouldContain("newtonsoft-json-group.newtonsoft-json_12-0-3: Newtonsoft.Json");
+            content.ShouldContain("serilog-group.serilog_3-1-1: Serilog");
+            content.ShouldContain("serilog-group.serilog_2-12-0: Serilog");
+            content.ShouldContain("test.libcore <- test.appconsole");
+            content.ShouldContain("newtonsoft-json-group.newtonsoft-json_13-0-3 <- test.appconsole");
+            content.ShouldContain("serilog-group.serilog_3-1-1 <- test.libcore");
+            content.ShouldContain("newtonsoft-json-group.style.fill: \"#DDEEFF\"");
+            content.ShouldContain("serilog-group.style.fill: \"#DDEEFF\"");
+            content.ShouldContain("newtonsoft-json-group.newtonsoft-json_13-0-3.style.fill: \"#405060\"");
+            content.ShouldContain("serilog-group.serilog_3-1-1.style.fill: \"#405060\"");
         }
 
         [Fact]
         public void Should_Render_An_Ungrouped_Graph_With_Right_To_Left_Direction()
         {
-            var renderer = new MermaidDiagramRenderer(CreateUngroupedOptions(), Substitute.For<IColorConsoleLogger>());
+            var renderer = new D2DiagramRenderer(CreateUngroupedOptions(), Substitute.For<IColorConsoleLogger>());
 
             var content = renderer.Render(CreateUngroupedModel());
 
-            content.ShouldContain("flowchart RL");
-            content.ShouldNotContain("subgraph test");
-            content.ShouldContain("  appconsole[\"AppConsole\"]");
-            content.ShouldContain("  microsoft-extensions-logging[\"Microsoft.Extensions.Logging\"]");
-            content.ShouldContain("  newtonsoft-json_13-0-3[\"Newtonsoft.Json<br>v13.0.3\"]");
-            content.ShouldContain("  newtonsoft-json_12-0-3[\"Newtonsoft.Json<br>v12.0.3\"]");
-            content.ShouldContain("  appconsole --> microsoft-extensions-logging");
-            content.ShouldContain("  appconsole --> newtonsoft-json_13-0-3");
-            content.ShouldContain("  newtonsoft-json_13-0-3 --> newtonsoft-json_12-0-3");
-            content.ShouldContain("  style microsoft-extensions-logging fill:#010203,opacity:0.9");
-            content.ShouldContain("  style newtonsoft-json_13-0-3 fill:#040506,opacity:0.7");
-            content.ShouldContain("  style newtonsoft-json_12-0-3 fill:#070809,opacity:0.5");
+            content.ShouldContain("direction: right");
+            content.ShouldNotContain("test:");
+            content.ShouldNotContain("subgraph");
+            content.ShouldContain("appconsole: AppConsole");
+            content.ShouldContain("microsoft-extensions-logging: Microsoft.Extensions.Logging");
+            content.ShouldContain("newtonsoft-json_13-0-3: Newtonsoft.Json");
+            content.ShouldContain("v13.0.3");
+            content.ShouldContain("newtonsoft-json_12-0-3: Newtonsoft.Json");
+            content.ShouldContain("v12.0.3");
+            content.ShouldContain("microsoft-extensions-logging.style.fill: \"#010203\"");
+            content.ShouldContain("newtonsoft-json_13-0-3.style.fill: \"#040506\"");
+            content.ShouldContain("newtonsoft-json_12-0-3.style.fill: \"#070809\"");
         }
     }
 
@@ -91,7 +87,7 @@ public class MermaidDiagramRendererFixture
     {
         return new GeneratorDiagramOptions
         {
-            Direction = GeneratorDiagramOptions.DiagramDirection.TB,
+            Direction = GeneratorDiagramOptions.DiagramDirection.BT,
             GroupName = "All Projects",
             GroupNameAlias = "test",
             FrameworkStyle = new GeneratorDiagramOptions.FillStyle

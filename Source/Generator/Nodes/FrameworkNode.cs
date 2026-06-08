@@ -4,5 +4,5 @@
 internal sealed class FrameworkNode
 {
     /// <summary>The framework name.</summary>
-    public string Name { get; init; }
+    public string Name { get; init; } = string.Empty;
 }

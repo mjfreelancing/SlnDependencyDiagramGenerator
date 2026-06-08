@@ -9,7 +9,7 @@ public sealed class GeneratorExportOptions
 
     /// <summary>The relative or fully-qualified export root path for the generated diagram files and images.
     /// A sub-folder will be created for each target framework processed.</summary>
-    public string RootPath { get; set; }
+    public string RootPath { get; set; } = string.Empty;
 
     /// <summary>The diagram image formats to create. Can be empty, or one or more of "png", "svg", "pdf".</summary>
     public DiagramImageFormat[] ImageFormats { get; init; } = [];

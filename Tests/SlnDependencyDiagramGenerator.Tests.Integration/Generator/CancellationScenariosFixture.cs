@@ -8,7 +8,7 @@ using SlnDependencyDiagramGenerator.Tests.Integration.Support;
 using Shouldly;
 using System.Threading;
 
-namespace SlnDependencyDiagramGenerator.Tests.Integration;
+namespace SlnDependencyDiagramGenerator.Tests.Integration.Generator;
 
 public class CancellationScenariosFixture
 {

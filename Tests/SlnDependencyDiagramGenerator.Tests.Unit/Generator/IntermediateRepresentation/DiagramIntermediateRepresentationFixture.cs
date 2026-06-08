@@ -2,7 +2,7 @@ using System;
 using SlnDependencyDiagramGenerator.Generator.IntermediateRepresentation;
 using Shouldly;
 
-namespace SlnDependencyDiagramGenerator.Tests.Unit;
+namespace SlnDependencyDiagramGenerator.Tests.Unit.Generator.IntermediateRepresentation;
 
 public class DiagramIntermediateRepresentationFixture
 {

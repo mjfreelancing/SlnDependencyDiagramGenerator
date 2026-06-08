@@ -18,6 +18,12 @@
         <CheckEolTargetFramework>false</CheckEolTargetFramework>
         <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
 
+        <!--
+            NU1903: Microsoft.Build 17.11.4 (net8.0/net9.0) — pre-existing vulnerability in a
+            build-time dependency that only reads trusted local files; not exploitable at runtime.
+        -->
+        <NoWarn>NU1903</NoWarn>
+
         <!-- devblogs.microsoft.com/dotnet/producing-packages-with-source-link/ -->
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <EmbedUntrackedSources>true</EmbedUntrackedSources>

@@ -1,7 +1,7 @@
 using SlnDependencyDiagramGenerator.Generator.ToolDetection;
 using Shouldly;
 
-namespace SlnDependencyDiagramGenerator.Tests.Unit;
+namespace SlnDependencyDiagramGenerator.Tests.Unit.Generator.ToolDetection;
 
 public class ToolReadinessResultFixture
 {

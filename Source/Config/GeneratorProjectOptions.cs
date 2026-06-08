@@ -19,7 +19,7 @@ public sealed class GeneratorProjectOptions
     }
 
     /// <summary>The relative or fully-qualified path to the solution file to be parsed.</summary>
-    public string SolutionPath { get; set; }
+    public string SolutionPath { get; set; } = string.Empty;
 
     /// <summary>One or more regex patterns to match solution projects to be included. To parse
     /// all <c>.csproj</c> files under a specific path, including sub-folders, use a regex such as
@@ -38,8 +38,8 @@ public sealed class GeneratorProjectOptions
     public string[] FrameworksToExclude { get; init; } = [];
 
     /// <summary>Specifies options specific to the processing of individual projects in a solution.</summary>
-    public ProjectScope Individual { get; set; }
+    public ProjectScope Individual { get; set; } = new();
 
     /// <summary>Specifies options specific to the processing of all projects in the solution (collectively).</summary>
-    public ProjectScope All { get; set; }
+    public ProjectScope All { get; set; } = new();
 }

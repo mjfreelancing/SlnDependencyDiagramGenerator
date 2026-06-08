@@ -163,7 +163,11 @@ public sealed class DependencyGenerator
 
             _logger.WriteLine();
 
-            var solutionProjects = allProjects.ToDictionary(project => project.Name, project => project);
+            // GroupBy handles duplicate project filenames across different directories
+            var solutionProjects = allProjects
+                .GroupBy(project => project.Name, StringComparer.OrdinalIgnoreCase)
+                .Select(group => group.First())
+                .ToDictionary(project => project.Name, project => project, StringComparer.OrdinalIgnoreCase);
 
             var exportPath = Path.Combine(configuration.Export.RootPath, targetFramework);
 
@@ -359,7 +363,7 @@ public sealed class DependencyGenerator
         };
     }
 
-    private static PackageNode BuildPackageNode(PackageReference packageReference, int maxTransitiveDepth)
+    private static PackageNode? BuildPackageNode(PackageReference packageReference, int maxTransitiveDepth)
     {
         if (packageReference.Depth > maxTransitiveDepth)
         {
@@ -457,7 +461,7 @@ public sealed class DependencyGenerator
     }
 
     private static IEnumerable<IGrouping<string, PackageVersion>> GetOrderedDistinctPackageDependencies(SolutionProject solutionProject,
-        Func<IGrouping<string, PackageVersion>, bool> predicate = default)
+        Func<IGrouping<string, PackageVersion>, bool>? predicate = null)
     {
         var results = GetAllPackageDependencies(solutionProject.PackageReferences)
             .Select(item => new PackageVersion(item.Name, item.Version))
@@ -473,7 +477,7 @@ public sealed class DependencyGenerator
 
     // For a given project get an ordered, distinct, list of all package references, including the package references for all referenced projects.
     private static IEnumerable<IGrouping<string, PackageVersion>> GetDeepOrderedDistinctPackageDependencies(SolutionProject solutionProject,
-        IDictionary<string, SolutionProject> solutionProjects, Func<IGrouping<string, PackageVersion>, bool> predicate = default)
+        IDictionary<string, SolutionProject> solutionProjects, Func<IGrouping<string, PackageVersion>, bool>? predicate = null)
     {
         var allPackageDependencies = new List<PackageVersion>();
 
@@ -574,9 +578,17 @@ public sealed class DependencyGenerator
         }
     }
 
-    private static void AssertConfiguration(DependencyGeneratorConfig configuration)
+    /// <summary>Validates a <see cref="DependencyGeneratorConfig"/> and throws <see cref="FluentValidation.ValidationException"/>
+    /// if any rules are violated.</summary>
+    /// <param name="configuration">The configuration to validate.</param>
+    public static void ValidateConfiguration(DependencyGeneratorConfig configuration)
     {
         var validator = new DependencyGeneratorConfigValidator();
         validator.ValidateAndThrow(configuration);
+    }
+
+    private static void AssertConfiguration(DependencyGeneratorConfig configuration)
+    {
+        ValidateConfiguration(configuration);
     }
 }

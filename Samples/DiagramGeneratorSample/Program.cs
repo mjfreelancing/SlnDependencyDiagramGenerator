@@ -51,7 +51,10 @@ internal class Program
         catch (Exception exception) when (exception is InvalidOperationException or FormatException or
                                                        ArgumentException or InvalidDataException)
         {
+            // Show full exception details so the root cause is visible
             WriteConfigurationError(logger, configurationSelection.ConfigFile, exception);
+
+            logger.WriteLine(ConsoleColor.DarkGray, exception.ToString());
         }
         catch (Exception exception)
         {

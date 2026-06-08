@@ -6,7 +6,7 @@ using Shouldly;
 using System;
 using System.Collections.Generic;
 
-namespace SlnDependencyDiagramGenerator.Tests.Unit;
+namespace SlnDependencyDiagramGenerator.Tests.Unit.Generator;
 
 public class SummaryDependencyGeneratorFixture
 {

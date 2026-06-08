@@ -65,9 +65,10 @@ internal sealed class ProjectAssetReader
         }
 
         // Build a lookup of all resolved package libraries for this target framework.
+        // NuGet's LockFileTargetLibrary.Name is annotated as string? but resolved packages always have names.
         var packageLibraries = target.Libraries
-            .Where(library => string.Equals(library.Type, "package", StringComparison.OrdinalIgnoreCase))
-            .ToDictionary(library => library.Name, library => library, StringComparer.OrdinalIgnoreCase);
+            .Where(library => string.Equals(library.Type, "package", StringComparison.OrdinalIgnoreCase) && library.Name is not null)
+            .ToDictionary(library => library.Name!, library => library!, StringComparer.OrdinalIgnoreCase);
 
         // Find explicit (direct) package references for this target framework.
         // Project-to-project references are not part of this package set.
@@ -78,7 +79,7 @@ internal sealed class ProjectAssetReader
             ? packageSpecTargetFramework.Dependencies
                 .Where(dependency => packageLibraries.ContainsKey(dependency.Name))
                 .ToDictionary(dependency => dependency.Name, GetRequestedVersionRange, StringComparer.OrdinalIgnoreCase)
-            : new Dictionary<string, VersionRange>(StringComparer.OrdinalIgnoreCase);
+            : new Dictionary<string, VersionRange?>(StringComparer.OrdinalIgnoreCase);
 
         // Build a package tree from each explicit package reference.
         var result = new List<PackageReference>();
@@ -106,7 +107,7 @@ internal sealed class ProjectAssetReader
         return [.. result];
     }
 
-    private static LockFileTarget GetTarget(LockFile lockFile, string targetFramework)
+    private static LockFileTarget? GetTarget(LockFile lockFile, string targetFramework)
     {
         var frameworkOnlyTargets = lockFile.Targets
             .Where(target => target.RuntimeIdentifier.IsNullOrEmpty())
@@ -139,7 +140,7 @@ internal sealed class ProjectAssetReader
         return null;
     }
 
-    private static TargetFrameworkInformation GetPackageSpecTargetFramework(LockFile lockFile, string targetFramework)
+    private static TargetFrameworkInformation? GetPackageSpecTargetFramework(LockFile lockFile, string targetFramework)
     {
         // Pass 1: find an exact framework entry from PackageSpec.
         foreach (var framework in lockFile.PackageSpec.TargetFrameworks)
@@ -186,8 +187,8 @@ internal sealed class ProjectAssetReader
     /// <param name="excludePackages">Package IDs to exclude from the graph.</param>
     /// <param name="requestedVersionRange">The version range requested by the parent dependency edge.</param>
     /// <returns>A package node when found; otherwise, <see langword="null"/>.</returns>
-    private static PackageReference BuildPackageTree(string packageName, Dictionary<string, LockFileTargetLibrary> libraryLookup,
-        int depth, int maxDepth, HashSet<string> activePathPackages, HashSet<string> excludePackages, VersionRange requestedVersionRange)
+    private static PackageReference? BuildPackageTree(string packageName, Dictionary<string, LockFileTargetLibrary> libraryLookup,
+        int depth, int maxDepth, HashSet<string> activePathPackages, HashSet<string> excludePackages, VersionRange? requestedVersionRange)
     {
         if (!libraryLookup.TryGetValue(packageName, out var library))
         {
@@ -219,17 +220,18 @@ internal sealed class ProjectAssetReader
             activePathPackages.Remove(packageName);
         }
 
+        // library.Name and library.Version are annotated as nullable by NuGet but always present for resolved packages.
         return new PackageReference(isTransitive: depth > 0, depth)
         {
-            Name = library.Name,
-            Version = library.Version.ToNormalizedString(),
+            Name = library.Name!,
+            Version = library.Version!.ToNormalizedString(),
             RequestedVersionRange = requestedVersionRange?.ToString(),
             RequestedDifferentVersion = IsRequestedDifferentVersion(requestedVersionRange, library.Version),
             TransitiveReferences = [.. children]
         };
     }
 
-    private static bool IsRequestedDifferentVersion(VersionRange requestedVersionRange, NuGetVersion resolvedVersion)
+    private static bool IsRequestedDifferentVersion(VersionRange? requestedVersionRange, NuGetVersion? resolvedVersion)
     {
         if (requestedVersionRange is null || resolvedVersion is null)
         {
@@ -253,7 +255,7 @@ internal sealed class ProjectAssetReader
         return true;
     }
 
-    private static VersionRange GetRequestedVersionRange(LibraryDependency dependency)
+    private static VersionRange? GetRequestedVersionRange(LibraryDependency dependency)
     {
         return dependency.LibraryRange?.VersionRange;
     }

@@ -1,0 +1,137 @@
+﻿using FluentValidation;
+using SlnDependencyDiagramGenerator.Config;
+using SlnDependencyDiagramGenerator.Generator;
+using Shouldly;
+using System.IO;
+
+namespace SlnDependencyDiagramGenerator.Tests.Unit.Config;
+
+public class DependencyGeneratorConfigFixture
+{
+    [Fact]
+    public void Should_Not_Throw_When_Config_Is_Valid()
+    {
+        var tempSlnPath = Path.Combine(Path.GetTempPath(), $"{System.Guid.NewGuid():N}.sln");
+
+        try
+        {
+            File.WriteAllText(tempSlnPath, "Microsoft Visual Studio Solution File, Format Version 12.00\n");
+
+            var config = new DependencyGeneratorConfig
+            {
+                Projects = new GeneratorProjectOptions
+                {
+                    SolutionPath = tempSlnPath,
+                    RegexToInclude = [".*\\.csproj"]
+                },
+                Diagram = new GeneratorDiagramOptions
+                {
+                    GroupName = "Test",
+                    GroupNameAlias = "test",
+                    FrameworkStyle = new GeneratorDiagramOptions.FillStyle { Fill = "#FFFFFF", Opacity = 0.8 },
+                    PackageStyle = new GeneratorDiagramOptions.FillStyle { Fill = "#FFFFFF", Opacity = 0.8 },
+                    TransitiveStyle = new GeneratorDiagramOptions.FillStyle { Fill = "#FFFFFF", Opacity = 0.8 },
+                    Grouping = new GeneratorDiagramOptions.GroupingOptions
+                    {
+                        BackgroundStyle = new GeneratorDiagramOptions.FillStyle { Fill = "#FFFFFF", Opacity = 1.0 }
+                    },
+                    Formats = [DiagramFormat.D2]
+                },
+                Export = new GeneratorExportOptions { RootPath = ".\\output" }
+            };
+
+            Should.NotThrow(() => DependencyGenerator.ValidateConfiguration(config));
+        }
+        finally
+        {
+            if (File.Exists(tempSlnPath))
+            {
+                File.Delete(tempSlnPath);
+            }
+        }
+    }
+
+    [Fact]
+    public void Should_Throw_ValidationException_When_SolutionPath_Is_Empty()
+    {
+        var config = new DependencyGeneratorConfig
+        {
+            Projects = new GeneratorProjectOptions
+            {
+                SolutionPath = string.Empty,
+                RegexToInclude = [".*\\.csproj"]
+            }
+        };
+
+        var exception = Should.Throw<ValidationException>(
+            () => DependencyGenerator.ValidateConfiguration(config));
+
+        exception.Errors.ShouldContain(error => error.ErrorMessage.Contains("SolutionPath"));
+    }
+
+    [Fact]
+    public void Should_Throw_ValidationException_When_SolutionPath_Is_Wrong_Extension()
+    {
+        var config = new DependencyGeneratorConfig
+        {
+            Projects = new GeneratorProjectOptions
+            {
+                SolutionPath = "test.txt",
+                RegexToInclude = [".*\\.csproj"]
+            }
+        };
+
+        var exception = Should.Throw<ValidationException>(
+            () => DependencyGenerator.ValidateConfiguration(config));
+
+        exception.Errors.ShouldContain(error =>
+            error.ErrorMessage.Contains(".sln") || error.ErrorMessage.Contains(".slnx"));
+    }
+
+    [Fact]
+    public void Should_Throw_ValidationException_When_Diagram_Formats_Is_Empty()
+    {
+        var tempSlnPath = Path.Combine(Path.GetTempPath(), $"{System.Guid.NewGuid():N}.sln");
+
+        try
+        {
+            File.WriteAllText(tempSlnPath, "Microsoft Visual Studio Solution File, Format Version 12.00\n");
+
+            var config = new DependencyGeneratorConfig
+            {
+                Projects = new GeneratorProjectOptions
+                {
+                    SolutionPath = tempSlnPath,
+                    RegexToInclude = [".*\\.csproj"]
+                },
+                Diagram = new GeneratorDiagramOptions
+                {
+                    GroupName = "Test",
+                    GroupNameAlias = "test",
+                    FrameworkStyle = new GeneratorDiagramOptions.FillStyle { Fill = "#FFFFFF", Opacity = 0.8 },
+                    PackageStyle = new GeneratorDiagramOptions.FillStyle { Fill = "#FFFFFF", Opacity = 0.8 },
+                    TransitiveStyle = new GeneratorDiagramOptions.FillStyle { Fill = "#FFFFFF", Opacity = 0.8 },
+                    Grouping = new GeneratorDiagramOptions.GroupingOptions
+                    {
+                        BackgroundStyle = new GeneratorDiagramOptions.FillStyle { Fill = "#FFFFFF", Opacity = 1.0 }
+                    },
+                    Formats = []
+                },
+                Export = new GeneratorExportOptions { RootPath = ".\\output" }
+            };
+
+            var exception = Should.Throw<ValidationException>(
+                () => DependencyGenerator.ValidateConfiguration(config));
+
+            exception.Errors.ShouldContain(error =>
+                error.ErrorMessage.Contains("formats", System.StringComparison.OrdinalIgnoreCase));
+        }
+        finally
+        {
+            if (File.Exists(tempSlnPath))
+            {
+                File.Delete(tempSlnPath);
+            }
+        }
+    }
+}

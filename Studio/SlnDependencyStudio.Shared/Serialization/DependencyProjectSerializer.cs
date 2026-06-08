@@ -1,14 +1,22 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json;
 
 namespace SlnDependencyStudio.Shared.Serialization;
 
 /// <summary>Handles JSON serialization and deserialization of <see cref="DependencyProjectDocument"/>,
-/// including schema versioning and forward-compatible unknown field handling.</summary>
+/// including schema versioning, forward-compatible unknown field handling, and migration between schema versions.</summary>
 public sealed class DependencyProjectSerializer
 {
     /// <summary>The current schema version of the document format.</summary>
     public const int CurrentSchemaVersion = 1;
+
+    /// <summary>Schema migration steps, keyed by source version. Each step transforms the document
+    /// from that version to the next. Migrations are applied in ascending version order until the
+    /// document reaches <see cref="CurrentSchemaVersion"/>.</summary>
+    private static readonly SortedDictionary<int, Action<DependencyProjectDocument>> Migrations = new()
+    {
+        // Example for future use:
+        // { 1, document => { document.SchemaVersion = 2; /* transform fields */ } },
+    };
 
     private static readonly JsonSerializerOptions Options = new()
     {
@@ -40,12 +48,8 @@ public sealed class DependencyProjectSerializer
     /// <exception cref="InvalidOperationException">Thrown when the schema version is not supported.</exception>
     public DependencyProjectDocument Deserialize(string json)
     {
-        var document = JsonSerializer.Deserialize<DependencyProjectDocument>(json, Options);
-
-        if (document is null)
-        {
-            throw new InvalidOperationException("Failed to deserialize the dependency project document.");
-        }
+        var document = JsonSerializer.Deserialize<DependencyProjectDocument>(json, Options)
+            ?? throw new InvalidOperationException("Failed to deserialize the dependency project document.");
 
         if (document.SchemaVersion > CurrentSchemaVersion)
         {
@@ -53,6 +57,8 @@ public sealed class DependencyProjectSerializer
                 $"The document schema version {document.SchemaVersion} is not supported. " +
                 $"The latest supported version is {CurrentSchemaVersion}.");
         }
+
+        MigrateToCurrent(document);
 
         return document;
     }
@@ -64,5 +70,17 @@ public sealed class DependencyProjectSerializer
     {
         var json = await File.ReadAllTextAsync(filePath).ConfigureAwait(false);
         return Deserialize(json);
+    }
+
+    private static void MigrateToCurrent(DependencyProjectDocument document)
+    {
+        var orderedMigrations = Migrations
+            .Where(kvp => kvp.Key >= document.SchemaVersion)
+            .OrderBy(kvp => kvp.Key);
+
+        foreach (var (_, migration) in orderedMigrations)
+        {
+            migration(document);
+        }
     }
 }

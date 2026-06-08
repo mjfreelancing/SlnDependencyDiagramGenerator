@@ -12,6 +12,8 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <!-- Test fixture with deliberate package versions — vulnerabilities not exploitable -->
+    <NoWarn>NU1903</NoWarn>
   </PropertyGroup>
 
 </Project>
