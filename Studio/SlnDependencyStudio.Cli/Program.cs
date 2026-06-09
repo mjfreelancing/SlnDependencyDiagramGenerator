@@ -1,4 +1,4 @@
-using AllOverIt.GenericHost;
+﻿using AllOverIt.GenericHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;

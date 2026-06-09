@@ -1,5 +1,4 @@
-using AllOverIt.Extensions;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
@@ -10,16 +9,22 @@ public static class StudioHostBuilderExtensions
 {
     /// <summary>
     /// Configures Serilog with a rolling-file sink shared by all frontends.
-    /// Log files are written to a <c>logs</c> subfolder under the application directory,
-    /// named after the project configuration file (without extension) so CLI and WPF
-    /// processing the same project share the same log.
     /// </summary>
+    /// <remarks>
+    /// <para>The log file base name and directory are resolved from <see cref="IConfiguration"/>:
+    /// the config file path is read from <c>configuration["configFile"]</c> (or <c>configuration["cf"]</c>
+    /// for the short-form CLI alias). When found, the log file is named
+    /// <c>{configFileBaseName}-{Date}.txt</c> and written to a <c>logs</c> subfolder relative to the
+    /// config file directory. When no config file path is available, the
+    /// log file defaults to <c>studio-{Date}.txt</c> under <see cref="AppContext.BaseDirectory"/>.</para>
+    /// </remarks>
     /// <param name="hostBuilder">The host builder.</param>
     /// <param name="configure">An optional callback that receives the <see cref="IServiceProvider"/>
     /// and the <see cref="LoggerConfiguration"/> so the caller can add frontend-specific sinks,
     /// enrichers, or filters (for example, a console sink for CLI, or a circular-buffer sink for WPF).</param>
     /// <returns>The host builder for chaining.</returns>
-    public static IHostBuilder UseStudioSerilog(this IHostBuilder hostBuilder, Action<IServiceProvider, LoggerConfiguration>? configure = null)
+    public static IHostBuilder UseStudioSerilog(this IHostBuilder hostBuilder,
+        Action<IServiceProvider, LoggerConfiguration>? configure = null)
     {
         return hostBuilder.UseSerilog((hostContext, services, configuration) =>
         {
@@ -27,23 +32,32 @@ public static class StudioHostBuilderExtensions
 
             configure?.Invoke(services, configuration);
 
-            var configFileBaseName = GetConfigFileBaseName(hostContext.Configuration);
-            var logDirectory = Path.Combine(AppContext.BaseDirectory, "logs");
+            var (configFileBaseName, logDirectory) = ResolveLogNaming(hostContext.Configuration);
+
             var rollingFileName = Path.Combine(logDirectory, $"{configFileBaseName}-{{Date}}.txt");
 
             configuration.WriteTo.RollingFile(rollingFileName, retainedFileCountLimit: 31);
         });
     }
 
-    private static string GetConfigFileBaseName(IConfiguration configuration)
+    private static (string BaseName, string LogDirectory) ResolveLogNaming(IConfiguration configuration)
     {
-        var configFile = configuration["configFile"];
+        var configFile = configuration["configFile"] ?? configuration["cf"];
 
-        if (configFile.IsNullOrEmpty())
+        if (!string.IsNullOrEmpty(configFile))
         {
-            return "studio";
+            var fullPath = Path.GetFullPath(configFile);
+            var baseName = Path.GetFileNameWithoutExtension(fullPath);
+            var logDir = Path.Combine(Path.GetDirectoryName(fullPath)!, "logs");
+
+            return (baseName, logDir);
         }
 
-        return Path.GetFileNameWithoutExtension(configFile);
+        // When the WPF frontend is implemented, it will provide the log directory from
+        // application settings rather than AppContext.BaseDirectory. This method will
+        // need refactoring at that point to accept a frontend-specific log directory.
+        var resolvedLogDir = Path.Combine(AppContext.BaseDirectory, "logs");
+
+        return ("studio", resolvedLogDir);
     }
 }

@@ -2,6 +2,7 @@
 using AllOverIt.GenericHost;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
+using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Generator;
 using System.CommandLine;
 
@@ -74,8 +75,9 @@ internal sealed class App : ConsoleAppBase
         {
             var config = _configLoader.Load(configFile);
 
-            _logger.LogInformation("Generating diagrams for solution: {SolutionPath}", config.Projects.SolutionPath);
-            _logger.LogInformation("Export root: {ExportRoot}", config.Export.RootPath);
+            LogResolvedConfiguration(configFile, config);
+
+            _logger.LogInformation("Generating diagrams...");
 
             await _generator.CreateDiagramsAsync(config, CancellationToken.None);
 
@@ -96,6 +98,9 @@ internal sealed class App : ConsoleAppBase
         try
         {
             var config = _configLoader.Load(configFile);
+
+            LogResolvedConfiguration(configFile, config);
+
             DependencyGenerator.ValidateConfiguration(config);
 
             _logger.LogInformation("Configuration is valid.");
@@ -108,6 +113,38 @@ internal sealed class App : ConsoleAppBase
         {
             _logger.LogError("File not found: {Message}", exception.Message);
         }
+    }
+
+    private void LogResolvedConfiguration(string configFile, DependencyGeneratorConfig config)
+    {
+        _logger.LogInformation("Configuration file: {ConfigFilePath}", Path.GetFullPath(configFile));
+        _logger.LogInformation("Resolved paths and options:");
+        _logger.LogInformation("  Solution path : {SolutionPath}", config.Projects.SolutionPath);
+        _logger.LogInformation("  Export root   : {ExportRoot}", config.Export.RootPath);
+        _logger.LogInformation("  Clear contents: {ClearContents}", config.Export.ClearContents);
+        _logger.LogInformation("  Diagram formats : {Formats}", string.Join(", ", config.Diagram.Formats));
+        _logger.LogInformation("  Diagram direction: {Direction}", config.Diagram.Direction);
+        _logger.LogInformation("  Group name  : {GroupName}", config.Diagram.GroupName);
+        _logger.LogInformation("  Group alias : {GroupAlias}", config.Diagram.GroupNameAlias);
+        _logger.LogInformation("  Grouping enabled: {GroupingEnabled}", config.Diagram.Grouping.Enabled);
+        _logger.LogInformation("  Image formats: {ImageFormats}", string.Join(", ", config.Export.ImageFormats));
+
+        _logger.LogInformation("  Project scopes:");
+
+        _logger.LogInformation("    Individual — Enabled: {IndividualEnabled}, IncludeDeps: {IndividualIncludeDeps}, TransitiveDepth: {IndividualTransitiveDepth}",
+            config.Projects.Individual.Enabled,
+            config.Projects.Individual.IncludeDependencies,
+            config.Projects.Individual.TransitiveDepth);
+
+        _logger.LogInformation("    All        — Enabled: {AllEnabled}, IncludeDeps: {AllIncludeDeps}, TransitiveDepth: {AllTransitiveDepth}",
+            config.Projects.All.Enabled,
+            config.Projects.All.IncludeDependencies,
+            config.Projects.All.TransitiveDepth);
+
+        _logger.LogInformation("  Regex include: {RegexInclude}", string.Join(", ", config.Projects.RegexToInclude));
+        _logger.LogInformation("  Regex exclude: {RegexExclude}", string.Join(", ", config.Projects.RegexToExclude));
+        _logger.LogInformation("  Packages to exclude: {PackagesExclude}", string.Join(", ", config.Projects.PackagesToExclude));
+        _logger.LogInformation("  Frameworks to exclude: {FrameworksExclude}", string.Join(", ", config.Projects.FrameworksToExclude));
     }
 
     private void WriteValidationErrors(ValidationException exception)

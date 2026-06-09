@@ -42,6 +42,7 @@ internal sealed class ProjectDiscoveryService : IProjectDiscoveryService
 
         var included = new List<string>();
         var excluded = new List<string>();
+        var implicitlyExcluded = new List<string>();
 
         foreach (var project in allProjects)
         {
@@ -49,6 +50,7 @@ internal sealed class ProjectDiscoveryService : IProjectDiscoveryService
 
             if (!isIncluded)
             {
+                implicitlyExcluded.Add(project.AbsolutePath);
                 continue;
             }
 
@@ -67,9 +69,10 @@ internal sealed class ProjectDiscoveryService : IProjectDiscoveryService
 
         return new ProjectDiscoveryResult
         {
-            AllProjectPaths = allProjects.Select(p => p.AbsolutePath).ToArray(),
+            AllProjectPaths = allProjects.Select(project => project.AbsolutePath).ToArray(),
             IncludedProjectPaths = [.. included],
-            ExcludedProjectPaths = [.. excluded]
+            ExcludedProjectPaths = [.. excluded],
+            ImplicitlyExcludedProjectPaths = [.. implicitlyExcluded]
         };
     }
 

@@ -11,4 +11,7 @@ public class ProjectDiscoveryResult
 
     /// <summary>Project paths that were excluded by the exclude regex.</summary>
     public string[] ExcludedProjectPaths { get; init; } = [];
+
+    /// <summary>Project paths that did not match any include regex (implicit exclusions).</summary>
+    public string[] ImplicitlyExcludedProjectPaths { get; init; } = [];
 }

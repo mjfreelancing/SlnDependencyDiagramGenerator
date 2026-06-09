@@ -109,6 +109,9 @@ public sealed class DependencyGenerator
         // so failures are visible early even if generation continues.
         await LogToolAvailabilityAsync(configuration, cancellationToken).ConfigureAwait(false);
 
+        // Log which projects were resolved, included, and excluded.
+        await LogProjectDiscoveryAsync(solutionPath, regexToInclude, regexToExclude, cancellationToken).ConfigureAwait(false);
+
         foreach (var targetFramework in targetFrameworks)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -190,6 +193,15 @@ public sealed class DependencyGenerator
                 await ExportAsAllAsync(configuration, targetFramework, exportPath, solutionProjects, renderers, cancellationToken).ConfigureAwait(false);
             }
         }
+    }
+
+    /// <summary>Validates a <see cref="DependencyGeneratorConfig"/> and throws <see cref="FluentValidation.ValidationException"/>
+    /// if any rules are violated.</summary>
+    /// <param name="configuration">The configuration to validate.</param>
+    public static void ValidateConfiguration(DependencyGeneratorConfig configuration)
+    {
+        var validator = new DependencyGeneratorConfigValidator();
+        validator.ValidateAndThrow(configuration);
     }
 
     private static void ClearFolder(string exportPath)
@@ -578,13 +590,100 @@ public sealed class DependencyGenerator
         }
     }
 
-    /// <summary>Validates a <see cref="DependencyGeneratorConfig"/> and throws <see cref="FluentValidation.ValidationException"/>
-    /// if any rules are violated.</summary>
-    /// <param name="configuration">The configuration to validate.</param>
-    public static void ValidateConfiguration(DependencyGeneratorConfig configuration)
+    private async Task LogProjectDiscoveryAsync(string solutionPath, string[] regexToInclude,
+        string[] regexToExclude, CancellationToken cancellationToken)
     {
-        var validator = new DependencyGeneratorConfigValidator();
-        validator.ValidateAndThrow(configuration);
+        var result = await _projectDiscovery
+            .DiscoverProjectsAsync(solutionPath, regexToInclude, regexToExclude, cancellationToken)
+            .ConfigureAwait(false);
+
+        _logger
+            .Write(ConsoleColor.White, "Projects in solution: ")
+            .WriteLine(ConsoleColor.Yellow, result.AllProjectPaths.Length.ToString());
+
+        LogIncludedProjects(result.IncludedProjectPaths);
+
+        LogExcludedProjects(result.ExcludedProjectPaths);
+
+        LogImplicitlyExcludedProjects(result.ImplicitlyExcludedProjectPaths);
+    }
+
+    private void LogIncludedProjects(string[] includedPaths)
+    {
+        var ordered = includedPaths
+            .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        _logger.WriteLine(ConsoleColor.DarkGray, "  Included (will be processed):");
+
+        if (ordered.Length == 0)
+        {
+            _logger.WriteLine(ConsoleColor.DarkGray, "    - <none>");
+            _logger.WriteLine();
+
+            return;
+        }
+
+        foreach (var path in ordered)
+        {
+            _logger
+                .Write(ConsoleColor.DarkGray, "    - ")
+                .WriteLine(ConsoleColor.Yellow, Path.GetFileName(path));
+        }
+
+        _logger.WriteLine();
+    }
+
+    private void LogExcludedProjects(string[] excludedPaths)
+    {
+        var ordered = excludedPaths
+            .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        _logger.WriteLine(ConsoleColor.DarkGray, "  Excluded (matched exclude regex):");
+
+        if (ordered.Length == 0)
+        {
+            _logger.WriteLine(ConsoleColor.DarkGray, "    - <none>");
+            _logger.WriteLine();
+
+            return;
+        }
+
+        foreach (var path in ordered)
+        {
+            _logger
+                .Write(ConsoleColor.DarkGray, "    - ")
+                .WriteLine(ConsoleColor.Yellow, Path.GetFileName(path));
+        }
+
+        _logger.WriteLine();
+    }
+
+    private void LogImplicitlyExcludedProjects(string[] implicitlyExcludedPaths)
+    {
+        var ordered = implicitlyExcludedPaths
+            .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        _logger.WriteLine(ConsoleColor.DarkGray, "  Implicitly excluded (did not match include regex):");
+
+        if (ordered.Length == 0)
+        {
+            _logger.WriteLine(ConsoleColor.DarkGray, "    - <none>");
+            _logger.WriteLine();
+
+            return;
+        }
+
+        foreach (var path in ordered)
+        {
+            _logger
+                .Write(ConsoleColor.DarkGray, "    - ")
+                .WriteLine(ConsoleColor.Yellow, Path.GetFileName(path));
+        }
+
+        _logger.WriteLine();
     }
 
     private static void AssertConfiguration(DependencyGeneratorConfig configuration)
