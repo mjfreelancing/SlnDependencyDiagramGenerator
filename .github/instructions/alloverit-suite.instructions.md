@@ -8,9 +8,9 @@ Use this guidance when the repository consumes one or more AllOverIt.* NuGet pac
 
 ## Package Discovery Flow
 
-1. Start at packs/alloverit/ai-context/README.md.
-2. Use packs/alloverit/ai-context/package-manifest.json to identify candidate packages.
-3. Read only the needed package files under packs/alloverit/ai-context/packages/.
+1. Start at .github/packs/alloverit/ai-context/README.md.
+2. Use .github/packs/alloverit/ai-context/package-manifest.json to identify candidate packages.
+3. Read only the needed package files under .github/packs/alloverit/ai-context/packages/.
 4. Prefer existing AllOverIt package APIs over ad-hoc implementations when requirements match.
 
 ## Response Requirements
@@ -22,7 +22,7 @@ Use this guidance when the repository consumes one or more AllOverIt.* NuGet pac
 
 ## Validation Rules
 
-- Treat packs/alloverit/ai-context/* as generated capability references.
+- Treat .github/packs/alloverit/ai-context/* as generated capability references.
 - If uncertain, verify against current source and demos in this repository.
 
 ## When Information Is Missing

@@ -32,6 +32,15 @@ applyTo: "**/*Tests/**/*.cs"
 - Unit tests: project-level test projects that validate in-process behavior.
 - Integration tests: hosted API or end-to-end boundary tests with real HTTP/database boundaries and real `HttpClient` requests.
 
+### Snapshot Testing
+
+- When a test asserts on a generated string output (diagram text, serialized JSON, formatted reports, multi-line templates, etc.), prefer a Verify snapshot over multiple `ShouldContain`/`ShouldBe` assertions. A single `await Verifier.Verify(content)` replaces all manual string checks.
+- Keep Verify snapshots in a `Snapshots` subdirectory within each test project. Configure the directory via `[ModuleInitializer]` with `Verifier.UseProjectRelativeDirectory("Snapshots")`.
+- Snapshot test methods must be `async Task` (not `void`) and call `await Verifier.Verify(content)`.
+- Use `VerifierSettings.AddScrubber(...)` in the module initializer to normalize machine-specific content (e.g. absolute paths, timestamps) that would make snapshots non-deterministic across environments.
+- After verifying the initial received output, approve snapshots by renaming `.received.txt` to `.verified.txt` and committing them to source control. Subsequent test runs compare against these committed verified files.
+- Do not mix snapshot assertions with manual string assertions in the same test — choose one approach.
+
 ### Layer-Specific Expectations
 
 - Keep test-only dependencies in test projects; do not add them to production projects.

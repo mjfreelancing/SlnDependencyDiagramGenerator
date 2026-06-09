@@ -20,6 +20,15 @@ applyTo: "**/*"
 - Keep code units focused and avoid unnecessary abstraction.
 - Avoid inline construction of model/request objects in method call arguments. Extract to a named variable so the intent is explicit and the call site remains readable.
 
+  ```csharp
+  // CORRECT:
+  var request = new ParseRequest { Path = solutionPath, MaxDepth = 3 };
+  var result = await parser.ParseAsync(request, cancellationToken);
+
+  // WRONG:
+  var result = await parser.ParseAsync(new ParseRequest { Path = solutionPath, MaxDepth = 3 }, cancellationToken);
+  ```
+
 ### Reuse and Boundaries
 
 - Make an explicit attempt to find existing code that can be reused before introducing new implementations.
@@ -33,6 +42,10 @@ applyTo: "**/*"
 - Preserve public API shape unless change is explicitly requested.
 - Keep boundary contracts stable and versioned where applicable.
 - Handle success/failure outcomes explicitly.
+
+## Precedence
+
+When a rule in this file conflicts with a language-specific instruction file, the language-specific file takes precedence.
 
 ## Expansion Notes
 

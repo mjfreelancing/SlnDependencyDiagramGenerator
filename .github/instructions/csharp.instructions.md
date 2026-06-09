@@ -4,16 +4,31 @@ applyTo: "**/*.cs"
 
 # C# Instructions
 
+This file extends [`language-agnostic-core.instructions.md`](language-agnostic-core.instructions.md). All rules from that file apply here.
+
 ## Core Rules
 
 ### Language and Code Quality
 
 - Treat `.editorconfig` as the source of truth for formatting and analyzer style rules.
 - Use clear naming and cohesive feature-level organization.
-- Avoid one-letter variable names unless loop/index intent is obvious or the abbreviation is listed in the Allowed Abbreviations section.
 - Keep methods focused and avoid unnecessary abstraction.
 - One class per file. Nested types, records, and enums that are logically part of the enclosing type are exempt.
-- Keep method and constructor signatures compact: start on one line and fit as many parameters as comfortable; wrap at a natural breaking point (after a comma or after the opening parenthesis) when the line would become too long. Continuation lines should be indented one level.
+- **Method/constructor parameter formatting:** Parameters start on the same line as the method name. When the line is too long, wrap at a comma (not the opening parenthesis) and put multiple parameters per continuation line — never one per line.
+
+  ```csharp
+  // CORRECT: wraps at comma, multiple params per continuation line
+  private async Task DoSomethingAsync(string firstParam, int secondParam, bool thirdParam,
+      CancellationToken cancellationToken)
+
+  // WRONG: one parameter per line, or wrapping at the opening parenthesis
+  private async Task DoSomethingAsync(
+      string firstParam,
+      int secondParam,
+      bool thirdParam,
+      CancellationToken cancellationToken)
+  ```
+
 - Follow member-ordering conventions consistently within each project:
   - Place nested types above constants, fields, and properties.
   - Place constants before other fields; place static readonly fields before instance fields.
