@@ -55,7 +55,7 @@ If any shared requirement appears to conflict between this document and a fronte
 4. End-to-end cancellation behavior is shared.
 5. Cancellation support in `SlnDependencyDiagramGenerator` with automated tests is a prerequisite.
 6. If CLI or WPF pre-validation requires new public generator interfaces, shared service contracts, or internal refactoring, that requirement shall be raised explicitly and implemented properly rather than worked around with ad-hoc hacks.
-7. If diagnostics visibility requires generator-level instrumentation, the shared contract shall use an optional logger abstraction with a null logger fallback when no logger is supplied.
+7. The generator and all renderers shall use `ILogger<T>` (from `Microsoft.Extensions.Logging`) as the sole logging abstraction. The parameterless constructor shall supply `NullLogger<T>.Instance` as a no-op fallback when no logger is registered in DI. The `IColorConsoleLogger` abstraction from `AllOverIt.Logging` is explicitly excluded from shared contracts — it is a console-specific concern that does not belong in frontend-agnostic code.
 
 ---
 

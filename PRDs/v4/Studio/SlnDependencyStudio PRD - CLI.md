@@ -114,15 +114,16 @@ The CLI shall consume shared contracts and services that are also consumed by WP
 
 ### FR-5: Output, Logging, and Exit Behavior
 
-| ID     | Requirement                                                                                                                   |
-| ------ | ----------------------------------------------------------------------------------------------------------------------------- |
-| FR-5.1 | The CLI shall stream generation and pre-generation output in real time.                                                       |
-| FR-5.2 | The CLI shall separate standard output and error output channels.                                                             |
-| FR-5.3 | The CLI shall produce concise human-readable output by default and shall support logging for diagnostics and troubleshooting. |
-| FR-5.4 | The CLI shall surface cancellation and failure reasons clearly.                                                               |
-| FR-5.5 | Exit code mapping shall be stable and documented.                                                                             |
-| FR-5.6 | The diagnostics path shall be generator and application logging, with a null logger fallback when no logger is supplied.      |
-| FR-5.7 | The CLI shall expose logging categories and verbosity levels sufficient for troubleshooting and operational diagnostics.      |
+| ID     | Requirement                                                                                                                                       |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FR-5.1 | The CLI shall stream generation and pre-generation output in real time.                                                                           |
+| FR-5.2 | The CLI shall separate standard output and error output channels.                                                                                 |
+| FR-5.3 | The CLI shall produce concise human-readable output by default and shall support logging for diagnostics and troubleshooting.                     |
+| FR-5.4 | The CLI shall surface cancellation and failure reasons clearly.                                                                                   |
+| FR-5.5 | Exit code mapping shall be stable and documented.                                                                                                 |
+| FR-5.6 | The diagnostics path shall be generator and application logging, with a null logger fallback when no logger is supplied.                          |
+| FR-5.7 | The CLI shall expose logging categories and verbosity levels sufficient for troubleshooting and operational diagnostics.                          |
+| FR-5.8 | The CLI shall write rolling log files to a `logs` subfolder relative to the config file being processed, named `{configFileBaseName}-{Date}.txt`. |
 
 ### FR-6: Multi-Frontend Delivery and Shared Ownership
 
@@ -214,9 +215,12 @@ The same DI conventions as WPF apply:
 
 ### 7.5 Logging and Diagnostics Strategy
 
-1. Serilog can be used for structured logging when required.
-2. CLI output must still provide deterministic stdout/stderr behavior regardless of logging backend.
-3. For parity investigations, shared orchestration events should be diagnosable in both WPF and CLI.
+1. Serilog is the primary structured logging backend for CLI, file, and (future) WPF sinks.
+2. The generator and renderers use `ILogger<T>` (not `IColorConsoleLogger`) so all output flows through the Serilog pipeline.
+3. The CLI shall provide colorised console output via Serilog's `AnsiConsoleTheme` (or equivalent theme) on the console sink, applying color by log level (Error=red, Warning=yellow, Information=white, Debug=gray).
+4. CLI output must still provide deterministic stdout/stderr behavior regardless of logging backend.
+5. All generator output (project discovery, dependency listings, export progress) shall appear in both the console and the rolling file log.
+6. For parity investigations, shared orchestration events should be diagnosable in both WPF and CLI logs.
 
 ### 7.6 Cross-Frontend Guardrails (CLI + WPF)
 
