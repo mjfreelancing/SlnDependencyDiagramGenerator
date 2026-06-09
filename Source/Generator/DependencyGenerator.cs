@@ -1,10 +1,11 @@
 ﻿using AllOverIt.Assertion;
 using AllOverIt.Extensions;
 using AllOverIt.IO;
-using AllOverIt.Logging;
 using AllOverIt.Patterns.Specification.Extensions;
 using AllOverIt.Validation.Extensions;
 using FluentValidation;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Generator.Discovery;
 using SlnDependencyDiagramGenerator.Generator.Nodes;
@@ -43,24 +44,26 @@ public sealed class DependencyGenerator
 
     private readonly IProjectDiscoveryService _projectDiscovery;
     private readonly IToolDetectionService _toolDetection;
-    private readonly IColorConsoleLogger _logger;
+    private readonly ILoggerFactory _loggerFactory;
+    private readonly ILogger<DependencyGenerator> _logger;
 
-    /// <summary>Initializes a new dependency generator with default service implementations.
-    /// Intended for simple usage where DI is not required.</summary>
+    /// <summary>Initializes a new dependency generator with default service implementations.</summary>
+    /// <remarks>Intended for simple usage where DI is not required.</remarks>
     public DependencyGenerator()
-        : this(new ProjectDiscoveryService(), new ToolDetectionService(), new ColorConsoleLogger())
+        : this(new ProjectDiscoveryService(), new ToolDetectionService(), NullLoggerFactory.Instance)
     {
     }
 
     /// <summary>Initializes a new dependency generator instance with explicitly provided services (for DI).</summary>
     /// <param name="projectDiscovery">The project discovery service used for parsing solutions and resolving dependencies.</param>
     /// <param name="toolDetection">The tool detection service used for checking external CLI tool availability.</param>
-    /// <param name="logger">A console logger that provides progress information during the processing of projects and generation of diagrams.</param>
-    public DependencyGenerator(IProjectDiscoveryService projectDiscovery, IToolDetectionService toolDetection, IColorConsoleLogger logger)
+    /// <param name="loggerFactory">The logger factory used to create loggers for the generator and renderers.</param>
+    public DependencyGenerator(IProjectDiscoveryService projectDiscovery, IToolDetectionService toolDetection, ILoggerFactory loggerFactory)
     {
         _projectDiscovery = projectDiscovery.WhenNotNull();
         _toolDetection = toolDetection.WhenNotNull();
-        _logger = logger.WhenNotNull();
+        _loggerFactory = loggerFactory.WhenNotNull();
+        _logger = loggerFactory.CreateLogger<DependencyGenerator>();
     }
 
     /// <summary>Generates dependency summaries, diagram files, and optional images for each discovered target framework.</summary>
@@ -96,9 +99,7 @@ public sealed class DependencyGenerator
 
         if (targetFrameworks.Length == 0)
         {
-            _logger
-                .Write(ConsoleColor.Red, "No target frameworks discovered in ")
-                .WriteLine(ConsoleColor.Yellow, Path.GetFileName(solutionPath));
+            _logger.LogError("No target frameworks discovered in {SolutionFile}", Path.GetFileName(solutionPath));
 
             return;
         }
@@ -139,32 +140,19 @@ public sealed class DependencyGenerator
                     ? string.Join(", ", configuration.Projects.RegexToExclude)
                     : "<none>";
 
-                _logger
-                    .WriteLine(ConsoleColor.Red, "No projects found with the configured filters:")
-                    .Write(ConsoleColor.DarkGray, "  Solution path: ")
-                    .WriteLine(ConsoleColor.Yellow, solutionPath)
-                    .Write(ConsoleColor.DarkGray, "  Include regex(es): ")
-                    .WriteLine(ConsoleColor.Yellow, includeRegexList)
-                    .Write(ConsoleColor.DarkGray, "  Exclude regex(es): ")
-                    .WriteLine(ConsoleColor.Yellow, excludeRegexList)
-                    .Write(ConsoleColor.DarkGray, "  Target framework: ")
-                    .WriteLine(ConsoleColor.Yellow, targetFramework)
-                    .WriteLine();
-
+                _logger.LogError(
+                    "No projects matched the configured filters for target framework {TargetFramework}",
+                    targetFramework);
+                    
                 continue;
             }
 
-            _logger
-                .Write(ConsoleColor.White, "Processing target framework: ")
-                .WriteLine(ConsoleColor.Yellow, targetFramework)
-                .WriteLine();
+            _logger.LogInformation("Processing target framework: {TargetFramework}", targetFramework);
 
             foreach (var project in allProjects)
             {
                 LogDependencies(project);
             }
-
-            _logger.WriteLine();
 
             // GroupBy handles duplicate project filenames across different directories
             var solutionProjects = allProjects
@@ -237,8 +225,6 @@ public sealed class DependencyGenerator
                     .CreateDiagramArtifactsAsync(targetFramework, exportPath, scopedProject.Name, model, configuration.Export.ImageFormats, cancellationToken)
                     .ConfigureAwait(false);
             }
-
-            _logger.WriteLine();
         }
     }
 
@@ -270,8 +256,6 @@ public sealed class DependencyGenerator
                 .CreateDiagramArtifactsAsync(targetFramework, exportPath, projectScope, model, configuration.Export.ImageFormats, cancellationToken)
                 .ConfigureAwait(false);
         }
-
-        _logger.WriteLine();
     }
 
     private IDiagramRenderer[] GetRenderers(DependencyGeneratorConfig configuration)
@@ -282,8 +266,10 @@ public sealed class DependencyGenerator
             .Distinct()
             .Select<DiagramFormat, IDiagramRenderer>(diagramFormat => diagramFormat switch
             {
-                DiagramFormat.Mermaid => new MermaidDiagramRenderer(diagramOptions, _logger),
-                DiagramFormat.D2 => new D2DiagramRenderer(diagramOptions, _logger),
+                // Deferring the use of a DiagramRendererFactory until we need to support more diagram formats or more complex
+                // renderer construction logic (for example, if renderers have additional dependencies in the future).
+                DiagramFormat.Mermaid => new MermaidDiagramRenderer(diagramOptions, _loggerFactory.CreateLogger<MermaidDiagramRenderer>()),
+                DiagramFormat.D2 => new D2DiagramRenderer(diagramOptions, _loggerFactory.CreateLogger<D2DiagramRenderer>()),
                 _ => throw new ArgumentOutOfRangeException(nameof(diagramFormat))
             })];
     }
@@ -412,17 +398,13 @@ public sealed class DependencyGenerator
 
         var filename = Path.Combine(exportPath, SummaryDependencyGenerator.MarkdownFilename);
 
-        _logger
-            .Write("{forecolor:white}Exporting Summary: ")
-            .Write(ConsoleColor.Yellow, filename)
-            .Write("{forecolor:white}...");
+        _logger.LogInformation("Exporting Summary: {ExportPath}", filename);
 
         await File
             .WriteAllTextAsync(filename, content, cancellationToken)
             .ConfigureAwait(false);
 
-        _logger.WriteLine("{forecolor:green}Done");
-        _logger.WriteLine();
+        _logger.LogInformation("Export complete.");
     }
 
     private static string GetProjectName(ProjectReference projectReference)
@@ -450,10 +432,8 @@ public sealed class DependencyGenerator
 
         foreach (var dependency in sortedProjectDependenies)
         {
-            _logger
-                .Write(ConsoleColor.Yellow, solutionProject.Name)
-                .Write(ConsoleColor.White, " depends on ")
-                .WriteLine(ConsoleColor.Yellow, Path.GetFileNameWithoutExtension(dependency));
+            _logger.LogInformation("{ProjectName} depends on {DependencyName}",
+                solutionProject.Name, Path.GetFileNameWithoutExtension(dependency));
         }
     }
 
@@ -465,10 +445,8 @@ public sealed class DependencyGenerator
 
         foreach (var dependency in sortedFrameworkReferences)
         {
-            _logger
-                .Write(ConsoleColor.Yellow, solutionProject.Name)
-                .Write(ConsoleColor.White, " depends on ")
-                .WriteLine(ConsoleColor.Yellow, Path.GetFileNameWithoutExtension(dependency));
+            _logger.LogInformation("{ProjectName} depends on {DependencyName}",
+                solutionProject.Name, Path.GetFileNameWithoutExtension(dependency));
         }
     }
 
@@ -539,17 +517,15 @@ public sealed class DependencyGenerator
             {
                 var dependencyVersion = dependencyVersions.Single();
 
-                _logger
-                    .Write(ConsoleColor.Yellow, solutionProject.Name)
-                    .Write(ConsoleColor.White, " depends on ")
-                    .WriteLine(ConsoleColor.Yellow, $"{dependencyName} v{dependencyVersion.Version}");
+                _logger.LogInformation("{ProjectName} depends on {PackageName} v{Version}",
+                    solutionProject.Name, dependencyName, dependencyVersion.Version);
             }
             else
             {
                 var versions = dependencyVersions.Select(item => $"v{item.Version}");
 
-                _logger
-                    .WriteLine(ConsoleColor.Red, $"{solutionProject.Name} depends on multiple versions of {dependencyName} {string.Join(", ", versions)}");
+                _logger.LogError("{ProjectName} depends on multiple versions of {PackageName}: {Versions}",
+                    solutionProject.Name, dependencyName, string.Join(", ", versions));
             }
         }
     }
@@ -584,7 +560,7 @@ public sealed class DependencyGenerator
             {
                 if (!status.IsAvailable)
                 {
-                    _logger.WriteLine(ConsoleColor.Red, status.ErrorMessage ?? $"'{status.ToolName}' is not available.");
+                    _logger.LogError(status.ErrorMessage ?? "'{ToolName}' is not available.", status.ToolName);
                 }
             }
         }
@@ -597,9 +573,7 @@ public sealed class DependencyGenerator
             .DiscoverProjectsAsync(solutionPath, regexToInclude, regexToExclude, cancellationToken)
             .ConfigureAwait(false);
 
-        _logger
-            .Write(ConsoleColor.White, "Projects in solution: ")
-            .WriteLine(ConsoleColor.Yellow, result.AllProjectPaths.Length.ToString());
+        _logger.LogInformation("Projects in solution: {ProjectCount}", result.AllProjectPaths.Length);
 
         LogIncludedProjects(result.IncludedProjectPaths);
 
@@ -614,24 +588,17 @@ public sealed class DependencyGenerator
             .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
             .ToArray();
 
-        _logger.WriteLine(ConsoleColor.DarkGray, "  Included (will be processed):");
+        _logger.LogInformation("  Included (will be processed): {Count} project(s)", ordered.Length);
 
         if (ordered.Length == 0)
         {
-            _logger.WriteLine(ConsoleColor.DarkGray, "    - <none>");
-            _logger.WriteLine();
-
             return;
         }
 
         foreach (var path in ordered)
         {
-            _logger
-                .Write(ConsoleColor.DarkGray, "    - ")
-                .WriteLine(ConsoleColor.Yellow, Path.GetFileName(path));
+            _logger.LogInformation("    - {ProjectName}", Path.GetFileName(path));
         }
-
-        _logger.WriteLine();
     }
 
     private void LogExcludedProjects(string[] excludedPaths)
@@ -640,24 +607,17 @@ public sealed class DependencyGenerator
             .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
             .ToArray();
 
-        _logger.WriteLine(ConsoleColor.DarkGray, "  Excluded (matched exclude regex):");
+        _logger.LogInformation("  Excluded (matched exclude regex): {Count} project(s)", ordered.Length);
 
         if (ordered.Length == 0)
         {
-            _logger.WriteLine(ConsoleColor.DarkGray, "    - <none>");
-            _logger.WriteLine();
-
             return;
         }
 
         foreach (var path in ordered)
         {
-            _logger
-                .Write(ConsoleColor.DarkGray, "    - ")
-                .WriteLine(ConsoleColor.Yellow, Path.GetFileName(path));
+            _logger.LogInformation("    - {ProjectName}", Path.GetFileName(path));
         }
-
-        _logger.WriteLine();
     }
 
     private void LogImplicitlyExcludedProjects(string[] implicitlyExcludedPaths)
@@ -666,24 +626,17 @@ public sealed class DependencyGenerator
             .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
             .ToArray();
 
-        _logger.WriteLine(ConsoleColor.DarkGray, "  Implicitly excluded (did not match include regex):");
+        _logger.LogInformation("  Implicitly excluded (did not match include regex): {Count} project(s)", ordered.Length);
 
         if (ordered.Length == 0)
         {
-            _logger.WriteLine(ConsoleColor.DarkGray, "    - <none>");
-            _logger.WriteLine();
-
             return;
         }
 
         foreach (var path in ordered)
         {
-            _logger
-                .Write(ConsoleColor.DarkGray, "    - ")
-                .WriteLine(ConsoleColor.Yellow, Path.GetFileName(path));
+            _logger.LogInformation("    - {ProjectName}", Path.GetFileName(path));
         }
-
-        _logger.WriteLine();
     }
 
     private static void AssertConfiguration(DependencyGeneratorConfig configuration)

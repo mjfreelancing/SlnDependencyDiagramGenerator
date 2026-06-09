@@ -1,11 +1,12 @@
-using AllOverIt.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NSubstitute;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Generator;
 using SlnDependencyDiagramGenerator.Generator.Nodes;
 using SlnDependencyDiagramGenerator.Renderers.D2;
-using Shouldly;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using VerifyXunit;
 
 namespace SlnDependencyDiagramGenerator.Tests.Unit.Renderers.D2;
 
@@ -14,72 +15,33 @@ public class D2DiagramRendererFixture
     public class Render : D2DiagramRendererFixture
     {
         [Fact]
-        public void Should_Render_A_Grouped_Graph_With_Custom_Direction_And_Styles()
+        public async Task Should_Render_A_Grouped_Graph_With_Custom_Direction_And_Styles()
         {
-            var renderer = new D2DiagramRenderer(CreateGroupedOptions(), Substitute.For<IColorConsoleLogger>());
+            var renderer = new D2DiagramRenderer(CreateGroupedOptions(), Substitute.For<ILogger<D2DiagramRenderer>>());
 
             var content = renderer.Render(CreateGroupedModel());
 
-            content.ShouldContain("direction: up");
-            content.ShouldContain("test: All Projects");
-            content.ShouldContain("newtonsoft-json-group: \"\"");
-            content.ShouldContain("test.appconsole: AppConsole");
-            content.ShouldContain("microsoft-aspnetcore-app: Microsoft.AspNetCore.App");
-            content.ShouldContain("newtonsoft-json-group.newtonsoft-json_13-0-3: Newtonsoft.Json");
-            content.ShouldContain("v13.0.3");
-            content.ShouldContain("newtonsoft-json-group.newtonsoft-json_12-0-3: Newtonsoft.Json");
-            content.ShouldContain("v12.0.3");
-            content.ShouldContain("microsoft-aspnetcore-app.style.fill: \"#102030\"");
-            content.ShouldContain("newtonsoft-json-group.newtonsoft-json_13-0-3.style.fill: \"#405060\"");
-            content.ShouldContain("newtonsoft-json-group.newtonsoft-json_12-0-3.style.fill: \"#708090\"");
-            content.ShouldContain("test.style.fill: \"#DDEEFF\"");
-            content.ShouldContain("newtonsoft-json-group.style.fill: \"#DDEEFF\"");
+            await Verifier.Verify(content);
         }
 
         [Fact]
-        public void Should_Render_Multiple_Project_And_Package_Groups_With_Shared_Project_References()
+        public async Task Should_Render_Multiple_Project_And_Package_Groups_With_Shared_Project_References()
         {
-            var renderer = new D2DiagramRenderer(CreateExpandedGroupedOptions(), Substitute.For<IColorConsoleLogger>());
+            var renderer = new D2DiagramRenderer(CreateExpandedGroupedOptions(), Substitute.For<ILogger<D2DiagramRenderer>>());
 
             var content = renderer.Render(CreateExpandedGroupedModel());
 
-            content.ShouldContain("direction: left");
-            content.ShouldContain("test.appconsole: AppConsole");
-            content.ShouldContain("test.libcore: LibCore");
-            content.ShouldContain("newtonsoft-json-group: \"\"");
-            content.ShouldContain("serilog-group: \"\"");
-            content.ShouldContain("newtonsoft-json-group.newtonsoft-json_13-0-3: Newtonsoft.Json");
-            content.ShouldContain("newtonsoft-json-group.newtonsoft-json_12-0-3: Newtonsoft.Json");
-            content.ShouldContain("serilog-group.serilog_3-1-1: Serilog");
-            content.ShouldContain("serilog-group.serilog_2-12-0: Serilog");
-            content.ShouldContain("test.libcore <- test.appconsole");
-            content.ShouldContain("newtonsoft-json-group.newtonsoft-json_13-0-3 <- test.appconsole");
-            content.ShouldContain("serilog-group.serilog_3-1-1 <- test.libcore");
-            content.ShouldContain("newtonsoft-json-group.style.fill: \"#DDEEFF\"");
-            content.ShouldContain("serilog-group.style.fill: \"#DDEEFF\"");
-            content.ShouldContain("newtonsoft-json-group.newtonsoft-json_13-0-3.style.fill: \"#405060\"");
-            content.ShouldContain("serilog-group.serilog_3-1-1.style.fill: \"#405060\"");
+            await Verifier.Verify(content);
         }
 
         [Fact]
-        public void Should_Render_An_Ungrouped_Graph_With_Right_To_Left_Direction()
+        public async Task Should_Render_An_Ungrouped_Graph_With_Right_To_Left_Direction()
         {
-            var renderer = new D2DiagramRenderer(CreateUngroupedOptions(), Substitute.For<IColorConsoleLogger>());
+            var renderer = new D2DiagramRenderer(CreateUngroupedOptions(), Substitute.For<ILogger<D2DiagramRenderer>>());
 
             var content = renderer.Render(CreateUngroupedModel());
 
-            content.ShouldContain("direction: right");
-            content.ShouldNotContain("test:");
-            content.ShouldNotContain("subgraph");
-            content.ShouldContain("appconsole: AppConsole");
-            content.ShouldContain("microsoft-extensions-logging: Microsoft.Extensions.Logging");
-            content.ShouldContain("newtonsoft-json_13-0-3: Newtonsoft.Json");
-            content.ShouldContain("v13.0.3");
-            content.ShouldContain("newtonsoft-json_12-0-3: Newtonsoft.Json");
-            content.ShouldContain("v12.0.3");
-            content.ShouldContain("microsoft-extensions-logging.style.fill: \"#010203\"");
-            content.ShouldContain("newtonsoft-json_13-0-3.style.fill: \"#040506\"");
-            content.ShouldContain("newtonsoft-json_12-0-3.style.fill: \"#070809\"");
+            await Verifier.Verify(content);
         }
     }
 

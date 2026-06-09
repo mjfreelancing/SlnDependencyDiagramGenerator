@@ -1,4 +1,4 @@
-using SlnDependencyDiagramGenerator.Config;
+﻿using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyStudio.Shared;
 using SlnDependencyStudio.Shared.Serialization;
 using Shouldly;

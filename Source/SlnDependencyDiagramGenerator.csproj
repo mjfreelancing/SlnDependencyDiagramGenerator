@@ -40,6 +40,7 @@
         <PackageReference Include="AllOverIt.Validation" Version="9.2.1" />
         <PackageReference Include="Microsoft.Build.Locator" Version="1.11.2" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.8" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.8" />
 
         <!--
             MSBuildLocator loads a compatible MSBuild toolset at runtime.
@@ -86,5 +87,6 @@
     <ItemGroup>
         <InternalsVisibleTo Include="SlnDependencyDiagramGenerator.Tests.Unit" />
         <InternalsVisibleTo Include="SlnDependencyDiagramGenerator.Tests.Integration" />
+        <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
     </ItemGroup>
 </Project>

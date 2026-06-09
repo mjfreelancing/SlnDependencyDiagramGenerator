@@ -1,4 +1,4 @@
-using AllOverIt.Logging;
+﻿using AllOverIt.Logging;
 using NSubstitute;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Generator;

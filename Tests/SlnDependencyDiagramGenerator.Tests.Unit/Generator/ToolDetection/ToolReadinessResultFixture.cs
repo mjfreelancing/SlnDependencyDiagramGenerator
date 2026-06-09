@@ -1,4 +1,4 @@
-using SlnDependencyDiagramGenerator.Generator.ToolDetection;
+﻿using SlnDependencyDiagramGenerator.Generator.ToolDetection;
 using Shouldly;
 
 namespace SlnDependencyDiagramGenerator.Tests.Unit.Generator.ToolDetection;

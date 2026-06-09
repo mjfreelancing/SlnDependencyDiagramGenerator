@@ -1,4 +1,4 @@
-using SlnDependencyDiagramGenerator.Exceptions;
+﻿using SlnDependencyDiagramGenerator.Exceptions;
 using SlnDependencyDiagramGenerator.Parser;
 using SlnDependencyDiagramGenerator.Tests.Integration.Support;
 using Shouldly;

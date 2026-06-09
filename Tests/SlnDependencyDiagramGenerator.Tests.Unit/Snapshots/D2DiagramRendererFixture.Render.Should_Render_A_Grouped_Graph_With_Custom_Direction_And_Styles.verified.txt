@@ -1,0 +1,22 @@
+﻿direction: up
+
+test: All Projects
+newtonsoft-json-group: ""
+test.appconsole: AppConsole
+microsoft-aspnetcore-app: Microsoft.AspNetCore.App
+newtonsoft-json-group.newtonsoft-json_13-0-3: Newtonsoft.Json\nv13.0.3
+newtonsoft-json-group.newtonsoft-json_12-0-3: Newtonsoft.Json\nv12.0.3
+microsoft-aspnetcore-app <- test.appconsole
+newtonsoft-json-group.newtonsoft-json_13-0-3 <- test.appconsole
+newtonsoft-json-group.newtonsoft-json_12-0-3 <- newtonsoft-json-group.newtonsoft-json_13-0-3
+microsoft-aspnetcore-app.style.fill: "#102030"
+microsoft-aspnetcore-app.style.opacity: 0.8
+newtonsoft-json-group.newtonsoft-json_13-0-3.style.fill: "#405060"
+newtonsoft-json-group.newtonsoft-json_13-0-3.style.opacity: 0.8
+newtonsoft-json-group.newtonsoft-json_12-0-3.style.fill: "#708090"
+newtonsoft-json-group.newtonsoft-json_12-0-3.style.opacity: 0.8
+test.style.fill: "#DDEEFF"
+test.style.opacity: 0.75
+newtonsoft-json-group.style.fill: "#DDEEFF"
+newtonsoft-json-group.style.opacity: 0.75
+

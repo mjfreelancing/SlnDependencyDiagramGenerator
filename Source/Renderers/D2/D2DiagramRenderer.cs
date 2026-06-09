@@ -1,4 +1,4 @@
-﻿using AllOverIt.Logging;
+﻿using Microsoft.Extensions.Logging;
 using AllOverIt.Process;
 using AllOverIt.Process.Extensions;
 using SlnDependencyDiagramGenerator.Config;
@@ -26,7 +26,7 @@ internal sealed class D2DiagramRenderer : DiagramRendererBase
     /// <summary>Initializes a new D2 diagram renderer.</summary>
     /// <param name="options">The diagram options.</param>
     /// <param name="logger">A logger for progress and diagnostics.</param>
-    public D2DiagramRenderer(GeneratorDiagramOptions options, IColorConsoleLogger logger)
+    public D2DiagramRenderer(GeneratorDiagramOptions options, ILogger<D2DiagramRenderer> logger)
         : base(options, logger)
     {
     }
@@ -122,10 +122,7 @@ internal sealed class D2DiagramRenderer : DiagramRendererBase
     {
         var imageFileName = Path.ChangeExtension(diagramFileName, format.ToString().ToLowerInvariant());
 
-        Logger
-            .Write(ConsoleColor.White, "Creating image: ")
-            .Write(ConsoleColor.Yellow, Path.GetFileName(imageFileName))
-            .Write(ConsoleColor.White, "...");
+        Logger.LogInformation("Creating image: {ImageName}", Path.GetFileName(imageFileName));
 
         var stopwatch = Stopwatch.StartNew();
 
@@ -140,7 +137,7 @@ internal sealed class D2DiagramRenderer : DiagramRendererBase
                 {
                     if (message.StartsWith("err:", true, CultureInfo.InvariantCulture))
                     {
-                        Logger.WriteLine(ConsoleColor.Red, $"  {message}");
+                        Logger.LogError("  {D2Message}", message);
                     }
                     else
                     {
@@ -154,7 +151,7 @@ internal sealed class D2DiagramRenderer : DiagramRendererBase
 
         stopwatch.Stop();
 
-        Logger.WriteLine(ConsoleColor.Green, $"Done ({FormatElapsed(stopwatch.Elapsed)})");
+        Logger.LogInformation("Image export complete ({Elapsed})", FormatElapsed(stopwatch.Elapsed));
     }
 
     private (string Fill, double Opacity) GetStyleValues(DiagramIrStyleRole styleRole)

@@ -1,5 +1,5 @@
 ﻿using AllOverIt.Assertion;
-using AllOverIt.Logging;
+using Microsoft.Extensions.Logging;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Exceptions;
 using SlnDependencyDiagramGenerator.Generator;
@@ -23,7 +23,7 @@ internal abstract class DiagramRendererBase : IDiagramRenderer
     protected readonly GeneratorDiagramOptions Options;
 
     /// <summary>The logger used for progress and diagnostics.</summary>
-    protected readonly IColorConsoleLogger Logger;
+    protected readonly ILogger Logger;
 
     /// <inheritdoc />
     public abstract string FileExtension { get; }
@@ -31,7 +31,7 @@ internal abstract class DiagramRendererBase : IDiagramRenderer
     /// <summary>Initializes a new renderer base instance.</summary>
     /// <param name="options">The diagram options.</param>
     /// <param name="logger">A logger for progress and diagnostics.</param>
-    protected DiagramRendererBase(GeneratorDiagramOptions options, IColorConsoleLogger logger)
+    protected DiagramRendererBase(GeneratorDiagramOptions options, ILogger logger)
     {
         Options = options.WhenNotNull();
         Logger = logger.WhenNotNull();
@@ -57,15 +57,14 @@ internal abstract class DiagramRendererBase : IDiagramRenderer
 
         var fileName = Path.Combine(rendererExportPath, $"{baseName}.{FileExtension}");
 
-        Logger.Write($"{{forecolor:white}}Creating {{forecolor:yellow}}'{targetFramework}'{{forecolor:white}} diagram: ")
-              .Write(ConsoleColor.Yellow, Path.GetFileName(fileName))
-              .Write("{forecolor:white}...");
+        Logger.LogInformation("Creating '{TargetFramework}' diagram: {FileName}",
+            targetFramework, Path.GetFileName(fileName));
 
         await File
             .WriteAllTextAsync(fileName, content, cancellationToken)
             .ConfigureAwait(false);
 
-        Logger.WriteLine("{forecolor:green}Done");
+        Logger.LogInformation("Diagram file created: {FileName}", Path.GetFileName(fileName));
 
         foreach (var format in imageFormats)
         {

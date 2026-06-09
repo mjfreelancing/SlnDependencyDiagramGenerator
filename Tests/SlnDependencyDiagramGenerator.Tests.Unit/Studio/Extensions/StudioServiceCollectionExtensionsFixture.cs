@@ -1,7 +1,8 @@
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
 using SlnDependencyDiagramGenerator.Generator;
 using SlnDependencyStudio.Shared.DependencyInjection;
+using SlnDependencyStudio.Shared.Extensions;
 using SlnDependencyStudio.Shared.Services;
 
 namespace SlnDependencyDiagramGenerator.Tests.Unit.Studio.Extensions;

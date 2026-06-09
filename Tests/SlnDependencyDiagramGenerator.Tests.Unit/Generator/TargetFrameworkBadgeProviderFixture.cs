@@ -1,4 +1,4 @@
-using SlnDependencyDiagramGenerator.Generator;
+﻿using SlnDependencyDiagramGenerator.Generator;
 using Shouldly;
 
 namespace SlnDependencyDiagramGenerator.Tests.Unit.Generator;

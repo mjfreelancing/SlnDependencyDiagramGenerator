@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using SlnDependencyDiagramGenerator.Generator.IntermediateRepresentation;
 using Shouldly;
 

@@ -1,4 +1,4 @@
-﻿using AllOverIt.Logging;
+﻿using Microsoft.Extensions.Logging;
 using AllOverIt.Process;
 using AllOverIt.Process.Extensions;
 using SlnDependencyDiagramGenerator.Config;
@@ -25,7 +25,7 @@ internal sealed class MermaidDiagramRenderer : DiagramRendererBase
     /// <summary>Initializes a new Mermaid diagram renderer.</summary>
     /// <param name="options">The diagram options.</param>
     /// <param name="logger">A logger for progress and diagnostics.</param>
-    public MermaidDiagramRenderer(GeneratorDiagramOptions options, IColorConsoleLogger logger)
+    public MermaidDiagramRenderer(GeneratorDiagramOptions options, ILogger<MermaidDiagramRenderer> logger)
         : base(options, logger)
     {
     }
@@ -146,10 +146,7 @@ internal sealed class MermaidDiagramRenderer : DiagramRendererBase
     {
         var imageFileName = Path.ChangeExtension(diagramFileName, format.ToString().ToLowerInvariant());
 
-        Logger
-            .Write(ConsoleColor.White, "Creating image: ")
-            .Write(ConsoleColor.Yellow, Path.GetFileName(imageFileName))
-            .Write(ConsoleColor.White, "...");
+        Logger.LogInformation("Creating image: {ImageName}", Path.GetFileName(imageFileName));
 
         var stopwatch = Stopwatch.StartNew();
 
@@ -167,7 +164,7 @@ internal sealed class MermaidDiagramRenderer : DiagramRendererBase
             {
                 if (eventArgs.Data is string message)
                 {
-                    Logger.WriteLine(ConsoleColor.Red, $"  {message}");
+                    Logger.LogError("  {MermaidMessage}", message);
                 }
             })
             .BuildProcessExecutor();
@@ -178,7 +175,7 @@ internal sealed class MermaidDiagramRenderer : DiagramRendererBase
 
         stopwatch.Stop();
 
-        Logger.WriteLine(ConsoleColor.Green, $"Done ({FormatElapsed(stopwatch.Elapsed)})");
+        Logger.LogInformation("Image export complete ({Elapsed})", FormatElapsed(stopwatch.Elapsed));
     }
 
     private static DiagramIrNode? FindNode(DiagramIntermediateRepresentation diagramRepresentation, string alias)

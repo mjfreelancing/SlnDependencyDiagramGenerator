@@ -1,4 +1,4 @@
-using SlnDependencyDiagramGenerator.Config;
+﻿using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Generator;
 using SlnDependencyDiagramGenerator.Generator.Discovery;
 using SlnDependencyDiagramGenerator.Generator.ToolDetection;

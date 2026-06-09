@@ -1,7 +1,8 @@
-using AllOverIt.DependencyInjection.Extensions;
+﻿using AllOverIt.DependencyInjection.Extensions;
 using Microsoft.Extensions.DependencyInjection;
+using SlnDependencyStudio.Shared.DependencyInjection;
 
-namespace SlnDependencyStudio.Shared.DependencyInjection;
+namespace SlnDependencyStudio.Shared.Extensions;
 
 /// <summary>Extension methods for registering Studio shared services with DI.</summary>
 public static class ServiceCollectionExtensions

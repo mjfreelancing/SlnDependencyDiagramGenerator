@@ -74,7 +74,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Studio", "Studio", "{E7FC63
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SlnDependencyStudio.Shared", "Studio\SlnDependencyStudio.Shared\SlnDependencyStudio.Shared.csproj", "{B488BE01-3AFE-4657-B82D-CC0C3F982169}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Generator", "Generator", "{73BAE748-6149-4F41-92FA-EA42E1F376F2}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Source", "Source", "{73BAE748-6149-4F41-92FA-EA42E1F376F2}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SlnDependencyStudio.Cli", "Studio\SlnDependencyStudio.Cli\SlnDependencyStudio.Cli.csproj", "{39825BBE-C177-44F0-8CFB-C3788D19FE4E}"
 EndProject
