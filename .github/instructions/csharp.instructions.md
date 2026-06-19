@@ -63,6 +63,22 @@ This file extends [`language-agnostic-core.instructions.md`](language-agnostic-c
 
 - Keep handlers thin: validate, map input, call service, map result.
 
+### Dependency Injection Registration
+
+- Default to concrete registrations for internal, single-implementation plumbing classes.
+- Introduce interface registrations only when one of these conditions is true:
+  - Multiple implementations are required now.
+  - A public/extensible boundary is intentionally part of the contract.
+  - A real consumer outside the implementation unit needs the abstraction.
+  - Unit tests require a reliable mock/fake seam and no simpler test seam exists.
+- Do not make implementation classes `public` just for DI convenience.
+- Prefer "internal first": start with concrete/internal and promote to interface/public only when a concrete requirement appears.
+- Keep DI registration centralized in a small set of composition-root extension methods.
+- Use `TryAdd*` registrations by default so host applications can override registrations without duplicate entries.
+- Use `Scoped` as the default lifetime unless there is a proven reason for `Singleton` or `Transient`.
+- When registering a service by interface, keep implementation classes non-public unless there is an explicit requirement to expose them.
+- If an interface exists but has a single implementation and no active extension point, periodically re-evaluate whether the interface still adds value.
+
 ### Constructor and Method Signature Ordering
 
 - When injecting services via constructor, the logging interface (when required) is always the **last** injected parameter.
