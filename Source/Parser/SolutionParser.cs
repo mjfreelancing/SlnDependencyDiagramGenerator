@@ -1,4 +1,5 @@
-﻿using AllOverIt.Extensions;
+﻿using AllOverIt.Assertion;
+using AllOverIt.Extensions;
 using Microsoft.Build.Evaluation;
 using SlnDependencyDiagramGenerator.Exceptions;
 using SlnDependencyDiagramGenerator.Parser.Resolvers;
@@ -23,11 +24,14 @@ internal sealed partial class SolutionParser
     private string _cachedSolutionFilePath = string.Empty;
     private IReadOnlyList<SolutionProjectDescriptor> _cachedProjects = [];
     private readonly Dictionary<string, ISolutionProjectResolver> _solutionProjectResolvers;
-    private readonly ProjectAssetReader _assetReader = new();
+    private readonly IProjectAssetReader _assetReader;
 
     /// <summary>Initializes a new parser instance.</summary>
-    public SolutionParser()
+    /// <param name="assetReader">The project assets reader used to resolve target frameworks and packages.</param>
+    public SolutionParser(IProjectAssetReader assetReader)
     {
+        _assetReader = assetReader.WhenNotNull();
+
         // SDK-style project evaluation requires a registered MSBuild instance so SDK resolvers
         // can locate Microsoft.NET.Sdk and related toolset components.
         MsBuildSdkResolver.EnsureInitialized();
@@ -37,6 +41,12 @@ internal sealed partial class SolutionParser
             [".sln"] = new SlnSolutionProjectResolver(),
             [".slnx"] = new SlnxSolutionProjectResolver()
         };
+    }
+
+    // For use with integration tests.
+    internal SolutionParser()
+        : this(new ProjectAssetReader())
+    {
     }
 
     /// <summary>
@@ -68,7 +78,8 @@ internal sealed partial class SolutionParser
     /// <returns>
     /// A distinct, ordered list of base target frameworks (for example, <c>net10.0</c>).
     /// </returns>
-    internal Task<string[]> DiscoverTargetFrameworksAsync(IReadOnlyList<SolutionProjectDescriptor> projects, CancellationToken cancellationToken)
+    internal Task<string[]> DiscoverTargetFrameworksAsync(IReadOnlyList<SolutionProjectDescriptor> projects,
+        CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -131,7 +142,8 @@ internal sealed partial class SolutionParser
     /// <returns>
     /// The full filtered classification used by discovery, framework detection, and parsing.
     /// </returns>
-    internal async Task<FilteredSolutionProjects> DiscoverProjectsAsync(string solutionFilePath, string[] regexToInclude, string[] regexToExclude,
+    internal async Task<FilteredSolutionProjects> DiscoverProjectsAsync(string solutionFilePath, string[] regexToInclude,
+        string[] regexToExclude,
         CancellationToken cancellationToken)
     {
         solutionFilePath = Path.GetFullPath(solutionFilePath);

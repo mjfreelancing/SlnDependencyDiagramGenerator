@@ -18,7 +18,7 @@ namespace SlnDependencyDiagramGenerator.Parser;
 /// already reflecting NuGet conflict resolution, Central Package Management
 /// (<c>Directory.Packages.props</c>), and <c>Directory.Build.props</c> evaluation.
 /// </remarks>
-internal sealed class ProjectAssetReader
+internal sealed class ProjectAssetReader : IProjectAssetReader
 {
     // Caches parsed project.assets.json lock files by absolute assets-file path so
     // repeated queries within a run do not re-read or re-parse the same file.

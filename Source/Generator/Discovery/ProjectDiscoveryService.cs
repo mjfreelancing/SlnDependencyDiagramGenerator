@@ -1,4 +1,5 @@
-﻿using SlnDependencyDiagramGenerator.Parser;
+﻿using AllOverIt.Assertion;
+using SlnDependencyDiagramGenerator.Parser;
 using System;
 using System.IO;
 using System.Linq;
@@ -10,9 +11,22 @@ namespace SlnDependencyDiagramGenerator.Generator.Discovery;
 /// <summary>Provides project discovery and parsing services by coordinating with <see cref="SolutionParser" />.</summary>
 internal sealed class ProjectDiscoveryService : IProjectDiscoveryService
 {
-    private readonly SolutionParser _solutionParser = new();
+    private readonly SolutionParser _solutionParser;
     private string _cachedDiscoveryKey = string.Empty;
     private FilteredSolutionProjects? _cachedFilteredProjects;
+
+    /// <summary>Initializes a new instance of <see cref="ProjectDiscoveryService"/>.</summary>
+    /// <param name="solutionParser">The parser used to discover and parse solution projects.</param>
+    public ProjectDiscoveryService(SolutionParser solutionParser)
+    {
+        _solutionParser = solutionParser.WhenNotNull();
+    }
+
+    // For use with integration tests.
+    internal ProjectDiscoveryService()
+        : this(new SolutionParser())
+    {
+    }
 
     /// <inheritdoc />
     public async Task<ProjectDiscoveryResult> DiscoverProjectsAsync(string solutionFilePath, string[] regexToInclude,
