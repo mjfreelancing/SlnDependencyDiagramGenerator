@@ -117,27 +117,58 @@ internal sealed partial class SolutionParser
     /// <returns>
     /// The filtered and alphabetically ordered set of MSBuild-format projects.
     /// </returns>
-    private async Task<IReadOnlyList<SolutionProjectDescriptor>> FilterAndOrderProjectsAsync(string solutionFilePath,
-        string[] regexToInclude, string[] regexToExclude, CancellationToken cancellationToken)
+    private async Task<IReadOnlyList<SolutionProjectDescriptor>> FilterAndOrderProjectsAsync(string solutionFilePath, string[] regexToInclude,
+        string[] regexToExclude, CancellationToken cancellationToken)
     {
+        // Resolve all solution projects once so include/exclude evaluation runs against the same snapshot.
         var solutionProjects = await GetSolutionProjectsAsync(solutionFilePath, cancellationToken).ConfigureAwait(false);
 
+        // Relative-path matching is performed from the solution directory because solution entries are typically relative.
+        var solutionDirectory = Path.GetDirectoryName(solutionFilePath) ?? string.Empty;
+
+        // Compile each configured pattern once up-front to avoid per-project regex construction.
         var includeRegexes = regexToInclude.SelectToArray(regex => new Regex(regex));
         var excludeRegexes = regexToExclude.SelectToArray(regex => new Regex(regex));
 
         return [.. solutionProjects
             .Where(project =>
             {
-                var include = includeRegexes.Any(regex => regex.Matches(project.AbsolutePath).Count > 0);
+                // Include is the first gate: if no include pattern matches, the project is rejected immediately.
+                var include = IsMatch(includeRegexes, solutionDirectory, project);
 
+                // Fast-path when include failed or there are no excludes configured.
                 if (!include || excludeRegexes.Length == 0)
                 {
                     return include;
                 }
 
-                return !excludeRegexes.Any(regex => regex.Matches(project.AbsolutePath).Count > 0);
+                // Exclude is applied only after include succeeds; any exclude match removes the project.
+                return !IsMatch(excludeRegexes, solutionDirectory, project);
             })
+            // Deterministic ordering keeps output stable across runs and simplifies testing.
             .OrderBy(item => item.ProjectName)];
+
+        static bool IsMatch(Regex[] regexes, string solutionDirectory, SolutionProjectDescriptor project)
+        {
+            var absolutePath = project.AbsolutePath;
+            var relativePath = Path.GetRelativePath(solutionDirectory, absolutePath);
+            var fileName = Path.GetFileName(absolutePath);
+
+            // Match against multiple candidate strings so callers can target absolute paths,
+            // normalized paths, relative paths, file names, or solution project names.
+            var candidates = new[]
+            {
+                absolutePath,
+                absolutePath.Replace('\\', '/'),
+                relativePath,
+                relativePath.Replace('\\', '/'),
+                fileName,
+                project.ProjectName
+            };
+
+            // Any regex can match any candidate: arrays behave as OR sets.
+            return regexes.Any(regex => candidates.Any(candidate => regex.IsMatch(candidate)));
+        }
     }
 
     /// <summary>

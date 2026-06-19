@@ -57,6 +57,9 @@ public class ParserScenariosFixture
         [Fact]
         public async Task Should_Exclude_Frameworks_From_RegexExcluded_Projects()
         {
+            // Baseline projects (Exclusions.slnx): LibA, LibB, LibExcluded.
+            // Include regex (^.*\.csproj$) keeps: LibA, LibB, LibExcluded.
+            // Exclude regex (.*LibExcluded.*\.csproj$) removes: LibExcluded.
             string[] includeRegex = [@"^.*\.csproj$"];
             string[] excludeRegex = [@".*LibExcluded.*\.csproj$"];
 
@@ -112,6 +115,222 @@ public class ParserScenariosFixture
                 maxTransitiveDepth: 3);
 
             projects.Select(project => project.Name).ShouldBe(["AppConsole", "LibA", "LibB"]);
+        }
+
+        [Fact]
+        public async Task Should_Include_Single_Project_When_Include_Regex_Matches_Exact_Project_Name()
+        {
+            // Baseline projects (Basic.slnx): AppConsole, LibA, LibB.
+            // Include regex (^LibA$) keeps: LibA.
+            // Exclude regex (none) removes: nothing.
+            string[] includeRegex = [@"^LibA$"];
+            string[] excludeRegex = [];
+            string[] excludePackages = [];
+            string[] excludeFrameworks = [];
+
+            var projects = await IntegrationTestHarness.ParseFixtureAsync(
+                fixtureName: "Basic",
+                extension: ".slnx",
+                targetFramework: "net10.0",
+                regexToInclude: includeRegex,
+                regexToExclude: excludeRegex,
+                excludePackages: excludePackages,
+                excludeFrameworks: excludeFrameworks,
+                maxTransitiveDepth: 3);
+
+            projects.Select(project => project.Name).ShouldBe(["LibA"]);
+        }
+
+        [Fact]
+        public async Task Should_Exclude_Single_Project_When_Exclude_Regex_Matches_Exact_Project_Name()
+        {
+            // Baseline projects (Basic.slnx): AppConsole, LibA, LibB.
+            // Include regex (^.*\.csproj$) keeps: AppConsole, LibA, LibB.
+            // Exclude regex (^LibB$) removes: LibB.
+            string[] includeRegex = [@"^.*\.csproj$"];
+            string[] excludeRegex = [@"^LibB$"];
+            string[] excludePackages = [];
+            string[] excludeFrameworks = [];
+
+            var projects = await IntegrationTestHarness.ParseFixtureAsync(
+                fixtureName: "Basic",
+                extension: ".slnx",
+                targetFramework: "net10.0",
+                regexToInclude: includeRegex,
+                regexToExclude: excludeRegex,
+                excludePackages: excludePackages,
+                excludeFrameworks: excludeFrameworks,
+                maxTransitiveDepth: 3);
+
+            projects.Select(project => project.Name).ShouldBe(["AppConsole", "LibA"]);
+        }
+
+        [Fact]
+        public async Task Should_Exclude_Single_Project_When_Exclude_Regex_Matches_Exact_Project_File_Name()
+        {
+            // Baseline projects (Basic.slnx): AppConsole, LibA, LibB.
+            // Include regex (^.*\.csproj$) keeps: AppConsole, LibA, LibB.
+            // Exclude regex (^LibB\.csproj$) removes: LibB.
+            string[] includeRegex = [@"^.*\.csproj$"];
+            string[] excludeRegex = [@"^LibB\.csproj$"];
+            string[] excludePackages = [];
+            string[] excludeFrameworks = [];
+
+            var projects = await IntegrationTestHarness.ParseFixtureAsync(
+                fixtureName: "Basic",
+                extension: ".slnx",
+                targetFramework: "net10.0",
+                regexToInclude: includeRegex,
+                regexToExclude: excludeRegex,
+                excludePackages: excludePackages,
+                excludeFrameworks: excludeFrameworks,
+                maxTransitiveDepth: 3);
+
+            projects.Select(project => project.Name).ShouldBe(["AppConsole", "LibA"]);
+        }
+
+        [Fact]
+        public async Task Should_Include_Single_Project_When_Include_Regex_Matches_Exact_Project_File_Name()
+        {
+            // Baseline projects (Basic.slnx): AppConsole, LibA, LibB.
+            // Include regex (^LibB\.csproj$) keeps: LibB.
+            // Exclude regex (none) removes: nothing.
+            string[] includeRegex = [@"^LibB\.csproj$"];
+            string[] excludeRegex = [];
+            string[] excludePackages = [];
+            string[] excludeFrameworks = [];
+
+            var projects = await IntegrationTestHarness.ParseFixtureAsync(
+                fixtureName: "Basic",
+                extension: ".slnx",
+                targetFramework: "net10.0",
+                regexToInclude: includeRegex,
+                regexToExclude: excludeRegex,
+                excludePackages: excludePackages,
+                excludeFrameworks: excludeFrameworks,
+                maxTransitiveDepth: 3);
+
+            projects.Select(project => project.Name).ShouldBe(["LibB"]);
+        }
+
+        [Fact]
+        public async Task Should_Exclude_Single_Project_When_Exclude_Regex_Matches_Folder_Path_With_Multiple_Projects()
+        {
+            // Baseline projects (Exclusions.slnx): LibA, LibB, LibExcluded.
+            // Include regex (^.*\.csproj$) keeps: LibA, LibB, LibExcluded.
+            // Exclude regex ([/\\]Exclusions[/\\]LibExcluded[/\\]) removes: LibExcluded.
+            string[] includeRegex = [@"^.*\.csproj$"];
+            string[] excludeRegex = [@"[/\\]Exclusions[/\\]LibExcluded[/\\]"];
+            string[] excludePackages = [];
+            string[] excludeFrameworks = [];
+
+            var projects = await IntegrationTestHarness.ParseFixtureAsync(
+                fixtureName: "Exclusions",
+                extension: ".slnx",
+                targetFramework: "net10.0",
+                regexToInclude: includeRegex,
+                regexToExclude: excludeRegex,
+                excludePackages: excludePackages,
+                excludeFrameworks: excludeFrameworks,
+                maxTransitiveDepth: 3);
+
+            projects.Select(project => project.Name).ShouldBe(["LibA", "LibB"]);
+        }
+
+        [Fact]
+        public async Task Should_Exclude_Single_Project_When_Exclude_Regex_Matches_Exact_Project_Name_With_Multiple_Projects()
+        {
+            // Baseline projects (Exclusions.slnx): LibA, LibB, LibExcluded.
+            // Include regex (^.*\.csproj$) keeps: LibA, LibB, LibExcluded.
+            // Exclude regex (^LibExcluded$) removes: LibExcluded.
+            string[] includeRegex = [@"^.*\.csproj$"];
+            string[] excludeRegex = [@"^LibExcluded$"];
+            string[] excludePackages = [];
+            string[] excludeFrameworks = [];
+
+            var projects = await IntegrationTestHarness.ParseFixtureAsync(
+                fixtureName: "Exclusions",
+                extension: ".slnx",
+                targetFramework: "net10.0",
+                regexToInclude: includeRegex,
+                regexToExclude: excludeRegex,
+                excludePackages: excludePackages,
+                excludeFrameworks: excludeFrameworks,
+                maxTransitiveDepth: 3);
+
+            projects.Select(project => project.Name).ShouldBe(["LibA", "LibB"]);
+        }
+
+        [Fact]
+        public async Task Should_Include_Projects_When_Any_Include_Regex_Matches_With_Multiple_Patterns()
+        {
+            // Baseline projects (Basic.slnx): AppConsole, LibA, LibB.
+            // Include regexes (^LibA$, ^LibB$) keep: LibA, LibB.
+            // Exclude regex (none) removes: nothing.
+            string[] includeRegex = [@"^LibA$", @"^LibB$"];
+            string[] excludeRegex = [];
+            string[] excludePackages = [];
+            string[] excludeFrameworks = [];
+
+            var projects = await IntegrationTestHarness.ParseFixtureAsync(
+                fixtureName: "Basic",
+                extension: ".slnx",
+                targetFramework: "net10.0",
+                regexToInclude: includeRegex,
+                regexToExclude: excludeRegex,
+                excludePackages: excludePackages,
+                excludeFrameworks: excludeFrameworks,
+                maxTransitiveDepth: 3);
+
+            projects.Select(project => project.Name).ShouldBe(["LibA", "LibB"]);
+        }
+
+        [Fact]
+        public async Task Should_Exclude_Projects_When_Any_Exclude_Regex_Matches_With_Multiple_Patterns()
+        {
+            // Baseline projects (Exclusions.slnx): LibA, LibB, LibExcluded.
+            // Include regex (^.*\.csproj$) keeps: LibA, LibB, LibExcluded.
+            // Exclude regexes (^LibA$, ^LibExcluded$) remove: LibA, LibExcluded.
+            string[] includeRegex = [@"^.*\.csproj$"];
+            string[] excludeRegex = [@"^LibA$", @"^LibExcluded$"];
+            string[] excludePackages = [];
+            string[] excludeFrameworks = [];
+
+            var projects = await IntegrationTestHarness.ParseFixtureAsync(
+                fixtureName: "Exclusions",
+                extension: ".slnx",
+                targetFramework: "net10.0",
+                regexToInclude: includeRegex,
+                regexToExclude: excludeRegex,
+                excludePackages: excludePackages,
+                excludeFrameworks: excludeFrameworks,
+                maxTransitiveDepth: 3);
+
+            projects.Select(project => project.Name).ShouldBe(["LibB"]);
+        }
+
+        [Fact]
+        public async Task Should_Apply_Multiple_Include_And_Exclude_Regexes_Together()
+        {
+            // Baseline projects (Basic.slnx): AppConsole, LibA, LibB.
+            // Include regexes (^Lib.*$, ^AppConsole$) keep: AppConsole, LibA, LibB.
+            // Exclude regexes (^LibB$, ^AppConsole$) remove: AppConsole, LibB.
+            string[] includeRegex = [@"^Lib.*$", @"^AppConsole$"];
+            string[] excludeRegex = [@"^LibB$", @"^AppConsole$"];
+            string[] excludePackages = [];
+            string[] excludeFrameworks = [];
+
+            var projects = await IntegrationTestHarness.ParseFixtureAsync(
+                fixtureName: "Basic",
+                extension: ".slnx",
+                targetFramework: "net10.0",
+                regexToInclude: includeRegex,
+                regexToExclude: excludeRegex,
+                excludePackages: excludePackages,
+                excludeFrameworks: excludeFrameworks,
+                maxTransitiveDepth: 3);
+
+            projects.Select(project => project.Name).ShouldBe(["LibA"]);
         }
 
         [Fact]
