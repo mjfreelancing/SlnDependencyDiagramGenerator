@@ -22,11 +22,13 @@ public static class ServiceCollectionExtensions
         // 1) Default to concrete registration for internal single-implementation plumbing.
         // 2) Use interface registration only when a boundary is intentionally public/extensible,
         //    or when multiple implementations must be selected at runtime.
-        // 3) Do not make implementation classes public just for DI convenience.
-        // 4) Start internal-first; introduce a public interface later only when a real consumer needs it.
-        // 5) Keep AddSlnDependencyGenerator() the canonical composition root for this library.
-        // 6) Use TryAdd* to allow host-level overrides without duplicate registrations.
-        // 7) Keep service lifetimes Scoped unless there is a proven reason to change.
+        // 3) An interface is also valid when unit tests need a reliable mock/fake seam and
+        //    no simpler seam exists.
+        // 4) Do not make implementation classes public just for DI convenience.
+        // 5) Start internal-first; introduce a public interface later only when a real consumer needs it.
+        // 6) Keep AddSlnDependencyGenerator() the canonical composition root for this library.
+        // 7) Use TryAdd* to allow host-level overrides without duplicate registrations.
+        // 8) Keep service lifetimes Scoped unless there is a proven reason to change.
 
         // Internal plumbing (single implementation, no public abstraction required today).
         services.TryAddScoped<ProjectAssetReader>();
