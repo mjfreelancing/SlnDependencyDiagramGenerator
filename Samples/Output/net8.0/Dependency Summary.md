@@ -12,6 +12,8 @@
 * FluentValidation v12.1.1
 * Microsoft.Build.Locator v1.11.2
 * Microsoft.Extensions.DependencyInjection.Abstractions v10.0.8
+* Microsoft.Extensions.Logging.Abstractions v10.0.8
+* Microsoft.VisualStudio.SolutionPersistence v1.0.52
 * Newtonsoft.Json v13.0.3
 * NuGet.Configuration v7.6.0
 * NuGet.DependencyResolver.Core v7.6.0
@@ -21,6 +23,7 @@
 * NuGet.ProjectModel v7.6.0
 * NuGet.Protocol v7.6.0
 * NuGet.Versioning v7.6.0
+* System.Diagnostics.DiagnosticSource v10.0.8
 * System.Security.Cryptography.Pkcs v8.0.1
 
 <br>

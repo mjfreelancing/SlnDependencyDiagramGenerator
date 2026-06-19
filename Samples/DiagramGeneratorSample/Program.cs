@@ -1,12 +1,12 @@
 ﻿using AllOverIt.Extensions;
-using AllOverIt.Logging;
 using FluentValidation;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using SlnDependencyDiagramGenerator.Config;
+using SlnDependencyDiagramGenerator.Extensions;
 using SlnDependencyDiagramGenerator.Exceptions;
 using SlnDependencyDiagramGenerator.Generator;
-using SlnDependencyDiagramGenerator.Generator.Discovery;
-using SlnDependencyDiagramGenerator.Generator.ToolDetection;
 using System;
 using System.IO;
 using System.Threading;
@@ -20,20 +20,18 @@ internal class Program
 
     private static async Task Main(string[] args)
     {
-        var logger = new ColorConsoleLogger();
+        using var serviceProvider = CreateServiceProvider();
+        var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
         var configurationSelection = GetConfigurationSelection(args);
 
         try
         {
             var options = GetGeneratorConfig(configurationSelection);
-            var generator = new DependencyGenerator();
+            var generator = serviceProvider.GetRequiredService<DependencyGenerator>();
 
             await generator.CreateDiagramsAsync(options, CancellationToken.None);
 
-            logger
-                .Write(ConsoleColor.Green, "The solution '")
-                .Write(ConsoleColor.Yellow, Path.GetFileName(options.Projects.SolutionPath))
-                .WriteLine(ConsoleColor.Green, "' has been processed.");
+            logger.LogInformation("The solution '{SolutionName}' has been processed.", Path.GetFileName(options.Projects.SolutionPath));
         }
         catch (Exception exception) when (exception is DependencyGeneratorException or ValidationException)
         {
@@ -41,11 +39,11 @@ internal class Program
             {
                 // Intentionally use ToString() so runtime failures include type, stack trace,
                 // and inner-exception details (Message alone hid root causes in prior debugging).
-                logger.WriteLine(ConsoleColor.Red, exception.ToString());
+                logger.LogError("{ExceptionText}", exception.ToString());
             }
             else
             {
-                logger.WriteLine(ConsoleColor.Red, exception.Message);
+                logger.LogError("{ErrorMessage}", exception.Message);
             }
         }
         catch (Exception exception) when (exception is InvalidOperationException or FormatException or
@@ -54,14 +52,34 @@ internal class Program
             // Show full exception details so the root cause is visible
             WriteConfigurationError(logger, configurationSelection.ConfigFile, exception);
 
-            logger.WriteLine(ConsoleColor.DarkGray, exception.ToString());
+            logger.LogError("{ExceptionText}", exception.ToString());
         }
         catch (Exception exception)
         {
             // Keep full exception output here as well so assembly-load and resolver failures
             // are not reduced to a single message line.
-            logger.WriteLine(ConsoleColor.Red, exception.ToString());
+            logger.LogError("{ExceptionText}", exception.ToString());
         }
+    }
+
+    private static ServiceProvider CreateServiceProvider()
+    {
+        var services = new ServiceCollection();
+
+        services
+            .AddLogging(builder =>
+            {
+                builder
+                    .SetMinimumLevel(LogLevel.Information)
+                    .AddSimpleConsole(options =>
+                    {
+                        options.SingleLine = true;
+                        options.TimestampFormat = "HH:mm:ss ";
+                    });
+            })
+            .AddSlnDependencyGenerator();
+
+        return services.BuildServiceProvider();
     }
 
     private static ConfigurationSelection GetConfigurationSelection(string[] args)
@@ -108,21 +126,35 @@ internal class Program
         var configuration = configurationBuilder.Build();
 
         configuration.Bind("options", generatorConfig);
+        ResolveRelativePaths(generatorConfig, configDirectory);
 
         return generatorConfig;
     }
 
-    private static void WriteConfigurationError(ColorConsoleLogger logger, string configFile, Exception exception)
+    private static void ResolveRelativePaths(DependencyGeneratorConfig config, string configDirectory)
+    {
+        if (!string.IsNullOrWhiteSpace(config.Projects.SolutionPath) &&
+            !Path.IsPathRooted(config.Projects.SolutionPath))
+        {
+            config.Projects.SolutionPath = Path.GetFullPath(
+                Path.Combine(configDirectory, config.Projects.SolutionPath));
+        }
+
+        if (!string.IsNullOrWhiteSpace(config.Export.RootPath) &&
+            !Path.IsPathRooted(config.Export.RootPath))
+        {
+            config.Export.RootPath = Path.GetFullPath(
+                Path.Combine(configDirectory, config.Export.RootPath));
+        }
+    }
+
+    private static void WriteConfigurationError(ILogger logger, string configFile, Exception exception)
     {
         configFile ??= "appsettings.json";
 
-        logger
-            .WriteLine()
-            .WriteLine(ConsoleColor.Red, "Failed to load configuration.")
-            .Write(ConsoleColor.White, "File: ")
-            .WriteLine(ConsoleColor.Yellow, Path.GetFullPath(configFile))
-            .WriteLine()
-            .WriteLine(ConsoleColor.White, "The configuration file could not be parsed or bound to the expected options type.")
-            .WriteLine(ConsoleColor.DarkGray, exception.Message);
+        logger.LogError("Failed to load configuration.");
+        logger.LogError("File: {ConfigFilePath}", Path.GetFullPath(configFile));
+        logger.LogError("The configuration file could not be parsed or bound to the expected options type.");
+        logger.LogError("{ErrorMessage}", exception.Message);
     }
 }

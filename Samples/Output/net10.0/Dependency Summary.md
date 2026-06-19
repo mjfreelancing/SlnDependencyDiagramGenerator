@@ -39,10 +39,18 @@
 * Microsoft.Extensions.Configuration.Binder v10.0.8
 * Microsoft.Extensions.Configuration.FileExtensions v10.0.8
 * Microsoft.Extensions.Configuration.Json v10.0.8
+* Microsoft.Extensions.DependencyInjection v10.0.8
 * Microsoft.Extensions.DependencyInjection.Abstractions v10.0.8
 * Microsoft.Extensions.FileProviders.Abstractions v10.0.8
 * Microsoft.Extensions.FileProviders.Physical v10.0.8
+* Microsoft.Extensions.Logging v10.0.8
+* Microsoft.Extensions.Logging.Abstractions v10.0.8
+* Microsoft.Extensions.Logging.Configuration v10.0.8
+* Microsoft.Extensions.Logging.Console v10.0.8
+* Microsoft.Extensions.Options v10.0.8
+* Microsoft.Extensions.Options.ConfigurationExtensions v10.0.8
 * Microsoft.Extensions.Primitives v10.0.8
+* Microsoft.VisualStudio.SolutionPersistence v1.0.52
 * Newtonsoft.Json v13.0.3
 * NuGet.Configuration v7.6.0
 * NuGet.DependencyResolver.Core v7.6.0
@@ -94,6 +102,8 @@
 * FluentValidation v12.1.1
 * Microsoft.Build.Locator v1.11.2
 * Microsoft.Extensions.DependencyInjection.Abstractions v10.0.8
+* Microsoft.Extensions.Logging.Abstractions v10.0.8
+* Microsoft.VisualStudio.SolutionPersistence v1.0.52
 * Newtonsoft.Json v13.0.3
 * NuGet.Configuration v7.6.0
 * NuGet.DependencyResolver.Core v7.6.0
