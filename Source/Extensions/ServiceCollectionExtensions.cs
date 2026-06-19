@@ -18,11 +18,26 @@ public static class ServiceCollectionExtensions
     /// <returns>The service collection, for chaining.</returns>
     public static IServiceCollection AddSlnDependencyGenerator(this IServiceCollection services)
     {
-        services.TryAddScoped<IProjectAssetReader, ProjectAssetReader>();
+        // Registration rules (keep these in sync with architecture decisions):
+        // 1) Default to concrete registration for internal single-implementation plumbing.
+        // 2) Use interface registration only when a boundary is intentionally public/extensible,
+        //    or when multiple implementations must be selected at runtime.
+        // 3) Do not make implementation classes public just for DI convenience.
+        // 4) Start internal-first; introduce a public interface later only when a real consumer needs it.
+        // 5) Keep AddSlnDependencyGenerator() the canonical composition root for this library.
+        // 6) Use TryAdd* to allow host-level overrides without duplicate registrations.
+        // 7) Keep service lifetimes Scoped unless there is a proven reason to change.
+
+        // Internal plumbing (single implementation, no public abstraction required today).
+        services.TryAddScoped<ProjectAssetReader>();
         services.TryAddScoped<SolutionParser>();
+
+        // Public generator-facing boundaries (used by DependencyGenerator and candidate frontend consumers).
         services.TryAddScoped<IProjectDiscoveryService, ProjectDiscoveryService>();
         services.TryAddScoped<IToolDetectionService, ToolDetectionService>();
         services.TryAddScoped<DependencyGenerator>();
+
+        // Renderer contract supports multiple implementations (D2, Mermaid).
         services.TryAddScoped<IDiagramRenderer, D2DiagramRenderer>();
         services.TryAddScoped<IDiagramRenderer, MermaidDiagramRenderer>();
 

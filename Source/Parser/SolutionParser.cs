@@ -24,11 +24,11 @@ internal sealed partial class SolutionParser
     private string _cachedSolutionFilePath = string.Empty;
     private IReadOnlyList<SolutionProjectDescriptor> _cachedProjects = [];
     private readonly Dictionary<string, ISolutionProjectResolver> _solutionProjectResolvers;
-    private readonly IProjectAssetReader _assetReader;
+    private readonly ProjectAssetReader _assetReader;
 
     /// <summary>Initializes a new parser instance.</summary>
     /// <param name="assetReader">The project assets reader used to resolve target frameworks and packages.</param>
-    public SolutionParser(IProjectAssetReader assetReader)
+    public SolutionParser(ProjectAssetReader assetReader)
     {
         _assetReader = assetReader.WhenNotNull();
 
