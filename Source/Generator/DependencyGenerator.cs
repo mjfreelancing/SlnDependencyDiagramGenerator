@@ -47,13 +47,6 @@ public sealed class DependencyGenerator
     private readonly ILoggerFactory _loggerFactory;
     private readonly ILogger<DependencyGenerator> _logger;
 
-    /// <summary>Initializes a new dependency generator with default service implementations.</summary>
-    /// <remarks>Intended for simple usage where DI is not required.</remarks>
-    public DependencyGenerator()
-        : this(new ProjectDiscoveryService(), new ToolDetectionService(), NullLoggerFactory.Instance)
-    {
-    }
-
     /// <summary>Initializes a new dependency generator instance with explicitly provided services (for DI).</summary>
     /// <param name="projectDiscovery">The project discovery service used for parsing solutions and resolving dependencies.</param>
     /// <param name="toolDetection">The tool detection service used for checking external CLI tool availability.</param>
@@ -64,6 +57,12 @@ public sealed class DependencyGenerator
         _toolDetection = toolDetection.WhenNotNull();
         _loggerFactory = loggerFactory.WhenNotNull();
         _logger = loggerFactory.CreateLogger<DependencyGenerator>();
+    }
+
+    // For use with integration tests
+    internal DependencyGenerator()
+        : this(new ProjectDiscoveryService(), new ToolDetectionService(), NullLoggerFactory.Instance)
+    {
     }
 
     /// <summary>Generates dependency summaries, diagram files, and optional images for each discovered target framework.</summary>
