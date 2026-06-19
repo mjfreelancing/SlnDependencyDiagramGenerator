@@ -1,7 +1,6 @@
 ﻿using AllOverIt.Assertion;
 using Microsoft.Extensions.Logging;
 using SlnDependencyDiagramGenerator.Config;
-using SlnDependencyDiagramGenerator.Exceptions;
 using SlnDependencyDiagramGenerator.Generator;
 using SlnDependencyDiagramGenerator.Generator.IntermediateRepresentation;
 using SlnDependencyDiagramGenerator.Generator.Nodes;
@@ -51,14 +50,12 @@ internal abstract class DiagramRendererBase : IDiagramRenderer
 
         var content = Render(model);
         var baseName = GetDiagramAliasId(projectScope, includeProjectGroupPrefix: false);
-        var rendererExportPath = Path.Combine(exportPath, FileExtension);
 
-        Directory.CreateDirectory(rendererExportPath);
+        Directory.CreateDirectory(exportPath);
 
-        var fileName = Path.Combine(rendererExportPath, $"{baseName}.{FileExtension}");
+        var fileName = Path.Combine(exportPath, $"{baseName}.{FileExtension}");
 
-        Logger.LogInformation("Creating '{TargetFramework}' diagram: {FileName}",
-            targetFramework, Path.GetFileName(fileName));
+        Logger.LogInformation("Creating '{TargetFramework}' diagram: {FileName}", targetFramework, Path.GetFileName(fileName));
 
         await File
             .WriteAllTextAsync(fileName, content, cancellationToken)

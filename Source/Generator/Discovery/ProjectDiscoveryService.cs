@@ -1,22 +1,18 @@
-﻿using AllOverIt.Extensions;
-using SlnDependencyDiagramGenerator.Exceptions;
-using SlnDependencyDiagramGenerator.Parser;
-using SlnDependencyDiagramGenerator.Parser.Resolvers;
+﻿using SlnDependencyDiagramGenerator.Parser;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace SlnDependencyDiagramGenerator.Generator.Discovery;
 
-/// <summary>Provides project discovery and parsing services by wrapping SolutionParser
-/// and solution project resolvers.</summary>
+/// <summary>Provides project discovery and parsing services by coordinating with <see cref="SolutionParser" />.</summary>
 internal sealed class ProjectDiscoveryService : IProjectDiscoveryService
 {
     private readonly SolutionParser _solutionParser = new();
+    private string _cachedDiscoveryKey = string.Empty;
+    private FilteredSolutionProjects? _cachedFilteredProjects;
 
     /// <inheritdoc />
     public async Task<ProjectDiscoveryResult> DiscoverProjectsAsync(string solutionFilePath, string[] regexToInclude,
@@ -24,82 +20,67 @@ internal sealed class ProjectDiscoveryService : IProjectDiscoveryService
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var extension = GetSolutionExtension(solutionFilePath);
-        var resolvers = CreateResolvers();
-
-        if (!resolvers.TryGetValue(extension, out var resolver))
-        {
-            var supported = string.Join(", ", resolvers.Keys.OrderBy(item => item));
-
-            throw new DependencyGeneratorException(
-                $"Unsupported solution extension '{extension}'. Supported extensions are {supported}. Path: {solutionFilePath}");
-        }
-
-        var allProjects = await resolver.GetProjectsAsync(solutionFilePath, cancellationToken).ConfigureAwait(false);
-
-        var includeRegexes = regexToInclude.SelectToArray(regex => new Regex(regex));
-        var excludeRegexes = regexToExclude.SelectToArray(regex => new Regex(regex));
-
-        var included = new List<string>();
-        var excluded = new List<string>();
-        var implicitlyExcluded = new List<string>();
-
-        foreach (var project in allProjects)
-        {
-            var isIncluded = includeRegexes.Any(regex => regex.Matches(project.AbsolutePath).Count > 0);
-
-            if (!isIncluded)
-            {
-                implicitlyExcluded.Add(project.AbsolutePath);
-                continue;
-            }
-
-            var isExcluded = excludeRegexes.Length > 0 &&
-                excludeRegexes.Any(regex => regex.Matches(project.AbsolutePath).Count > 0);
-
-            if (isExcluded)
-            {
-                excluded.Add(project.AbsolutePath);
-            }
-            else
-            {
-                included.Add(project.AbsolutePath);
-            }
-        }
+        var filteredProjects = await GetFilteredProjectsAsync(solutionFilePath, regexToInclude, regexToExclude, cancellationToken)
+            .ConfigureAwait(false);
 
         return new ProjectDiscoveryResult
         {
-            AllProjectPaths = allProjects.Select(project => project.AbsolutePath).ToArray(),
-            IncludedProjectPaths = [.. included],
-            ExcludedProjectPaths = [.. excluded],
-            ImplicitlyExcludedProjectPaths = [.. implicitlyExcluded]
+            AllProjectPaths = [.. filteredProjects.AllProjects.Select(project => project.AbsolutePath)],
+            IncludedProjectPaths = [.. filteredProjects.IncludedProjects.Select(project => project.AbsolutePath)],
+            ExcludedProjectPaths = [.. filteredProjects.ExcludedProjects.Select(project => project.AbsolutePath)],
+            ImplicitlyExcludedProjectPaths = [.. filteredProjects.ImplicitlyExcludedProjects.Select(project => project.AbsolutePath)]
         };
     }
 
     /// <inheritdoc />
     public Task<SolutionProject[]> ParseProjectsAsync(SolutionParseRequest request, CancellationToken cancellationToken)
     {
-        return _solutionParser.ParseAsync(request, cancellationToken);
+        return ParseProjectsInternalAsync(request, cancellationToken);
     }
 
     /// <inheritdoc />
-    public Task<string[]> DiscoverTargetFrameworksAsync(string solutionFilePath, string[] regexToInclude, string[] regexToExclude,
+    public async Task<string[]> DiscoverTargetFrameworksAsync(string solutionFilePath, string[] regexToInclude, string[] regexToExclude,
         CancellationToken cancellationToken)
     {
-        return _solutionParser.DiscoverTargetFrameworksAsync(solutionFilePath, regexToInclude, regexToExclude, cancellationToken);
+        var filteredProjects = await GetFilteredProjectsAsync(solutionFilePath, regexToInclude, regexToExclude, cancellationToken)
+            .ConfigureAwait(false);
+
+        return await _solutionParser
+            .DiscoverTargetFrameworksAsync(filteredProjects.IncludedProjects, cancellationToken)
+            .ConfigureAwait(false);
     }
 
-    private static string GetSolutionExtension(string solutionFilePath)
+    private async Task<SolutionProject[]> ParseProjectsInternalAsync(SolutionParseRequest request, CancellationToken cancellationToken)
     {
-        return Path.GetExtension(solutionFilePath);
+        var filteredProjects = await GetFilteredProjectsAsync(request.SolutionFilePath, request.RegexToInclude, request.RegexToExclude, cancellationToken)
+            .ConfigureAwait(false);
+
+        return _solutionParser.BuildParsedProjects(request, filteredProjects.IncludedProjects);
     }
 
-    private static Dictionary<string, ISolutionProjectResolver> CreateResolvers()
+    private async Task<FilteredSolutionProjects> GetFilteredProjectsAsync(string solutionFilePath, string[] regexToInclude, string[] regexToExclude,
+        CancellationToken cancellationToken)
     {
-        return new Dictionary<string, ISolutionProjectResolver>(StringComparer.OrdinalIgnoreCase)
+        var normalizedSolutionPath = Path.GetFullPath(solutionFilePath);
+        var discoveryKey = CreateDiscoveryKey(normalizedSolutionPath, regexToInclude, regexToExclude);
+
+        if (_cachedFilteredProjects is not null && string.Equals(_cachedDiscoveryKey, discoveryKey, StringComparison.Ordinal))
         {
-            [".sln"] = new SlnSolutionProjectResolver(),
-            [".slnx"] = new SlnxSolutionProjectResolver()
-        };
+            return _cachedFilteredProjects;
+        }
+
+        var filteredProjects = await _solutionParser
+            .DiscoverProjectsAsync(normalizedSolutionPath, regexToInclude, regexToExclude, cancellationToken)
+            .ConfigureAwait(false);
+
+        _cachedDiscoveryKey = discoveryKey;
+        _cachedFilteredProjects = filteredProjects;
+
+        return filteredProjects;
+    }
+
+    private static string CreateDiscoveryKey(string solutionFilePath, string[] regexToInclude, string[] regexToExclude)
+    {
+        return string.Join("|", solutionFilePath, string.Join(";", regexToInclude), string.Join(";", regexToExclude));
     }
 }

@@ -143,7 +143,7 @@ public sealed class DependencyGenerator
                 _logger.LogError(
                     "No projects matched the configured filters for target framework {TargetFramework}",
                     targetFramework);
-                    
+
                 continue;
             }
 
@@ -202,34 +202,47 @@ public sealed class DependencyGenerator
         }
     }
 
-    private async Task ExportAsIndividualAsync(DependencyGeneratorConfig configuration, string targetFramework, string exportPath, IDictionary<string, SolutionProject> solutionProjects,
-        IDiagramRenderer[] renderers, CancellationToken cancellationToken)
+    private static async Task ExportAsIndividualAsync(DependencyGeneratorConfig configuration, string targetFramework,
+        string exportPath, IDictionary<string, SolutionProject> solutionProjects, IDiagramRenderer[] renderers,
+        CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
         var includeDependencies = configuration.Projects.Individual.IncludeDependencies;
         var transitiveDepth = configuration.Projects.Individual.TransitiveDepth;
 
-        foreach (var scopedProject in solutionProjects.Values)
+        foreach (var renderer in renderers)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var packagesWithMultipleVersions = GetDeepOrderedDistinctPackageDependencies(scopedProject, solutionProjects, kvp => kvp.Count() > 1)
-                .ToDictionary(kvp => kvp.Key, kvp => GetDiagramPackageGroupId(kvp.Key));
+            var rendererExportPath = Path.Combine(exportPath, renderer.FileExtension);
 
-            var model = BuildGraphModel([scopedProject], solutionProjects, includeDependencies, transitiveDepth, packagesWithMultipleVersions);
+            Directory.CreateDirectory(rendererExportPath);
 
-            foreach (var renderer in renderers)
+            if (configuration.Export.ClearContents)
             {
+                ClearFolder(rendererExportPath);
+            }
+
+            foreach (var scopedProject in solutionProjects.Values)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                var packagesWithMultipleVersions = GetDeepOrderedDistinctPackageDependencies(scopedProject, solutionProjects, kvp => kvp.Count() > 1)
+                    .ToDictionary(kvp => kvp.Key, kvp => GetDiagramPackageGroupId(kvp.Key));
+
+                var model = BuildGraphModel([scopedProject], solutionProjects, includeDependencies, transitiveDepth, packagesWithMultipleVersions);
+
                 await renderer
-                    .CreateDiagramArtifactsAsync(targetFramework, exportPath, scopedProject.Name, model, configuration.Export.ImageFormats, cancellationToken)
+                    .CreateDiagramArtifactsAsync(targetFramework, rendererExportPath, scopedProject.Name, model, configuration.Export.ImageFormats, cancellationToken)
                     .ConfigureAwait(false);
             }
         }
     }
 
-    private async Task ExportAsAllAsync(DependencyGeneratorConfig configuration, string targetFramework, string exportPath, IDictionary<string, SolutionProject> solutionProjects,
-        IDiagramRenderer[] renderers, CancellationToken cancellationToken)
+    private static async Task ExportAsAllAsync(DependencyGeneratorConfig configuration, string targetFramework,
+        string exportPath, IDictionary<string, SolutionProject> solutionProjects, IDiagramRenderer[] renderers,
+        CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -251,9 +264,10 @@ public sealed class DependencyGenerator
         foreach (var renderer in renderers)
         {
             var projectScope = $"{configuration.Diagram.GroupName}-All";
+            var rendererExportPath = Path.Combine(exportPath, renderer.FileExtension);
 
             await renderer
-                .CreateDiagramArtifactsAsync(targetFramework, exportPath, projectScope, model, configuration.Export.ImageFormats, cancellationToken)
+                .CreateDiagramArtifactsAsync(targetFramework, rendererExportPath, projectScope, model, configuration.Export.ImageFormats, cancellationToken)
                 .ConfigureAwait(false);
         }
     }
@@ -566,8 +580,8 @@ public sealed class DependencyGenerator
         }
     }
 
-    private async Task LogProjectDiscoveryAsync(string solutionPath, string[] regexToInclude,
-        string[] regexToExclude, CancellationToken cancellationToken)
+    private async Task LogProjectDiscoveryAsync(string solutionPath, string[] regexToInclude, string[] regexToExclude,
+        CancellationToken cancellationToken)
     {
         var result = await _projectDiscovery
             .DiscoverProjectsAsync(solutionPath, regexToInclude, regexToExclude, cancellationToken)

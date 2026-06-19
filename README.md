@@ -166,8 +166,9 @@ Specifies diagram options that determine how the diagram will be styled.
 
 Specifies export path and image format options.
 
-- **ClearContents**: When True, clears the contents of the folder that combines `RootPath` and the target framework
-  being processed.
+- **ClearContents**: When True, clears the target framework output folder and the diagram-format sub-folders for
+  the configured formats only (for example `d2/` and/or `mmd/`). Sub-folders for formats that are not configured
+  are not cleared.
 - **RootPath**: The relative or fully-qualified export root path for the generated diagram files and images.
   A sub-folder will be created for each target framework processed, and then per diagram renderer.
 - Generated diagram and image file names use normalized file-safe base names (for example, `My Group-All` becomes `my-group-all`).

@@ -7,6 +7,72 @@ namespace SlnDependencyDiagramGenerator.Tests.Integration.Parser;
 
 public class ParserScenariosFixture
 {
+    public class DiscoverProjects : ParserScenariosFixture
+    {
+        [Fact]
+        public async Task Should_Classify_Projects_When_Exclude_Regex_Removes_One_Project()
+        {
+            // Baseline projects (Exclusions.slnx): LibA, LibB, LibExcluded.
+            // Include regex (^.*\.csproj$) keeps: LibA, LibB, LibExcluded.
+            // Exclude regex (^LibExcluded$) removes: LibExcluded.
+            string[] includeRegex = [@"^.*\.csproj$"];
+            string[] excludeRegex = [@"^LibExcluded$"];
+
+            var discovery = await IntegrationTestHarness.DiscoverFixtureProjectsAsync(
+                fixtureName: "Exclusions",
+                extension: ".slnx",
+                regexToInclude: includeRegex,
+                regexToExclude: excludeRegex);
+
+            discovery.AllProjectPaths.Select(Path.GetFileNameWithoutExtension).OrderBy(name => name).ShouldBe(["LibA", "LibB", "LibExcluded"]);
+            discovery.IncludedProjectPaths.Select(Path.GetFileNameWithoutExtension).OrderBy(name => name).ShouldBe(["LibA", "LibB"]);
+            discovery.ExcludedProjectPaths.Select(Path.GetFileNameWithoutExtension).OrderBy(name => name).ShouldBe(["LibExcluded"]);
+            discovery.ImplicitlyExcludedProjectPaths.ShouldBeEmpty();
+        }
+
+        [Fact]
+        public async Task Should_Classify_Projects_When_Include_Regex_Selects_Single_Project()
+        {
+            // Baseline projects (Basic.slnx): AppConsole, LibA, LibB.
+            // Include regex (^LibA$) keeps: LibA.
+            // Exclude regex (none) removes: nothing.
+            string[] includeRegex = [@"^LibA$"];
+            string[] excludeRegex = [];
+
+            var discovery = await IntegrationTestHarness.DiscoverFixtureProjectsAsync(
+                fixtureName: "Basic",
+                extension: ".slnx",
+                regexToInclude: includeRegex,
+                regexToExclude: excludeRegex);
+
+            discovery.AllProjectPaths.Select(Path.GetFileNameWithoutExtension).OrderBy(name => name).ShouldBe(["AppConsole", "LibA", "LibB"]);
+            discovery.IncludedProjectPaths.Select(Path.GetFileNameWithoutExtension).OrderBy(name => name).ShouldBe(["LibA"]);
+            discovery.ExcludedProjectPaths.ShouldBeEmpty();
+            discovery.ImplicitlyExcludedProjectPaths.Select(Path.GetFileNameWithoutExtension).OrderBy(name => name).ShouldBe(["AppConsole", "LibB"]);
+        }
+
+        [Fact]
+        public async Task Should_Classify_Projects_When_Include_And_Exclude_Regexes_Both_Apply()
+        {
+            // Baseline projects (Basic.slnx): AppConsole, LibA, LibB.
+            // Include regex (^Lib.*$) keeps: LibA, LibB.
+            // Exclude regex (^LibB$) removes: LibB.
+            string[] includeRegex = [@"^Lib.*$"];
+            string[] excludeRegex = [@"^LibB$"];
+
+            var discovery = await IntegrationTestHarness.DiscoverFixtureProjectsAsync(
+                fixtureName: "Basic",
+                extension: ".slnx",
+                regexToInclude: includeRegex,
+                regexToExclude: excludeRegex);
+
+            discovery.AllProjectPaths.Select(Path.GetFileNameWithoutExtension).OrderBy(name => name).ShouldBe(["AppConsole", "LibA", "LibB"]);
+            discovery.IncludedProjectPaths.Select(Path.GetFileNameWithoutExtension).OrderBy(name => name).ShouldBe(["LibA"]);
+            discovery.ExcludedProjectPaths.Select(Path.GetFileNameWithoutExtension).OrderBy(name => name).ShouldBe(["LibB"]);
+            discovery.ImplicitlyExcludedProjectPaths.Select(Path.GetFileNameWithoutExtension).OrderBy(name => name).ShouldBe(["AppConsole"]);
+        }
+    }
+
     public class DiscoverTargetFrameworks : ParserScenariosFixture
     {
         [Fact]

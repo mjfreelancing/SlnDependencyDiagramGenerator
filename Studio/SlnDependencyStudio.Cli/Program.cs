@@ -5,6 +5,7 @@ using Serilog;
 using Serilog.Sinks.SystemConsole.Themes;
 using SlnDependencyDiagramGenerator.Extensions;
 using SlnDependencyStudio.Cli;
+using SlnDependencyStudio.Shared.Extensions;
 using SlnDependencyStudio.Shared.Logging;
 
 await GenericHost
@@ -13,6 +14,7 @@ await GenericHost
     {
         services.AddScoped<ConfigLoader>();
         services.AddSlnDependencyGenerator();
+        services.AddSlnDependency();
     })
     .UseStudioSerilog((_, configuration) =>
     {

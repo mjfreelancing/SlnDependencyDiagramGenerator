@@ -28,7 +28,7 @@ internal interface IDiagramRenderer
     /// Renders and writes the diagram file, and optionally exports images.
     /// </summary>
     /// <param name="targetFramework">The target framework being processed.</param>
-    /// <param name="exportPath">The framework-specific export root path.</param>
+    /// <param name="exportPath">The framework/renderer specific export path (for example, .../net10.0/d2).</param>
     /// <param name="projectScope">The current project scope name (individual project or grouped-all scope).</param>
     /// <param name="model">The resolved dependency graph model.</param>
     /// <param name="imageFormats">The optional image formats to export.</param>

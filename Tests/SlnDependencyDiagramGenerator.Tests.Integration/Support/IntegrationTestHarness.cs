@@ -247,6 +247,15 @@ internal static class IntegrationTestHarness
         return await discovery.DiscoverTargetFrameworksAsync(solutionPath, regexToInclude, regexToExclude, CancellationToken.None);
     }
 
+    public static async Task<ProjectDiscoveryResult> DiscoverFixtureProjectsAsync(string fixtureName, string extension,
+        string[] regexToInclude, string[] regexToExclude)
+    {
+        var discovery = new ProjectDiscoveryService();
+        var solutionPath = GetFixtureSolutionPath(fixtureName, extension);
+
+        return await discovery.DiscoverProjectsAsync(solutionPath, regexToInclude, regexToExclude, CancellationToken.None);
+    }
+
     public static DisposableTempDirectory CreateTempDirectory(string name)
     {
         return new DisposableTempDirectory(name);

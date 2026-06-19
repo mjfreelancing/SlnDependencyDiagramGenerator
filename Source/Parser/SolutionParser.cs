@@ -57,12 +57,29 @@ internal sealed partial class SolutionParser
 
         var projects = await FilterAndOrderProjectsAsync(solutionFilePath, regexToInclude, regexToExclude, cancellationToken).ConfigureAwait(false);
 
-        return [.. projects
+        return await DiscoverTargetFrameworksAsync(projects, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Discovers target frameworks for an already filtered set of projects.
+    /// </summary>
+    /// <param name="projects">The pre-filtered projects.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>
+    /// A distinct, ordered list of base target frameworks (for example, <c>net10.0</c>).
+    /// </returns>
+    internal Task<string[]> DiscoverTargetFrameworksAsync(IReadOnlyList<SolutionProjectDescriptor> projects, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        string[] targetFrameworks = [.. projects
             .SelectMany(project => _assetReader.GetTargetFrameworks(project.AbsolutePath))
             .Select(targetFramework => targetFramework.Split('-')[0])      // strip platform suffix (e.g. net10.0-windows10.0.19041 -> net10.0)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(TfmSortVersion)
             .ThenBy(targetFramework => targetFramework, StringComparer.OrdinalIgnoreCase)];
+
+        return Task.FromResult(targetFrameworks);
     }
 
     /// <summary>
@@ -80,14 +97,56 @@ internal sealed partial class SolutionParser
 
         var solutionFilePath = Path.GetFullPath(request.SolutionFilePath);
 
+        var projects = await FilterAndOrderProjectsAsync(solutionFilePath, request.RegexToInclude, request.RegexToExclude, cancellationToken).ConfigureAwait(false);
+
+        return BuildParsedProjects(request, projects);
+    }
+
+    /// <summary>
+    /// Builds parsed project models from an already filtered set for the requested target framework.
+    /// </summary>
+    /// <param name="request">The parse request parameters.</param>
+    /// <param name="projects">The pre-filtered projects.</param>
+    /// <returns>
+    /// The built project models for the requested target framework.
+    /// </returns>
+    internal SolutionProject[] BuildParsedProjects(SolutionParseRequest request, IReadOnlyList<SolutionProjectDescriptor> projects)
+    {
         var excludeSet = new HashSet<string>(request.ExcludePackages, StringComparer.OrdinalIgnoreCase);
         var excludeFrameworkSet = new HashSet<string>(request.ExcludeFrameworks, StringComparer.OrdinalIgnoreCase);
 
-        var projects = await FilterAndOrderProjectsAsync(solutionFilePath, request.RegexToInclude, request.RegexToExclude, cancellationToken).ConfigureAwait(false);
-
         return [.. projects
             .Where(project => _assetReader.HasTargetFramework(project.AbsolutePath, request.TargetFramework))
-            .Select(project => BuildSolutionProject(project, request.TargetFramework, request.MaxTransitiveDepth, excludeSet, excludeFrameworkSet))];
+            .Select(project => BuildSolutionProject(project, request.TargetFramework, request.MaxTransitiveDepth, excludeSet, excludeFrameworkSet))
+            .OrderBy(project => project.Name)];
+    }
+
+    /// <summary>
+    /// Discovers and classifies all projects for the supplied regex filters.
+    /// </summary>
+    /// <param name="solutionFilePath">The solution path.</param>
+    /// <param name="regexToInclude">Regex patterns used to include projects.</param>
+    /// <param name="regexToExclude">Regex patterns used to exclude projects.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>
+    /// The full filtered classification used by discovery, framework detection, and parsing.
+    /// </returns>
+    internal async Task<FilteredSolutionProjects> DiscoverProjectsAsync(string solutionFilePath, string[] regexToInclude, string[] regexToExclude,
+        CancellationToken cancellationToken)
+    {
+        solutionFilePath = Path.GetFullPath(solutionFilePath);
+
+        // Resolve all solution projects once so include/exclude evaluation runs against the same snapshot.
+        var solutionProjects = await GetSolutionProjectsAsync(solutionFilePath, cancellationToken).ConfigureAwait(false);
+
+        // Relative-path matching is performed from the solution directory because solution entries are typically relative.
+        var solutionDirectory = Path.GetDirectoryName(solutionFilePath) ?? string.Empty;
+
+        // Compile each configured pattern once up-front to avoid per-project regex construction.
+        var includeRegexes = regexToInclude.SelectToArray(regex => new Regex(regex));
+        var excludeRegexes = regexToExclude.SelectToArray(regex => new Regex(regex));
+
+        return ClassifyProjects(solutionProjects, solutionDirectory, includeRegexes, excludeRegexes);
     }
 
     /// <summary>
@@ -120,55 +179,73 @@ internal sealed partial class SolutionParser
     private async Task<IReadOnlyList<SolutionProjectDescriptor>> FilterAndOrderProjectsAsync(string solutionFilePath, string[] regexToInclude,
         string[] regexToExclude, CancellationToken cancellationToken)
     {
-        // Resolve all solution projects once so include/exclude evaluation runs against the same snapshot.
-        var solutionProjects = await GetSolutionProjectsAsync(solutionFilePath, cancellationToken).ConfigureAwait(false);
+        var filteredProjects = await DiscoverProjectsAsync(solutionFilePath, regexToInclude, regexToExclude, cancellationToken).ConfigureAwait(false);
 
-        // Relative-path matching is performed from the solution directory because solution entries are typically relative.
-        var solutionDirectory = Path.GetDirectoryName(solutionFilePath) ?? string.Empty;
-
-        // Compile each configured pattern once up-front to avoid per-project regex construction.
-        var includeRegexes = regexToInclude.SelectToArray(regex => new Regex(regex));
-        var excludeRegexes = regexToExclude.SelectToArray(regex => new Regex(regex));
-
-        return [.. solutionProjects
-            .Where(project =>
-            {
-                // Include is the first gate: if no include pattern matches, the project is rejected immediately.
-                var include = IsMatch(includeRegexes, solutionDirectory, project);
-
-                // Fast-path when include failed or there are no excludes configured.
-                if (!include || excludeRegexes.Length == 0)
-                {
-                    return include;
-                }
-
-                // Exclude is applied only after include succeeds; any exclude match removes the project.
-                return !IsMatch(excludeRegexes, solutionDirectory, project);
-            })
+        return [.. filteredProjects.IncludedProjects
             // Deterministic ordering keeps output stable across runs and simplifies testing.
             .OrderBy(item => item.ProjectName)];
+    }
 
-        static bool IsMatch(Regex[] regexes, string solutionDirectory, SolutionProjectDescriptor project)
+    private static FilteredSolutionProjects ClassifyProjects(IReadOnlyList<SolutionProjectDescriptor> solutionProjects, string solutionDirectory,
+        Regex[] includeRegexes, Regex[] excludeRegexes)
+    {
+        var included = new List<SolutionProjectDescriptor>();
+        var excluded = new List<SolutionProjectDescriptor>();
+        var implicitlyExcluded = new List<SolutionProjectDescriptor>();
+
+        foreach (var project in solutionProjects)
         {
-            var absolutePath = project.AbsolutePath;
-            var relativePath = Path.GetRelativePath(solutionDirectory, absolutePath);
-            var fileName = Path.GetFileName(absolutePath);
+            // Include is the first gate: if no include pattern matches, the project is rejected immediately.
+            var include = IsMatch(includeRegexes, solutionDirectory, project);
 
-            // Match against multiple candidate strings so callers can target absolute paths,
-            // normalized paths, relative paths, file names, or solution project names.
-            var candidates = new[]
+            if (!include)
             {
-                absolutePath,
-                absolutePath.Replace('\\', '/'),
-                relativePath,
-                relativePath.Replace('\\', '/'),
-                fileName,
-                project.ProjectName
-            };
+                implicitlyExcluded.Add(project);
+                continue;
+            }
 
-            // Any regex can match any candidate: arrays behave as OR sets.
-            return regexes.Any(regex => candidates.Any(candidate => regex.IsMatch(candidate)));
+            // Exclude is applied only after include succeeds; any exclude match removes the project.
+            var isExcluded = excludeRegexes.Length > 0 && IsMatch(excludeRegexes, solutionDirectory, project);
+
+            if (isExcluded)
+            {
+                excluded.Add(project);
+            }
+            else
+            {
+                included.Add(project);
+            }
         }
+
+        return new FilteredSolutionProjects
+        {
+            AllProjects = [.. solutionProjects],
+            IncludedProjects = [.. included],
+            ExcludedProjects = [.. excluded],
+            ImplicitlyExcludedProjects = [.. implicitlyExcluded]
+        };
+    }
+
+    private static bool IsMatch(Regex[] regexes, string solutionDirectory, SolutionProjectDescriptor project)
+    {
+        var absolutePath = project.AbsolutePath;
+        var relativePath = Path.GetRelativePath(solutionDirectory, absolutePath);
+        var fileName = Path.GetFileName(absolutePath);
+
+        // Match against multiple candidate strings so callers can target absolute paths,
+        // normalized paths, relative paths, file names, or solution project names.
+        var candidates = new[]
+        {
+            absolutePath,
+            absolutePath.Replace('\\', '/'),
+            relativePath,
+            relativePath.Replace('\\', '/'),
+            fileName,
+            project.ProjectName
+        };
+
+        // Any regex can match any candidate: arrays behave as OR sets.
+        return regexes.Any(regex => candidates.Any(candidate => regex.IsMatch(candidate)));
     }
 
     /// <summary>
