@@ -2,10 +2,10 @@
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
-namespace SlnDependencyStudio.Shared.Logging;
+namespace SlnDependencyStudio.Shared.Extensions;
 
 /// <summary>Host builder extensions for configuring Studio-wide Serilog logging.</summary>
-public static class StudioHostBuilderExtensions
+public static class HostBuilderExtensions
 {
     /// <summary>
     /// Configures Serilog with a rolling-file sink shared by all frontends.
