@@ -9,11 +9,11 @@ internal sealed class ConfigLoader
     /// <summary>Loads a generator config from a JSON file.</summary>
     /// <param name="configFilePath">The path to the configuration JSON file.</param>
     /// <returns>The deserialized and validated configuration.</returns>
+    /// <remarks>Currently used via DI rather than making this method static, but this may change.</remarks>
     public DependencyGeneratorConfig Load(string configFilePath)
     {
         var fullPath = Path.GetFullPath(configFilePath);
-        var directory = Path.GetDirectoryName(fullPath)
-            ?? throw new InvalidOperationException($"Cannot determine directory from path: {configFilePath}");
+        var directory = Path.GetDirectoryName(fullPath) ?? throw new InvalidOperationException($"Cannot determine directory from path: {configFilePath}");
         var fileName = Path.GetFileName(fullPath);
 
         var generatorConfig = new DependencyGeneratorConfig();

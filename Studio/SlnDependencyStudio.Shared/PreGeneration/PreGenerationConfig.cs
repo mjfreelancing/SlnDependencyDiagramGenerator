@@ -1,4 +1,4 @@
-namespace SlnDependencyStudio.Shared;
+namespace SlnDependencyStudio.Shared.PreGeneration;
 
 /// <summary>Configuration for an optional pre-generation command that executes before diagram generation starts.</summary>
 public sealed class PreGenerationConfig

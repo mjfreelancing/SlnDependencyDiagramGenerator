@@ -14,7 +14,7 @@ await GenericHost
     {
         services.AddScoped<ConfigLoader>();
         services.AddSlnDependencyGenerator();
-        services.AddSlnDependency();
+        services.AddSlnDependencyStudio();
     })
     .UseStudioSerilog((_, configuration) =>
     {

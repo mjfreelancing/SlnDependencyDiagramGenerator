@@ -10,7 +10,7 @@ public static class ServiceCollectionExtensions
     /// <summary>Registers all shared Sln Dependency Studio services with the service collection.</summary>
     /// <param name="services">The service collection.</param>
     /// <returns>The service collection, for chaining.</returns>
-    public static IServiceCollection AddSlnDependency(this IServiceCollection services)
+    public static IServiceCollection AddSlnDependencyStudio(this IServiceCollection services)
     {
         // Auto-register all classes implementing marker interfaces found in this assembly.
         services.AutoRegisterScoped<DependencyRegistrar, IStudioScopedDependency>(

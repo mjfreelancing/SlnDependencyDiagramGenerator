@@ -4,7 +4,7 @@ namespace SlnDependencyStudio.Shared.Serialization;
 
 /// <summary>Handles JSON serialization and deserialization of <see cref="DependencyProjectDocument"/>,
 /// including schema versioning, forward-compatible unknown field handling, and migration between schema versions.</summary>
-public sealed class DependencyProjectSerializer
+internal sealed class DependencyProjectSerializer
 {
     /// <summary>The current schema version of the document format.</summary>
     public const int CurrentSchemaVersion = 1;

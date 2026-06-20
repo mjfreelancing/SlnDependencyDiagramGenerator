@@ -1,9 +1,9 @@
-﻿using SlnDependencyDiagramGenerator.Config;
+﻿using Shouldly;
+using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyStudio.Shared;
+using SlnDependencyStudio.Shared.PreGeneration;
 using SlnDependencyStudio.Shared.Serialization;
-using Shouldly;
 using System;
-using System.Collections.Generic;
 
 namespace SlnDependencyDiagramGenerator.Tests.Unit.Studio.Serialization;
 

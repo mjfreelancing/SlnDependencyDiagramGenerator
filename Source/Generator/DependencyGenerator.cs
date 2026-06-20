@@ -417,7 +417,7 @@ public sealed class DependencyGenerator
             .WriteAllTextAsync(filename, content, cancellationToken)
             .ConfigureAwait(false);
 
-        _logger.LogInformation("Export complete.");
+        _logger.LogInformation("Export complete");
     }
 
     private static string GetProjectName(ProjectReference projectReference)

@@ -1,5 +1,5 @@
 ﻿using SlnDependencyDiagramGenerator.Config;
-using System.Collections.Generic;
+using SlnDependencyStudio.Shared.PreGeneration;
 using System.Text.Json.Serialization;
 
 namespace SlnDependencyStudio.Shared;

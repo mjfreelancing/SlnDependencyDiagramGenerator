@@ -13,7 +13,7 @@ public class StudioServiceCollectionExtensionsFixture
     {
         var services = new ServiceCollection();
         services.AddSingleton(new DependencyGenerator());
-        services.AddSlnDependency();
+        services.AddSlnDependencyStudio();
 
         var provider = services.BuildServiceProvider();
 
