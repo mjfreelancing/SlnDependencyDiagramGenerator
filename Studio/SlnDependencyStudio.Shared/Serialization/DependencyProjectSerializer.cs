@@ -1,10 +1,11 @@
 ﻿using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace SlnDependencyStudio.Shared.Serialization;
 
 /// <summary>Handles JSON serialization and deserialization of <see cref="DependencyProjectDocument"/>,
 /// including schema versioning, forward-compatible unknown field handling, and migration between schema versions.</summary>
-internal sealed class DependencyProjectSerializer
+internal sealed class DependencyProjectSerializer : IDependencyProjectSerializer
 {
     /// <summary>The current schema version of the document format.</summary>
     public const int CurrentSchemaVersion = 1;
@@ -21,7 +22,8 @@ internal sealed class DependencyProjectSerializer
     private static readonly JsonSerializerOptions Options = new()
     {
         WriteIndented = true,
-        PropertyNameCaseInsensitive = true
+        PropertyNameCaseInsensitive = true,
+        Converters = { new JsonStringEnumConverter() }
     };
 
     /// <summary>Serializes a document to a JSON string.</summary>

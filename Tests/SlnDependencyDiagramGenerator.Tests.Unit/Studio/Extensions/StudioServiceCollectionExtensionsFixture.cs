@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
-using SlnDependencyDiagramGenerator.Generator;
+using SlnDependencyDiagramGenerator.Extensions;
 using SlnDependencyStudio.Shared.DependencyInjection;
 using SlnDependencyStudio.Shared.Extensions;
 
@@ -12,7 +12,7 @@ public class StudioServiceCollectionExtensionsFixture
     public void Should_Not_Register_Marker_Interface_As_Service()
     {
         var services = new ServiceCollection();
-        services.AddSingleton(new DependencyGenerator());
+        services.AddSlnDependencyGenerator();
         services.AddSlnDependencyStudio();
 
         var provider = services.BuildServiceProvider();

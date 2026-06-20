@@ -1,9 +1,8 @@
-﻿using AllOverIt.Logging;
-using NSubstitute;
+﻿using Microsoft.Extensions.DependencyInjection;
 using SlnDependencyDiagramGenerator.Config;
+using SlnDependencyDiagramGenerator.Extensions;
 using SlnDependencyDiagramGenerator.Generator;
 using SlnDependencyDiagramGenerator.Generator.Discovery;
-using SlnDependencyDiagramGenerator.Generator.ToolDetection;
 using SlnDependencyDiagramGenerator.Parser;
 using System.Threading;
 
@@ -72,12 +71,25 @@ internal static class IntegrationTestHarness
         };
     }
 
+    public static DependencyGenerator CreateGenerator()
+    {
+        var services = new ServiceCollection();
+
+        services.AddLogging();
+        services.AddSlnDependencyGenerator();
+
+        var provider = services.BuildServiceProvider();
+
+        return provider.GetRequiredService<DependencyGenerator>();
+    }
+
     public static async Task<ScenarioRunResult> RunGeneratorAsync(GeneratorScenarioOptions options)
     {
         var tempDirectory = CreateTempDirectory(options.FixtureName.ToLowerInvariant());
         var solutionPath = GetFixtureSolutionPath(options.FixtureName, options.SolutionExtension);
         var configuration = CreateConfig(solutionPath, tempDirectory.DirectoryPath, options);
-        var generator = new DependencyGenerator();
+
+        var generator = CreateGenerator();
 
         await generator.CreateDiagramsAsync(configuration, CancellationToken.None);
 

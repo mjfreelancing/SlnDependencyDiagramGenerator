@@ -78,7 +78,7 @@ public class FolderStructureScenariosFixture
 
             var solutionPath = IntegrationTestHarness.GetFixtureSolutionPath("Basic", ".slnx");
             var firstRunConfig = IntegrationTestHarness.CreateConfig(solutionPath, tempDirectory.DirectoryPath, options);
-            var firstRunGenerator = new DependencyGenerator();
+            var firstRunGenerator = IntegrationTestHarness.CreateGenerator();
 
             await firstRunGenerator.CreateDiagramsAsync(firstRunConfig, CancellationToken.None);
 
@@ -86,7 +86,7 @@ public class FolderStructureScenariosFixture
             await File.WriteAllTextAsync(staleFilePath, "stale");
 
             var secondRunConfig = IntegrationTestHarness.CreateConfig(solutionPath, tempDirectory.DirectoryPath, options);
-            var secondRunGenerator = new DependencyGenerator();
+            var secondRunGenerator = IntegrationTestHarness.CreateGenerator();
 
             await secondRunGenerator.CreateDiagramsAsync(secondRunConfig, CancellationToken.None);
 

@@ -1,13 +1,22 @@
 ﻿using FluentValidation;
-using SlnDependencyDiagramGenerator.Config;
-using SlnDependencyDiagramGenerator.Generator;
+using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
+using SlnDependencyDiagramGenerator.Config;
+using SlnDependencyDiagramGenerator.Extensions;
+using SlnDependencyDiagramGenerator.Generator;
 using System.IO;
 
 namespace SlnDependencyDiagramGenerator.Tests.Unit.Config;
 
 public class DependencyGeneratorConfigFixture
 {
+    private readonly DependencyGenerator _generator;
+
+    public DependencyGeneratorConfigFixture()
+    {
+        _generator = CreateGenerator();
+    }
+
     [Fact]
     public void Should_Not_Throw_When_Config_Is_Valid()
     {
@@ -40,7 +49,7 @@ public class DependencyGeneratorConfigFixture
                 Export = new GeneratorExportOptions { RootPath = ".\\output" }
             };
 
-            Should.NotThrow(() => DependencyGenerator.ValidateConfiguration(config));
+            Should.NotThrow(() => _generator.ValidateConfiguration(config));
         }
         finally
         {
@@ -63,8 +72,7 @@ public class DependencyGeneratorConfigFixture
             }
         };
 
-        var exception = Should.Throw<ValidationException>(
-            () => DependencyGenerator.ValidateConfiguration(config));
+        var exception = Should.Throw<ValidationException>(() => _generator.ValidateConfiguration(config));
 
         exception.Errors.ShouldContain(error => error.ErrorMessage.Contains("SolutionPath"));
     }
@@ -81,8 +89,7 @@ public class DependencyGeneratorConfigFixture
             }
         };
 
-        var exception = Should.Throw<ValidationException>(
-            () => DependencyGenerator.ValidateConfiguration(config));
+        var exception = Should.Throw<ValidationException>(() => _generator.ValidateConfiguration(config));
 
         exception.Errors.ShouldContain(error =>
             error.ErrorMessage.Contains(".sln") || error.ErrorMessage.Contains(".slnx"));
@@ -120,8 +127,7 @@ public class DependencyGeneratorConfigFixture
                 Export = new GeneratorExportOptions { RootPath = ".\\output" }
             };
 
-            var exception = Should.Throw<ValidationException>(
-                () => DependencyGenerator.ValidateConfiguration(config));
+            var exception = Should.Throw<ValidationException>(() => _generator.ValidateConfiguration(config));
 
             exception.Errors.ShouldContain(error =>
                 error.ErrorMessage.Contains("formats", System.StringComparison.OrdinalIgnoreCase));
@@ -133,5 +139,17 @@ public class DependencyGeneratorConfigFixture
                 File.Delete(tempSlnPath);
             }
         }
+    }
+
+    private static DependencyGenerator CreateGenerator()
+    {
+        var services = new ServiceCollection();
+
+        services.AddLogging();
+        services.AddSlnDependencyGenerator();
+
+        var provider = services.BuildServiceProvider();
+
+        return provider.GetRequiredService<DependencyGenerator>();
     }
 }

@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using AllOverIt.Validation.Extensions;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using SlnDependencyDiagramGenerator.Generator;
 using SlnDependencyDiagramGenerator.Generator.Discovery;
@@ -7,6 +8,7 @@ using SlnDependencyDiagramGenerator.Parser;
 using SlnDependencyDiagramGenerator.Renderers;
 using SlnDependencyDiagramGenerator.Renderers.D2;
 using SlnDependencyDiagramGenerator.Renderers.Mermaid;
+using SlnDependencyDiagramGenerator.Validators;
 
 namespace SlnDependencyDiagramGenerator.Extensions;
 
@@ -30,7 +32,10 @@ public static class ServiceCollectionExtensions
         // 7) Use TryAdd* to allow host-level overrides without duplicate registrations.
         // 8) Keep service lifetimes Scoped unless there is a proven reason to change.
 
-        // Internal plumbing (single implementation, no public abstraction required today).
+        // Internal plumbing
+        // - single implementation
+        // - no public abstraction required
+        // - does not participate in unit testing (but is integration tested)
         services.TryAddScoped<ProjectAssetReader>();
         services.TryAddScoped<SolutionParser>();
 
@@ -42,6 +47,11 @@ public static class ServiceCollectionExtensions
         // Renderer contract supports multiple implementations (D2, Mermaid).
         services.TryAddScoped<IDiagramRenderer, D2DiagramRenderer>();
         services.TryAddScoped<IDiagramRenderer, MermaidDiagramRenderer>();
+
+        services.AddValidationInvoker(validationRegistry =>
+        {
+            validationRegistry.AutoRegisterValidators<ValidationRegistrar>();
+        });
 
         return services;
     }

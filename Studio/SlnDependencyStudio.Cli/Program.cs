@@ -12,7 +12,6 @@ await GenericHost
     .CreateConsoleHostBuilder<App>(args)
     .ConfigureServices((context, services) =>
     {
-        services.AddScoped<ConfigLoader>();
         services.AddSlnDependencyGenerator();
         services.AddSlnDependencyStudio();
     })

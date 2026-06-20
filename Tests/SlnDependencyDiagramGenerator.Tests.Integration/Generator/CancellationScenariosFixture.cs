@@ -24,7 +24,7 @@ public class CancellationScenariosFixture
 
             var solutionPath = IntegrationTestHarness.GetFixtureSolutionPath("Basic", ".slnx");
             var configuration = IntegrationTestHarness.CreateConfig(solutionPath, tempDirectory.DirectoryPath, options);
-            var generator = new DependencyGenerator();
+            var generator = IntegrationTestHarness.CreateGenerator();
 
             using var cancellationTokenSource = new CancellationTokenSource();
             cancellationTokenSource.Cancel();

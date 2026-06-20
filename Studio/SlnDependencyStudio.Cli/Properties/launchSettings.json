@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "SlnDependencyStudio.Cli": {
+      "commandName": "Project",
+      "commandLineArgs": "validate --cf ..\\..\\..\\sample.sds",
+      //"commandLineArgs": "run --cf ..\\..\\..\\alloverit.sds"
+    }
+  }
+}

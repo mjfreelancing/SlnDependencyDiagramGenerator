@@ -2,10 +2,9 @@
 using AllOverIt.Extensions;
 using AllOverIt.IO;
 using AllOverIt.Patterns.Specification.Extensions;
-using AllOverIt.Validation.Extensions;
+using AllOverIt.Validation;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Generator.Discovery;
 using SlnDependencyDiagramGenerator.Generator.Nodes;
@@ -14,7 +13,6 @@ using SlnDependencyDiagramGenerator.Parser;
 using SlnDependencyDiagramGenerator.Renderers;
 using SlnDependencyDiagramGenerator.Renderers.D2;
 using SlnDependencyDiagramGenerator.Renderers.Mermaid;
-using SlnDependencyDiagramGenerator.Validators;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -44,25 +42,23 @@ public sealed class DependencyGenerator
 
     private readonly IProjectDiscoveryService _projectDiscovery;
     private readonly IToolDetectionService _toolDetection;
+    private readonly IValidationInvoker _validationInvoker;
     private readonly ILoggerFactory _loggerFactory;
     private readonly ILogger<DependencyGenerator> _logger;
 
     /// <summary>Initializes a new dependency generator instance with explicitly provided services (for DI).</summary>
     /// <param name="projectDiscovery">The project discovery service used for parsing solutions and resolving dependencies.</param>
     /// <param name="toolDetection">The tool detection service used for checking external CLI tool availability.</param>
+    /// <param name="validationInvoker">The validation invoker used to validate configuration before generation.</param>
     /// <param name="loggerFactory">The logger factory used to create loggers for the generator and renderers.</param>
-    public DependencyGenerator(IProjectDiscoveryService projectDiscovery, IToolDetectionService toolDetection, ILoggerFactory loggerFactory)
+    public DependencyGenerator(IProjectDiscoveryService projectDiscovery, IToolDetectionService toolDetection,
+        IValidationInvoker validationInvoker, ILoggerFactory loggerFactory)
     {
         _projectDiscovery = projectDiscovery.WhenNotNull();
         _toolDetection = toolDetection.WhenNotNull();
         _loggerFactory = loggerFactory.WhenNotNull();
+        _validationInvoker = validationInvoker.WhenNotNull(); ;
         _logger = loggerFactory.CreateLogger<DependencyGenerator>();
-    }
-
-    // For use with integration tests
-    internal DependencyGenerator()
-        : this(new ProjectDiscoveryService(), new ToolDetectionService(), NullLoggerFactory.Instance)
-    {
     }
 
     /// <summary>Generates dependency summaries, diagram files, and optional images for each discovered target framework.</summary>
@@ -73,7 +69,7 @@ public sealed class DependencyGenerator
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        AssertConfiguration(configuration);
+        ValidateConfiguration(configuration);
 
         var individualTransitiveDepth = configuration.Projects.Individual.Enabled
             ? configuration.Projects.Individual.TransitiveDepth
@@ -185,10 +181,9 @@ public sealed class DependencyGenerator
     /// <summary>Validates a <see cref="DependencyGeneratorConfig"/> and throws <see cref="FluentValidation.ValidationException"/>
     /// if any rules are violated.</summary>
     /// <param name="configuration">The configuration to validate.</param>
-    public static void ValidateConfiguration(DependencyGeneratorConfig configuration)
+    public void ValidateConfiguration(DependencyGeneratorConfig configuration)
     {
-        var validator = new DependencyGeneratorConfigValidator();
-        validator.ValidateAndThrow(configuration);
+        _validationInvoker.AssertValidation(configuration);
     }
 
     private static void ClearFolder(string exportPath)
@@ -650,10 +645,5 @@ public sealed class DependencyGenerator
         {
             _logger.LogInformation("    - {ProjectName}", Path.GetFileName(path));
         }
-    }
-
-    private static void AssertConfiguration(DependencyGeneratorConfig configuration)
-    {
-        ValidateConfiguration(configuration);
     }
 }
