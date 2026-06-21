@@ -67,11 +67,11 @@ internal sealed class DependencyProjectSerializer : IDependencyProjectSerializer
     }
 
     /// <summary>Loads and deserializes a document from a JSON file.</summary>
-    /// <param name="filePath">The source file path.</param>
+    /// <param name="configFilename">The configuration file path.</param>
     /// <returns>A task that resolves to the deserialized document.</returns>
-    public async Task<DependencyProjectDocument> DeserializeAsync(string filePath)
+    public async Task<DependencyProjectDocument> DeserializeAsync(string configFilename, CancellationToken cancellationToken)
     {
-        var json = await File.ReadAllTextAsync(filePath).ConfigureAwait(false);
+        var json = await File.ReadAllTextAsync(configFilename, cancellationToken).ConfigureAwait(false);
         return Deserialize(json);
     }
 

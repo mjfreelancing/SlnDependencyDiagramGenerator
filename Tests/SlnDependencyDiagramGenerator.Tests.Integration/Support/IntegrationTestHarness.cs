@@ -71,7 +71,7 @@ internal static class IntegrationTestHarness
         };
     }
 
-    public static DependencyGenerator CreateGenerator()
+    public static IDependencyGenerator CreateGenerator()
     {
         var services = new ServiceCollection();
 
@@ -80,7 +80,7 @@ internal static class IntegrationTestHarness
 
         var provider = services.BuildServiceProvider();
 
-        return provider.GetRequiredService<DependencyGenerator>();
+        return provider.GetRequiredService<IDependencyGenerator>();
     }
 
     public static async Task<ScenarioRunResult> RunGeneratorAsync(GeneratorScenarioOptions options)

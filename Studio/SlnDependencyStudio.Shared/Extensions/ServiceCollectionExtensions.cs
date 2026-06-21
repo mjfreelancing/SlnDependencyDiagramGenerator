@@ -20,8 +20,10 @@ public static class ServiceCollectionExtensions
         public IServiceCollection AddSlnDependencyStudio(IValidationRegistry validationRegistry)
         {
             // Auto-register all classes implementing marker interfaces found in this assembly.
-            services.AutoRegisterScoped<DependencyRegistrar, IStudioScopedDependency>(
-                config => config.Filter((serviceType, implementationType) => serviceType != typeof(IStudioScopedDependency)));
+            services.AutoRegisterScoped<DependencyRegistrar, IStudioScopedDependency>(config =>
+            {
+                config.Filter((serviceType, implementationType) => serviceType != typeof(IStudioScopedDependency));
+            });
 
             // Auto-register all validators found in this assembly.
             validationRegistry.AutoRegisterValidators<ValidationRegistrar>();

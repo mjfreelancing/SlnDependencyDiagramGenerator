@@ -36,7 +36,7 @@ namespace SlnDependencyDiagramGenerator.Generator;
 /// the full selected solution scope, with optional <c>svg</c>, <c>png</c>, and <c>pdf</c> image export.
 /// </para>
 /// </remarks>
-public sealed class DependencyGenerator
+public sealed class DependencyGenerator : IDependencyGenerator
 {
     private readonly record struct PackageVersion(string Name, string Version);
 
@@ -61,10 +61,13 @@ public sealed class DependencyGenerator
         _logger = loggerFactory.CreateLogger<DependencyGenerator>();
     }
 
-    /// <summary>Generates dependency summaries, diagram files, and optional images for each discovered target framework.</summary>
-    /// <param name="configuration">The dependency generator configuration options.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>A <see cref="Task"/> that completes when the diagram generation has completed.</returns>
+    /// <inheritdoc />
+    public void ValidateConfiguration(DependencyGeneratorConfig configuration)
+    {
+        _validationInvoker.AssertValidation(configuration);
+    }
+
+    /// <inheritdoc />
     public async Task CreateDiagramsAsync(DependencyGeneratorConfig configuration, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -176,14 +179,6 @@ public sealed class DependencyGenerator
                 await ExportAsAllAsync(configuration, targetFramework, exportPath, solutionProjects, renderers, cancellationToken).ConfigureAwait(false);
             }
         }
-    }
-
-    /// <summary>Validates a <see cref="DependencyGeneratorConfig"/> and throws <see cref="FluentValidation.ValidationException"/>
-    /// if any rules are violated.</summary>
-    /// <param name="configuration">The configuration to validate.</param>
-    public void ValidateConfiguration(DependencyGeneratorConfig configuration)
-    {
-        _validationInvoker.AssertValidation(configuration);
     }
 
     private static void ClearFolder(string exportPath)

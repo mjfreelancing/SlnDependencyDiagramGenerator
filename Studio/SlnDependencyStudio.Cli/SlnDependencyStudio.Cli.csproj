@@ -9,6 +9,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="SlnDependencyStudio.Cli.Tests.Unit" />
+    <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="System.CommandLine" Version="2.0.8" />
     <PackageReference Include="AllOverIt.GenericHost" Version="9.2.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.8" />

@@ -10,7 +10,7 @@ namespace SlnDependencyDiagramGenerator.Tests.Unit.Config;
 
 public class DependencyGeneratorConfigFixture
 {
-    private readonly DependencyGenerator _generator;
+    private readonly IDependencyGenerator _generator;
 
     public DependencyGeneratorConfigFixture()
     {
@@ -141,7 +141,7 @@ public class DependencyGeneratorConfigFixture
         }
     }
 
-    private static DependencyGenerator CreateGenerator()
+    private static IDependencyGenerator CreateGenerator()
     {
         var services = new ServiceCollection();
 
@@ -150,6 +150,6 @@ public class DependencyGeneratorConfigFixture
 
         var provider = services.BuildServiceProvider();
 
-        return provider.GetRequiredService<DependencyGenerator>();
+        return provider.GetRequiredService<IDependencyGenerator>();
     }
 }

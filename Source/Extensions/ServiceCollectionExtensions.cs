@@ -52,7 +52,7 @@ public static class ServiceCollectionExtensions
             // Public generator-facing boundaries (used by DependencyGenerator and candidate frontend consumers).
             services.AddScoped<IProjectDiscoveryService, ProjectDiscoveryService>();
             services.AddScoped<IToolDetectionService, ToolDetectionService>();
-            services.AddScoped<DependencyGenerator>();
+            services.AddScoped<IDependencyGenerator, DependencyGenerator>();
 
             // Renderer contract supports multiple implementations (D2, Mermaid).
             services.AddScoped<IDiagramRenderer, D2DiagramRenderer>();

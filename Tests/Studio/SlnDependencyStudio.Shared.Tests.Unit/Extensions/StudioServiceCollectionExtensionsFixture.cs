@@ -61,7 +61,7 @@ public class StudioServiceCollectionExtensionsFixture
         using var provider = CreateServiceProvider();
 
         using var scope = provider.CreateScope();
-        var generator = scope.ServiceProvider.GetService<DependencyGenerator>();
+        var generator = scope.ServiceProvider.GetService<IDependencyGenerator>();
 
         generator.ShouldNotBeNull();
     }

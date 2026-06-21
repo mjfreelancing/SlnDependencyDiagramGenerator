@@ -8,6 +8,7 @@ using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Exceptions;
 using SlnDependencyDiagramGenerator.Generator;
 using SlnDependencyStudio.Cli.Enumerations;
+using SlnDependencyStudio.Cli.Handlers.Validate;
 using SlnDependencyStudio.Shared.Config.Extensions;
 using SlnDependencyStudio.Shared.PreGeneration;
 using SlnDependencyStudio.Shared.Serialization;
@@ -20,24 +21,28 @@ namespace SlnDependencyStudio.Cli;
 /// <summary>CLI entry point that parses commands and delegates to services.</summary>
 internal sealed class App : ConsoleAppBase
 {
-    private readonly DependencyGenerator _generator;
+    private readonly IDependencyGenerator _generator;
     private readonly IDependencyProjectSerializer _serializer;
     private readonly IPreGenerationCommandRunner _preGenerationCommandRunner;
     private readonly IValidationInvoker _validationInvoker;
+    private readonly ICommandLineValidateHandler _validateHandler;
     private readonly ILogger<App> _logger;
 
     /// <summary>Initializes a new instance of <see cref="App"/>.</summary>
     /// <param name="generator">The dependency diagram generator.</param>
     /// <param name="serializer">The dependency project document serializer.</param>
     /// <param name="preGenerationCommandRunner">The pre-generation command runner.</param>
+    /// <param name="validationInvoker">The validation invoker for model validation.</param>
+    /// <param name="validateHandler">The validate command handler.</param>
     /// <param name="logger">The logger instance.</param>
-    public App(DependencyGenerator generator, IDependencyProjectSerializer serializer, IPreGenerationCommandRunner preGenerationCommandRunner,
-        IValidationInvoker validationInvoker, ILogger<App> logger)
+    public App(IDependencyGenerator generator, IDependencyProjectSerializer serializer, IPreGenerationCommandRunner preGenerationCommandRunner,
+        IValidationInvoker validationInvoker, ICommandLineValidateHandler validateHandler, ILogger<App> logger)
     {
         _generator = generator.WhenNotNull();
         _serializer = serializer.WhenNotNull();
         _preGenerationCommandRunner = preGenerationCommandRunner.WhenNotNull();
         _validationInvoker = validationInvoker.WhenNotNull();
+        _validateHandler = validateHandler.WhenNotNull();
         _logger = logger.WhenNotNull();
     }
 
@@ -91,7 +96,7 @@ internal sealed class App : ConsoleAppBase
         validateCommand.SetAction(async parseResult =>
         {
             var configFile = parseResult.GetValue(configFileOption)!;
-            await HandleValidate(configFile);
+            await HandleValidateAsync(configFile, cancellationToken);
         });
 
         // ── Root command ──────────────────────────────────────────────────
@@ -156,7 +161,7 @@ internal sealed class App : ConsoleAppBase
             // VALIDATION
 
             var configDirectory = GetConfigDirectory(configFilename);
-            var document = await _serializer.DeserializeAsync(configFilename);
+            var document = await _serializer.DeserializeAsync(configFilename, cancellationToken);
 
             ResolveRelativePaths(document.DiagramGenerator, configDirectory);
 
@@ -241,7 +246,7 @@ internal sealed class App : ConsoleAppBase
             _logger.LogError("Diagram generator failed: {Message}", exception.Message);
             ExitCode = StudioCliExitCode.DiagramGeneratorFailed.Value;
         }
-        catch (InvalidOperationException exception)
+        catch (DirectoryNotFoundException exception)
         {
             _logger.LogError("Failed to load dependency project file: {Message}", exception.Message);
             ExitCode = StudioCliExitCode.RunCommandFailed.Value;
@@ -253,41 +258,9 @@ internal sealed class App : ConsoleAppBase
         }
     }
 
-    private async Task HandleValidate(string configFilename)
+    private async Task HandleValidateAsync(string configFilename, CancellationToken cancellationToken)
     {
-        try
-        {
-            var configDirectory = GetConfigDirectory(configFilename);
-            var document = await _serializer.DeserializeAsync(configFilename);
-
-            ResolveRelativePaths(document.DiagramGenerator, configDirectory);
-
-            document.LogConfiguration(configFilename, _logger);
-
-
-            // Validate Pre-Generation Command settings.
-            var preGenConfigContext = new PreGenerationConfigContext { ConfigDirectory = configDirectory };
-            _validationInvoker.AssertValidation(document.PreGeneration, preGenConfigContext);
-
-            // Validate the main diagram generator configuration.
-            _generator.ValidateConfiguration(document.DiagramGenerator);
-
-
-
-            _logger.LogInformation("Configuration is valid.");
-        }
-        catch (ValidationException exception)
-        {
-            WriteValidationErrors(exception);
-        }
-        catch (FileNotFoundException exception)
-        {
-            _logger.LogError("File not found: {Message}", exception.Message);
-        }
-        catch (InvalidOperationException exception)
-        {
-            _logger.LogError("Failed to load dependency project file: {Message}", exception.Message);
-        }
+        ExitCode = await _validateHandler.HandleAsync(configFilename, cancellationToken);
     }
 
     private static string GetConfigDirectory(string configFilePath)
