@@ -10,12 +10,18 @@ using SlnDependencyStudio.Shared.Validators.Contexts;
 
 namespace SlnDependencyStudio.Cli.Handlers.Validate;
 
+/// <inheritdoc cref="ICommandLineValidateHandler"/>
 internal sealed class CommandLineValidateHandler : CommandLineHandlerBase, ICommandLineValidateHandler
 {
     private readonly IDependencyGenerator _generator;
     private readonly IValidationInvoker _validationInvoker;
     private readonly ILogger<CommandLineValidateHandler> _logger;
 
+    /// <summary>Initializes a new instance of <see cref="CommandLineValidateHandler"/>.</summary>
+    /// <param name="serializer">The dependency project document serializer.</param>
+    /// <param name="generator">The dependency diagram generator.</param>
+    /// <param name="validationInvoker">The validation invoker for model validation.</param>
+    /// <param name="logger">The logger instance.</param>
     public CommandLineValidateHandler(IDependencyProjectSerializer serializer, IDependencyGenerator generator,
         IValidationInvoker validationInvoker, ILogger<CommandLineValidateHandler> logger)
         : base(serializer, logger)
@@ -25,6 +31,7 @@ internal sealed class CommandLineValidateHandler : CommandLineHandlerBase, IComm
         _logger = logger.WhenNotNull();
     }
 
+    /// <inheritdoc />
     public override async Task<int> HandleAsync(string configFilename, CancellationToken cancellationToken)
     {
         try
@@ -48,15 +55,15 @@ internal sealed class CommandLineValidateHandler : CommandLineHandlerBase, IComm
 
             return 0;
         }
-        catch (Exception exception) when (exception is DirectoryNotFoundException or FileNotFoundException)
-        {
-            _logger.LogError("Could not load file: {Message}", exception.Message);
-            return StudioCliExitCode.ConfigFileNotFound.Value;
-        }
         catch (ValidationException exception)
         {
             WriteValidationErrors(exception);
             return StudioCliExitCode.ValidateCommandFailed.Value;
+        }
+        catch (Exception exception) when (exception is DirectoryNotFoundException or FileNotFoundException)
+        {
+            _logger.LogError("Could not load file: {Message}", exception.Message);
+            return StudioCliExitCode.ConfigFileNotFound.Value;
         }
     }
 }

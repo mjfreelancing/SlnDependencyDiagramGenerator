@@ -48,8 +48,7 @@ public class CommandLineValidateHandlerFixture
         var validationInvoker = Substitute.For<IValidationInvoker>();
         var logger = Substitute.For<ILogger<CommandLineValidateHandler>>();
 
-        var handler = new CommandLineValidateHandler(
-            serializer, dependencyGenerator, validationInvoker, logger);
+        var handler = new CommandLineValidateHandler(serializer, dependencyGenerator, validationInvoker, logger);
 
         var result = await handler.HandleAsync(@"X:\nonexistent\file.sds", CancellationToken.None);
 

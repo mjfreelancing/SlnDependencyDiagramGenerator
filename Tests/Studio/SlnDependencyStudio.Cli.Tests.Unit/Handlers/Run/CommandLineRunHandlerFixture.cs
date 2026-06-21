@@ -1,0 +1,281 @@
+using AllOverIt.Validation;
+using FluentValidation;
+using Microsoft.Extensions.Logging;
+using NSubstitute;
+using NSubstitute.ExceptionExtensions;
+using Shouldly;
+using SlnDependencyDiagramGenerator.Config;
+using SlnDependencyDiagramGenerator.Exceptions;
+using SlnDependencyDiagramGenerator.Generator;
+using SlnDependencyStudio.Cli.Enumerations;
+using SlnDependencyStudio.Cli.Handlers.Run;
+using SlnDependencyStudio.Shared.Config;
+using SlnDependencyStudio.Shared.PreGeneration;
+using SlnDependencyStudio.Shared.Serialization;
+
+namespace SlnDependencyStudio.Cli.Tests.Unit.Handlers.Run;
+
+public class CommandLineRunHandlerFixture
+{
+    [Fact]
+    public async Task Should_Return_Zero_When_All_Dependencies_Succeed()
+    {
+        var serializer = Substitute.For<IDependencyProjectSerializer>();
+
+        serializer
+            .DeserializeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(CreateValidDocument(preGenEnabled: false)));
+
+        var dependencyGenerator = Substitute.For<IDependencyGenerator>();
+        var preGenRunner = Substitute.For<IPreGenerationCommandRunner>();
+        var validationInvoker = Substitute.For<IValidationInvoker>();
+        var logger = Substitute.For<ILogger<CommandLineRunHandler>>();
+
+        var handler = new CommandLineRunHandler(serializer, dependencyGenerator, preGenRunner, validationInvoker, logger);
+
+        var result = await handler.HandleAsync(
+            Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None);
+
+        result.ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task Should_Return_Zero_When_PreGenerateCommand_Succeeds()
+    {
+        var serializer = Substitute.For<IDependencyProjectSerializer>();
+
+        serializer
+            .DeserializeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(CreateValidDocument(preGenEnabled: true)));
+
+        var dependencyGenerator = Substitute.For<IDependencyGenerator>();
+        var preGenRunner = Substitute.For<IPreGenerationCommandRunner>();
+
+        preGenRunner
+            .RunAsync(Arg.Any<PreGenerationConfig>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(new PreGenerationCommandResult
+            {
+                CommandAttempted = true,
+                Succeeded = true,
+                ExitCode = 0
+            }));
+
+        var validationInvoker = Substitute.For<IValidationInvoker>();
+        var logger = Substitute.For<ILogger<CommandLineRunHandler>>();
+
+        var handler = new CommandLineRunHandler(serializer, dependencyGenerator, preGenRunner, validationInvoker, logger);
+
+        var result = await handler.HandleAsync(
+            Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None);
+
+        result.ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task Should_Return_PreGenFailed_When_PreGenerateCommand_Fails_And_Continue_Disabled()
+    {
+        var serializer = Substitute.For<IDependencyProjectSerializer>();
+
+        serializer
+            .DeserializeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(CreateValidDocument(
+                preGenEnabled: true, continueOnFailure: false)));
+
+        var dependencyGenerator = Substitute.For<IDependencyGenerator>();
+        var preGenRunner = Substitute.For<IPreGenerationCommandRunner>();
+
+        preGenRunner
+            .RunAsync(Arg.Any<PreGenerationConfig>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(new PreGenerationCommandResult
+            {
+                CommandAttempted = true,
+                Succeeded = false,
+                ExitCode = 1,
+                ErrorMessage = "Command failed"
+            }));
+
+        var validationInvoker = Substitute.For<IValidationInvoker>();
+        var logger = Substitute.For<ILogger<CommandLineRunHandler>>();
+
+        var handler = new CommandLineRunHandler(serializer, dependencyGenerator, preGenRunner, validationInvoker, logger);
+
+        var result = await handler.HandleAsync(
+            Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None);
+
+        result.ShouldBe(StudioCliExitCode.PreGenerationCommandFailed.Value);
+    }
+
+    [Fact]
+    public async Task Should_Return_Zero_When_PreGenerateCommand_Fails_And_Continue_Enabled()
+    {
+        var serializer = Substitute.For<IDependencyProjectSerializer>();
+
+        serializer
+            .DeserializeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(CreateValidDocument(
+                preGenEnabled: true, continueOnFailure: true)));
+
+        var dependencyGenerator = Substitute.For<IDependencyGenerator>();
+        var preGenRunner = Substitute.For<IPreGenerationCommandRunner>();
+
+        preGenRunner
+            .RunAsync(Arg.Any<PreGenerationConfig>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(new PreGenerationCommandResult
+            {
+                CommandAttempted = true,
+                Succeeded = false,
+                ExitCode = 1,
+                ErrorMessage = "Command failed"
+            }));
+
+        var validationInvoker = Substitute.For<IValidationInvoker>();
+        var logger = Substitute.For<ILogger<CommandLineRunHandler>>();
+
+        var handler = new CommandLineRunHandler(serializer, dependencyGenerator, preGenRunner, validationInvoker, logger);
+
+        var result = await handler.HandleAsync(
+            Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None);
+
+        result.ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task Should_Return_ConfigFileNotFound_When_File_Does_Not_Exist()
+    {
+        var serializer = Substitute.For<IDependencyProjectSerializer>();
+
+        serializer
+            .DeserializeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .ThrowsAsync(new FileNotFoundException("File not found"));
+
+        var dependencyGenerator = Substitute.For<IDependencyGenerator>();
+        var preGenRunner = Substitute.For<IPreGenerationCommandRunner>();
+        var validationInvoker = Substitute.For<IValidationInvoker>();
+        var logger = Substitute.For<ILogger<CommandLineRunHandler>>();
+
+        var handler = new CommandLineRunHandler(serializer, dependencyGenerator, preGenRunner, validationInvoker, logger);
+
+        var result = await handler.HandleAsync(
+            @"X:\nonexistent\file.sds", CancellationToken.None);
+
+        result.ShouldBe(StudioCliExitCode.ConfigFileNotFound.Value);
+    }
+
+    [Fact]
+    public async Task Should_Return_ValidateCommandFailed_When_Validation_Fails()
+    {
+        var serializer = Substitute.For<IDependencyProjectSerializer>();
+
+        serializer
+            .DeserializeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(CreateValidDocument(preGenEnabled: false)));
+
+        var dependencyGenerator = Substitute.For<IDependencyGenerator>();
+
+        dependencyGenerator
+            .When(generator => generator.ValidateConfiguration(Arg.Any<DependencyGeneratorConfig>()))
+            .Do(_ => throw new ValidationException("Test failure"));
+
+        var preGenRunner = Substitute.For<IPreGenerationCommandRunner>();
+        var validationInvoker = Substitute.For<IValidationInvoker>();
+        var logger = Substitute.For<ILogger<CommandLineRunHandler>>();
+
+        var handler = new CommandLineRunHandler(serializer, dependencyGenerator, preGenRunner, validationInvoker, logger);
+
+        var result = await handler.HandleAsync(
+            Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None);
+
+        result.ShouldBe(StudioCliExitCode.ValidateCommandFailed.Value);
+    }
+
+    [Fact]
+    public async Task Should_Return_DiagramGeneratorFailed_When_Generator_Throws()
+    {
+        var serializer = Substitute.For<IDependencyProjectSerializer>();
+
+        serializer
+            .DeserializeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(CreateValidDocument(preGenEnabled: false)));
+
+        var dependencyGenerator = Substitute.For<IDependencyGenerator>();
+
+        dependencyGenerator
+            .CreateDiagramsAsync(Arg.Any<DependencyGeneratorConfig>(), Arg.Any<CancellationToken>())
+            .ThrowsAsync(new DependencyGeneratorException("Generator error"));
+
+        var preGenRunner = Substitute.For<IPreGenerationCommandRunner>();
+        var validationInvoker = Substitute.For<IValidationInvoker>();
+        var logger = Substitute.For<ILogger<CommandLineRunHandler>>();
+
+        var handler = new CommandLineRunHandler(serializer, dependencyGenerator, preGenRunner, validationInvoker, logger);
+
+        var result = await handler.HandleAsync(
+            Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None);
+
+        result.ShouldBe(StudioCliExitCode.DiagramGeneratorFailed.Value);
+    }
+
+    [Fact]
+    public async Task Should_Return_RunCommandFailed_When_Cancelled()
+    {
+        var serializer = Substitute.For<IDependencyProjectSerializer>();
+
+        serializer
+            .DeserializeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(CreateValidDocument(preGenEnabled: false)));
+
+        var dependencyGenerator = Substitute.For<IDependencyGenerator>();
+
+        dependencyGenerator
+            .CreateDiagramsAsync(Arg.Any<DependencyGeneratorConfig>(), Arg.Any<CancellationToken>())
+            .ThrowsAsync(new OperationCanceledException());
+
+        var preGenRunner = Substitute.For<IPreGenerationCommandRunner>();
+        var validationInvoker = Substitute.For<IValidationInvoker>();
+        var logger = Substitute.For<ILogger<CommandLineRunHandler>>();
+
+        var handler = new CommandLineRunHandler(serializer, dependencyGenerator, preGenRunner, validationInvoker, logger);
+
+        var result = await handler.HandleAsync(
+            Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None);
+
+        result.ShouldBe(StudioCliExitCode.RunCommandFailed.Value);
+    }
+
+    private static DependencyProjectDocument CreateValidDocument(bool preGenEnabled = false, bool continueOnFailure = false)
+    {
+        return new DependencyProjectDocument
+        {
+            SchemaVersion = 1,
+            Metadata = new DependencyProjectMetadata { ProjectName = "Test", Description = "" },
+            DiagramGenerator = new DependencyGeneratorConfig
+            {
+                Projects = new GeneratorProjectOptions
+                {
+                    SolutionPath = Path.GetTempPath(),
+                    RegexToInclude = [".*\\.csproj"]
+                },
+                Diagram = new GeneratorDiagramOptions
+                {
+                    GroupName = "Test",
+                    GroupNameAlias = "test",
+                    FrameworkStyle = new GeneratorDiagramOptions.FillStyle { Fill = "#000", Opacity = 0.5 },
+                    PackageStyle = new GeneratorDiagramOptions.FillStyle { Fill = "#000", Opacity = 0.5 },
+                    TransitiveStyle = new GeneratorDiagramOptions.FillStyle { Fill = "#000", Opacity = 0.5 },
+                    Grouping = new GeneratorDiagramOptions.GroupingOptions
+                    {
+                        BackgroundStyle = new GeneratorDiagramOptions.FillStyle { Fill = "#000", Opacity = 1.0 }
+                    },
+                    Formats = [DiagramFormat.D2]
+                },
+                Export = new GeneratorExportOptions { RootPath = "." }
+            },
+            PreGeneration = new PreGenerationConfig
+            {
+                Enabled = preGenEnabled,
+                Command = preGenEnabled ? "dotnet" : string.Empty,
+                ContinueOnFailure = continueOnFailure
+            }
+        };
+    }
+}

@@ -1,19 +1,9 @@
 ﻿using AllOverIt.Assertion;
-using AllOverIt.Extensions;
 using AllOverIt.GenericHost;
-using AllOverIt.Validation;
-using FluentValidation;
 using Microsoft.Extensions.Logging;
-using SlnDependencyDiagramGenerator.Config;
-using SlnDependencyDiagramGenerator.Exceptions;
-using SlnDependencyDiagramGenerator.Generator;
 using SlnDependencyStudio.Cli.Enumerations;
+using SlnDependencyStudio.Cli.Handlers.Run;
 using SlnDependencyStudio.Cli.Handlers.Validate;
-using SlnDependencyStudio.Shared.Config.Extensions;
-using SlnDependencyStudio.Shared.PreGeneration;
-using SlnDependencyStudio.Shared.Serialization;
-using SlnDependencyStudio.Shared.Utils;
-using SlnDependencyStudio.Shared.Validators.Contexts;
 using System.CommandLine;
 
 namespace SlnDependencyStudio.Cli;
@@ -21,28 +11,18 @@ namespace SlnDependencyStudio.Cli;
 /// <summary>CLI entry point that parses commands and delegates to services.</summary>
 internal sealed class App : ConsoleAppBase
 {
-    private readonly IDependencyGenerator _generator;
-    private readonly IDependencyProjectSerializer _serializer;
-    private readonly IPreGenerationCommandRunner _preGenerationCommandRunner;
-    private readonly IValidationInvoker _validationInvoker;
-    private readonly ICommandLineValidateHandler _validateHandler;
+    private readonly ICommandLineValidateHandler _validateCommandHandler;
+    private readonly ICommandLineRunHandler _runCommandHandler;
     private readonly ILogger<App> _logger;
 
     /// <summary>Initializes a new instance of <see cref="App"/>.</summary>
-    /// <param name="generator">The dependency diagram generator.</param>
-    /// <param name="serializer">The dependency project document serializer.</param>
-    /// <param name="preGenerationCommandRunner">The pre-generation command runner.</param>
-    /// <param name="validationInvoker">The validation invoker for model validation.</param>
-    /// <param name="validateHandler">The validate command handler.</param>
+    /// <param name="validateCommandHandler">The Validate command handler.</param>
+    /// <param name="runCommandHandler">The Run command handler.</param>
     /// <param name="logger">The logger instance.</param>
-    public App(IDependencyGenerator generator, IDependencyProjectSerializer serializer, IPreGenerationCommandRunner preGenerationCommandRunner,
-        IValidationInvoker validationInvoker, ICommandLineValidateHandler validateHandler, ILogger<App> logger)
+    public App(ICommandLineValidateHandler validateCommandHandler, ICommandLineRunHandler runCommandHandler, ILogger<App> logger)
     {
-        _generator = generator.WhenNotNull();
-        _serializer = serializer.WhenNotNull();
-        _preGenerationCommandRunner = preGenerationCommandRunner.WhenNotNull();
-        _validationInvoker = validationInvoker.WhenNotNull();
-        _validateHandler = validateHandler.WhenNotNull();
+        _validateCommandHandler = validateCommandHandler.WhenNotNull();
+        _runCommandHandler = runCommandHandler;
         _logger = logger.WhenNotNull();
     }
 
@@ -75,14 +55,12 @@ internal sealed class App : ConsoleAppBase
         runCommand.SetAction(async parseResult =>
         {
             // parseResult.GetValue(configFileOption) reads the value of the
-            // shared configFileOption instance from the parse result.  Even
+            // shared configFileOption instance from the parse result. Even
             // though the same Option object appears on multiple commands,
             // GetValue resolves it based on the context of the matched command.
-            var configFile = parseResult.GetValue(configFileOption)!;
+            var configFilename = parseResult.GetValue(configFileOption)!;
 
-            // cancellationToken is captured from StartAsync's parameter and
-            // propagated through the pre-generation command and generator call.
-            await HandleRunAsync(configFile, cancellationToken);
+            ExitCode = await _runCommandHandler.HandleAsync(configFilename, cancellationToken);
         });
 
         // ── "validate" subcommand ─────────────────────────────────────────
@@ -95,8 +73,9 @@ internal sealed class App : ConsoleAppBase
 
         validateCommand.SetAction(async parseResult =>
         {
-            var configFile = parseResult.GetValue(configFileOption)!;
-            await HandleValidateAsync(configFile, cancellationToken);
+            var configFilename = parseResult.GetValue(configFileOption)!;
+
+            ExitCode = await _validateCommandHandler.HandleAsync(configFilename, cancellationToken);
         });
 
         // ── Root command ──────────────────────────────────────────────────
@@ -151,137 +130,6 @@ internal sealed class App : ConsoleAppBase
         {
             _logger.LogError(exception, "An unexpected CLI failure occurred.");
             ExitCode = StudioCliExitCode.UnhandledCliFailure.Value;
-        }
-    }
-
-    private async Task HandleRunAsync(string configFilename, CancellationToken cancellationToken)
-    {
-        try
-        {
-            // VALIDATION
-
-            var configDirectory = GetConfigDirectory(configFilename);
-            var document = await _serializer.DeserializeAsync(configFilename, cancellationToken);
-
-            ResolveRelativePaths(document.DiagramGenerator, configDirectory);
-
-            document.LogConfiguration(configFilename, _logger);
-
-
-            // Validate Pre-Generation Command settings.
-            var preGenConfigContext = new PreGenerationConfigContext { ConfigDirectory = configDirectory };
-            _validationInvoker.AssertValidation(document.PreGeneration, preGenConfigContext);
-
-            // Validate the main diagram generator configuration.
-            _generator.ValidateConfiguration(document.DiagramGenerator);
-
-
-
-
-            // ── Pre-generation command ────────────────────────────────────
-            // If the pre-generation command is enabled and non-empty, execute
-            // it before running the generator.  On failure, the continue-on-
-            // failure setting determines whether generation still proceeds.
-            // The working directory is resolved to an absolute path before
-            // being passed to the runner.
-            var preGenConfig = document.PreGeneration;
-
-            if (preGenConfig.Enabled && preGenConfig.Command.IsNotNullOrEmpty())
-            {
-                var resolvedWorkingDir = preGenConfig.WorkingDirectory.IsNotNullOrEmpty()
-                    ? PathUtils.ResolveAsAbsolutePath(preGenConfig.WorkingDirectory, configDirectory)
-                    : null;
-
-                // Assign the resolved path so the runner uses the absolute form
-                preGenConfig.WorkingDirectory = resolvedWorkingDir ?? string.Empty;
-
-                _logger.LogInformation(
-                    "Running pre-generation command: {Command} {Arguments} (WorkingDirectory: {WorkingDirectory}, ContinueOnFailure: {ContinueOnFailure})",
-                    preGenConfig.Command,
-                    preGenConfig.Arguments,
-                    resolvedWorkingDir ?? "<default>",
-                    preGenConfig.ContinueOnFailure);
-
-                var preGenResult = await _preGenerationCommandRunner.RunAsync(preGenConfig, cancellationToken);
-
-                if (!preGenResult.Succeeded)
-                {
-                    if (!preGenConfig.ContinueOnFailure)
-                    {
-                        _logger.LogError(
-                            "Pre-generation command failed and continue-on-failure is disabled. Aborting.\n  {ErrorMessage}",
-                            preGenResult.ErrorMessage);
-
-                        ExitCode = StudioCliExitCode.PreGenerationCommandFailed.Value;
-                        return;
-                    }
-
-                    _logger.LogWarning(
-                        "Pre-generation command failed but continue-on-failure is enabled. Proceeding with generation.\n  {ErrorMessage}",
-                        preGenResult.ErrorMessage);
-                }
-            }
-
-            // ── Diagram generation ────────────────────────────────────────
-            _logger.LogInformation("Generating diagrams...");
-
-            await _generator.CreateDiagramsAsync(document.DiagramGenerator, cancellationToken);
-
-            _logger.LogInformation("Generation complete.");
-
-            ExitCode = 0;
-        }
-        catch (ValidationException exception)
-        {
-            WriteValidationErrors(exception);
-            ExitCode = StudioCliExitCode.ValidateCommandFailed.Value;
-        }
-        catch (FileNotFoundException exception)
-        {
-            _logger.LogError("File not found: {Message}", exception.Message);
-            ExitCode = StudioCliExitCode.ConfigFileNotFound.Value;
-        }
-        catch (DependencyGeneratorException exception)
-        {
-            _logger.LogError("Diagram generator failed: {Message}", exception.Message);
-            ExitCode = StudioCliExitCode.DiagramGeneratorFailed.Value;
-        }
-        catch (DirectoryNotFoundException exception)
-        {
-            _logger.LogError("Failed to load dependency project file: {Message}", exception.Message);
-            ExitCode = StudioCliExitCode.RunCommandFailed.Value;
-        }
-        catch (OperationCanceledException)
-        {
-            _logger.LogWarning("Operation was cancelled.");
-            ExitCode = StudioCliExitCode.RunCommandFailed.Value;
-        }
-    }
-
-    private async Task HandleValidateAsync(string configFilename, CancellationToken cancellationToken)
-    {
-        ExitCode = await _validateHandler.HandleAsync(configFilename, cancellationToken);
-    }
-
-    private static string GetConfigDirectory(string configFilePath)
-    {
-        return Path.GetDirectoryName(Path.GetFullPath(configFilePath))
-            ?? throw new InvalidOperationException($"Cannot determine directory from path: {configFilePath}");
-    }
-
-    private static void ResolveRelativePaths(DependencyGeneratorConfig config, string configDirectory)
-    {
-        config.Projects.SolutionPath = PathUtils.ResolveAsAbsolutePath(config.Projects.SolutionPath, configDirectory);
-        config.Export.RootPath = PathUtils.ResolveAsAbsolutePath(config.Export.RootPath, configDirectory);
-    }
-
-    private void WriteValidationErrors(ValidationException exception)
-    {
-        _logger.LogError("Configuration validation failed:");
-
-        foreach (var error in exception.Errors)
-        {
-            _logger.LogError("  - {ErrorMessage}", error.ErrorMessage);
         }
     }
 }
