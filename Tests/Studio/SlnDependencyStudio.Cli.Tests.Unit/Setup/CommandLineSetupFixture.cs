@@ -1,0 +1,135 @@
+using Microsoft.Extensions.Logging;
+using NSubstitute;
+using Shouldly;
+using SlnDependencyStudio.Cli.Handlers.Run;
+using SlnDependencyStudio.Cli.Handlers.Validate;
+using SlnDependencyStudio.Cli.Setup;
+using System.CommandLine;
+
+namespace SlnDependencyStudio.Cli.Tests.Unit.Setup;
+
+public class CommandLineSetupFixture
+{
+    [Fact]
+    public void Build_Should_Include_Validate_Command()
+    {
+        var setup = new CommandLineSetup(CancellationToken.None);
+
+        var root = setup
+            .AddRun(Substitute.For<ICommandLineRunHandler>(), _ => { })
+            .AddValidate(Substitute.For<ICommandLineValidateHandler>(), _ => { })
+            .Build(Substitute.For<ILogger>());
+
+        root.Children.Any(child => child is Command cmd && cmd.Name == "validate").ShouldBeTrue();
+    }
+
+    [Fact]
+    public void Build_Should_Include_Run_Command()
+    {
+        var setup = new CommandLineSetup(CancellationToken.None);
+
+        var root = setup
+            .AddRun(Substitute.For<ICommandLineRunHandler>(), _ => { })
+            .AddValidate(Substitute.For<ICommandLineValidateHandler>(), _ => { })
+            .Build(Substitute.For<ILogger>());
+
+        root.Children.Any(child => child is Command cmd && cmd.Name == "run").ShouldBeTrue();
+    }
+
+    [Fact]
+    public void Build_Should_Include_ConfigFile_Option_On_Root()
+    {
+        var root = new CommandLineSetup(CancellationToken.None)
+            .AddRun(Substitute.For<ICommandLineRunHandler>(), _ => { })
+            .AddValidate(Substitute.For<ICommandLineValidateHandler>(), _ => { })
+            .Build(Substitute.For<ILogger>());
+
+        // Verify --cf parses at the root level (reachable without a subcommand)
+        var parseResult = root.Parse("--cf file.sds");
+        parseResult.Errors.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task Each_Command_Should_Have_ConfigFile_Option()
+    {
+        var handler = Substitute.For<ICommandLineRunHandler>();
+
+        handler
+            .HandleAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(0));
+
+        var root = new CommandLineSetup(CancellationToken.None)
+            .AddRun(handler, _ => { })
+            .Build(Substitute.For<ILogger>());
+
+        // Verify --cf is recognised under the run subcommand
+        var parseResult = root.Parse("run --cf file.sds");
+        parseResult.Errors.ShouldBeEmpty();
+
+        await parseResult.InvokeAsync();
+        await handler.Received(1).HandleAsync("file.sds", Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Validate_Command_Should_Invoke_Handler_With_ConfigFile()
+    {
+        var handler = Substitute.For<ICommandLineValidateHandler>();
+        var exitCode = 0;
+
+        handler
+            .HandleAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(99));
+
+        var root = new CommandLineSetup(CancellationToken.None)
+            .AddValidate(handler, code => exitCode = code)
+            .Build(Substitute.For<ILogger>());
+
+        var parseResult = root.Parse("validate --cf other.sds");
+        await parseResult.InvokeAsync();
+
+        await handler.Received(1).HandleAsync("other.sds", Arg.Any<CancellationToken>());
+        exitCode.ShouldBe(99);
+    }
+
+    [Fact]
+    public async Task Run_Command_Should_Invoke_Handler_With_ConfigFile()
+    {
+        var handler = Substitute.For<ICommandLineRunHandler>();
+        var exitCode = 0;
+
+        handler
+            .HandleAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(42));
+
+        var root = new CommandLineSetup(CancellationToken.None)
+            .AddRun(handler, code => exitCode = code)
+            .Build(Substitute.For<ILogger>());
+
+        var parseResult = root.Parse("run --cf test.sds");
+        await parseResult.InvokeAsync();
+
+        await handler.Received(1).HandleAsync("test.sds", Arg.Any<CancellationToken>());
+        exitCode.ShouldBe(42);
+    }
+
+    [Fact]
+    public async Task Unknown_Command_Should_Fall_Through_To_Root_Action()
+    {
+        var logger = Substitute.For<ILogger>();
+
+        var root = new CommandLineSetup(CancellationToken.None)
+            .AddRun(Substitute.For<ICommandLineRunHandler>(), _ => { })
+            .AddValidate(Substitute.For<ICommandLineValidateHandler>(), _ => { })
+            .Build(logger);
+
+        var parseResult = root.Parse("--cf test.sds");
+        await parseResult.InvokeAsync();
+
+        logger.Received(1).Log(
+            Arg.Is<LogLevel>(l => l == LogLevel.Error),
+            Arg.Any<EventId>(),
+            Arg.Is<object>(o => o.ToString()!.Contains("run")),
+            null,
+            Arg.Any<Func<object, Exception?, string>>());
+    }
+}
