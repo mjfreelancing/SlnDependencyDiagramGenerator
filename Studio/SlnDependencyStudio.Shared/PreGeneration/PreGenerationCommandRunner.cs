@@ -2,6 +2,7 @@ using AllOverIt.Extensions;
 using AllOverIt.Process;
 using AllOverIt.Process.Extensions;
 using Microsoft.Extensions.Logging;
+using SlnDependencyStudio.Shared.Config;
 
 namespace SlnDependencyStudio.Shared.PreGeneration;
 
@@ -34,10 +35,6 @@ internal sealed class PreGenerationCommandRunner : IPreGenerationCommandRunner
             config.Command,
             config.Arguments);
 
-        var workingDirectory = config.WorkingDirectory.IsNotNullOrEmpty()
-            ? config.WorkingDirectory
-            : null;
-
         var executorOptions = ProcessBuilder.For(config.Command);
 
         if (config.WorkingDirectory.IsNotNullOrEmpty())
@@ -47,7 +44,12 @@ internal sealed class PreGenerationCommandRunner : IPreGenerationCommandRunner
 
         if (config.Arguments.IsNotNullOrEmpty())
         {
-            executorOptions = executorOptions.WithArguments(config.Arguments);
+            // Split the arguments string so each token is passed as a separate argument to the process.
+            // Without splitting, the entire string is treated as a single quoted argument
+            // (e.g. "restore file.sln" will be seen by the process as a single unknown command name).
+            var args = config.Arguments.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+            executorOptions = executorOptions.WithArguments(args);
         }
 
         var executor = executorOptions

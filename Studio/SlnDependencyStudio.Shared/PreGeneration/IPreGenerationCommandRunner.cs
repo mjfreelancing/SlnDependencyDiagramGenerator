@@ -1,3 +1,4 @@
+using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Shared.DependencyInjection;
 
 namespace SlnDependencyStudio.Shared.PreGeneration;

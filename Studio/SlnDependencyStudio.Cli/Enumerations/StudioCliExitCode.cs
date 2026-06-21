@@ -6,20 +6,23 @@ namespace SlnDependencyStudio.Cli.Enumerations;
 /// <summary>CLI-specific exit codes reserved for command-line frontend behavior.</summary>
 public sealed class StudioCliExitCode : EnrichedEnum<StudioCliExitCode>
 {
-    /// <summary>The required <c>--configFile</c> argument was not supplied.</summary>
-    public static readonly StudioCliExitCode MissingConfigFileArgument = new(1001);
+    /// <summary>Command-line parsing failed.</summary>
+    public static readonly StudioCliExitCode CommandLineParseFailed = new(1001);
 
     /// <summary>The config file path does not exist.</summary>
     public static readonly StudioCliExitCode ConfigFileNotFound = new(1002);
 
-    /// <summary>Command-line parsing failed.</summary>
-    public static readonly StudioCliExitCode CommandLineParseFailed = new(1003);
-
     /// <summary>The <c>validate</c> command failed.</summary>
-    public static readonly StudioCliExitCode ValidateCommandFailed = new(1004);
+    public static readonly StudioCliExitCode ValidateCommandFailed = new(1003);
 
     /// <summary>The <c>run</c> command failed.</summary>
-    public static readonly StudioCliExitCode RunCommandFailed = new(1005);
+    public static readonly StudioCliExitCode RunCommandFailed = new(1004);
+
+    /// <summary>The pre-generation command failed and continue-on-failure is disabled.</summary>
+    public static readonly StudioCliExitCode PreGenerationCommandFailed = new(1005);
+
+    /// <summary>The diagram generator threw an error during <c>CreateDiagramsAsync</c>.</summary>
+    public static readonly StudioCliExitCode DiagramGeneratorFailed = new(1006);
 
     /// <summary>An unexpected CLI failure occurred.</summary>
     public static readonly StudioCliExitCode UnhandledCliFailure = new(1999);

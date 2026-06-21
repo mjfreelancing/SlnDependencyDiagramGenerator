@@ -11,6 +11,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="SlnDependencyDiagramGenerator.Tests.Unit" />
     <InternalsVisibleTo Include="SlnDependencyDiagramGenerator.Tests.Integration" />
+    <InternalsVisibleTo Include="SlnDependencyStudio.Shared.Tests.Unit" />
   </ItemGroup>
 
   <ItemGroup>

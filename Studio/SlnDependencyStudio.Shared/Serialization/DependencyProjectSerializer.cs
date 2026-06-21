@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using SlnDependencyStudio.Shared.Config;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace SlnDependencyStudio.Shared.Serialization;

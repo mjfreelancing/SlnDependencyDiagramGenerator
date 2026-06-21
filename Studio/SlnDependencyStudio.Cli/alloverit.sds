@@ -4,7 +4,7 @@
     "projectName": "AllOverIt",
     "description": "Generates dependency diagrams for the AllOverIt solution"
   },
-  "generatorConfig": {
+  "diagramGenerator": {
     "projects": {
       "solutionPath": "..\\..\\..\\AllOverIt\\AllOverIt.sln",
       "regexToInclude": ["\\\\.*\\.csproj"],
@@ -66,10 +66,10 @@
     }
   },
   "preGeneration": {
-    "enabled": false,
-    "command": "",
-    "arguments": "",
-    "workingDirectory": "",
+    "enabled": true,
+    "command": "dotnet",
+    "arguments": "restore AllOverIt.slnx",
+    "workingDirectory": "..\\..\\..\\AllOverIt",
     "continueOnFailure": false
   }
 }

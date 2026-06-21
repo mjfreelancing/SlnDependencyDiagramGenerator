@@ -1,10 +1,18 @@
 ﻿using AllOverIt.Assertion;
+using AllOverIt.Extensions;
 using AllOverIt.GenericHost;
+using AllOverIt.Validation;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
 using SlnDependencyDiagramGenerator.Config;
+using SlnDependencyDiagramGenerator.Exceptions;
 using SlnDependencyDiagramGenerator.Generator;
+using SlnDependencyStudio.Cli.Enumerations;
+using SlnDependencyStudio.Shared.Config.Extensions;
+using SlnDependencyStudio.Shared.PreGeneration;
 using SlnDependencyStudio.Shared.Serialization;
+using SlnDependencyStudio.Shared.Utils;
+using SlnDependencyStudio.Shared.Validators.Contexts;
 using System.CommandLine;
 
 namespace SlnDependencyStudio.Cli;
@@ -14,16 +22,22 @@ internal sealed class App : ConsoleAppBase
 {
     private readonly DependencyGenerator _generator;
     private readonly IDependencyProjectSerializer _serializer;
+    private readonly IPreGenerationCommandRunner _preGenerationCommandRunner;
+    private readonly IValidationInvoker _validationInvoker;
     private readonly ILogger<App> _logger;
 
     /// <summary>Initializes a new instance of <see cref="App"/>.</summary>
     /// <param name="generator">The dependency diagram generator.</param>
     /// <param name="serializer">The dependency project document serializer.</param>
+    /// <param name="preGenerationCommandRunner">The pre-generation command runner.</param>
     /// <param name="logger">The logger instance.</param>
-    public App(DependencyGenerator generator, IDependencyProjectSerializer serializer, ILogger<App> logger)
+    public App(DependencyGenerator generator, IDependencyProjectSerializer serializer, IPreGenerationCommandRunner preGenerationCommandRunner,
+        IValidationInvoker validationInvoker, ILogger<App> logger)
     {
         _generator = generator.WhenNotNull();
         _serializer = serializer.WhenNotNull();
+        _preGenerationCommandRunner = preGenerationCommandRunner.WhenNotNull();
+        _validationInvoker = validationInvoker.WhenNotNull();
         _logger = logger.WhenNotNull();
     }
 
@@ -60,7 +74,10 @@ internal sealed class App : ConsoleAppBase
             // though the same Option object appears on multiple commands,
             // GetValue resolves it based on the context of the matched command.
             var configFile = parseResult.GetValue(configFileOption)!;
-            await HandleRunAsync(configFile);
+
+            // cancellationToken is captured from StartAsync's parameter and
+            // propagated through the pre-generation command and generator call.
+            await HandleRunAsync(configFile, cancellationToken);
         });
 
         // ── "validate" subcommand ─────────────────────────────────────────
@@ -107,53 +124,155 @@ internal sealed class App : ConsoleAppBase
         // command tree (root → subcommands). The result captures which command (if any) was
         // matched, which options were provided, and any errors. InvokeAsync() then executes
         // the matched command's SetAction handler (or the root fallback if nothing matched).
-        var parseResult = root.Parse(Environment.GetCommandLineArgs()[1..]);
+        //
+        // ExitCode is set explicitly by each handler on failure; on success it stays 0.
+        // InvokeAsync's return value is NOT used because it would overwrite the specific
+        // exit codes our handlers already assigned.
+        try
+        {
+            var parseResult = root.Parse(Environment.GetCommandLineArgs()[1..]);
 
-        var exitCode = await parseResult.InvokeAsync(cancellationToken: cancellationToken);
-        ExitCode = exitCode;
+            if (parseResult.Errors.Count > 0)
+            {
+                ExitCode = StudioCliExitCode.CommandLineParseFailed.Value;
+            }
+            else
+            {
+                await parseResult.InvokeAsync(cancellationToken: cancellationToken);
+                ExitCode = 0;
+            }
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "An unexpected CLI failure occurred.");
+            ExitCode = StudioCliExitCode.UnhandledCliFailure.Value;
+        }
     }
 
-    private async Task HandleRunAsync(string configFile)
+    private async Task HandleRunAsync(string configFilename, CancellationToken cancellationToken)
     {
         try
         {
-            var document = await _serializer.DeserializeAsync(configFile);
+            // VALIDATION
 
-            ResolveRelativePaths(document.GeneratorConfig, configFile);
+            var configDirectory = GetConfigDirectory(configFilename);
+            var document = await _serializer.DeserializeAsync(configFilename);
 
-            LogResolvedGeneratorConfiguration(configFile, document.GeneratorConfig);
+            ResolveRelativePaths(document.DiagramGenerator, configDirectory);
 
+            document.LogConfiguration(configFilename, _logger);
+
+
+            // Validate Pre-Generation Command settings.
+            var preGenConfigContext = new PreGenerationConfigContext { ConfigDirectory = configDirectory };
+            _validationInvoker.AssertValidation(document.PreGeneration, preGenConfigContext);
+
+            // Validate the main diagram generator configuration.
+            _generator.ValidateConfiguration(document.DiagramGenerator);
+
+
+
+
+            // ── Pre-generation command ────────────────────────────────────
+            // If the pre-generation command is enabled and non-empty, execute
+            // it before running the generator.  On failure, the continue-on-
+            // failure setting determines whether generation still proceeds.
+            // The working directory is resolved to an absolute path before
+            // being passed to the runner.
+            var preGenConfig = document.PreGeneration;
+
+            if (preGenConfig.Enabled && preGenConfig.Command.IsNotNullOrEmpty())
+            {
+                var resolvedWorkingDir = preGenConfig.WorkingDirectory.IsNotNullOrEmpty()
+                    ? PathUtils.ResolveAsAbsolutePath(preGenConfig.WorkingDirectory, configDirectory)
+                    : null;
+
+                // Assign the resolved path so the runner uses the absolute form
+                preGenConfig.WorkingDirectory = resolvedWorkingDir ?? string.Empty;
+
+                _logger.LogInformation(
+                    "Running pre-generation command: {Command} {Arguments} (WorkingDirectory: {WorkingDirectory}, ContinueOnFailure: {ContinueOnFailure})",
+                    preGenConfig.Command,
+                    preGenConfig.Arguments,
+                    resolvedWorkingDir ?? "<default>",
+                    preGenConfig.ContinueOnFailure);
+
+                var preGenResult = await _preGenerationCommandRunner.RunAsync(preGenConfig, cancellationToken);
+
+                if (!preGenResult.Succeeded)
+                {
+                    if (!preGenConfig.ContinueOnFailure)
+                    {
+                        _logger.LogError(
+                            "Pre-generation command failed and continue-on-failure is disabled. Aborting.\n  {ErrorMessage}",
+                            preGenResult.ErrorMessage);
+
+                        ExitCode = StudioCliExitCode.PreGenerationCommandFailed.Value;
+                        return;
+                    }
+
+                    _logger.LogWarning(
+                        "Pre-generation command failed but continue-on-failure is enabled. Proceeding with generation.\n  {ErrorMessage}",
+                        preGenResult.ErrorMessage);
+                }
+            }
+
+            // ── Diagram generation ────────────────────────────────────────
             _logger.LogInformation("Generating diagrams...");
 
-            await _generator.CreateDiagramsAsync(document.GeneratorConfig, CancellationToken.None);
+            await _generator.CreateDiagramsAsync(document.DiagramGenerator, cancellationToken);
 
             _logger.LogInformation("Generation complete.");
+
+            ExitCode = 0;
         }
         catch (ValidationException exception)
         {
             WriteValidationErrors(exception);
+            ExitCode = StudioCliExitCode.ValidateCommandFailed.Value;
         }
         catch (FileNotFoundException exception)
         {
             _logger.LogError("File not found: {Message}", exception.Message);
+            ExitCode = StudioCliExitCode.ConfigFileNotFound.Value;
+        }
+        catch (DependencyGeneratorException exception)
+        {
+            _logger.LogError("Diagram generator failed: {Message}", exception.Message);
+            ExitCode = StudioCliExitCode.DiagramGeneratorFailed.Value;
         }
         catch (InvalidOperationException exception)
         {
             _logger.LogError("Failed to load dependency project file: {Message}", exception.Message);
+            ExitCode = StudioCliExitCode.RunCommandFailed.Value;
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogWarning("Operation was cancelled.");
+            ExitCode = StudioCliExitCode.RunCommandFailed.Value;
         }
     }
 
-    private async Task HandleValidate(string configFile)
+    private async Task HandleValidate(string configFilename)
     {
         try
         {
-            var document = await _serializer.DeserializeAsync(configFile);
+            var configDirectory = GetConfigDirectory(configFilename);
+            var document = await _serializer.DeserializeAsync(configFilename);
 
-            ResolveRelativePaths(document.GeneratorConfig, configFile);
+            ResolveRelativePaths(document.DiagramGenerator, configDirectory);
 
-            LogResolvedGeneratorConfiguration(configFile, document.GeneratorConfig);
+            document.LogConfiguration(configFilename, _logger);
 
-            _generator.ValidateConfiguration(document.GeneratorConfig);
+
+            // Validate Pre-Generation Command settings.
+            var preGenConfigContext = new PreGenerationConfigContext { ConfigDirectory = configDirectory };
+            _validationInvoker.AssertValidation(document.PreGeneration, preGenConfigContext);
+
+            // Validate the main diagram generator configuration.
+            _generator.ValidateConfiguration(document.DiagramGenerator);
+
+
 
             _logger.LogInformation("Configuration is valid.");
         }
@@ -171,54 +290,16 @@ internal sealed class App : ConsoleAppBase
         }
     }
 
-    private void LogResolvedGeneratorConfiguration(string configFile, DependencyGeneratorConfig config)
+    private static string GetConfigDirectory(string configFilePath)
     {
-        _logger.LogInformation("Configuration file: {ConfigFilePath}", Path.GetFullPath(configFile));
-        _logger.LogInformation("Resolved paths and options:");
-        _logger.LogInformation("  Solution path : {SolutionPath}", config.Projects.SolutionPath);
-        _logger.LogInformation("  Export root   : {ExportRoot}", config.Export.RootPath);
-        _logger.LogInformation("  Clear contents: {ClearContents}", config.Export.ClearContents);
-        _logger.LogInformation("  Diagram formats : {Formats}", string.Join(", ", config.Diagram.Formats));
-        _logger.LogInformation("  Diagram direction: {Direction}", config.Diagram.Direction);
-        _logger.LogInformation("  Group name  : {GroupName}", config.Diagram.GroupName);
-        _logger.LogInformation("  Group alias : {GroupAlias}", config.Diagram.GroupNameAlias);
-        _logger.LogInformation("  Grouping enabled: {GroupingEnabled}", config.Diagram.Grouping.Enabled);
-        _logger.LogInformation("  Image formats: {ImageFormats}", string.Join(", ", config.Export.ImageFormats));
-
-        _logger.LogInformation("  Project scopes:");
-
-        _logger.LogInformation("    Individual — Enabled: {IndividualEnabled}, IncludeDeps: {IndividualIncludeDeps}, TransitiveDepth: {IndividualTransitiveDepth}",
-            config.Projects.Individual.Enabled,
-            config.Projects.Individual.IncludeDependencies,
-            config.Projects.Individual.TransitiveDepth);
-
-        _logger.LogInformation("    All        — Enabled: {AllEnabled}, IncludeDeps: {AllIncludeDeps}, TransitiveDepth: {AllTransitiveDepth}",
-            config.Projects.All.Enabled,
-            config.Projects.All.IncludeDependencies,
-            config.Projects.All.TransitiveDepth);
-
-        _logger.LogInformation("  Regex include: {RegexInclude}", string.Join(", ", config.Projects.RegexToInclude));
-        _logger.LogInformation("  Regex exclude: {RegexExclude}", string.Join(", ", config.Projects.RegexToExclude));
-        _logger.LogInformation("  Packages to exclude: {PackagesExclude}", string.Join(", ", config.Projects.PackagesToExclude));
-        _logger.LogInformation("  Frameworks to exclude: {FrameworksExclude}", string.Join(", ", config.Projects.FrameworksToExclude));
+        return Path.GetDirectoryName(Path.GetFullPath(configFilePath))
+            ?? throw new InvalidOperationException($"Cannot determine directory from path: {configFilePath}");
     }
 
-    private static void ResolveRelativePaths(DependencyGeneratorConfig config, string configFilePath)
+    private static void ResolveRelativePaths(DependencyGeneratorConfig config, string configDirectory)
     {
-        var configDirectory = Path.GetDirectoryName(Path.GetFullPath(configFilePath))
-            ?? throw new InvalidOperationException($"Cannot determine directory from path: {configFilePath}");
-
-        if (!Path.IsPathRooted(config.Projects.SolutionPath))
-        {
-            config.Projects.SolutionPath = Path.GetFullPath(
-                Path.Combine(configDirectory, config.Projects.SolutionPath));
-        }
-
-        if (!Path.IsPathRooted(config.Export.RootPath))
-        {
-            config.Export.RootPath = Path.GetFullPath(
-                Path.Combine(configDirectory, config.Export.RootPath));
-        }
+        config.Projects.SolutionPath = PathUtils.ResolveAsAbsolutePath(config.Projects.SolutionPath, configDirectory);
+        config.Export.RootPath = PathUtils.ResolveAsAbsolutePath(config.Export.RootPath, configDirectory);
     }
 
     private void WriteValidationErrors(ValidationException exception)

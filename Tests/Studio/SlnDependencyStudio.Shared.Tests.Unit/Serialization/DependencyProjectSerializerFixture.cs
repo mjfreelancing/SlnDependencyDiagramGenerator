@@ -1,11 +1,10 @@
-﻿using Shouldly;
+using Shouldly;
 using SlnDependencyDiagramGenerator.Config;
-using SlnDependencyStudio.Shared;
-using SlnDependencyStudio.Shared.PreGeneration;
+using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Shared.Serialization;
 using System;
 
-namespace SlnDependencyDiagramGenerator.Tests.Unit.Studio.Serialization;
+namespace SlnDependencyStudio.Shared.Tests.Unit.Serialization;
 
 public class DependencyProjectSerializerFixture
 {
@@ -37,7 +36,7 @@ public class DependencyProjectSerializerFixture
             var serializer = new DependencyProjectSerializer();
             var document = new DependencyProjectDocument
             {
-                GeneratorConfig = new DependencyGeneratorConfig
+                DiagramGenerator = new DependencyGeneratorConfig
                 {
                     Projects = new GeneratorProjectOptions
                     {
@@ -49,7 +48,7 @@ public class DependencyProjectSerializerFixture
 
             var json = serializer.Serialize(document);
 
-            json.ShouldContain("generatorConfig");
+            json.ShouldContain("diagramGenerator");
             json.ShouldContain("test.sln");
             json.ShouldContain("RegexToInclude");
         }
@@ -93,7 +92,7 @@ public class DependencyProjectSerializerFixture
                     ProjectName = "Roundtrip Test",
                     Description = "Testing roundtrip"
                 },
-                GeneratorConfig = new DependencyGeneratorConfig
+                DiagramGenerator = new DependencyGeneratorConfig
                 {
                     Projects = new GeneratorProjectOptions
                     {
@@ -114,7 +113,7 @@ public class DependencyProjectSerializerFixture
             deserialized.SchemaVersion.ShouldBe(original.SchemaVersion);
             deserialized.Metadata.ProjectName.ShouldBe(original.Metadata.ProjectName);
             deserialized.Metadata.Description.ShouldBe(original.Metadata.Description);
-            deserialized.GeneratorConfig.Projects.SolutionPath.ShouldBe(original.GeneratorConfig.Projects.SolutionPath);
+            deserialized.DiagramGenerator.Projects.SolutionPath.ShouldBe(original.DiagramGenerator.Projects.SolutionPath);
             deserialized.PreGeneration.Enabled.ShouldBe(original.PreGeneration.Enabled);
             deserialized.PreGeneration.Command.ShouldBe(original.PreGeneration.Command);
         }
@@ -127,7 +126,7 @@ public class DependencyProjectSerializerFixture
                 {
                     "schemaVersion": 999,
                     "metadata": { "projectName": "Future", "description": "" },
-                    "generatorConfig": {},
+                    "diagramGenerator": {},
                     "preGeneration": {}
                 }
                 """;
@@ -146,7 +145,7 @@ public class DependencyProjectSerializerFixture
                 {
                     "schemaVersion": 1,
                     "metadata": { "projectName": "Ext", "description": "" },
-                    "generatorConfig": {},
+                    "diagramGenerator": {},
                     "preGeneration": {},
                     "futureField": "will be preserved"
                 }

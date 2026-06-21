@@ -1,4 +1,4 @@
-namespace SlnDependencyStudio.Shared;
+namespace SlnDependencyStudio.Shared.Config;
 
 /// <summary>User-facing metadata stored in a dependency project document.</summary>
 public sealed class DependencyProjectMetadata

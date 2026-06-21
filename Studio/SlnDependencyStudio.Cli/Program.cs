@@ -1,5 +1,4 @@
 ﻿using AllOverIt.GenericHost;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using Serilog.Sinks.SystemConsole.Themes;
@@ -11,8 +10,8 @@ await GenericHost
     .CreateConsoleHostBuilder<App>(args)
     .ConfigureServices((context, services) =>
     {
-        services.AddSlnDependencyGenerator();
-        services.AddSlnDependencyStudio();
+        var (_, validationRegistry) = services.AddSlnDependencyGenerator();
+        services.AddSlnDependencyStudio(validationRegistry);
     })
     .UseStudioSerilog((_, configuration) =>
     {
