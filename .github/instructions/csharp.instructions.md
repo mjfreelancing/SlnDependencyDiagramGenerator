@@ -74,7 +74,6 @@ This file extends [`language-agnostic-core.instructions.md`](language-agnostic-c
 - Do not make implementation classes `public` just for DI convenience.
 - Prefer "internal first": start with concrete/internal and promote to interface/public only when a concrete requirement appears.
 - Keep DI registration centralized in a small set of composition-root extension methods.
-- Use `TryAdd*` registrations by default so host applications can override registrations without duplicate entries.
 - Use `Scoped` as the default lifetime unless there is a proven reason for `Singleton` or `Transient`.
 - When registering a service by interface, keep implementation classes non-public unless there is an explicit requirement to expose them.
 - If an interface exists but has a single implementation and no active extension point, periodically re-evaluate whether the interface still adds value.
