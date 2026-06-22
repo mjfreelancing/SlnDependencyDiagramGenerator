@@ -75,8 +75,8 @@ The application hosts the `SlnDependencyDiagramGenerator` library directly and a
 | FR-1.4 | The application shall be structured to support future expansion without changing the saved dependency project file format unnecessarily.                                                                                   |
 | FR-1.5 | The first release shall target Windows 10 only.                                                                                                                                                                            |
 | FR-1.6 | The application shall target `net10.0-windows10.0.19041`.                                                                                                                                                                  |
-| FR-1.7 | The solution structure shall reserve room for multiple frontends by placing the WPF application under a dedicated `Wpf` sub-folder within the studio solution area.                                                        |
-| FR-1.8 | A shared project shall exist for dependency-project contracts and orchestration-facing models consumed by both WPF and CLI frontends.                                                                                      |
+| FR-1.7 | The solution structure shall reserve room for multiple frontends by placing the WPF application under `Studio/SlnDependencyStudio.Wpf`. The project shall target `net10.0-windows10.0.19041` with `<UseWPF>true</UseWPF>` and include `ProjectReference` to both `SlnDependencyDiagramGenerator` and `SlnDependencyStudio.Shared`. |
+| FR-1.8 | A shared project shall exist for dependency-project contracts and orchestration-facing models consumed by both WPF and CLI frontends. `SlnDependencyStudio.Shared` (already implemented) serves this role and must not depend on WPF assemblies.                                                                                      |
 
 ### FR-2: Dependency Project Lifecycle
 
@@ -103,7 +103,7 @@ Proposed shape:
     "projectName": "My Solution Audit",
     "description": "Tracks the default diagram settings for the main repo"
   },
-  "generatorConfig": {
+  "diagramGenerator": {
     "projects": {},
     "diagram": {},
     "export": {}
@@ -124,7 +124,7 @@ Requirements for this format:
 | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | FR-3.1 | The file format shall include a schema version.                                                                                                                        |
 | FR-3.2 | The file format shall contain `metadata` with `projectName` and `description`.                                                                                         |
-| FR-3.3 | The file format shall contain a `generatorConfig` payload compatible with the current `DependencyGeneratorConfig` model.                                               |
+| FR-3.3 | The file format shall contain a `diagramGenerator` payload compatible with the current `DependencyGeneratorConfig` model. See `DependencyProjectDocument` in `SlnDependencyStudio.Shared` for the authoritative C# shape. |
 | FR-3.4 | Unknown future fields shall be ignored when loading, where practical.                                                                                                  |
 | FR-3.5 | The file format shall support optional pre-generation command configuration including enabled state, command path, arguments, working directory, and failure behavior. |
 
@@ -160,6 +160,7 @@ Requirements for this format:
 | FR-6.1  | The application shall reference `SlnDependencyDiagramGenerator` via a `ProjectReference`.                                                                                                                                                                                |
 | FR-6.2  | The application shall validate configuration before invoking generation.                                                                                                                                                                                                 |
 | FR-6.3  | The application shall execute generation through an application service layer rather than directly from the view.                                                                                                                                                        |
+| FR-6.3a | **Deferred (June 2026):** The generation orchestration workflow (validate → pre-generation → generate) is currently implemented in the CLI's `CommandLineRunHandler` and is not yet a shared service. A shared `IGenerationService` is planned but deferred until both frontend implementation patterns can be compared for alignment. WPF shall implement its own orchestration in a frontend-specific service for now, with extraction to Shared planned once parity is confirmed. |
 | FR-6.4  | The application shall present success, warning, and failure outcomes clearly after generation completes.                                                                                                                                                                 |
 | FR-6.5  | The application shall provide an action to open Windows File Explorer at the export root for the most recent run.                                                                                                                                                        |
 | FR-6.6  | The application shall make clear that generated `.d2` and `.mmd` files are stored in renderer-specific subfolders under the target framework output folder.                                                                                                              |
@@ -317,10 +318,11 @@ Recommended service split:
 
 1. `IDependencyProjectService` for open/save/new operations.
 2. `IApplicationSettingsService` for user settings persistence.
-3. `IToolDetectionService` for `d2` and Mermaid CLI discovery.
-4. `IGenerationService` for running the generator and streaming output.
+3. `IToolDetectionService` for `d2` and Mermaid CLI discovery (already implemented in `SlnDependencyDiagramGenerator`).
+4. `IGenerationService` for running the generator and streaming output (WPF-specific; shared extraction deferred — see FR-6.3a).
 5. `IExplorerService` for opening Explorer at the export root.
 6. `IRecentProjectsService` for MRU management.
+7. `IPreGenerationCommandRunner` for executing optional pre-generation commands (already implemented in `SlnDependencyStudio.Shared`; added during CLI implementation).
 
 ### 7.5 Model Layer
 

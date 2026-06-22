@@ -57,6 +57,8 @@ If any shared requirement appears to conflict between this document and a fronte
 6. If CLI or WPF pre-validation requires new public generator interfaces, shared service contracts, or internal refactoring, that requirement shall be raised explicitly and implemented properly rather than worked around with ad-hoc hacks.
 7. The generator and all renderers shall use `ILogger<T>` (from `Microsoft.Extensions.Logging`) as the sole logging abstraction. The parameterless constructor shall supply `NullLogger<T>.Instance` as a no-op fallback when no logger is registered in DI. The `IColorConsoleLogger` abstraction from `AllOverIt.Logging` is explicitly excluded from shared contracts — it is a console-specific concern that does not belong in frontend-agnostic code.
 
+> **Note (June 2026):** The generation orchestration workflow (validate → pre-generation command → generate diagrams) is currently **not** implemented as a shared service. In the CLI, orchestration lives in `CommandLineRunHandler`. The Shared Contracts PRD intends for this to move into a shared service (e.g. `IGenerationService`) consumed by both frontends, but the refactor is deferred until the WPF implementation clarifies how both frontends will call the pipeline. Once the WPF path is implemented, the two orchestration patterns should be compared and a shared service extracted where they align.
+
 ---
 
 ## 6. External Tool Detection Contract
