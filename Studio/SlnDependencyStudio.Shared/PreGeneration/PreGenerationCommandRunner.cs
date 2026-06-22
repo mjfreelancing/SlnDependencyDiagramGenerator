@@ -1,8 +1,10 @@
+using AllOverIt.Assertion;
 using AllOverIt.Extensions;
 using AllOverIt.Process;
 using AllOverIt.Process.Extensions;
 using Microsoft.Extensions.Logging;
 using SlnDependencyStudio.Shared.Config;
+using SlnDependencyStudio.Shared.Enumerations;
 
 namespace SlnDependencyStudio.Shared.PreGeneration;
 
@@ -15,18 +17,18 @@ internal sealed class PreGenerationCommandRunner : IPreGenerationCommandRunner
     /// <param name="logger">The logger instance.</param>
     public PreGenerationCommandRunner(ILogger<PreGenerationCommandRunner> logger)
     {
-        _logger = logger;
+        _logger = logger.WhenNotNull();
     }
 
     /// <inheritdoc />
     public async Task<PreGenerationCommandResult> RunAsync(PreGenerationConfig config, CancellationToken cancellationToken)
     {
-        if (!config.Enabled || config.Command.IsNullOrEmpty())
+        if (!config.Enabled)
         {
             return new PreGenerationCommandResult
             {
-                CommandAttempted = false,
-                Succeeded = true
+                Succeeded = true,
+                ExitCode = 0
             };
         }
 
@@ -75,6 +77,8 @@ internal sealed class PreGenerationCommandRunner : IPreGenerationCommandRunner
             {
                 _logger.LogInformation("Pre-generation command started.");
 
+                cancellationToken.ThrowIfCancellationRequested();
+
                 var result = await executor.ExecuteAsync(cancellationToken).ConfigureAwait(false);
 
                 _logger.LogInformation(
@@ -85,7 +89,6 @@ internal sealed class PreGenerationCommandRunner : IPreGenerationCommandRunner
 
                 return new PreGenerationCommandResult
                 {
-                    CommandAttempted = true,
                     Succeeded = succeeded,
                     ExitCode = result.ExitCode,
                     ErrorMessage = succeeded
@@ -99,9 +102,20 @@ internal sealed class PreGenerationCommandRunner : IPreGenerationCommandRunner
 
                 return new PreGenerationCommandResult
                 {
-                    CommandAttempted = true,
                     Succeeded = false,
+                    ExitCode = StudioExitCode.PreGenerationCommandCancelled.Value,
                     ErrorMessage = "Pre-generation command was cancelled."
+                };
+            }
+            catch (TimeoutException exception)
+            {
+                _logger.LogError(exception, "Pre-generation command timed out.");
+
+                return new PreGenerationCommandResult
+                {
+                    Succeeded = false,
+                    ExitCode = StudioExitCode.PreGenerationCommandTimeout.Value,
+                    ErrorMessage = "Pre-generation command timed out."
                 };
             }
             catch (Exception exception)
@@ -110,8 +124,8 @@ internal sealed class PreGenerationCommandRunner : IPreGenerationCommandRunner
 
                 return new PreGenerationCommandResult
                 {
-                    CommandAttempted = true,
                     Succeeded = false,
+                    ExitCode = StudioExitCode.PreGenerationUnexpectedError.Value,
                     ErrorMessage = exception.Message
                 };
             }

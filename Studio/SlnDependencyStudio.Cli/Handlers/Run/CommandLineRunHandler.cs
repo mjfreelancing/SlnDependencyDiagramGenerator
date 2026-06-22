@@ -112,6 +112,11 @@ internal sealed class CommandLineRunHandler : CommandLineHandlerBase, ICommandLi
 
         if (!preGenResult.Succeeded)
         {
+            _logger.LogError(
+                "Pre-generation command failed (exit code {ExitCode}, error: {ErrorMessage}).",
+                preGenResult.ExitCode,
+                preGenResult.ErrorMessage);
+
             if (!preGenConfig.ContinueOnFailure)
             {
                 _logger.LogError(

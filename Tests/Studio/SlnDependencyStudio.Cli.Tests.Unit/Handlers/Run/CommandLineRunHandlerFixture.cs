@@ -55,7 +55,6 @@ public class CommandLineRunHandlerFixture
             .RunAsync(Arg.Any<PreGenerationConfig>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(new PreGenerationCommandResult
             {
-                CommandAttempted = true,
                 Succeeded = true,
                 ExitCode = 0
             }));
@@ -88,7 +87,6 @@ public class CommandLineRunHandlerFixture
             .RunAsync(Arg.Any<PreGenerationConfig>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(new PreGenerationCommandResult
             {
-                CommandAttempted = true,
                 Succeeded = false,
                 ExitCode = 1,
                 ErrorMessage = "Command failed"
@@ -122,7 +120,6 @@ public class CommandLineRunHandlerFixture
             .RunAsync(Arg.Any<PreGenerationConfig>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(new PreGenerationCommandResult
             {
-                CommandAttempted = true,
                 Succeeded = false,
                 ExitCode = 1,
                 ErrorMessage = "Command failed"
