@@ -76,12 +76,6 @@ New items may be added at the end of a phase (with a `(Added: YYYY-MM-DD)` annot
 - [x] 1.3.5 The bottom output panel should be collapsible (a splitter or toggle button). Start collapsed when no generation has run.
 - [x] 1.3.6 Wire the `Closing` event to check a `CanClose` observable on the main view model, preventing close during active generation.
 
----
-
-**HUMAN HAS READ TO HERE ONLY - DO NOT PROCEED FURTHER WITHOUT APPROVAL**
-
----
-
 > **Direction change (June 2026):** MahApps.Metro and the `MaterialDesignThemes.MahApps` bridge were dropped during Phase 1 implementation. `ReactiveWindow<T>` (ReactiveUI.WPF) cannot inherit from `MetroWindow` (MahApps.Metro) — they share the `Window` base. An attempt to use `MetroWindow` + manual `IViewFor<T>` resolved the inheritance conflict but the title bar was not draggable due to `MaterialDesign3.Defaults.xaml` overriding the MetroWindow style. The stack is now `ReactiveWindow<T>` + `MaterialDesignThemes` for control theming. No PRD-required features depend on MahApps.Metro. See WPF PRD for updated wording.
 
 ### 1.4 Navigation & Configuration Experience Design
@@ -236,11 +230,11 @@ The selected nav item gets a left-accent border (4px `MaterialDesignPrimary`) an
 
 #### Actionable Checklist Items
 
-- [ ] 1.4.1 Present the five-section navigation design (Project, Sources, Diagrams, Export, Pipeline) to the human for review and iterate until signed off. Confirm the "Pipeline" merge of Pre-Generation + Tools and the "Sources" rename.
-- [ ] 1.4.2 Agree the progressive disclosure split: Essential (solution path, formats, export root — always expanded), Common (regex patterns, scope toggles, image formats — always expanded), Advanced (fill styles, opacity, grouping, pre-gen, tool paths — collapsed by default with an "Advanced" label). Confirm which fields fall into each tier.
-- [ ] 1.4.3 Agree the card-based page layout pattern: each navigation section renders a scrollable workspace page with collapsible `Card` controls grouping related settings. Cards show validation error counts on their headers. Confirm this pattern for all five sections.
-- [ ] 1.4.4 Agree the validation visibility approach: inline field errors via ReactiveUI.Validation, nav-item warning dots, a floating validation summary bar above the output panel, and a disabled Generate button with tooltip. Confirm the error-count badge on card headers.
-- [ ] 1.4.5 Agree the empty-state landing page design: two primary CTA cards (New Project / Open Project), recent projects list, and Settings shortcut. Confirm the empty state is what the user sees on first launch before opening a document.
+- [x] 1.4.1 Present the five-section navigation design (Project, Sources, Diagrams, Export, Pipeline) to the human for review and iterate until signed off. Confirm the "Pipeline" merge of Pre-Generation + Tools and the "Sources" rename.
+- [x] 1.4.2 Agree the progressive disclosure split: Essential (solution path, formats, export root — always expanded), Common (regex patterns, scope toggles, image formats — always expanded), Advanced (fill styles, opacity, grouping, pre-gen, tool paths — collapsed by default with an "Advanced" label). Confirm which fields fall into each tier.
+- [x] 1.4.3 Agree the card-based page layout pattern: each navigation section renders a scrollable workspace page with collapsible `Card` controls grouping related settings. Cards show validation error counts on their headers. Confirm this pattern for all five sections.
+- [x] 1.4.4 Agree the validation visibility approach: inline field errors via ReactiveUI.Validation, nav-item warning dots, a floating validation summary bar above the output panel, and a disabled Generate button with tooltip. Confirm the error-count badge on card headers.
+- [x] 1.4.5 Agree the empty-state landing page design: two primary CTA cards (New Project / Open Project), recent projects list, and Settings shortcut. Confirm the empty state is what the user sees on first launch before opening a document.
 - [ ] 1.4.6 Create `NavigationItemViewModel` with `DisplayName`, `PackIconKind`, `IsSelected`, `HasValidationError`, and `ViewModelType` (for view resolution). Include an `IsAdvanced` flag that controls the "(opt)" chip visibility.
 - [ ] 1.4.7 Extend `MainWindowViewModel` with a `ReactiveList<NavigationItemViewModel>` bound to the nav `ListBox`, a `CurrentPage` property for the centre workspace, and a `CurrentValidationSummary` collection driving the floating bar.
 - [ ] 1.4.8 Implement the left nav `ListBox` with Material Design styling: `MaterialDesignPaper` background, `Divider` border, left-accent selection indicator (4px `MaterialDesignPrimary`), icon+label item template, validation dot template, tool-status row at bottom. The left nav shall include:
