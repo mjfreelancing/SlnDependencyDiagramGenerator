@@ -15,10 +15,11 @@ public partial class App : Application
     public App()
     {
         // ReactiveUI v23 requires explicit builder initialization before reactive mixins are used.
-        var reactiveUiBuilder = RxAppBuilder.CreateReactiveUIBuilder();
-        reactiveUiBuilder.WithCoreServices();
-        reactiveUiBuilder.WithWpf();
-        reactiveUiBuilder.BuildApp();
+        RxAppBuilder
+            .CreateReactiveUIBuilder()
+            .WithCoreServices()
+            .WithWpf()
+            .BuildApp();
 
         _host = new HostBuilder()
             .ConfigureServices((context, services) =>
