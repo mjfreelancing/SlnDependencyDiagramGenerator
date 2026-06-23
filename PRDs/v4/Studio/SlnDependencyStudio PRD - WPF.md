@@ -12,7 +12,9 @@
 
 The application must be structured so it can absorb future capabilities from `SlnDependencyDiagramGenerator` without repeated architectural churn. The first version focuses on project authoring, validation, CLI tool detection, generation orchestration, and transparent display of generation output.
 
-The first release is explicitly Windows 10-only, targeting `net10.0-windows10.0.19041`, and will use `MahApps.Metro` together with the Material Design bridge package for theming and control styling.
+The first release is explicitly Windows 10-only, targeting `net10.0-windows10.0.19041`, and will use `MaterialDesignThemes` for control theming and `ReactiveWindow<T>` from ReactiveUI.WPF for view activation.
+
+> **Note (June 2026):** MahApps.Metro and the `MaterialDesignThemes.MahApps` bridge were originally specified but removed during Phase 1 implementation. `ReactiveWindow<T>` and `MetroWindow` share the `Window` base and cannot be combined. The title bar was not draggable when `MetroWindow` was used with MaterialDesign3 theme overrides. `MaterialDesignThemes` alone provides full control theming without MetroWindow. MahApps.Metro may be reconsidered if flyouts or custom window chrome become necessary.
 
 ---
 
@@ -28,7 +30,7 @@ The first release is explicitly Windows 10-only, targeting `net10.0-windows10.0.
 6. Detect `d2` and Mermaid CLI availability and clearly show which tools are supported by the application versus which tools are installed on the current machine.
 7. Surface all non-artifact run output in real time through application logging while generation is running, without requiring callback/event expansion in the initial release.
 8. Keep the architecture extensible so future features can be added without rewriting the shell.
-9. Standardise the UI stack on `MahApps.Metro` with the `MaterialDesignThemes.MahApps` bridge for a professional, consistent Windows desktop experience.
+9. Standardise the UI stack on `MaterialDesignThemes` for a professional, consistent Windows desktop experience. Window activation uses `ReactiveWindow<T>` from ReactiveUI.WPF.
 10. Support an optional pre-generation command step (for example BAT, PS1, or EXE) so users can run prerequisite actions such as rebuilds before diagram generation.
 11. Treat WPF and CLI as first-class delivery targets in the same release, with shared document and orchestration contracts.
 12. Keep WPF Windows-only while preserving a cross-platform-compatible shared core so CLI can run on non-Windows environments.
@@ -570,11 +572,10 @@ Recommended behaviours:
 
 The UI stack for the first release is:
 
-1. `MahApps.Metro` for window chrome and shell-level styling.
-2. `MaterialDesignThemes`
-3. `MaterialDesignThemes.MahApps` to bridge both styling systems cleanly.
+1. `MaterialDesignThemes` for control theming (BundledTheme + MaterialDesign3.Defaults).
+2. `ReactiveWindow<T>` from `ReactiveUI.WPF` for view activation, `WhenActivated`, and `BindCommand`.
 
-This is the baseline visual stack for implementation and should be treated as a project decision rather than a remaining design option.
+> **Note (June 2026):** `MahApps.Metro` and `MaterialDesignThemes.MahApps` were originally specified but removed — see Executive Summary for rationale.
 
 ---
 
