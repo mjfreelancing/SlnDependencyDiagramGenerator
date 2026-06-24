@@ -172,6 +172,70 @@ public class GeneratorProjectOptionsValidatorFixture
         }
 
         [Fact]
+        public void Should_Return_No_Errors_When_RegexToInclude_Has_Valid_Patterns()
+        {
+            var solutionPath = CreateTempSolutionFilePath(".sln");
+
+            try
+            {
+                var model = CreateValidModel(solutionPath, regexToInclude: [".*\\.csproj", "^Test\\..*$"]);
+
+                var validator = new GeneratorProjectOptionsValidator();
+                var result = validator.Validate(model);
+
+                result.IsValid.ShouldBeTrue();
+            }
+            finally
+            {
+                File.Delete(solutionPath);
+            }
+        }
+
+        [Fact]
+        public void Should_Return_An_Error_When_RegexToInclude_Has_Invalid_Pattern()
+        {
+            var solutionPath = CreateTempSolutionFilePath(".sln");
+            const string invalidPattern = "[unclosed";
+
+            try
+            {
+                var model = CreateValidModel(solutionPath, regexToInclude: [invalidPattern]);
+
+                var validator = new GeneratorProjectOptionsValidator();
+                var result = validator.Validate(model);
+
+                result.IsValid.ShouldBeFalse();
+                result.Errors.ShouldContain(item => item.ErrorMessage == $"'{invalidPattern}' is not a valid regex pattern.");
+            }
+            finally
+            {
+                File.Delete(solutionPath);
+            }
+        }
+
+        [Fact]
+        public void Should_Return_An_Error_When_RegexToInclude_Has_Multiple_Patterns_And_One_Is_Invalid()
+        {
+            var solutionPath = CreateTempSolutionFilePath(".sln");
+            const string invalidPattern = "*invalid*";
+
+            try
+            {
+                var model = CreateValidModel(solutionPath, regexToInclude: [".*\\.csproj", invalidPattern]);
+
+                var validator = new GeneratorProjectOptionsValidator();
+                var result = validator.Validate(model);
+
+                result.IsValid.ShouldBeFalse();
+                result.Errors.ShouldContain(item => item.ErrorMessage == $"'{invalidPattern}' is not a valid regex pattern.");
+            }
+            finally
+            {
+                File.Delete(solutionPath);
+            }
+        }
+
+        [Fact]
         public void Should_Return_An_Error_When_Regex_To_Exclude_Is_Null()
         {
             var solutionPath = CreateTempSolutionFilePath(".sln");
@@ -204,6 +268,68 @@ public class GeneratorProjectOptionsValidatorFixture
 
                 result.IsValid.ShouldBeFalse();
                 result.Errors.ShouldContain(item => item.PropertyName == "RegexToExclude");
+            }
+            finally
+            {
+                File.Delete(solutionPath);
+            }
+        }
+
+        [Fact]
+        public void Should_Return_No_Errors_When_RegexToExclude_Is_Empty()
+        {
+            var solutionPath = CreateTempSolutionFilePath(".sln");
+
+            try
+            {
+                var model = CreateValidModel(solutionPath, regexToExclude: []);
+
+                var validator = new GeneratorProjectOptionsValidator();
+                var result = validator.Validate(model);
+
+                result.IsValid.ShouldBeTrue();
+            }
+            finally
+            {
+                File.Delete(solutionPath);
+            }
+        }
+
+        [Fact]
+        public void Should_Return_No_Errors_When_RegexToExclude_Has_Valid_Patterns()
+        {
+            var solutionPath = CreateTempSolutionFilePath(".sln");
+
+            try
+            {
+                var model = CreateValidModel(solutionPath, regexToExclude: [".*\\.Tests\\.*", "^Obsolete\\..*$"]);
+
+                var validator = new GeneratorProjectOptionsValidator();
+                var result = validator.Validate(model);
+
+                result.IsValid.ShouldBeTrue();
+            }
+            finally
+            {
+                File.Delete(solutionPath);
+            }
+        }
+
+        [Fact]
+        public void Should_Return_An_Error_When_RegexToExclude_Has_Invalid_Pattern()
+        {
+            var solutionPath = CreateTempSolutionFilePath(".sln");
+            const string invalidPattern = "(unclosed";
+
+            try
+            {
+                var model = CreateValidModel(solutionPath, regexToExclude: [invalidPattern]);
+
+                var validator = new GeneratorProjectOptionsValidator();
+                var result = validator.Validate(model);
+
+                result.IsValid.ShouldBeFalse();
+                result.Errors.ShouldContain(item => item.ErrorMessage == $"'{invalidPattern}' is not a valid regex pattern.");
             }
             finally
             {
@@ -448,6 +574,7 @@ public class GeneratorProjectOptionsValidatorFixture
     private static string CreateTempSolutionFilePath(string extension)
     {
         var solutionPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}{extension}");
+
         File.WriteAllText(solutionPath, string.Empty);
 
         return solutionPath;
