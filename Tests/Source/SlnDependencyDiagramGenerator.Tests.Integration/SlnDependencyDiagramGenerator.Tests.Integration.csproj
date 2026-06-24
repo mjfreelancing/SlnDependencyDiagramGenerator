@@ -2,6 +2,7 @@
 
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <IsPackable>false</IsPackable>
     </PropertyGroup>
@@ -9,8 +10,6 @@
     <ItemGroup>
         <PackageReference Include="AllOverIt.Assertion" Version="9.2.1" />
         <PackageReference Include="coverlet.collector" Version="6.0.4" />
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.8" />
-        <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.8" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
         <PackageReference Include="NSubstitute" Version="5.3.0" />
         <PackageReference Include="Shouldly" Version="4.3.0" />
@@ -24,7 +23,17 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\Source\SlnDependencyDiagramGenerator.csproj" />
+        <ProjectReference Include="..\..\..\Source\SlnDependencyDiagramGenerator.csproj" />
+        <ProjectReference Include="..\..\..\Studio\SlnDependencyStudio.Shared\SlnDependencyStudio.Shared.csproj" />
+    </ItemGroup>
+
+    <!--
+        Fixture projects under Fixtures/ are real projects and still build/restore normally as part of solution builds.
+        This only prevents fixture source files from being compiled again into the integration test assembly,
+        which would otherwise cause duplicate type/assembly-attribute and top-level-statement errors.
+    -->
+    <ItemGroup>
+        <Compile Remove="Fixtures\**\*.cs" />
     </ItemGroup>
 
 </Project>
