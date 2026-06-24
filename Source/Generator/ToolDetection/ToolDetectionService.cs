@@ -1,9 +1,12 @@
-﻿using AllOverIt.Extensions;
+﻿using AllOverIt.Assertion;
+using AllOverIt.Extensions;
 using AllOverIt.Process;
 using AllOverIt.Process.Extensions;
+using Microsoft.Extensions.Logging;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Exceptions;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -14,33 +17,42 @@ namespace SlnDependencyDiagramGenerator.Generator.ToolDetection;
 /// <summary>Detects and validates the availability of external CLI tools on PATH.</summary>
 internal sealed class ToolDetectionService : IToolDetectionService
 {
-    private readonly Func<CancellationToken, Task<ToolStatus>>[] _toolsAvailability;
+    private readonly Dictionary<DiagramFormat, Func<CancellationToken, Task<ToolStatus>>> _toolsAvailability;
+    private readonly ILogger<ToolDetectionService> _logger;
 
-    public ToolDetectionService()
+    public ToolDetectionService(ILogger<ToolDetectionService> logger)
     {
-        _toolsAvailability =
-        [
-            token => CheckToolAvailabilityAsync("d2", cancellationToken: token),
-            token => CheckToolAvailabilityAsync("mmdc", cancellationToken: token)
-        ];
+        _toolsAvailability = new()
+        {
+            { DiagramFormat.D2, token => CheckToolAvailabilityAsync("d2", cancellationToken: token) },
+            { DiagramFormat.Mermaid, token => CheckToolAvailabilityAsync("mmdc", cancellationToken: token) }
+        };
+
+        _logger = logger.WhenNotNull();
     }
 
     /// <inheritdoc />
     public async Task<ToolStatus> CheckToolAvailabilityAsync(string toolName, string? explicitPath = null, CancellationToken cancellationToken = default)
     {
-        if (!explicitPath.IsNullOrEmpty())
+        if (explicitPath.IsNotNullOrEmpty())
         {
+            _logger.LogInformation("Checking availability of {ToolName} at {ExplicitPath}", toolName, explicitPath);
+
             return await CheckExplicitPathAsync(toolName, explicitPath, cancellationToken).ConfigureAwait(false);
         }
+
+        _logger.LogInformation("Checking availability of {ToolName} on PATH", toolName);
 
         return await CheckPathAsync(toolName, cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
-    public async Task<ToolReadinessResult> CheckConfiguredToolsAsync(DiagramImageFormat[] imageFormats, CancellationToken cancellationToken)
+    public async Task<ToolReadinessResult> CheckConfiguredToolsAsync(DiagramFormat[] diagramFormats, CancellationToken cancellationToken)
     {
-        if (imageFormats.Length == 0)
+        if (diagramFormats.Length == 0)
         {
+            _logger.LogInformation("No diagram formats configured, skipping tool availability checks.");
+
             return new ToolReadinessResult
             {
                 ToolStatuses = []
@@ -48,7 +60,9 @@ internal sealed class ToolDetectionService : IToolDetectionService
         }
 
         var statuses = await Task.WhenAll(
-            _toolsAvailability.Select(check => check(cancellationToken)))
+            _toolsAvailability
+                .Where(kvp => diagramFormats.Contains(kvp.Key))
+                .Select(kvp => kvp.Value.Invoke(cancellationToken)))
             .ConfigureAwait(false);
 
         return new ToolReadinessResult

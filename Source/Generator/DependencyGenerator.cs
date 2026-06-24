@@ -554,7 +554,7 @@ public sealed class DependencyGenerator : IDependencyGenerator
         }
 
         var readiness = await _toolDetection
-            .CheckConfiguredToolsAsync(configuration.Export.ImageFormats, cancellationToken)
+            .CheckConfiguredToolsAsync(configuration.Diagram.Formats, cancellationToken)
             .ConfigureAwait(false);
 
         if (!readiness.AllRequiredToolsAvailable)
@@ -563,7 +563,14 @@ public sealed class DependencyGenerator : IDependencyGenerator
             {
                 if (!status.IsAvailable)
                 {
-                    _logger.LogError(status.ErrorMessage ?? "'{ToolName}' is not available.", status.ToolName);
+                    if (status.ErrorMessage is not null)
+                    {
+                        _logger.LogError("{Message}", status.ErrorMessage);
+                    }
+                    else
+                    {
+                        _logger.LogError("'{ToolName}' is not available.", status.ToolName);
+                    }
                 }
             }
         }

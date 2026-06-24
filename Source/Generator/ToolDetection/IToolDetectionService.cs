@@ -15,8 +15,8 @@ public interface IToolDetectionService
     Task<ToolStatus> CheckToolAvailabilityAsync(string toolName, string? explicitPath = null, CancellationToken cancellationToken = default);
 
     /// <summary>Checks availability for all tools required by the configured image formats.</summary>
-    /// <param name="imageFormats">The configured image export formats.</param>
+    /// <param name="diagramFormats">The configured diagram export formats.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A readiness result covering all required tools.</returns>
-    Task<ToolReadinessResult> CheckConfiguredToolsAsync(DiagramImageFormat[] imageFormats, CancellationToken cancellationToken);
+    Task<ToolReadinessResult> CheckConfiguredToolsAsync(DiagramFormat[] diagramFormats, CancellationToken cancellationToken);
 }
