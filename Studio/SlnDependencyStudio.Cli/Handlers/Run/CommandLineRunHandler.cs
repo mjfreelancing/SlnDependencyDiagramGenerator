@@ -10,6 +10,7 @@ using SlnDependencyStudio.Shared.Config.Extensions;
 using SlnDependencyStudio.Shared.PreGeneration;
 using SlnDependencyStudio.Shared.Serialization;
 using SlnDependencyStudio.Shared.Validators.Contexts;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace SlnDependencyStudio.Cli.Handlers.Run;
@@ -90,10 +91,15 @@ internal sealed class CommandLineRunHandler : CommandLineHandlerBase, ICommandLi
             _logger.LogWarning("Operation was cancelled.");
             return StudioCliExitCode.RunCommandFailed.Value;
         }
+        catch (JsonException exception)
+        {
+            _logger.LogError("Failed to parse configuration file. Error on line {LineNumber} for Path {Path}.", exception.LineNumber + 1, exception.Path);
+            return StudioCliExitCode.CannotLoadConfigFile.Value;
+        }
         catch (Exception exception) when (exception is DirectoryNotFoundException or FileNotFoundException)
         {
             _logger.LogError("Could not load file: {Message}", exception.Message);
-            return StudioCliExitCode.ConfigFileNotFound.Value;
+            return StudioCliExitCode.CannotLoadConfigFile.Value;
         }
     }
 

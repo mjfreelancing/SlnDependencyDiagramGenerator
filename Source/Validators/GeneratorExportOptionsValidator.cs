@@ -19,6 +19,8 @@ internal sealed class GeneratorExportOptionsValidator : ValidatorBase<GeneratorE
     {
         RuleFor(model => model.RootPath).IsNotEmpty();
         RuleFor(model => model.ImageFormats).NotNull();
-        RuleForEach(model => model.ImageFormats).IsInEnum();
+
+        // Can't validate since the document needs to be loaded first - which would raise a JsonException if the value is invalid.
+        // RuleForEach(model => model.ImageFormats).IsInEnum();
     }
 }

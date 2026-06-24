@@ -9,8 +9,8 @@ public sealed class StudioCliExitCode : EnrichedEnum<StudioCliExitCode>
     /// <summary>Command-line parsing failed.</summary>
     public static readonly StudioCliExitCode CommandLineParseFailed = new(1001);
 
-    /// <summary>The config file path does not exist.</summary>
-    public static readonly StudioCliExitCode ConfigFileNotFound = new(1002);
+    /// <summary>The config file path does not exist or the file is malformed.</summary>
+    public static readonly StudioCliExitCode CannotLoadConfigFile = new(1002);
 
     /// <summary>The <c>validate</c> command failed.</summary>
     public static readonly StudioCliExitCode ValidateCommandFailed = new(1003);

@@ -1,6 +1,6 @@
+using Shouldly;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Validators;
-using Shouldly;
 
 namespace SlnDependencyDiagramGenerator.Tests.Unit.Validators;
 
@@ -69,22 +69,6 @@ public class GeneratorExportOptionsValidatorFixture
 
             result.IsValid.ShouldBeFalse();
             result.Errors.ShouldContain(item => item.PropertyName == "ImageFormats");
-        }
-
-        [Fact]
-        public void Should_Return_An_Error_When_Image_Formats_Contains_An_Invalid_Value()
-        {
-            var model = new GeneratorExportOptions
-            {
-                RootPath = "output",
-                ImageFormats = [(DiagramImageFormat)999]
-            };
-
-            var validator = new GeneratorExportOptionsValidator();
-            var result = validator.Validate(model);
-
-            result.IsValid.ShouldBeFalse();
-            result.Errors.ShouldContain(item => item.PropertyName == "ImageFormats[0]");
         }
     }
 }

@@ -28,7 +28,9 @@ internal sealed class GeneratorDiagramOptionsValidator : ValidatorBase<Generator
         RuleFor(model => model.TransitiveStyle).NotNull();
         RuleFor(model => model.TransitiveStyle).SetValidator(fillStyleValidator);
 
-        RuleFor(model => model.Direction).IsInEnum();
+        // Can't validate since the document needs to be loaded first - which would raise a JsonException if the value is invalid.
+        // RuleFor(model => model.Direction).IsInEnum();
+
         RuleFor(model => model.GroupName).IsNotEmpty();
         RuleFor(model => model.GroupNameAlias).IsNotEmpty();
         RuleFor(model => model.Grouping).NotNull();
@@ -39,8 +41,9 @@ internal sealed class GeneratorDiagramOptionsValidator : ValidatorBase<Generator
             RuleFor(model => model.Grouping.BackgroundStyle).SetValidator(fillStyleValidator);
         });
 
-        RuleFor(model => model.Formats).NotNull();
         RuleFor(model => model.Formats).IsNotEmpty();
-        RuleForEach(model => model.Formats).IsInEnum();
+        
+        // Can't validate since the document needs to be loaded first - which would raise a JsonException if the value is invalid.
+        // RuleForEach(model => model.Formats).IsInEnum();
     }
 }

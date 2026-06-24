@@ -44,7 +44,6 @@ internal sealed class GeneratorProjectOptionsValidator : ValidatorBase<Generator
                 .WithMessage(model => $"The solution was not found: {Path.GetFullPath(model.SolutionPath)}");
         });
 
-        RuleFor(model => model.RegexToInclude).NotNull();
         RuleFor(model => model.RegexToInclude).IsNotEmpty();
 
         When(model => model.RegexToInclude is { Length: > 0 }, () =>

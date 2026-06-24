@@ -1,6 +1,6 @@
+using Shouldly;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Validators;
-using Shouldly;
 
 namespace SlnDependencyDiagramGenerator.Tests.Unit.Validators;
 
@@ -334,19 +334,6 @@ public class GeneratorDiagramOptionsValidatorFixture
 
             result.IsValid.ShouldBeFalse();
             result.Errors.ShouldContain(item => item.PropertyName == "FrameworkStyle.Opacity");
-        }
-
-        [Fact]
-        public void Should_Return_An_Error_When_Direction_Is_Invalid()
-        {
-            var model = CreateValidModel();
-            model.Direction = (GeneratorDiagramOptions.DiagramDirection)999;
-
-            var validator = new GeneratorDiagramOptionsValidator();
-            var result = validator.Validate(model);
-
-            result.IsValid.ShouldBeFalse();
-            result.Errors.ShouldContain(item => item.PropertyName == "Direction");
         }
     }
 

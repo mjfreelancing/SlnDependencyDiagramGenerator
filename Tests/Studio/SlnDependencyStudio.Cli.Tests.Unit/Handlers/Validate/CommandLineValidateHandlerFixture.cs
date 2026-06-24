@@ -10,6 +10,7 @@ using SlnDependencyStudio.Cli.Enumerations;
 using SlnDependencyStudio.Cli.Handlers.Validate;
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Shared.Serialization;
+using System.Text.Json;
 
 namespace SlnDependencyStudio.Cli.Tests.Unit.Handlers.Validate;
 
@@ -52,7 +53,27 @@ public class CommandLineValidateHandlerFixture
 
         var result = await handler.HandleAsync(@"X:\nonexistent\file.sds", CancellationToken.None);
 
-        result.ShouldBe(StudioCliExitCode.ConfigFileNotFound.Value);
+        result.ShouldBe(StudioCliExitCode.CannotLoadConfigFile.Value);
+    }
+
+    [Fact]
+    public async Task Should_Return_CannotLoadConfigFile_When_Json_Is_Malformed()
+    {
+        var serializer = Substitute.For<IDependencyProjectSerializer>();
+
+        serializer
+            .DeserializeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .ThrowsAsync(new JsonException("Invalid JSON"));
+
+        var dependencyGenerator = Substitute.For<IDependencyGenerator>();
+        var validationInvoker = Substitute.For<IValidationInvoker>();
+        var logger = Substitute.For<ILogger<CommandLineValidateHandler>>();
+
+        var handler = new CommandLineValidateHandler(serializer, dependencyGenerator, validationInvoker, logger);
+
+        var result = await handler.HandleAsync(Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None);
+
+        result.ShouldBe(StudioCliExitCode.CannotLoadConfigFile.Value);
     }
 
     [Fact]

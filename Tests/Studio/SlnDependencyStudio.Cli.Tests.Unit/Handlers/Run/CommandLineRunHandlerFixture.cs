@@ -12,8 +12,8 @@ using SlnDependencyStudio.Cli.Handlers.Run;
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Shared.PreGeneration;
 using SlnDependencyStudio.Shared.Serialization;
-
-namespace SlnDependencyStudio.Cli.Tests.Unit.Handlers.Run;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 
 public class CommandLineRunHandlerFixture
 {
@@ -155,7 +155,29 @@ public class CommandLineRunHandlerFixture
         var result = await handler.HandleAsync(
             @"X:\nonexistent\file.sds", CancellationToken.None);
 
-        result.ShouldBe(StudioCliExitCode.ConfigFileNotFound.Value);
+        result.ShouldBe(StudioCliExitCode.CannotLoadConfigFile.Value);
+    }
+
+    [Fact]
+    public async Task Should_Return_CannotLoadConfigFile_When_Json_Is_Malformed()
+    {
+        var serializer = Substitute.For<IDependencyProjectSerializer>();
+
+        serializer
+            .DeserializeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .ThrowsAsync(new JsonException("Invalid JSON"));
+
+        var dependencyGenerator = Substitute.For<IDependencyGenerator>();
+        var preGenRunner = Substitute.For<IPreGenerationCommandRunner>();
+        var validationInvoker = Substitute.For<IValidationInvoker>();
+        var logger = Substitute.For<ILogger<CommandLineRunHandler>>();
+
+        var handler = new CommandLineRunHandler(serializer, dependencyGenerator, preGenRunner, validationInvoker, logger);
+
+        var result = await handler.HandleAsync(
+            Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None);
+
+        result.ShouldBe(StudioCliExitCode.CannotLoadConfigFile.Value);
     }
 
     [Fact]

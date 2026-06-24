@@ -7,6 +7,7 @@ using SlnDependencyStudio.Cli.Enumerations;
 using SlnDependencyStudio.Shared.Config.Extensions;
 using SlnDependencyStudio.Shared.Serialization;
 using SlnDependencyStudio.Shared.Validators.Contexts;
+using System.Text.Json;
 
 namespace SlnDependencyStudio.Cli.Handlers.Validate;
 
@@ -60,10 +61,15 @@ internal sealed class CommandLineValidateHandler : CommandLineHandlerBase, IComm
             WriteValidationErrors(exception);
             return StudioCliExitCode.ValidateCommandFailed.Value;
         }
+        catch (JsonException exception)
+        {
+            _logger.LogError("Failed to parse configuration file. Error on line {LineNumber} for Path {Path}.", exception.LineNumber + 1, exception.Path);
+            return StudioCliExitCode.CannotLoadConfigFile.Value;
+        }
         catch (Exception exception) when (exception is DirectoryNotFoundException or FileNotFoundException)
         {
             _logger.LogError("Could not load file: {Message}", exception.Message);
-            return StudioCliExitCode.ConfigFileNotFound.Value;
+            return StudioCliExitCode.CannotLoadConfigFile.Value;
         }
     }
 }
