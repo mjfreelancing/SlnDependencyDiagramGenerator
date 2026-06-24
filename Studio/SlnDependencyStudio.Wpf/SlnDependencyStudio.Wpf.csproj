@@ -13,23 +13,23 @@
 
   <ItemGroup>
     <!-- Phase 1: ReactiveUI foundation -->
-    <PackageReference Include="ReactiveUI" Version="23.2.27" />
-    <PackageReference Include="ReactiveUI.Validation" Version="4.1.1" />
-    <PackageReference Include="ReactiveUI.Fody" Version="19.5.41" />
-    <PackageReference Include="ReactiveUI.WPF" Version="23.2.27" />
+    <PackageReference Include="ReactiveUI" />
+    <PackageReference Include="ReactiveUI.Validation" />
+    <PackageReference Include="ReactiveUI.Fody" />
+    <PackageReference Include="ReactiveUI.WPF" />
 
     <!-- Phase 1: UI theming -->
-    <PackageReference Include="MaterialDesignThemes" Version="5.2.1" />
+    <PackageReference Include="MaterialDesignThemes" />
 
     <!-- Phase 1: AllOverIt infrastructure -->
-    <PackageReference Include="AllOverIt.ReactiveUI" Version="9.2.1" />
-    <PackageReference Include="AllOverIt.ReactiveUI.Wpf" Version="9.2.1" />
-    <PackageReference Include="AllOverIt.DependencyInjection" Version="9.2.1" />
+    <PackageReference Include="AllOverIt.ReactiveUI" />
+    <PackageReference Include="AllOverIt.ReactiveUI.Wpf" />
+    <PackageReference Include="AllOverIt.DependencyInjection" />
 
     <!-- Phase 1: Hosting and logging -->
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.8" />
-    <PackageReference Include="Serilog.Extensions.Hosting" Version="10.0.0" />
-    <PackageReference Include="Serilog.Sinks.RollingFile" Version="3.3.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Serilog.Extensions.Hosting" />
+    <PackageReference Include="Serilog.Sinks.RollingFile" />
   </ItemGroup>
 
   <ItemGroup>
