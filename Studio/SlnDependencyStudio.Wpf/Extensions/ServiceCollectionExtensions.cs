@@ -19,7 +19,13 @@ public static class ServiceCollectionExtensions
             config.Filter((serviceType, _) => serviceType != typeof(IStudioScopedDependency));
         });
 
-        // AutoRegisterTransient and AutoRegisterSingleton are deferred until needed by a specific phase.
+        // AutoRegisterTransient is deferred until needed by a specific phase.
+
+        // Auto-register all singleton classes implementing IStudioSingletonDependency in this assembly.
+        services.AutoRegisterSingleton<DependencyRegistrar, IStudioSingletonDependency>(config =>
+        {
+            config.Filter((serviceType, _) => serviceType != typeof(IStudioSingletonDependency));
+        });
 
         return services;
     }
