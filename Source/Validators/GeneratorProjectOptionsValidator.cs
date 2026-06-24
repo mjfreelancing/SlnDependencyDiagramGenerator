@@ -29,8 +29,9 @@ internal sealed class GeneratorProjectOptionsValidator : ValidatorBase<Generator
                 .Must(path =>
                 {
                     var extension = Path.GetExtension(path);
-                    return extension.Equals(".sln", System.StringComparison.OrdinalIgnoreCase) ||
-                           extension.Equals(".slnx", System.StringComparison.OrdinalIgnoreCase);
+
+                    return extension.Equals(".sln", StringComparison.OrdinalIgnoreCase) ||
+                           extension.Equals(".slnx", StringComparison.OrdinalIgnoreCase);
                 })
                 .WithMessage("SolutionPath must reference a .sln or .slnx file.");
 
