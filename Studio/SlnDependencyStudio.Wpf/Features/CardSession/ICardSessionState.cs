@@ -1,4 +1,4 @@
-namespace SlnDependencyStudio.Wpf.Services;
+namespace SlnDependencyStudio.Wpf.Features.CardSession;
 
 /// <summary>Tracks the expanded/collapsed state of collapsible cards for the duration of a navigation session.
 /// State is not persisted to disk.</summary>

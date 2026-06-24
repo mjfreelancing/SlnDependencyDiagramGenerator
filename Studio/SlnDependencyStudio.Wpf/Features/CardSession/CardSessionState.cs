@@ -1,6 +1,6 @@
 using SlnDependencyStudio.Shared.DependencyInjection;
 
-namespace SlnDependencyStudio.Wpf.Services;
+namespace SlnDependencyStudio.Wpf.Features.CardSession;
 
 /// <summary>Default in-memory implementation of <see cref="ICardSessionState"/>.
 /// Holds card expanded state in a <see cref="Dictionary{TKey,TValue}"/> for the lifetime

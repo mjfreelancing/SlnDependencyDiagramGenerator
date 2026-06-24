@@ -13,6 +13,36 @@ New items may be added at the end of a phase (with a `(Added: YYYY-MM-DD)` annot
 
 ---
 
+## 🗂️ Code Organization Convention (Vertical Slice / Feature-Based)
+
+The WPF project uses a **vertical slice** folder structure under `Features/`. Each feature gets its own folder containing all the code for that feature — interface, implementation, and models. There is no top-level `Services/` or `Models/` folder.
+
+```
+Features/
+├── <FeatureName>/
+│   ├── I<FeatureName>Service.cs       (public interface)
+│   ├── <FeatureName>Service.cs       (internal sealed implementation)
+│   └── Models/                        (optional — only if the feature has models)
+│       └── <ModelName>.cs
+```
+
+**Existing features (as of 2026-06-24):**
+
+| Feature Folder          | Namespace                                      | Contents                                                                                                                        |
+| ----------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `Features/Application/` | `SlnDependencyStudio.Wpf.Features.Application` | `IApplicationSettingsService`, `ApplicationSettingsService`, `Models/` (ApplicationSettings, ApplicationState, WindowPlacement) |
+| `Features/CardSession/` | `SlnDependencyStudio.Wpf.Features.CardSession` | `ICardSessionState`, `CardSessionState`                                                                                         |
+
+**Rules:**
+
+- Each feature folder is a self-contained vertical slice. Do not scatter a feature's interface, implementation, or models across top-level folders.
+- The namespace must match the folder path: `SlnDependencyStudio.Wpf.Features.<FeatureName>` (and `.Models` for the model subfolder).
+- Interfaces are `public`. Implementations are `internal sealed` and implement the appropriate DI marker interface (`IStudioSingletonDependency` or `IStudioScopedDependency`) for auto-registration.
+- A `Models/` subfolder is created only when the feature has one or more model/POCO classes. If the feature has no models, omit the folder.
+- Cross-cutting infrastructure that is not a feature (e.g., `DependencyInjection/`, `Extensions/`, `App.xaml`, `MainWindow.xaml`) remains at the project root.
+
+---
+
 ## Phase Status
 
 | Phase | Description                           | Status |
@@ -37,9 +67,9 @@ New items may be added at the end of a phase (with a `(Added: YYYY-MM-DD)` annot
 
 ### 1.1 Project File & Dependencies
 
-- [ ] 1.1.1 Create the project at `Studio/SlnDependencyStudio.Wpf/SlnDependencyStudio.Wpf.csproj` with `<OutputType>WinExe</OutputType>`, `<UseWPF>true</UseWPF>`, and `<TargetFramework>net10.0-windows10.0.19041</TargetFramework>`.
-- [ ] 1.1.2 Add `ProjectReference` to `..\..\Source\SlnDependencyDiagramGenerator.csproj` and `..\SlnDependencyStudio.Shared\SlnDependencyStudio.Shared.csproj`.
-- [ ] 1.1.3 Add NuGet packages **only as they are needed per phase** (YAGNI). Do not install all packages up front. When a phase first requires a package, use a **specialised NuGet/Context7 agent** to resolve the latest compatible version for `net10.0-windows10.0.19041`. Phase 1 requires at minimum:
+- [x] 1.1.1 Create the project at `Studio/SlnDependencyStudio.Wpf/SlnDependencyStudio.Wpf.csproj` with `<OutputType>WinExe</OutputType>`, `<UseWPF>true</UseWPF>`, and `<TargetFramework>net10.0-windows10.0.19041</TargetFramework>`.
+- [x] 1.1.2 Add `ProjectReference` to `..\..\Source\SlnDependencyDiagramGenerator.csproj` and `..\SlnDependencyStudio.Shared\SlnDependencyStudio.Shared.csproj`.
+- [x] 1.1.3 Add NuGet packages **only as they are needed per phase** (YAGNI). Do not install all packages up front. When a phase first requires a package, use a **specialised NuGet/Context7 agent** to resolve the latest compatible version for `net10.0-windows10.0.19041`. Phase 1 requires at minimum:
   - `ReactiveUI` and `ReactiveUI.Validation` (MVVM foundation; `RxAppBuilder` is in `ReactiveUI` itself)
   - `ReactiveUI.WPF` (WPF platform bindings for ReactiveUI)
   - `MaterialDesignThemes` (Material Design control theming: Card, PackIcon, Chip, DialogHost)
@@ -233,7 +263,7 @@ The selected nav item gets a left-accent border (4px `MaterialDesignPrimary`) an
 - [x] 1.4.1 Present the five-section navigation design (Project, Sources, Diagrams, Export, Pipeline) to the human for review and iterate until signed off. Confirm the "Pipeline" merge of Pre-Generation + Tools and the "Sources" rename.
 - [x] 1.4.2 Agree the progressive disclosure split: Essential (solution path, formats, export root — always expanded), Common (regex patterns, scope toggles, image formats — always expanded), Advanced (fill styles, opacity, grouping, pre-gen, tool paths — collapsed by default with an "Advanced" label). Confirm which fields fall into each tier.
 - [x] 1.4.3 Agree the card-based page layout pattern: each navigation section renders a scrollable workspace page with collapsible `Card` controls grouping related settings. Cards show validation error counts on their headers. Confirm this pattern for all five sections.
-- [x] 1.4.4 Agree the validation visibility approach: inline field errors via ReactiveUI.Validation, nav-item warning dots, and a disabled Generate button with tooltip. Confirm the error-count badge on card headers. *(Revised 2026-06-24: floating validation summary bar dropped — WPF GridSplitter limitation made it architecturally problematic; nav badges + inline errors provide equivalent coverage.)*
+- [x] 1.4.4 Agree the validation visibility approach: inline field errors via ReactiveUI.Validation, nav-item warning dots, and a disabled Generate button with tooltip. Confirm the error-count badge on card headers. _(Revised 2026-06-24: floating validation summary bar dropped — WPF GridSplitter limitation made it architecturally problematic; nav badges + inline errors provide equivalent coverage.)_
 - [x] 1.4.5 Agree the empty-state landing page design: two primary CTA cards (New Project / Open Project), recent projects list, and Settings shortcut. Confirm the empty state is what the user sees on first launch before opening a document.
 - [x] 1.4.6 Create `NavigationItemViewModel` with `DisplayName`, `PackIconKind`, `IsSelected`, `HasValidationError`, and `ViewModelType` (for view resolution). Include an `IsAdvanced` flag that controls the "(opt)" chip visibility.
 - [x] 1.4.7 Extend `MainWindowViewModel` with a `ReactiveList<NavigationItemViewModel>` bound to the nav `ListBox`, a `CurrentPage` property for the centre workspace, and a `CurrentValidationSummary` collection aggregating cross-section validation state (drives nav-item dot indicators).
@@ -254,11 +284,11 @@ The selected nav item gets a left-accent border (4px `MaterialDesignPrimary`) an
 
 ### 2.1 Settings Model & Persistence
 
-- [ ] 2.1.1 Create `ApplicationSettings` model with properties: `DefaultProjectFolder` (string), `ToolPathOverrides` (dictionary: tool name → explicit path), `LogRetentionDays` (int, default 30).
-- [ ] 2.1.2 Create `IApplicationSettingsService` interface with `LoadAsync()`, `SaveAsync()`, and a `CurrentSettings` property (or observable).
-- [ ] 2.1.3 Implement `ApplicationSettingsService` using `System.Text.Json` to persist to `%AppData%/SlnDependencyStudio/settings.json`. Use a **specialised file-I/O agent** if threading or atomic-write concerns arise.
-- [ ] 2.1.4 Create `ApplicationState` model (separate from settings) for transient data: `RecentProjects` (list of paths), `WindowPlacement` (left/top/width/height/state). Persist to `%AppData%/SlnDependencyStudio/state.json`.
-- [ ] 2.1.5 Register `IApplicationSettingsService` as a singleton in `AddWpfDependencies()`.
+- [x] 2.1.1 Create `ApplicationSettings` model with properties: `DefaultProjectFolder` (string), `ToolPathOverrides` (dictionary: tool name → explicit path), `LogRetentionDays` (int, default 30).
+- [x] 2.1.2 Create `IApplicationSettingsService` interface with `LoadAsync()`, `SaveAsync()`, and a `CurrentSettings` property (or observable).
+- [x] 2.1.3 Implement `ApplicationSettingsService` using `System.Text.Json` to persist to `%AppData%/SlnDependencyStudio/settings.json`. Use a **specialised file-I/O agent** if threading or atomic-write concerns arise.
+- [x] 2.1.4 Create `ApplicationState` model (separate from settings) for transient data: `RecentProjects` (list of paths), `WindowPlacement` (left/top/width/height/state). Persist to `%AppData%/SlnDependencyStudio/state.json`.
+- [x] 2.1.5 Register `IApplicationSettingsService` as a singleton in `AddWpfDependencies()`.
 
 ### 2.2 Settings UI
 
