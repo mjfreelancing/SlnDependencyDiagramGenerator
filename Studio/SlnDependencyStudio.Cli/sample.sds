@@ -8,7 +8,7 @@
     "projects": {
       "solutionPath": "..\\..\\SlnDependencyDiagramGenerator.sln",
       "regexToInclude": ["\\.*\\.csproj"],
-      "regexToExclude": ["\\(Tests|Studio)\\"],
+      "regexToExclude": ["Tests|Studio"],
       "packagesToExclude": ["Microsoft.Build", "Microsoft.SourceLink.GitHub"],
       "frameworksToExclude": ["Microsoft.NETCore.App"],
       "individual": {
