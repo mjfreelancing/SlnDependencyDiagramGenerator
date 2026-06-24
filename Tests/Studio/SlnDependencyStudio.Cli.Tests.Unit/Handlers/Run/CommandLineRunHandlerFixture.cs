@@ -182,7 +182,7 @@ public class CommandLineRunHandlerFixture
         var result = await handler.HandleAsync(
             Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None);
 
-        result.ShouldBe(StudioCliExitCode.ValidateCommandFailed.Value);
+        result.ShouldBe(StudioCliExitCode.RunCommandFailed.Value);
     }
 
     [Fact]

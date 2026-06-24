@@ -73,12 +73,12 @@ internal sealed class CommandLineRunHandler : CommandLineHandlerBase, ICommandLi
         catch (ValidationException exception)
         {
             WriteValidationErrors(exception);
-            return StudioCliExitCode.ValidateCommandFailed.Value;
+            return StudioCliExitCode.RunCommandFailed.Value;
         }
         catch (RegexParseException exception)
         {
             _logger.LogError("Invalid regular expression: {Message}", exception.Message);
-            return StudioCliExitCode.InvalidRegex.Value;
+            return StudioCliExitCode.RunCommandFailed.Value;
         }
         catch (DependencyGeneratorException exception)
         {
