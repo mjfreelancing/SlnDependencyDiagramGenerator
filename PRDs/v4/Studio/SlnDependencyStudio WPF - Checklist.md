@@ -168,7 +168,7 @@ Validation is **always visible**, not gated behind a "Validate" button:
 - Each card shows a **count badge** on its header when it contains validation errors (e.g., "⚠ 2").
 - Individual fields show inline error text below the control via `ReactiveUI.Validation` bindings, styled with Material Design's `MaterialDesignValidationErrorTemplate`.
 - The left nav items show a **dot indicator** (orange for warnings, red for errors) next to the nav label — the user can see at a glance which sections need attention.
-- A **floating validation summary bar** appears at the bottom of the workspace (above the output panel) when validation errors exist. It lists each error with a "jump to" link that navigates to the offending field. It dismisses when all errors are resolved.
+- A floating validation summary bar was considered but dropped (2026-06-24). The WPF `GridSplitter` cannot respect `MinHeight` constraints when adjacent rows mix `Auto` and `Star` sizing. The nav-item dot indicators already provide the cross-section "which sections have problems" overview, and inline field errors provide the detail — together they deliver equivalent UX without architectural complexity.
 - The "Generate" button (in a persistent bottom bar or toolbar) is **disabled** while critical validation errors exist, with a tooltip listing what must be fixed.
 
 #### First Impression — The Empty State
@@ -233,16 +233,16 @@ The selected nav item gets a left-accent border (4px `MaterialDesignPrimary`) an
 - [x] 1.4.1 Present the five-section navigation design (Project, Sources, Diagrams, Export, Pipeline) to the human for review and iterate until signed off. Confirm the "Pipeline" merge of Pre-Generation + Tools and the "Sources" rename.
 - [x] 1.4.2 Agree the progressive disclosure split: Essential (solution path, formats, export root — always expanded), Common (regex patterns, scope toggles, image formats — always expanded), Advanced (fill styles, opacity, grouping, pre-gen, tool paths — collapsed by default with an "Advanced" label). Confirm which fields fall into each tier.
 - [x] 1.4.3 Agree the card-based page layout pattern: each navigation section renders a scrollable workspace page with collapsible `Card` controls grouping related settings. Cards show validation error counts on their headers. Confirm this pattern for all five sections.
-- [x] 1.4.4 Agree the validation visibility approach: inline field errors via ReactiveUI.Validation, nav-item warning dots, a floating validation summary bar above the output panel, and a disabled Generate button with tooltip. Confirm the error-count badge on card headers.
+- [x] 1.4.4 Agree the validation visibility approach: inline field errors via ReactiveUI.Validation, nav-item warning dots, and a disabled Generate button with tooltip. Confirm the error-count badge on card headers. *(Revised 2026-06-24: floating validation summary bar dropped — WPF GridSplitter limitation made it architecturally problematic; nav badges + inline errors provide equivalent coverage.)*
 - [x] 1.4.5 Agree the empty-state landing page design: two primary CTA cards (New Project / Open Project), recent projects list, and Settings shortcut. Confirm the empty state is what the user sees on first launch before opening a document.
-- [ ] 1.4.6 Create `NavigationItemViewModel` with `DisplayName`, `PackIconKind`, `IsSelected`, `HasValidationError`, and `ViewModelType` (for view resolution). Include an `IsAdvanced` flag that controls the "(opt)" chip visibility.
-- [ ] 1.4.7 Extend `MainWindowViewModel` with a `ReactiveList<NavigationItemViewModel>` bound to the nav `ListBox`, a `CurrentPage` property for the centre workspace, and a `CurrentValidationSummary` collection driving the floating bar.
-- [ ] 1.4.8 Implement the left nav `ListBox` with Material Design styling: `MaterialDesignPaper` background, `Divider` border, left-accent selection indicator (4px `MaterialDesignPrimary`), icon+label item template, validation dot template, tool-status row at bottom. The left nav shall include:
+- [x] 1.4.6 Create `NavigationItemViewModel` with `DisplayName`, `PackIconKind`, `IsSelected`, `HasValidationError`, and `ViewModelType` (for view resolution). Include an `IsAdvanced` flag that controls the "(opt)" chip visibility.
+- [x] 1.4.7 Extend `MainWindowViewModel` with a `ReactiveList<NavigationItemViewModel>` bound to the nav `ListBox`, a `CurrentPage` property for the centre workspace, and a `CurrentValidationSummary` collection aggregating cross-section validation state (drives nav-item dot indicators).
+- [x] 1.4.8 Implement the left nav `ListBox` with Material Design styling: `MaterialDesignPaper` background, `Divider` border, left-accent selection indicator (4px `MaterialDesignPrimary`), icon+label item template, validation dot template, tool-status row at bottom. The left nav shall include:
   - An app title row at the very top (small, muted text: "🧩 SlnDep...Studio" or similar, truncated if needed).
   - A `DataTemplate` that renders nav items with `IsAdvanced == true` as a Material Design `Chip` with "optional" text beside the label.
   - A hover highlight (subtle background change) on non-selected items.
   - Defer the recent-projects list to Phase 3.
-- [ ] 1.4.9 Implement card collapse/expand persistence: each collapsible `Card` on a config page remembers its expanded/collapsed state for the duration of the navigation session. When the user switches pages and returns, cards restore their previous state. State is **not** persisted to disk. Use a dictionary keyed by card identifier stored in the page's view model or a shared session-state service.
+- [x] 1.4.9 Implement card collapse/expand persistence: each collapsible `Card` on a config page remembers its expanded/collapsed state for the duration of the navigation session. When the user switches pages and returns, cards restore their previous state. State is **not** persisted to disk. Use a dictionary keyed by card identifier stored in the page's view model or a shared session-state service.
 
 **Phase 1 completion:** The app launches and displays a themed window with three empty zones. Navigation structure is agreed but detailed views are not yet wired.
 
@@ -340,7 +340,7 @@ The selected nav item gets a left-accent border (4px `MaterialDesignPrimary`) an
 ### 4.4 Validation Wiring
 
 - [ ] 4.4.1 Wire `ReactiveUI.Validation`'s `BindValidation` helper in each view to display inline error messages with Material Design's `MaterialDesignValidationErrorTemplate`, per the validation integration section in 1.4.
-- [ ] 4.4.2 Implement the floating validation summary bar (above the output panel) that lists errors with "jump to" navigation links, as described in 1.4.
+- [x] 4.4.2 ~~Implement the floating validation summary bar~~ — Dropped (2026-06-24). WPF `GridSplitter` limitation: both adjacent rows must use `GridUnitType.Star` for `MinHeight` to be respected, which conflicts with `Auto`-sized validation content. Inline validation + nav badges provide equivalent UX without architectural complexity.
 - [ ] 4.4.3 Ensure each card header shows a validation-error count badge (e.g., "⚠ 2") and each left-nav item shows a dot indicator (orange/red) when its page has validation errors, per 1.4.
 
 **Phase 4 completion:** The user can edit metadata, select solution/export paths, toggle formats, and clear contents. Validation errors appear inline and are surfaced in the navigation.
