@@ -24,6 +24,9 @@ public sealed class StudioCliExitCode : EnrichedEnum<StudioCliExitCode>
     /// <summary>The diagram generator threw an error during <c>CreateDiagramsAsync</c>.</summary>
     public static readonly StudioCliExitCode DiagramGeneratorFailed = new(1006);
 
+    /// <summary>An invalid regular expression was provided for project inclusion/exclusion.</summary>
+    public static readonly StudioCliExitCode InvalidRegex = new(1007);
+
     /// <summary>An unexpected CLI failure occurred.</summary>
     public static readonly StudioCliExitCode UnhandledCliFailure = new(1999);
 

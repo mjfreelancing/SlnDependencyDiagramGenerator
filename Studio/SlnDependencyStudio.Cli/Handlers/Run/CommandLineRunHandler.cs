@@ -10,6 +10,7 @@ using SlnDependencyStudio.Shared.Config.Extensions;
 using SlnDependencyStudio.Shared.PreGeneration;
 using SlnDependencyStudio.Shared.Serialization;
 using SlnDependencyStudio.Shared.Validators.Contexts;
+using System.Text.RegularExpressions;
 
 namespace SlnDependencyStudio.Cli.Handlers.Run;
 
@@ -73,6 +74,11 @@ internal sealed class CommandLineRunHandler : CommandLineHandlerBase, ICommandLi
         {
             WriteValidationErrors(exception);
             return StudioCliExitCode.ValidateCommandFailed.Value;
+        }
+        catch (RegexParseException exception)
+        {
+            _logger.LogError("Invalid regular expression: {Message}", exception.Message);
+            return StudioCliExitCode.InvalidRegex.Value;
         }
         catch (DependencyGeneratorException exception)
         {

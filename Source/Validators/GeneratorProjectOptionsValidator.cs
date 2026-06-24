@@ -3,7 +3,9 @@ using AllOverIt.Validation;
 using AllOverIt.Validation.Extensions;
 using FluentValidation;
 using SlnDependencyDiagramGenerator.Config;
+using System;
 using System.IO;
+using System.Text.RegularExpressions;
 
 namespace SlnDependencyDiagramGenerator.Validators;
 
@@ -43,10 +45,25 @@ internal sealed class GeneratorProjectOptionsValidator : ValidatorBase<Generator
 
         RuleFor(model => model.RegexToInclude).NotNull();
         RuleFor(model => model.RegexToInclude).IsNotEmpty();
+
+        When(model => model.RegexToInclude is { Length: > 0 }, () =>
+        {
+            RuleForEach(model => model.RegexToInclude)
+                .Must(pattern => ValidateRegexPattern(pattern))
+                .WithMessage("'{PropertyValue}' is not a valid regex pattern.");
+        });
+
         RuleFor(model => model.RegexToExclude).NotNull();
+
+        When(model => model.RegexToExclude is { Length: > 0 }, () =>
+        {
+            RuleForEach(model => model.RegexToExclude)
+                .Must(pattern => ValidateRegexPattern(pattern))
+                .WithMessage("'{PropertyValue}' is not a valid regex pattern.");
+        });
+
         RuleFor(model => model.PackagesToExclude).NotNull();
         RuleFor(model => model.FrameworksToExclude).NotNull();
-
         RuleFor(model => model.Individual).NotNull();
         RuleFor(model => model.All).NotNull();
 
@@ -59,5 +76,18 @@ internal sealed class GeneratorProjectOptionsValidator : ValidatorBase<Generator
         {
             RuleFor(model => model.All.TransitiveDepth).IsGreaterThanOrEqualTo(0);
         });
+    }
+
+    private static bool ValidateRegexPattern(string pattern)
+    {
+        try
+        {
+            _ = new Regex(pattern, RegexOptions.None, TimeSpan.FromMilliseconds(100));
+            return true;
+        }
+        catch (ArgumentException)
+        {
+            return false;
+        }
     }
 }
