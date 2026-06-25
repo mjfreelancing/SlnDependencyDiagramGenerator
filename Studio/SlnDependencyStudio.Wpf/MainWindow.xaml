@@ -9,6 +9,7 @@
     xmlns:viewModels="clr-namespace:SlnDependencyStudio.Wpf.ViewModels"
     xmlns:wpf="clr-namespace:SlnDependencyStudio.Wpf"
     Title="SlnDependencyStudio"
+    Icon="app.ico"
     Width="1200"
     Height="800"
     MinWidth="900"
