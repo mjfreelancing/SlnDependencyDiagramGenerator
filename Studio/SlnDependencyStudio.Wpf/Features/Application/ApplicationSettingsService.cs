@@ -1,4 +1,3 @@
-using SlnDependencyStudio.Shared.DependencyInjection;
 using SlnDependencyStudio.Wpf.Features.Application.Models;
 using System.IO;
 using System.Text.Json;
@@ -8,7 +7,7 @@ namespace SlnDependencyStudio.Wpf.Features.Application;
 /// <summary>Default implementation of <see cref="IApplicationSettingsService"/>.
 /// Persists settings to <c>%AppData%/SlnDependencyStudio/settings.json</c> using
 /// <see cref="System.Text.Json"/> with an atomic write strategy.</summary>
-internal sealed class ApplicationSettingsService : IApplicationSettingsService, IStudioSingletonDependency
+internal sealed class ApplicationSettingsService : IApplicationSettingsService
 {
     private static readonly string SettingsDirectory = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),

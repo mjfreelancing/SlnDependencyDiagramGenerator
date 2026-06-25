@@ -4,6 +4,7 @@ using ReactiveUI.Fody.Helpers;
 using SlnDependencyStudio.Wpf.ViewModels;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Disposables.Fluent;
 using System.Reactive.Linq;
@@ -44,6 +45,15 @@ public sealed class MainWindowViewModel : ActivatableViewModel
     /// <summary><see langword="true"/> when the validation summary bar should be visible.
     /// Derived from <see cref="CurrentValidationSummary"/> via <see cref="ObservableAsPropertyHelper{T}"/>.</summary>
     public bool HasValidationSummaryItems => _hasValidationSummaryItems.Value;
+
+    /// <summary>Command that opens the application settings dialog.</summary>
+    public ReactiveCommand<Unit, Unit> OpenSettingsCommand { get; }
+
+    /// <summary>Initializes a new instance of <see cref="MainWindowViewModel"/>.</summary>
+    public MainWindowViewModel()
+    {
+        OpenSettingsCommand = ReactiveCommand.Create(() => { });
+    }
 
     /// <inheritdoc />
     protected override void OnActivated(CompositeDisposable disposables)

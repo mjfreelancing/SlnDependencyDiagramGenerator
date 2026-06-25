@@ -32,9 +32,6 @@ public partial class App : Application
 
                 // WPF-specific services.
                 services.AddWpfDependencies();
-
-                // MainWindow is a singleton (matches the AllOverIt ViewRegistryDemo pattern).
-                services.AddSingleton<MainWindow>();
             })
             .UseStudioSerilog()
             .Build();
@@ -44,7 +41,7 @@ public partial class App : Application
     {
         await _host.StartAsync();
 
-        var mainWindow = _host.Services.GetRequiredService<MainWindow>();
-        mainWindow.Show();
+        var bootstrapper = _host.Services.GetRequiredService<SlnDependencyWpfAppBootstrapper>();
+        await bootstrapper.RunAsync();
     }
 }

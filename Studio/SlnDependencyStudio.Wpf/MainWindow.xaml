@@ -15,6 +15,7 @@
     MinHeight="600"
     x:TypeArguments="wpf:MainWindowViewModel"
     WindowStartupLocation="CenterScreen"
+    Style="{StaticResource MaterialDesignWindow}"
     mc:Ignorable="d">
 
     <Window.Resources>
@@ -41,12 +42,18 @@
 
             <DockPanel>
                 <StackPanel DockPanel.Dock="Bottom">
-                    <TextBlock
-                        Text="⚙  Settings"
-                        FontSize="12"
-                        Foreground="{DynamicResource MaterialDesignHintForeground}"
-                        Margin="16,8,16,4"
-                        Cursor="Hand" />
+                    <Button
+                        x:Name="SettingsButton"
+                        Style="{StaticResource MaterialDesignFlatButton}"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Left"
+                        Margin="8,4"
+                        Padding="8,6">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Cog" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <TextBlock Text="Settings" FontSize="12" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
 
                     <StackPanel Orientation="Horizontal" Margin="16,4,16,8">
                         <Ellipse Width="8" Height="8" Fill="Gray" Margin="0,0,6,0" ToolTip="d2 — not yet checked" />

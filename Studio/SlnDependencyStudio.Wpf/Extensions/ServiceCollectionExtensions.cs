@@ -1,7 +1,10 @@
 using AllOverIt.DependencyInjection.Extensions;
+using AllOverIt.ReactiveUI.Factories;
+using AllOverIt.ReactiveUI.Wpf.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using SlnDependencyStudio.Shared.DependencyInjection;
 using SlnDependencyStudio.Wpf.DependencyInjection;
+using SlnDependencyStudio.Wpf.Features.Settings;
 
 namespace SlnDependencyStudio.Wpf.Extensions;
 
@@ -26,6 +29,13 @@ public static class ServiceCollectionExtensions
         {
             config.Filter((serviceType, _) => serviceType != typeof(IStudioSingletonDependency));
         });
+
+        services.AddSingleton<SlnDependencyWpfAppBootstrapper>();
+        services.AddSingleton<IViewFactory, ViewFactory>();
+
+        services.RegisterWindowSingleton<MainWindowViewModel, MainWindow>();
+        services.RegisterWindowTransient<SettingsWindowViewModel, SettingsWindow>();
+        services.RegisterUserControlTransient<SettingsEditorViewModel, SettingsEditor>();
 
         return services;
     }

@@ -1,9 +1,10 @@
+using SlnDependencyStudio.Shared.DependencyInjection;
 using SlnDependencyStudio.Wpf.Features.Application.Models;
 
 namespace SlnDependencyStudio.Wpf.Features.Application;
 
 /// <summary>Loads and saves durable application settings from/to persistent storage.</summary>
-public interface IApplicationSettingsService
+public interface IApplicationSettingsService : IStudioSingletonDependency
 {
     /// <summary>Gets the currently loaded settings. Call <see cref="LoadAsync"/> first to populate.</summary>
     ApplicationSettings CurrentSettings { get; }
