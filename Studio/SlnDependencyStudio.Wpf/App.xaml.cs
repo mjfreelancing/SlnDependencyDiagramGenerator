@@ -4,12 +4,17 @@ using ReactiveUI.Builder;
 using SlnDependencyDiagramGenerator.Extensions;
 using SlnDependencyStudio.Shared.Extensions;
 using SlnDependencyStudio.Wpf.Extensions;
+using System.IO;
 using System.Windows;
 
 namespace SlnDependencyStudio.Wpf;
 
 public partial class App : Application
 {
+    private static readonly string DefaultLogDirectory = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        "SlnDependencyStudio", "Logs");
+
     private readonly IHost _host;
 
     public App()
@@ -33,7 +38,7 @@ public partial class App : Application
                 // WPF-specific services.
                 services.AddWpfDependencies();
             })
-            .UseStudioSerilog()
+            .UseStudioSerilog(logDirectory: DefaultLogDirectory)
             .Build();
     }
 
