@@ -11,32 +11,35 @@ namespace SlnDependencyStudio.Wpf.Extensions;
 /// <summary>Extension methods for registering WPF-specific Studio services with DI.</summary>
 public static class ServiceCollectionExtensions
 {
-    /// <summary>Registers WPF-specific services with the service collection.</summary>
-    /// <param name="services">The service collection.</param>
-    /// <returns>The service collection, for chaining.</returns>
-    public static IServiceCollection AddWpfDependencies(this IServiceCollection services)
+    extension(IServiceCollection services)
     {
-        // Auto-register all scoped classes implementing IStudioScopedDependency in this assembly.
-        services.AutoRegisterScoped<DependencyRegistrar, IStudioScopedDependency>(config =>
+        /// <summary>Registers WPF-specific services with the service collection.</summary>
+        /// <param name="services">The service collection.</param>
+        /// <returns>The service collection, for chaining.</returns>
+        public IServiceCollection AddWpfDependencies()
         {
-            config.Filter((serviceType, _) => serviceType != typeof(IStudioScopedDependency));
-        });
+            // Auto-register all scoped classes implementing IStudioScopedDependency in this assembly.
+            services.AutoRegisterScoped<DependencyRegistrar, IStudioScopedDependency>(config =>
+            {
+                config.Filter((serviceType, _) => serviceType != typeof(IStudioScopedDependency));
+            });
 
-        // AutoRegisterTransient is deferred until needed by a specific phase.
+            // AutoRegisterTransient is deferred until needed by a specific phase.
 
-        // Auto-register all singleton classes implementing IStudioSingletonDependency in this assembly.
-        services.AutoRegisterSingleton<DependencyRegistrar, IStudioSingletonDependency>(config =>
-        {
-            config.Filter((serviceType, _) => serviceType != typeof(IStudioSingletonDependency));
-        });
+            // Auto-register all singleton classes implementing IStudioSingletonDependency in this assembly.
+            services.AutoRegisterSingleton<DependencyRegistrar, IStudioSingletonDependency>(config =>
+            {
+                config.Filter((serviceType, _) => serviceType != typeof(IStudioSingletonDependency));
+            });
 
-        services.AddSingleton<SlnDependencyWpfAppBootstrapper>();
-        services.AddSingleton<IViewFactory, ViewFactory>();
+            services.AddSingleton<SlnDependencyWpfAppBootstrapper>();
+            services.AddSingleton<IViewFactory, ViewFactory>();
 
-        services.RegisterWindowSingleton<MainWindowViewModel, MainWindow>();
-        services.RegisterWindowTransient<SettingsWindowViewModel, SettingsWindow>();
-        services.RegisterUserControlTransient<SettingsEditorViewModel, SettingsEditor>();
+            services.RegisterWindowSingleton<MainWindowViewModel, MainWindow>();
+            services.RegisterWindowTransient<SettingsWindowViewModel, SettingsWindow>();
+            services.RegisterUserControlTransient<SettingsEditorViewModel, SettingsEditor>();
 
-        return services;
+            return services;
+        }
     }
 }
