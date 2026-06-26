@@ -15,11 +15,15 @@ internal sealed class ApplicationSettingsService : IApplicationSettingsService
         "SlnDependencyStudio");
 
     private static readonly string SettingsFilePath = Path.Combine(SettingsDirectory, "settings.json");
+    private static readonly string StateFilePath = Path.Combine(SettingsDirectory, "state.json");
 
     private readonly IStudioJsonSerializer _jsonSerializer;
 
     /// <inheritdoc />
     public ApplicationSettings CurrentSettings { get; private set; } = new();
+
+    /// <inheritdoc />
+    public ApplicationState CurrentState { get; private set; } = new();
 
     /// <summary>Initializes a new instance of <see cref="ApplicationSettingsService"/>.</summary>
     /// <param name="jsonSerializer">The JSON serializer used to persist and load settings.</param>
@@ -31,6 +35,12 @@ internal sealed class ApplicationSettingsService : IApplicationSettingsService
     /// <inheritdoc />
     public async Task LoadAsync(CancellationToken cancellationToken = default)
     {
+        await LoadSettingsAsync(cancellationToken);
+        await LoadStateAsync(cancellationToken);
+    }
+
+    private async Task LoadSettingsAsync(CancellationToken cancellationToken)
+    {
         if (!File.Exists(SettingsFilePath))
         {
             CurrentSettings = new ApplicationSettings();
@@ -41,8 +51,20 @@ internal sealed class ApplicationSettingsService : IApplicationSettingsService
         CurrentSettings = (await _jsonSerializer.DeserializeAsync<ApplicationSettings>(stream, cancellationToken))!;
     }
 
+    private async Task LoadStateAsync(CancellationToken cancellationToken)
+    {
+        if (!File.Exists(StateFilePath))
+        {
+            CurrentState = new ApplicationState();
+            return;
+        }
+
+        await using var stream = new FileStream(StateFilePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+        CurrentState = (await _jsonSerializer.DeserializeAsync<ApplicationState>(stream, cancellationToken))!;
+    }
+
     /// <inheritdoc />
-    public async Task SaveAsync(CancellationToken cancellationToken = default)
+    public async Task SaveSettingsAsync(CancellationToken cancellationToken = default)
     {
         Directory.CreateDirectory(SettingsDirectory);
 
@@ -54,5 +76,17 @@ internal sealed class ApplicationSettingsService : IApplicationSettingsService
         }
 
         File.Move(tempPath, SettingsFilePath, overwrite: true);
+    }
+
+    /// <inheritdoc />
+    public void SaveState()
+    {
+        Directory.CreateDirectory(SettingsDirectory);
+
+        var tempPath = StateFilePath + ".tmp";
+        var json = _jsonSerializer.Serialize(CurrentState);
+
+        File.WriteAllText(tempPath, json);
+        File.Move(tempPath, StateFilePath, overwrite: true);
     }
 }

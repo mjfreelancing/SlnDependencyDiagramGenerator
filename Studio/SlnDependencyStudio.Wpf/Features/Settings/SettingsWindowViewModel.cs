@@ -73,7 +73,7 @@ public sealed class SettingsWindowViewModel : ReactiveObject
         SettingsEditorViewModel.ApplyToSettings(_settingsService.CurrentSettings);
 
         // ...and persisted to disk.
-        await _settingsService.SaveAsync();
+        await _settingsService.SaveSettingsAsync();
     }
 
     private void BeginRestartTracking()
