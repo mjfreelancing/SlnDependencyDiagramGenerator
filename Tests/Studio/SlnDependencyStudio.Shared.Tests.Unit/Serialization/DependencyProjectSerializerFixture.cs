@@ -13,7 +13,7 @@ public class DependencyProjectSerializerFixture
         [Fact]
         public void Should_Produce_Valid_Json_With_SchemaVersion()
         {
-            var serializer = new DependencyProjectSerializer();
+            var serializer = CreateSerializer();
             var document = new DependencyProjectDocument
             {
                 Metadata = new DependencyProjectMetadata
@@ -33,7 +33,7 @@ public class DependencyProjectSerializerFixture
         [Fact]
         public void Should_Include_Generator_Config()
         {
-            var serializer = new DependencyProjectSerializer();
+            var serializer = CreateSerializer();
             var document = new DependencyProjectDocument
             {
                 DiagramGenerator = new DependencyGeneratorConfig
@@ -50,13 +50,13 @@ public class DependencyProjectSerializerFixture
 
             json.ShouldContain("diagramGenerator");
             json.ShouldContain("test.sln");
-            json.ShouldContain("RegexToInclude");
+            json.ShouldContain("regexToInclude");
         }
 
         [Fact]
         public void Should_Include_PreGeneration_Config()
         {
-            var serializer = new DependencyProjectSerializer();
+            var serializer = CreateSerializer();
             var document = new DependencyProjectDocument
             {
                 PreGeneration = new PreGenerationConfig
@@ -74,7 +74,7 @@ public class DependencyProjectSerializerFixture
             json.ShouldContain("preGeneration");
             json.ShouldContain("build.cmd");
             json.ShouldContain("--config Release");
-            json.ShouldContain("ContinueOnFailure");
+            json.ShouldContain("continueOnFailure");
         }
     }
 
@@ -83,7 +83,7 @@ public class DependencyProjectSerializerFixture
         [Fact]
         public void Should_Roundtrip_And_Match_Original()
         {
-            var serializer = new DependencyProjectSerializer();
+            var serializer = CreateSerializer();
             var original = new DependencyProjectDocument
             {
                 SchemaVersion = 1,
@@ -121,7 +121,7 @@ public class DependencyProjectSerializerFixture
         [Fact]
         public void Should_Throw_When_Schema_Version_Is_Too_New()
         {
-            var serializer = new DependencyProjectSerializer();
+            var serializer = CreateSerializer();
             var json = """
                 {
                     "schemaVersion": 999,
@@ -140,7 +140,7 @@ public class DependencyProjectSerializerFixture
         [Fact]
         public void Should_Preserve_Unknown_Fields_On_Roundtrip()
         {
-            var serializer = new DependencyProjectSerializer();
+            var serializer = CreateSerializer();
             var json = """
                 {
                     "schemaVersion": 1,
@@ -157,5 +157,10 @@ public class DependencyProjectSerializerFixture
             reSerialized.ShouldContain("futureField");
             reSerialized.ShouldContain("will be preserved");
         }
+    }
+
+    private static DependencyProjectSerializer CreateSerializer()
+    {
+        return new DependencyProjectSerializer(new StudioJsonSerializer());
     }
 }

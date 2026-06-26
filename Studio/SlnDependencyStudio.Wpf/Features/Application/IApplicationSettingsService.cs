@@ -11,9 +11,9 @@ public interface IApplicationSettingsService : IStudioSingletonDependency
 
     /// <summary>Loads settings from disk. If the settings file does not exist, populates
     /// <see cref="CurrentSettings"/> with defaults.</summary>
-    Task LoadAsync();
+    Task LoadAsync(CancellationToken cancellationToken = default);
 
     /// <summary>Saves the current settings to disk. Performs an atomic write
     /// (temp file then move) to avoid partial writes.</summary>
-    Task SaveAsync();
+    Task SaveAsync(CancellationToken cancellationToken = default);
 }

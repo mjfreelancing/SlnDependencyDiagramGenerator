@@ -1,6 +1,5 @@
-﻿using SlnDependencyStudio.Shared.Config;
-using System.Text.Json;
-using System.Text.Json.Serialization;
+﻿using AllOverIt.Assertion;
+using SlnDependencyStudio.Shared.Config;
 
 namespace SlnDependencyStudio.Shared.Serialization;
 
@@ -8,9 +7,6 @@ namespace SlnDependencyStudio.Shared.Serialization;
 /// including schema versioning, forward-compatible unknown field handling, and migration between schema versions.</summary>
 internal sealed class DependencyProjectSerializer : IDependencyProjectSerializer
 {
-    /// <summary>The current schema version of the document format.</summary>
-    public const int CurrentSchemaVersion = 1;
-
     /// <summary>Schema migration steps, keyed by source version. Each step transforms the document
     /// from that version to the next. Migrations are applied in ascending version order until the
     /// document reaches <see cref="CurrentSchemaVersion"/>.</summary>
@@ -20,19 +16,24 @@ internal sealed class DependencyProjectSerializer : IDependencyProjectSerializer
         // { 1, document => { document.SchemaVersion = 2; /* transform fields */ } },
     };
 
-    private static readonly JsonSerializerOptions Options = new()
+    private readonly IStudioJsonSerializer _jsonSerializer;
+
+    /// <summary>The current schema version of the document format.</summary>
+    public const int CurrentSchemaVersion = 1;
+
+    /// <summary>Initializes a new instance of <see cref="DependencyProjectSerializer"/>.</summary>
+    /// <param name="jsonSerializer">The JSON serializer to delegate serialization and deserialization to.</param>
+    public DependencyProjectSerializer(IStudioJsonSerializer jsonSerializer)
     {
-        WriteIndented = true,
-        PropertyNameCaseInsensitive = true,
-        Converters = { new JsonStringEnumConverter() }
-    };
+        _jsonSerializer = jsonSerializer.WhenNotNull();
+    }
 
     /// <summary>Serializes a document to a JSON string.</summary>
     /// <param name="document">The document to serialize.</param>
     /// <returns>A JSON string representation.</returns>
     public string Serialize(DependencyProjectDocument document)
     {
-        return JsonSerializer.Serialize(document, Options);
+        return _jsonSerializer.Serialize(document);
     }
 
     /// <summary>Serializes a document to a JSON file.</summary>
@@ -51,7 +52,7 @@ internal sealed class DependencyProjectSerializer : IDependencyProjectSerializer
     /// <exception cref="InvalidOperationException">Thrown when the schema version is not supported.</exception>
     public DependencyProjectDocument Deserialize(string json)
     {
-        var document = JsonSerializer.Deserialize<DependencyProjectDocument>(json, Options)
+        var document = _jsonSerializer.Deserialize<DependencyProjectDocument>(json)
             ?? throw new InvalidOperationException("Failed to deserialize the dependency project document.");
 
         if (document.SchemaVersion > CurrentSchemaVersion)
