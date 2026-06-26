@@ -20,6 +20,10 @@
     WindowStyle="ToolWindow"
     mc:Ignorable="d">
 
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    </Window.Resources>
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
@@ -39,24 +43,54 @@
             Margin="12,0" />
 
         <!-- Action Buttons -->
-        <StackPanel
+        <Grid
             Grid.Row="1"
-            Orientation="Horizontal"
-            HorizontalAlignment="Right"
             Margin="12,8,12,12">
 
-            <Button
-                x:Name="CancelButton"
-                Content="Cancel"
-                Style="{StaticResource MaterialDesignOutlinedButton}"
-                Margin="0,0,8,0" />
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
 
-            <Button
-                x:Name="SaveButton"
-                Content="Save"
-                Style="{StaticResource MaterialDesignFlatButton}"
-                materialDesign:ButtonAssist.CornerRadius="8" />
-        </StackPanel>
+            <!-- Restart-required indicator — only visible when LogRetentionDays has been edited -->
+            <StackPanel
+                Grid.Column="0"
+                Orientation="Horizontal"
+                VerticalAlignment="Center"
+                Visibility="{Binding IsRestartRequired, Converter={StaticResource BoolToVis}}">
+
+                <materialDesign:PackIcon
+                    Kind="Restart"
+                    Width="16" Height="16"
+                    VerticalAlignment="Center"
+                    Margin="0,0,6,0"
+                    Foreground="{DynamicResource MaterialDesignHintForeground}" />
+
+                <TextBlock
+                    Text="Restart required for log retention change"
+                    FontSize="11"
+                    Foreground="{DynamicResource MaterialDesignHintForeground}"
+                    VerticalAlignment="Center" />
+            </StackPanel>
+
+            <StackPanel
+                Grid.Column="2"
+                Orientation="Horizontal">
+
+                <Button
+                    x:Name="CancelButton"
+                    Content="Cancel"
+                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                    Margin="0,0,8,0" />
+
+                <Button
+                    x:Name="SaveButton"
+                    Content="Save"
+                    Style="{StaticResource MaterialDesignFlatButton}"
+                    materialDesign:ButtonAssist.CornerRadius="8" />
+            </StackPanel>
+        </Grid>
     </Grid>
 
 </reactiveui:ReactiveWindow>

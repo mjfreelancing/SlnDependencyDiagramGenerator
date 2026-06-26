@@ -3,6 +3,8 @@ namespace SlnDependencyStudio.Wpf.Features.Application.Models;
 /// <summary>Durable application settings persisted to disk across sessions.</summary>
 public sealed class ApplicationSettings
 {
+    internal const int DefaultLogRetentionDays = 31;
+
     /// <summary>The default folder for Open/Save file dialogs when no project is loaded.</summary>
     public string DefaultProjectFolder { get; set; } = string.Empty;
 
@@ -10,6 +12,16 @@ public sealed class ApplicationSettings
     /// Key is the tool name, value is the full path to the executable.</summary>
     public Dictionary<string, string> ToolPathOverrides { get; set; } = [];
 
-    /// <summary>Number of days to retain log files. Defaults to 30.</summary>
-    public int LogRetentionDays { get; set; } = 30;
+    /// <summary>Number of days to retain log files. Defaults to 31.</summary>
+    public int LogRetentionDays { get; set; } = DefaultLogRetentionDays;
+
+    public ApplicationSettings Clone()
+    {
+        return new ApplicationSettings
+        {
+            DefaultProjectFolder = DefaultProjectFolder,
+            ToolPathOverrides = new Dictionary<string, string>(ToolPathOverrides),
+            LogRetentionDays = LogRetentionDays
+        };
+    }
 }

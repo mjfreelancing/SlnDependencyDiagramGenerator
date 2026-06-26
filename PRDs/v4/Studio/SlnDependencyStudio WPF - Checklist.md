@@ -292,15 +292,15 @@ The selected nav item gets a left-accent border (4px `MaterialDesignPrimary`) an
 
 ### 2.2 Settings UI
 
-- [ ] 2.2.1 Create `SettingsView.xaml` and `SettingsViewModel` with ReactiveUI bindings for `DefaultProjectFolder` (with a `Browse` button that opens `OpenFolderDialog`), tool path overrides (one row per known tool: d2, mmdc, with browse per row), and `LogRetentionDays` (numeric input).
-- [ ] 2.2.2 Create `SettingsWindow` (a `ReactiveWindow<T>` with Material Design theming) hosting `SettingsView`.
-- [ ] 2.2.3 Add a "Settings" entry in the left navigation that opens the settings window or navigates the workspace to the settings view.
-- [ ] 2.2.4 On application startup, load settings. On settings change, save automatically (or provide explicit Save/Cancel).
+- [x] 2.2.1 Create `SettingsView.xaml` and `SettingsViewModel` with ReactiveUI bindings for `DefaultProjectFolder` (with a `Browse` button that opens `OpenFolderDialog`), tool path overrides (one row per known tool: d2, mmdc, with browse per row), and `LogRetentionDays` (numeric input).
+- [x] 2.2.2 Create `SettingsWindow` (a `ReactiveWindow<T>` with Material Design theming) hosting `SettingsView`.
+- [x] 2.2.3 Add a "Settings" entry in the left navigation that opens the settings window or navigates the workspace to the settings view.
+- [x] 2.2.4 On application startup, load settings. On settings change, save automatically (or provide explicit Save/Cancel).
 
 ### 2.3 Log Path Wiring
 
-- [ ] 2.3.1 Ensure the `UseStudioSerilog` call receives the log directory from `IApplicationSettingsService.CurrentSettings`. When no project file is open, use a fallback directory from AppData.
-- [ ] 2.3.2 Wire the retention policy: read `LogRetentionDays` from settings and configure the rolling file sink's `retainedFileCountLimit` accordingly.
+- [x] 2.3.1 Ensure the `UseStudioSerilog` call receives the log directory from `IApplicationSettingsService.CurrentSettings`. When no project file is open, use a fallback directory from AppData.
+- [x] 2.3.2 Wire the retention policy: read `LogRetentionDays` from settings and configure the rolling file sink's `retainedFileCountLimit` accordingly.
 
 **Phase 2 completion:** Settings persist across restarts, the user can change defaults and tool paths through a settings dialog, and log files respect the configured retention policy.
 

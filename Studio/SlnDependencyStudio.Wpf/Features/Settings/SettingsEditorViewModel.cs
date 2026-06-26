@@ -1,3 +1,4 @@
+using AllOverIt.Extensions;
 using ReactiveUI;
 using ReactiveUI.Fody.Helpers;
 using SlnDependencyStudio.Wpf.Features.Application;
@@ -7,10 +8,7 @@ using System.Reactive.Linq;
 
 namespace SlnDependencyStudio.Wpf.Features.Settings;
 
-/// <summary>View model for the <see cref="SettingsEditor"/> control (everything except Save/Cancel,
-/// which belong to <see cref="SettingsWindowViewModel"/>).
-/// Uses <see cref="Interaction{TInput, TOutput}"/> for all UI dialogs — the View
-/// registers handlers in its code-behind; the ViewModel has no UI dependencies.</summary>
+/// <summary>View model for the <see cref="SettingsEditor"/> control.</summary>
 public sealed class SettingsEditorViewModel : ReactiveObject
 {
     /// <summary>The default folder for Open/Save file dialogs.</summary>
@@ -27,7 +25,7 @@ public sealed class SettingsEditorViewModel : ReactiveObject
 
     /// <summary>Number of days to retain log files.</summary>
     [Reactive]
-    public int LogRetentionDays { get; set; } = 30;
+    public int LogRetentionDays { get; set; } = ApplicationSettings.DefaultLogRetentionDays;
 
     /// <summary>Interaction that asks the View to browse for a folder and return the selected path.
     /// Input is the initial folder path; output is the selected path, or <see langword="null"/> if cancelled.</summary>
@@ -57,16 +55,41 @@ public sealed class SettingsEditorViewModel : ReactiveObject
     /// <param name="settingsService">The application settings service.</param>
     public SettingsEditorViewModel(IApplicationSettingsService settingsService)
     {
-        var current = settingsService.CurrentSettings;
+        var currentSettings = settingsService.CurrentSettings;
 
-        DefaultProjectFolder = current.DefaultProjectFolder;
-        D2ToolPath = GetToolPathOverride(current, "d2");
-        MmdcToolPath = GetToolPathOverride(current, "mmdc");
-        LogRetentionDays = current.LogRetentionDays;
+        // Take a snapshot of the current settings to populate the editing properties.
+        // The editor operates on a copy of these settings.
+        DefaultProjectFolder = currentSettings.DefaultProjectFolder;
+        D2ToolPath = GetToolPathOverride(currentSettings, "d2");
+        MmdcToolPath = GetToolPathOverride(currentSettings, "mmdc");
+        LogRetentionDays = currentSettings.LogRetentionDays;
 
         BrowseDefaultProjectFolderCommand = ReactiveCommand.CreateFromTask(BrowseDefaultProjectFolderAsync);
         BrowseD2ToolPathCommand = ReactiveCommand.CreateFromTask(BrowseD2ToolPathAsync);
         BrowseMmdcToolPathCommand = ReactiveCommand.CreateFromTask(BrowseMmdcToolPathAsync);
+    }
+
+    /// <summary>Copies the currently edited values to the provided <paramref name="settings"/> instance.</summary>
+    /// <param name="settings">The target <see cref="ApplicationSettings"/> to write to.</param>
+    public void ApplyToSettings(ApplicationSettings settings)
+    {
+        settings.DefaultProjectFolder = DefaultProjectFolder;
+        settings.LogRetentionDays = LogRetentionDays;
+
+        SetToolPathOverride(settings, "d2", D2ToolPath);
+        SetToolPathOverride(settings, "mmdc", MmdcToolPath);
+    }
+
+    private static void SetToolPathOverride(ApplicationSettings settings, string toolName, string path)
+    {
+        if (path.IsNullOrEmpty())
+        {
+            settings.ToolPathOverrides.Remove(toolName);
+        }
+        else
+        {
+            settings.ToolPathOverrides[toolName] = path;
+        }
     }
 
     private async Task BrowseDefaultProjectFolderAsync()
