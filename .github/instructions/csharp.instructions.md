@@ -14,12 +14,19 @@ This file extends [`language-agnostic-core.instructions.md`](language-agnostic-c
 - Use clear naming and cohesive feature-level organization.
 - Keep methods focused and avoid unnecessary abstraction.
 - One class per file. Nested types, records, and enums that are logically part of the enclosing type are exempt.
-- **Method/constructor parameter formatting:** Parameters start on the same line as the method name. When the line is too long, wrap at a comma (not the opening parenthesis) and put multiple parameters per continuation line — never one per line.
+- **Method/constructor parameter formatting:** Parameters start on the same line as the method name. Parameters wrap to the next line only when the signature exceeds **140 characters**. Wrap at a comma (not the opening parenthesis) and put multiple parameters per continuation line — never one per line.
 
   ```csharp
-  // CORRECT: wraps at comma, multiple params per continuation line
+  // CORRECT: fits within 140 chars, all on one line
+  public MainWindow(MainWindowViewModel viewModel, IViewFactory viewFactory, IApplicationSettingsService settingsService)
+
+  // CORRECT: exceeds 140 chars, wraps at comma with multiple params per line
   private async Task DoSomethingAsync(string firstParam, int secondParam, bool thirdParam,
       CancellationToken cancellationToken)
+
+  // WRONG: under 140 chars, unnecessary wrap
+  public MainWindow(MainWindowViewModel viewModel, IViewFactory viewFactory,
+      IApplicationSettingsService settingsService)
 
   // WRONG: one parameter per line, or wrapping at the opening parenthesis
   private async Task DoSomethingAsync(
