@@ -310,35 +310,37 @@ The selected nav item gets a left-accent border (4px `MaterialDesignPrimary`) an
 
 **Intent:** Implement the full document lifecycle: create from defaults, create by loading an existing `.sds` file, open, save, save-as, close. Track unsaved changes and prompt before discard. Maintain a recent-projects list. Build the empty-state view so first-run users understand what a dependency project is and how to start.
 
-### 3.1 Project Service
+### 3.1 Slice A — Open + Display + Edit
 
-- [ ] 3.1.1 Create `IDependencyProjectService` interface with methods: `CreateFromDefaultsAsync()`, `CreateFromExistingAsync(string filePath)`, `OpenAsync(string filePath)`, `SaveAsync(DependencyProjectDocument document, string filePath)`, `SaveAsAsync(DependencyProjectDocument document, string filePath)`.
-- [ ] 3.1.2 Implement `DependencyProjectService`. Use `IDependencyProjectSerializer` (already in Shared) for all serialization. Create-from-defaults populates a new `DependencyProjectDocument` with sensible defaults (empty solution path, all formats enabled, etc.).
-- [ ] 3.1.3 Register `IDependencyProjectService` as scoped.
+**Goal:** User browses for an `.sds` file → document is loaded → metadata is visible and editable on screen. Pipeline is testable end-to-end before any save/create logic exists.
 
-### 3.2 Document View Model & Dirty Tracking
+- [ ] 3.1.1 Define `OpenAsync(string filePath)` only on `IDependencyProjectService` (defer other methods to Slices B/C). Implement it by delegating to `IDependencyProjectSerializer`.
+- [ ] 3.1.2 Create `DependencyProjectViewModel` wrapping `DependencyProjectDocument`. Expose `Metadata` as a child view model (start small — just `ProjectName` and `Description`). Defer `DiagramGenerator` and `PreGeneration` child VMs to Phase 4/5.
+- [ ] 3.1.3 Create `ProjectView.xaml` and `ProjectViewModel` under `Features/Project/` — the "Project" nav item page showing name + description fields bound to the document metadata. Use `WhenAnyValue` for two-way binding.
+- [ ] 3.1.4 Wire the "Open Project" action on `MainWindowViewModel`: calls an `OpenFileDialog` filtered to `.sds` files, then `IDependencyProjectService.OpenAsync()`, assigns the result to `CurrentProject`, and navigates the centre workspace to `ProjectView`.
+- [ ] 3.1.5 Verify: load a real `.sds` file → name and description appear in the Project page → edit a field → dirty state updates → UI reflects the change.
 
-- [ ] 3.2.1 Create `DependencyProjectViewModel` wrapping a `DependencyProjectDocument`. Expose `Metadata`, `DiagramGenerator`, and `PreGeneration` as child view models (or direct bindings).
-- [ ] 3.2.2 Implement `IsDirty` tracking using ReactiveUI's `WhenAnyValue` on all editable properties. When any bound value changes, set `IsDirty = true`.
-- [ ] 3.2.3 Track the current file path (`CurrentFilePath`). `IsNewDocument` is `true` when no file path has been assigned.
-- [ ] 3.2.4 Wire `Save` and `SaveAs` commands. `Save` overwrites `CurrentFilePath`; `SaveAs` prompts for a new path and updates `CurrentFilePath`. Both call `IDependencyProjectService` and set `IsDirty = false` on success.
-- [ ] 3.2.5 Wire `Open` and `New` commands. Before discarding a dirty document, show a Material Design `DialogHost` confirmation: "Save changes to {project name}?" with Yes/No/Cancel.
+### 3.2 Slice B — Save + Dirty Tracking
 
-### 3.3 Recent Projects
+**Goal:** User can save changes back to disk, see dirty state, and is prompted before discarding unsaved work.
 
-- [ ] 3.3.1 Create `IRecentProjectsService` with `AddAsync(string filePath)`, `GetRecentAsync()`, and `RemoveAsync(string filePath)`.
-- [ ] 3.3.2 Implement using the `ApplicationState` model (Phase 2). Store up to 10 recent paths.
-- [ ] 3.3.3 In the left navigation, display recent projects below the navigation sections. Each entry shows the file name (no extension) as the display text.
-- [ ] 3.3.4 Clicking a recent project entry calls `IDependencyProjectService.OpenAsync()` and navigates to the workspace.
+- [ ] 3.2.1 Add `SaveAsync(DependencyProjectDocument, string filePath)` to `IDependencyProjectService`. Implement by delegating to `IDependencyProjectSerializer`.
+- [ ] 3.2.2 Wire `SaveCommand` on `DependencyProjectViewModel`: overwrites `CurrentFilePath` with serialized document, sets `IsDirty = false` on success.
+- [ ] 3.2.3 Wire `SaveAsCommand`: prompts for a new path via `SaveFileDialog`, updates `CurrentFilePath`, then delegates to `SaveAsync`.
+- [ ] 3.2.4 Add `IsDirty` tracking via `WhenAnyValue` on all editable properties. Expose as `IObservable<bool>` for toolbar binding.
+- [ ] 3.2.5 Wire "Before discard" prompt using `DialogHost`: when the user triggers Open/New/Close while `IsDirty == true`, show "Save changes to {project name}?" with Yes/No/Cancel.
+- [ ] 3.2.6 Add a persistent toolbar Save button (under the nav or top bar) bound to `SaveCommand`, disabled when `!IsDirty`.
 
-### 3.4 Empty-State / First-Run Experience
+### 3.3 Slice C — Create + Recent + Empty State
 
-- [ ] 3.4.1 When no project is loaded (`CurrentProject == null`), show an empty-state view in the centre workspace. The view should communicate what a dependency project is and offer:
-  - **Create from defaults** — calls `IDependencyProjectService.CreateFromDefaultsAsync()` and loads the result.
-  - **Create from existing file** — opens a file picker for `.sds` files, then calls `CreateFromExistingAsync()`.
-  - **Open recent** — navigates the user to the recent projects list.
-  - **Go to settings** — opens the settings dialog.
-- [ ] 3.4.2 Use a **specialised WPF/Material Design agent** to style the empty-state view with clear icons, headings, and action buttons suitable for a developer tool.
+**Goal:** User can start from defaults or from an existing `.sds` via the empty-state landing page. Recent projects are persisted and clickable.
+
+- [ ] 3.3.1 Add `CreateFromDefaultsAsync()` and `CreateFromExistingAsync(string filePath)` to `IDependencyProjectService`. Implement both delegating to `IDependencyProjectSerializer`.
+- [ ] 3.3.2 Wire "New Project" command (creates from defaults, loads into `CurrentProject`, navigates to Project page).
+- [ ] 3.3.3 Create `IRecentProjectsService` with `AddAsync`, `GetRecentAsync`, `RemoveAsync`. Implement using `ApplicationState` (from Phase 2). Store up to 10 recent paths.
+- [ ] 3.3.4 In the left nav, display recent projects below the navigation sections. Each entry shows the file name (no extension). Clicking calls `IDependencyProjectService.OpenAsync()`.
+- [ ] 3.3.5 Create `EmptyStateView.xaml` and `EmptyStateViewModel` under `Features/EmptyState/` with: large icon, app title/subtitle, "New Project" card, "Open Project" card (file picker for `.sds`), recent projects list, and Settings shortcut. Use Material Design `Card` + `PackIcon` styling.
+- [ ] 3.3.6 Wire `MainWindowViewModel` to show `EmptyStateView` when `CurrentProject == null`. On project load (New or Open), navigate to the Project page.
 
 **Phase 3 completion:** The user can create, open, save, and save-as dependency projects. Unsaved changes are tracked and prompt on close. Recent files are persisted and clickable. The first-run empty state guides new users.
 
@@ -540,8 +542,8 @@ The selected nav item gets a left-accent border (4px `MaterialDesignPrimary`) an
 
 ### 9.3 Window State Persistence
 
-- [ ] 9.3.1 On `MainWindow` close, save `Left`, `Top`, `Width`, `Height`, and `WindowState` to `ApplicationState.WindowPlacement`.
-- [ ] 9.3.2 On startup, restore the saved window placement. If no saved state exists, center on the primary screen at a default size (1200×800).
+- [x] 9.3.1 On `MainWindow` close, save `Left`, `Top`, `Width`, `Height`, and `WindowState` to `ApplicationState.WindowPlacement`.
+- [x] 9.3.2 On startup, restore the saved window placement. If no saved state exists, center on the primary screen at a default size (1200×800).
 
 ### 9.4 Recent Projects in Empty State
 
