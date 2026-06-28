@@ -28,7 +28,7 @@ public sealed class MainWindowViewModel : ActivatableViewModel
     [Reactive]
     public NavigationItemViewModel? SelectedNavigationItem { get; set; }
 
-    /// <summary>The view model for the current centre workspace page.</summary>
+    /// <summary>The view for the current centre workspace page.</summary>
     [Reactive]
     public object? CurrentPage { get; set; }
 

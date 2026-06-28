@@ -101,7 +101,7 @@ Features/
 - [x] 1.3.3 Register `MainWindow` and `MainWindowViewModel` via DI. Consult the AllOverIt `ViewRegistryDemo` at `Demos/AllOverIt.ReactiveUI.Wpf/ViewRegistryDemo` for guidance: in that demo `MainWindow` is registered as a **Singleton**, while `RegisterWindowTransient<TViewModel, TView>()` is used for non-shell windows. The implementing agent should choose the appropriate lifetime for each registration. Also consult `ReactiveUI` and `ReactiveUI.Wpf` native APIs for view location and registration features that may be more suitable.
 - [x] 1.3.4 Layout the shell with three zones using a `Grid`:
   - **Left navigation** (fixed width, ~220px). Placeholder with `TextBlock "Navigation"` and a list of navigation item stubs.
-  - **Centre workspace** (star-sized). Placeholder with `TextBlock "Workspace"` bound to a `CurrentView` property on the main view model.
+  - **Centre workspace** (star-sized). Placeholder with `TextBlock "Workspace"` bound to a `CurrentPage` property on the main view model.
   - **Bottom output panel** (fixed height, ~180px, collapsible). Placeholder with `TextBlock "Output"`.
 - [x] 1.3.5 The bottom output panel should be collapsible (a splitter or toggle button). Start collapsed when no generation has run.
 - [x] 1.3.6 Wire the `Closing` event to check a `CanClose` observable on the main view model, preventing close during active generation.
