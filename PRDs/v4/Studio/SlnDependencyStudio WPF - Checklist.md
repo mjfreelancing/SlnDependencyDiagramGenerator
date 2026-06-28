@@ -314,11 +314,11 @@ The selected nav item gets a left-accent border (4px `MaterialDesignPrimary`) an
 
 **Goal:** User browses for an `.sds` file → document is loaded → metadata is visible and editable on screen. Pipeline is testable end-to-end before any save/create logic exists.
 
-- [ ] 3.1.1 Define `OpenAsync(string filePath)` only on `IDependencyProjectService` (defer other methods to Slices B/C). Implement it by delegating to `IDependencyProjectSerializer`.
-- [ ] 3.1.2 Create `DependencyProjectViewModel` wrapping `DependencyProjectDocument`. Expose `Metadata` as a child view model (start small — just `ProjectName` and `Description`). Defer `DiagramGenerator` and `PreGeneration` child VMs to Phase 4/5.
-- [ ] 3.1.3 Create `ProjectView.xaml` and `ProjectViewModel` under `Features/Project/` — the "Project" nav item page showing name + description fields bound to the document metadata. Use `WhenAnyValue` for two-way binding.
-- [ ] 3.1.4 Wire the "Open Project" action on `MainWindowViewModel`: calls an `OpenFileDialog` filtered to `.sds` files, then `IDependencyProjectService.OpenAsync()`, assigns the result to `CurrentProject`, and navigates the centre workspace to `ProjectView`.
-- [ ] 3.1.5 Verify: load a real `.sds` file → name and description appear in the Project page → edit a field → dirty state updates → UI reflects the change.
+- [x] 3.1.1 Define `OpenAsync(string filePath)` only on `IDependencyProjectService` (defer other methods to Slices B/C). Implement it by delegating to `IDependencyProjectSerializer`.
+- [x] 3.1.2 Create `DependencyProjectViewModel` wrapping `DependencyProjectDocument`. The `NavigationItemViewModel<T>` + `ConfigureViewModel` pattern passes the document directly to each page VM rather than routing through intermediate child VMs, which would add unnecessary indirection. Defer `DiagramGenerator` and `PreGeneration` child VMs to Phase 4/5.
+- [x] 3.1.3 Create `ProjectView.xaml` and `ProjectViewModel` under `Features/Project/` — the "Project" nav item page showing name + description fields bound to the document metadata. Form fields use the reusable `FormField` component from `Controls/`. Use `WhenAnyValue` for two-way binding.
+- [x] 3.1.4 Wire the "Open Project" action on `MainWindowViewModel`: calls an `OpenFileDialog` filtered to `.sds` files, then `IDependencyProjectService.OpenAsync()`, assigns the result to `CurrentProject`, and navigates the centre workspace to `ProjectView`. Menu bar added with File → Open Project, Settings, Exit. Nav list disabled until project is loaded.
+- [x] 3.1.5 Verify: load a real `.sds` file → name and description appear in the Project page → edit a field → dirty state updates → UI reflects the change.
 
 ### 3.2 Slice B — Save + Dirty Tracking
 
