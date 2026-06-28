@@ -1,0 +1,44 @@
+<UserControl
+    x:Class="SlnDependencyStudio.Wpf.Controls.FormField"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+    mc:Ignorable="d"
+    x:Name="FormFieldRoot">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="3" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" SharedSizeGroup="LabelColumn" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- Label -->
+        <TextBlock
+            Grid.Row="0" Grid.Column="0"
+            Text="{Binding Label, ElementName=FormFieldRoot}"
+            FontSize="14"
+            FontWeight="Bold"
+            VerticalAlignment="{Binding LabelVerticalAlignment, ElementName=FormFieldRoot}"
+            Margin="0,0,12,0" />
+
+        <!-- Content (input control) — bound to InputContent, not the inherited Content -->
+        <ContentControl
+            Grid.Row="0" Grid.Column="1"
+            Content="{Binding InputContent, ElementName=FormFieldRoot}"
+            VerticalAlignment="{Binding LabelVerticalAlignment, ElementName=FormFieldRoot}"
+            Focusable="False" />
+
+        <!-- Separator -->
+        <Rectangle
+            Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
+            Height="1"
+            Fill="{DynamicResource MaterialDesignDivider}"
+            Margin="0,8,0,8" />
+    </Grid>
+</UserControl>

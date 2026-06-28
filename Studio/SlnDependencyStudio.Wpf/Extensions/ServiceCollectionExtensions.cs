@@ -4,6 +4,7 @@ using AllOverIt.ReactiveUI.Wpf.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using SlnDependencyStudio.Shared.DependencyInjection;
 using SlnDependencyStudio.Wpf.DependencyInjection;
+using SlnDependencyStudio.Wpf.Features.Project;
 using SlnDependencyStudio.Wpf.Features.Settings;
 
 namespace SlnDependencyStudio.Wpf.Extensions;
@@ -38,6 +39,7 @@ public static class ServiceCollectionExtensions
             services.RegisterWindowSingleton<MainWindowViewModel, MainWindow>();
             services.RegisterWindowTransient<SettingsWindowViewModel, SettingsWindow>();
             services.RegisterUserControlTransient<SettingsEditorViewModel, SettingsEditor>();
+            services.RegisterUserControlTransient<ProjectViewModel, ProjectView>();
 
             return services;
         }

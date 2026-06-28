@@ -1,5 +1,6 @@
 using AllOverIt.Assertion;
 using AllOverIt.ReactiveUI.Factories;
+using Microsoft.Win32;
 using ReactiveUI;
 using SlnDependencyStudio.Wpf.Features.Application;
 using SlnDependencyStudio.Wpf.Features.Application.Models;
@@ -14,24 +15,19 @@ namespace SlnDependencyStudio.Wpf;
 /// <summary>
 /// Main application shell window. Inherits <see cref="ReactiveWindow{T}"/> from ReactiveUI.WPF
 /// for automatic ViewModel activation, <c>WhenActivated</c>, and <c>BindCommand</c> support.
-/// Material Design theming is applied via resource dictionaries in <c>App.xaml</c>.
 /// </summary>
 public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 {
     private readonly IViewFactory _viewFactory;
     private readonly IApplicationSettingsService _settingsService;
 
-    /// <summary>
-    /// Initializes a new instance of <see cref="MainWindow"/>.
-    /// The ViewModel is created here, matching the ReactiveUI pattern from
-    /// AllOverIt Demos/AllOverIt.ReactiveUI/CountdownTimerAppDemo/Views/MainWindow.xaml.cs.
-    /// </summary>
     public MainWindow(MainWindowViewModel vieModel, IViewFactory viewFactory, IApplicationSettingsService settingsService)
     {
         _viewFactory = viewFactory.WhenNotNull();
         _settingsService = settingsService.WhenNotNull();
-        
+
         ViewModel = vieModel;
+        DataContext = vieModel;
 
         InitializeComponent();
 
@@ -39,13 +35,44 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 
         this.WhenActivated(disposables =>
         {
-            // Open the settings dialog when the Settings nav button is clicked.
-            this.BindCommand(ViewModel, vm => vm.OpenSettingsCommand, view => view.SettingsButton)
+            // Open the settings dialog when the Settings menu item is clicked.
+            this.BindCommand(ViewModel, vm => vm.OpenSettingsCommand, view => view.SettingsMenuItem)
                 .DisposeWith(disposables);
 
             ViewModel!
                 .OpenSettingsCommand
                 .Subscribe(_ => OpenSettingsDialog())
+                .DisposeWith(disposables);
+
+            // Open Project menu item (also triggered by Ctrl+O).
+            this.BindCommand(ViewModel, vm => vm.OpenProjectCommand, view => view.OpenProjectMenuItem)
+                .DisposeWith(disposables);
+
+            // Open-file dialog interaction.
+            ViewModel!
+                .OpenFileInteraction
+                .RegisterHandler(context =>
+                {
+                    var dialog = new OpenFileDialog
+                    {
+                        Title = "Open Dependency Project",
+                        Filter = context.Input,
+                        CheckFileExists = true
+                    };
+
+                    var output = dialog.ShowDialog() == true ? dialog.FileName : null;
+
+                    context.SetOutput(output);
+                })
+                .DisposeWith(disposables);
+
+            // Exit menu item.
+            this.BindCommand(ViewModel, vm => vm.ExitCommand, view => view.ExitMenuItem)
+                .DisposeWith(disposables);
+
+            ViewModel!
+                .ExitCommand
+                .Subscribe(_ => Close())
                 .DisposeWith(disposables);
 
             // Track generation state for UI gating (Phase 8).

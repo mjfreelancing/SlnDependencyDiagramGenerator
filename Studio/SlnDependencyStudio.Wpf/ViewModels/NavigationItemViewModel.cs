@@ -1,11 +1,12 @@
+using AllOverIt.ReactiveUI.Factories;
 using MaterialDesignThemes.Wpf;
 using ReactiveUI;
 using ReactiveUI.Fody.Helpers;
 
 namespace SlnDependencyStudio.Wpf.ViewModels;
 
-/// <summary>View model for a single navigation item in the left sidebar.</summary>
-public sealed class NavigationItemViewModel : ReactiveObject
+/// <summary>Abstract base class for navigation items displayed in the left sidebar.</summary>
+public abstract class NavigationItemViewModel : ReactiveObject
 {
     /// <summary>The display label shown in the nav (e.g. "Project", "Sources").</summary>
     [Reactive]
@@ -15,22 +16,48 @@ public sealed class NavigationItemViewModel : ReactiveObject
     [Reactive]
     public PackIconKind IconKind { get; set; }
 
-    /// <summary>Whether this nav item is the currently selected one.</summary>
-    [Reactive]
-    public bool IsSelected { get; set; }
-
     /// <summary>Whether the page associated with this nav item has validation errors.
     /// Controls the warning dot indicator in the nav.</summary>
     [Reactive]
     public bool HasValidationError { get; set; }
 
-    /// <summary>The <see cref="Type"/> of the view model that should be loaded in the centre workspace
-    /// when this nav item is selected. Used for view resolution.</summary>
-    [Reactive]
-    public Type? ViewModelType { get; set; }
-
     /// <summary>When <see langword="true"/>, this nav item is rendered with a Material Design
     /// <c>Chip</c> showing "optional" text (e.g. the Pipeline item).</summary>
     [Reactive]
     public bool IsAdvanced { get; set; }
+
+    /// <summary>Optional action invoked after the view is created, before it is displayed.
+    /// Receives the view's <c>ViewModel</c> instance so page-specific setup (e.g. loading
+    /// document data) can be performed.</summary>
+    public Action<object>? ConfigureViewModel { get; set; }
+
+    /// <summary>The CLR <see cref="Type"/> of the page view model associated with this nav item.
+    /// Used to resolve the correct view via <see cref="IViewFactory"/>.</summary>
+    public abstract Type ViewModelType { get; }
+
+    /// <summary>Creates the view for this nav item's page, invoking <see cref="ConfigureViewModel"/>
+    /// if set.</summary>
+    /// <param name="viewFactory">The view factory used to create view/view-model pairs.</param>
+    /// <returns>The created view, with its <c>ViewModel</c> populated.</returns>
+    public abstract IViewFor CreateView(IViewFactory viewFactory);
+}
+
+/// <summary>Generic navigation item for a specific page view model type.
+/// <typeparamref name="TViewModel"/> must be a reference type registered with
+/// <see cref="IViewFactory"/>.</summary>
+/// <typeparam name="TViewModel">The page view model type.</typeparam>
+public sealed class NavigationItemViewModel<TViewModel> : NavigationItemViewModel where TViewModel : class
+{
+    /// <inheritdoc />
+    public override Type ViewModelType => typeof(TViewModel);
+
+    /// <inheritdoc />
+    public override IViewFor CreateView(IViewFactory viewFactory)
+    {
+        var view = viewFactory.CreateViewFor<TViewModel>();
+
+        ConfigureViewModel?.Invoke(view.ViewModel!);
+
+        return view;
+    }
 }

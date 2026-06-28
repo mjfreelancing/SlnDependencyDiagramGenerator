@@ -8,6 +8,7 @@
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:viewModels="clr-namespace:SlnDependencyStudio.Wpf.ViewModels"
     xmlns:wpf="clr-namespace:SlnDependencyStudio.Wpf"
+    xmlns:converters="clr-namespace:SlnDependencyStudio.Wpf.Converters"
     Title="SlnDependencyStudio"
     Icon="app.ico"
     Width="1200"
@@ -21,66 +22,73 @@
 
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <converters:NullToBoolConverter x:Key="NullToBool" />
     </Window.Resources>
 
     <Grid Background="{DynamicResource MaterialDesignBackground}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="220" />
+            <ColumnDefinition Width="180" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
-        <Grid.RowDefinitions>
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
+        <!-- ====== MENU BAR ====== -->
+
+        <Menu
+            Grid.Row="0"
+            Grid.ColumnSpan="2"
+            Background="{DynamicResource MaterialDesignPaper}"
+            BorderBrush="{DynamicResource MaterialDesignDivider}"
+            BorderThickness="0,0,0,1"
+            Padding="4,2,0,2">
+
+            <MenuItem Header="_File">
+                <MenuItem
+                    x:Name="OpenProjectMenuItem"
+                    Header="_Open Project..."
+                    Command="{Binding OpenProjectCommand}"
+                    InputGestureText="Ctrl+O" />
+                <Separator />
+                <MenuItem
+                    Header="_Recent Projects"
+                    IsEnabled="False"
+                    ToolTip="Opened recently — available after first save" />
+                <Separator />
+                <MenuItem
+                    x:Name="SettingsMenuItem"
+                    Header="_Settings..."
+                    Command="{Binding OpenSettingsCommand}" />
+                <Separator />
+                <MenuItem
+                    x:Name="ExitMenuItem"
+                    Header="E_xit"
+                    InputGestureText="Alt+F4" />
+            </MenuItem>
+        </Menu>
 
         <!-- ====== LEFT NAVIGATION ====== -->
 
         <Border
+            Grid.Row="1"
             Grid.Column="0"
             Background="{DynamicResource MaterialDesignPaper}"
             BorderBrush="{DynamicResource MaterialDesignDivider}"
             BorderThickness="0,0,1,0">
 
             <DockPanel>
-                <StackPanel DockPanel.Dock="Bottom">
-                    <Button
-                        x:Name="SettingsButton"
-                        Style="{StaticResource MaterialDesignFlatButton}"
-                        HorizontalAlignment="Stretch"
-                        HorizontalContentAlignment="Left"
-                        Margin="8,4"
-                        Padding="8,6">
-                        <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="Cog" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,8,0" />
-                            <TextBlock Text="Settings" FontSize="12" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
-
-                    <StackPanel Orientation="Horizontal" Margin="16,4,16,8">
-                        <Ellipse Width="8" Height="8" Fill="Gray" Margin="0,0,6,0" ToolTip="d2 — not yet checked" />
-                        <TextBlock Text="d2" FontSize="11" Foreground="{DynamicResource MaterialDesignHintForeground}" Margin="0,0,12,0" />
-                        <Ellipse Width="8" Height="8" Fill="Gray" Margin="0,0,6,0" ToolTip="mmdc — not yet checked" />
-                        <TextBlock Text="mmdc" FontSize="11" Foreground="{DynamicResource MaterialDesignHintForeground}" />
-                    </StackPanel>
-                </StackPanel>
 
                 <Grid>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-
-                    <TextBlock
-                        Grid.Row="0"
-                        Text="🧩 SlnDependencyStudio"
-                        FontSize="12"
-                        Foreground="{DynamicResource MaterialDesignHintForeground}"
-                        Margin="16,12,16,8"
-                        TextTrimming="CharacterEllipsis" />
 
                     <ListBox
                         x:Name="NavigationListBox"
                         Grid.Row="1"
+                        IsEnabled="{Binding CurrentProject, Converter={StaticResource NullToBool}}"
                         ItemsSource="{Binding NavigationItems}"
                         SelectedItem="{Binding SelectedNavigationItem, Mode=TwoWay}"
                         Background="Transparent"
@@ -108,8 +116,8 @@
                                             </Border>
                                             <ControlTemplate.Triggers>
                                                 <Trigger Property="IsSelected" Value="True">
-                                                    <Setter TargetName="ItemBorder" Property="BorderBrush" Value="{DynamicResource MaterialDesignPrimary}" />
-                                                    <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource MaterialDesignSelection}" />
+                                                    <Setter TargetName="ItemBorder" Property="BorderBrush" Value="{DynamicResource PrimaryHueMidBrush}" />
+                                                    <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource MaterialDesignDivider}" />
                                                 </Trigger>
                                                 <MultiTrigger>
                                                     <MultiTrigger.Conditions>
@@ -162,7 +170,6 @@
                                     <materialDesign:Chip
                                         Grid.Column="3"
                                         Content="opt"
-                                        Style="{StaticResource MaterialDesignChip}"
                                         FontSize="9"
                                         Height="18"
                                         Padding="4,0"
@@ -180,7 +187,7 @@
 
         <!-- ====== CENTRE WORKSPACE ====== -->
 
-        <Grid Grid.Column="1">
+        <Grid Grid.Row="1" Grid.Column="1">
             <Grid.RowDefinitions>
                 <RowDefinition Height="4*" MinHeight="60" />
                 <RowDefinition Height="5" />
