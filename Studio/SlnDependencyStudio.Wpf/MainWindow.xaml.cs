@@ -6,11 +6,11 @@ using ReactiveUI;
 using SlnDependencyStudio.Wpf.Features.Application;
 using SlnDependencyStudio.Wpf.Features.Application.Models;
 using SlnDependencyStudio.Wpf.Features.Settings;
+using SlnDependencyStudio.Wpf.Models;
 using System.ComponentModel;
 using System.Reactive.Disposables.Fluent;
 using System.Reactive.Linq;
 using System.Windows;
-using System.Windows.Controls;
 
 namespace SlnDependencyStudio.Wpf;
 
@@ -103,20 +103,10 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                         Message = $"Save changes to \"{projectName}\"?"
                     };
 
+                    // The buttons in the dialog are bound to the DiscardAction enum values - see the CommandParameter bindings in the XAML.
                     var result = await DialogHost.Show(dialog, "MainDialogHost");
 
-                    switch (result)
-                    {
-                        case "Save":
-                            context.SetOutput(true);
-                            break;
-                        case "Discard":
-                            context.SetOutput(false);
-                            break;
-                        default:
-                            context.SetOutput(null);
-                            break;
-                    }
+                    context.SetOutput((DiscardAction)result!);
                 })
                 .DisposeWith(disposables);
 
@@ -176,15 +166,15 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         // Prompt before discarding unsaved changes.
         if (ViewModel?.CurrentProject is { IsDirty: true })
         {
-            var shouldSave = await ViewModel.PromptDiscardAsync(ViewModel.CurrentProject);
+            var action = await ViewModel.PromptDiscardAsync(ViewModel.CurrentProject);
 
-            if (shouldSave is null)
+            if (action == DiscardAction.Cancel)
             {
                 e.Cancel = true;
                 return;
             }
 
-            if (shouldSave.Value)
+            if (action == DiscardAction.Save)
             {
                 await ViewModel.SaveCommand.Execute();
             }

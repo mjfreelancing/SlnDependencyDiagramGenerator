@@ -5,6 +5,7 @@ using AllOverIt.ReactiveUI.Factories;
 using ReactiveUI;
 using ReactiveUI.Fody.Helpers;
 using SlnDependencyStudio.Wpf.Features.Project;
+using SlnDependencyStudio.Wpf.Models;
 using SlnDependencyStudio.Wpf.ViewModels;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
@@ -69,10 +70,8 @@ public sealed class MainWindowViewModel : ActivatableViewModel
     /// <summary>Interaction for showing a save-file dialog. Returns the selected path or <see langword="null"/>.</summary>
     public Interaction<string, string?> SaveFileInteraction { get; } = new();
 
-    /// <summary>Interaction for showing a save-before-discard confirmation dialog.
-    /// Returns <see langword="true"/> if the user chose to save, <see langword="false"/> to discard,
-    /// and <see langword="null"/> to cancel.</summary>
-    public Interaction<string, bool?> ConfirmDiscardInteraction { get; } = new();
+    /// <summary>Interaction for showing a save-before-discard confirmation dialog.</summary>
+    public Interaction<string, DiscardAction> ConfirmDiscardInteraction { get; } = new();
 
     /// <summary>Command that closes the application.</summary>
     public ReactiveCommand<Unit, Unit> ExitCommand { get; }
@@ -172,14 +171,14 @@ public sealed class MainWindowViewModel : ActivatableViewModel
     {
         if (CurrentProject is { IsDirty: true })
         {
-            var shouldSave = await PromptDiscardAsync(CurrentProject);
+            var action = await PromptDiscardAsync(CurrentProject);
 
-            if (shouldSave is null)
+            if (action == DiscardAction.Cancel)
             {
-                return; // Cancelled
+                return;
             }
 
-            if (shouldSave.Value)
+            if (action == DiscardAction.Save)
             {
                 await SaveAsync();
             }
@@ -258,9 +257,8 @@ public sealed class MainWindowViewModel : ActivatableViewModel
         }
     }
 
-    /// <summary>Prompts the user to save or discard changes. Returns <see langword="true"/> for save,
-    /// <see langword="false"/> for discard, and <see langword="null"/> for cancel.</summary>
-    public async Task<bool?> PromptDiscardAsync(DependencyProjectViewModel project)
+    /// <summary>Prompts the user to save or discard changes.</summary>
+    public async Task<DiscardAction> PromptDiscardAsync(DependencyProjectViewModel project)
     {
         var projectName = project.Document.Metadata.ProjectName.IsNotNullOrEmpty()
             ? project.Document.Metadata.ProjectName

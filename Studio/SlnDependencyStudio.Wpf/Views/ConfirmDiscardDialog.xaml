@@ -5,6 +5,8 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+    xmlns:wpf="clr-namespace:SlnDependencyStudio.Wpf"
+    xmlns:models="clr-namespace:SlnDependencyStudio.Wpf.Models"
     mc:Ignorable="d"
     d:DesignWidth="350">
 
@@ -23,20 +25,21 @@
                 Content="Save"
                 Style="{StaticResource MaterialDesignFlatButton}"
                 Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}"
-                CommandParameter="Save"
+                CommandParameter="{x:Static models:DiscardAction.Save}"
                 Margin="0,0,8,0" />
 
             <Button
                 Content="Discard"
                 Style="{StaticResource MaterialDesignOutlinedButton}"
                 Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}"
-                CommandParameter="Discard"
+                CommandParameter="{x:Static models:DiscardAction.Discard}"
                 Margin="0,0,8,0" />
 
             <Button
                 Content="Cancel"
                 IsCancel="True"
-                Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}" />
+                Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}"
+                CommandParameter="{x:Static models:DiscardAction.Cancel}" />
         </StackPanel>
     </StackPanel>
 </UserControl>
