@@ -17,8 +17,8 @@ public partial class ProjectView : ReactiveUserControl<ProjectViewModel>
         {
             // When any editable property changes, sync back to the underlying document.
             this.WhenAnyValue(
-                    view => view.ViewModel!.ProjectName,
-                    view => view.ViewModel!.Description)
+                    view => view.ViewModel!.ProjectName.Value,
+                    view => view.ViewModel!.Description.Value)
                 .Subscribe(_ => ViewModel!.ApplyToDocument())
                 .DisposeWith(disposables);
         });

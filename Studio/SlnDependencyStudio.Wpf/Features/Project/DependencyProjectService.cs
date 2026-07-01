@@ -13,10 +13,17 @@ internal sealed class DependencyProjectService : IDependencyProjectService
         _serializer = serializer.WhenNotNull();
     }
 
-    public async Task<DependencyProjectDocument> OpenAsync(string filePath, CancellationToken cancellationToken = default)
+    public Task<DependencyProjectDocument> OpenAsync(string filePath, CancellationToken cancellationToken = default)
     {
         filePath.WhenNotNull();
 
-        return await _serializer.DeserializeAsync(filePath, cancellationToken).ConfigureAwait(false);
+        return _serializer.DeserializeAsync(filePath, cancellationToken);
+    }
+
+    public Task SaveAsync(DependencyProjectDocument document, string filePath, CancellationToken cancellationToken = default)
+    {
+        filePath.WhenNotNull();
+
+        return _serializer.SerializeAsync(document, filePath, cancellationToken);
     }
 }

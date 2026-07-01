@@ -26,6 +26,8 @@
     </Window.Resources>
 
     <Grid Background="{DynamicResource MaterialDesignBackground}">
+        <materialDesign:DialogHost x:Name="MainDialogHost" Identifier="MainDialogHost">
+        <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -51,6 +53,16 @@
                     Header="_Open Project..."
                     Command="{Binding OpenProjectCommand}"
                     InputGestureText="Ctrl+O" />
+                <Separator />
+                <MenuItem
+                    x:Name="SaveMenuItem"
+                    Header="_Save"
+                    Command="{Binding SaveCommand}"
+                    InputGestureText="Ctrl+S" />
+                <MenuItem
+                    x:Name="SaveAsMenuItem"
+                    Header="Save _As..."
+                    Command="{Binding SaveAsCommand}" />
                 <Separator />
                 <MenuItem
                     Header="_Recent Projects"
@@ -220,6 +232,8 @@
                     Foreground="{DynamicResource MaterialDesignHintForeground}" />
             </Border>
         </Grid>
+        </Grid>
+    </materialDesign:DialogHost>
     </Grid>
 
 </reactiveui:ReactiveWindow>

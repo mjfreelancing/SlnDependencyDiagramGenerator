@@ -1,6 +1,8 @@
 using ReactiveUI;
 using ReactiveUI.Fody.Helpers;
 using SlnDependencyStudio.Shared.Config;
+using SlnDependencyStudio.Wpf.Controls;
+using System.Reactive.Disposables;
 
 namespace SlnDependencyStudio.Wpf.Features.Project;
 
@@ -9,27 +11,40 @@ namespace SlnDependencyStudio.Wpf.Features.Project;
 public sealed class ProjectViewModel : ReactiveObject
 {
     private DependencyProjectDocument? _document;
+    private readonly SerialDisposable _dirtyTracking = new();
 
-    /// <summary>The project name, bound two-way to <see cref="DependencyProjectMetadata.ProjectName"/>.</summary>
+    /// <summary>The project name. Bound via <c>ProjectName.Value</c> in XAML.</summary>
+    public TrackableValue<string> ProjectName { get; } = new();
+
+    /// <summary>The project description. Bound via <c>Description.Value</c> in XAML.</summary>
+    public TrackableValue<string> Description { get; } = new();
+
+    /// <summary><see langword="true"/> when any of the Project attributes, such as <see cref="ProjectName"/>
+    /// or <see cref="Description"/>, has diverged from its original value.</summary>
     [Reactive]
-    public string ProjectName { get; set; } = string.Empty;
+    public bool IsDirty { get; set; }
 
-    /// <summary>The project description, bound two-way to <see cref="DependencyProjectMetadata.Description"/>.</summary>
-    [Reactive]
-    public string Description { get; set; } = string.Empty;
+    public ProjectViewModel()
+    {
+    }
 
-    /// <summary>Loads metadata from the given <see cref="DependencyProjectDocument"/> and sets up
-    /// two-way synchronisation so that edits on this view model flow back to the document.</summary>
+    /// <summary>Loads metadata from the given <see cref="DependencyProjectDocument"/>.</summary>
     /// <param name="document">The document whose metadata should be edited.</param>
     public void LoadFrom(DependencyProjectDocument document)
     {
         _document = document;
-        ProjectName = document.Metadata.ProjectName;
-        Description = document.Metadata.Description;
+
+        ProjectName.SetOriginalValue(document.Metadata.ProjectName);
+        Description.SetOriginalValue(document.Metadata.Description);
+
+        _dirtyTracking.Disposable = this.WhenAnyValue(
+                vm => vm.ProjectName.IsDirty,
+                vm => vm.Description.IsDirty,
+                (nameDirty, descDirty) => nameDirty || descDirty)
+            .BindTo(this, vm => vm.IsDirty);
     }
 
-    /// <summary>Applies the current values back to the underlying document's metadata.
-    /// Call this before save operations to ensure the document reflects the latest edits.</summary>
+    /// <summary>Applies the current values back to the underlying document's metadata.</summary>
     public void ApplyToDocument()
     {
         if (_document is null)
@@ -37,7 +52,15 @@ public sealed class ProjectViewModel : ReactiveObject
             return;
         }
 
-        _document.Metadata.ProjectName = ProjectName;
-        _document.Metadata.Description = Description;
+        _document.Metadata.ProjectName = ProjectName.Value;
+        _document.Metadata.Description = Description.Value;
+    }
+
+    /// <summary>Resets all <see cref="TrackableValue{T}"/> baselines to their current values
+    /// so <see cref="IsDirty"/> returns <see langword="false"/>. Called after save.</summary>
+    public void MarkClean()
+    {
+        ProjectName.SetOriginalValue(ProjectName.Value);
+        Description.SetOriginalValue(Description.Value);
     }
 }

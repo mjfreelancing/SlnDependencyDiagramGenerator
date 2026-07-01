@@ -39,7 +39,7 @@
             <!-- Project Name -->
             <studioControls:FormField Label="Project name" Margin="0,0,0,16">
                 <TextBox
-                    Text="{Binding ProjectName, UpdateSourceTrigger=PropertyChanged}"
+                    Text="{Binding ProjectName.Value, UpdateSourceTrigger=PropertyChanged}"
                     materialDesign:HintAssist.Hint="Enter a name for this project" />
             </studioControls:FormField>
 
@@ -49,7 +49,7 @@
                 LabelVerticalAlignment="Top"
                 Margin="0,0,0,16">
                 <TextBox
-                    Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}"
+                    Text="{Binding Description.Value, UpdateSourceTrigger=PropertyChanged}"
                     materialDesign:HintAssist.Hint="Optional description"
                     AcceptsReturn="True"
                     TextWrapping="Wrap"

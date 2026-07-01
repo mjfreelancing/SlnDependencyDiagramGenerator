@@ -11,4 +11,10 @@ public interface IDependencyProjectService : IStudioScopedDependency
     /// <param name="cancellationToken">A token for cancelling the operation.</param>
     /// <returns>The deserialized <see cref="DependencyProjectDocument"/>.</returns>
     Task<DependencyProjectDocument> OpenAsync(string filePath, CancellationToken cancellationToken = default);
+
+    /// <summary>Saves the given document to the specified file path.</summary>
+    /// <param name="document">The document to serialize and save.</param>
+    /// <param name="filePath">The destination file path.</param>
+    /// <param name="cancellationToken">A token for cancelling the operation.</param>
+    Task SaveAsync(DependencyProjectDocument document, string filePath, CancellationToken cancellationToken = default);
 }

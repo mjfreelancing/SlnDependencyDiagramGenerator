@@ -322,14 +322,45 @@ The selected nav item gets a left-accent border (4px `MaterialDesignPrimary`) an
 
 ### 3.2 Slice B — Save + Dirty Tracking
 
-**Goal:** User can save changes back to disk, see dirty state, and is prompted before discarding unsaved work.
+**Goal:** User can save changes via File menu (Ctrl+S), see dirty state reflected in the window title, and is prompted before discarding unsaved work. No toolbar needed — menu items handle save operations. Dirty tracking uses a lightweight `ObservableValue<T>` wrapper on each editable property so dirty state is self-contained and composes without per-page records.
 
 - [ ] 3.2.1 Add `SaveAsync(DependencyProjectDocument, string filePath)` to `IDependencyProjectService`. Implement by delegating to `IDependencyProjectSerializer`.
-- [ ] 3.2.2 Wire `SaveCommand` on `DependencyProjectViewModel`: overwrites `CurrentFilePath` with serialized document, sets `IsDirty = false` on success.
-- [ ] 3.2.3 Wire `SaveAsCommand`: prompts for a new path via `SaveFileDialog`, updates `CurrentFilePath`, then delegates to `SaveAsync`.
-- [ ] 3.2.4 Add `IsDirty` tracking via `WhenAnyValue` on all editable properties. Expose as `IObservable<bool>` for toolbar binding.
-- [ ] 3.2.5 Wire "Before discard" prompt using `DialogHost`: when the user triggers Open/New/Close while `IsDirty == true`, show "Save changes to {project name}?" with Yes/No/Cancel.
-- [ ] 3.2.6 Add a persistent toolbar Save button (under the nav or top bar) bound to `SaveCommand`, disabled when `!IsDirty`.
+- [ ] 3.2.2 Create `ObservableValue<T>` — a `ReactiveObject` wrapper that knows its original value and exposes `IsDirty`. Lives in a shared location (e.g. a `Types/` folder):
+
+  ```csharp
+  public sealed class ObservableValue<T> : ReactiveObject
+  {
+      private T _original;
+
+      [Reactive] public T Value { get; set; }
+      public bool IsDirty => !EqualityComparer<T>.Default.Equals(Value, _original);
+
+      public ObservableValue(T initial) { _original = initial; Value = initial; }
+      public void MarkClean() { _original = Value; this.RaisePropertyChanged(nameof(IsDirty)); }
+  }
+  ```
+
+  Apply to `ProjectViewModel`:
+  - Replace `[Reactive] string ProjectName` and `[Reactive] string Description` with `ObservableValue<string>`.
+  - Update XAML bindings: `{Binding ProjectName}` → `{Binding ProjectName.Value}`; same for `Description`.
+  - `LoadFrom()` sets `Name.Value = doc.Metadata.ProjectName`, `Description.Value = doc.Metadata.Description`, then calls `Name.MarkClean()` and `Description.MarkClean()` to establish the original.
+  - `ApplyToDocument()` writes `Name.Value` and `Description.Value` back to `document.Metadata`.
+  - Expose a computed `bool IsDirty => ProjectName.IsDirty || Description.IsDirty;` with `this.RaisePropertyChanged(nameof(IsDirty))` triggered via `WhenAnyValue` on each `ObservableValue.IsDirty`.
+
+  Apply to `DependencyProjectViewModel`:
+  - Expose `[Reactive] bool IsProjectPageDirty { get; set; }`.
+  - Expose computed `bool IsDirty => IsProjectPageDirty /* || IsSourcesPageDirty in future */`.
+  - The `NavigationItem.ConfigureViewModel` lambda wires: `projectVm.WhenAnyValue(vm => vm.IsDirty).BindTo(CurrentProject!, doc => doc.IsProjectPageDirty)`.
+
+  **Why this scales:** Adding a new page means adding one `IsXxxPageDirty` slot + one `BindTo` + one `||` clause — no existing code changes. Adding a new property to any page means adding one `ObservableValue<T>` field and one `||` clause to that page's `IsDirty`. No records to update, no snapshots to compare.
+
+- [ ] 3.2.3 Add `SaveCommand` and `SaveAsCommand` to `DependencyProjectViewModel`. Wire to File → Save (Ctrl+S) and File → Save As menu items. `Save` serializes via `IDependencyProjectService.SaveAsync`. On success: (a) calls `MarkClean()` on every `ObservableValue<T>` in every page VM, (b) sets `CurrentFilePath` (for SaveAs), (c) notifies `IRecentProjectsService` of the saved path.
+- [ ] 3.2.4 Update the main window title to reflect dirty state and file path. Bind `Title` via `WhenAnyValue` on `CurrentProject.IsDirty` and `CurrentProject.CurrentFilePath`:
+  - No project: `"SlnDependencyStudio"`
+  - Clean: `"SlnDependencyStudio — MyProject.sds"`
+  - Dirty: `"SlnDependencyStudio — MyProject.sds *"`
+- [ ] 3.2.5 Wire "Before discard" prompt using `DialogHost` (Material Design modal). On File → Open/New/Recent or window close while `IsDirty == true`, show `"Save changes to {project name}?"` with **Save** / **Discard** / **Cancel**. Dialog fires from code-behind (`DialogHost.Show()` is UI code).
+- [ ] 3.2.6 Verify: edit name → title shows `*` → File → Save → `*` disappears. Edit name → edit back to original → `*` disappears. Edit name + description → revert description → `*` stays (name still dirty). Close with unsaved changes → dialog appears.
 
 ### 3.3 Slice C — Create + Recent + Empty State
 
@@ -352,8 +383,8 @@ The selected nav item gets a left-accent border (4px `MaterialDesignPrimary`) an
 
 ### 4.1 Metadata Editing
 
-- [ ] 4.1.1 Under the "Project" navigation section, create `ProjectMetadataView.xaml` and `ProjectMetadataViewModel`.
-- [ ] 4.1.2 Bind `ProjectName` (TextBox) and `Description` (TextBox, multi-line) to `DependencyProjectMetadata` properties on the current document.
+- [x] 4.1.1 ~~Create `ProjectMetadataView.xaml` and `ProjectMetadataViewModel`.~~ — Already done as `ProjectView` + `ProjectViewModel` in Phase 3.1.3.
+- [x] 4.1.2 ~~Bind `ProjectName` and `Description` to `DependencyProjectMetadata`~~ — Already done in 3.1.3 via `ProjectViewModel.LoadFrom()` / `ApplyToDocument()`.
 - [ ] 4.1.3 Add a `ReactiveUI.Validation` rule: `ProjectName` must not be empty. Show inline validation error below the TextBox.
 
 ### 4.2 Solution & Export Paths

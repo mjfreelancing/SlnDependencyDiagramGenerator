@@ -15,7 +15,7 @@ public interface IDependencyProjectSerializer : IStudioScopedDependency
     /// <param name="document">The document to serialize.</param>
     /// <param name="filePath">The target file path.</param>
     /// <returns>A task that completes when the file has been written.</returns>
-    Task SerializeAsync(DependencyProjectDocument document, string filePath);
+    Task SerializeAsync(DependencyProjectDocument document, string filePath, CancellationToken cancellationToken = default);
 
     /// <summary>Deserializes a JSON string into a document.</summary>
     /// <param name="json">The JSON string.</param>
@@ -26,5 +26,5 @@ public interface IDependencyProjectSerializer : IStudioScopedDependency
     /// <param name="configFilename">The configuration file path.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>A task that resolves to the deserialized document.</returns>
-    Task<DependencyProjectDocument> DeserializeAsync(string configFilename, CancellationToken cancellationToken);
+    Task<DependencyProjectDocument> DeserializeAsync(string configFilename, CancellationToken cancellationToken = default);
 }

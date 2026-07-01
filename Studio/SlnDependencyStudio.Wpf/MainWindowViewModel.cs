@@ -1,4 +1,5 @@
 using AllOverIt.Assertion;
+using AllOverIt.Extensions;   // IsNotNullOrEmpty
 using AllOverIt.ReactiveUI;
 using AllOverIt.ReactiveUI.Factories;
 using ReactiveUI;
@@ -56,8 +57,22 @@ public sealed class MainWindowViewModel : ActivatableViewModel
     /// <summary>Command that opens an existing <c>.sds</c> project file.</summary>
     public ReactiveCommand<Unit, Unit> OpenProjectCommand { get; }
 
+    /// <summary>Command that saves the current project via the <c>IDependencyProjectService</c>.</summary>
+    public ReactiveCommand<Unit, Unit> SaveCommand { get; }
+
+    /// <summary>Command that saves the current project to a new file path.</summary>
+    public ReactiveCommand<Unit, Unit> SaveAsCommand { get; }
+
     /// <summary>Interaction for showing an open-file dialog. Returns the selected path or <see langword="null"/>.</summary>
     public Interaction<string, string?> OpenFileInteraction { get; } = new();
+
+    /// <summary>Interaction for showing a save-file dialog. Returns the selected path or <see langword="null"/>.</summary>
+    public Interaction<string, string?> SaveFileInteraction { get; } = new();
+
+    /// <summary>Interaction for showing a save-before-discard confirmation dialog.
+    /// Returns <see langword="true"/> if the user chose to save, <see langword="false"/> to discard,
+    /// and <see langword="null"/> to cancel.</summary>
+    public Interaction<string, bool?> ConfirmDiscardInteraction { get; } = new();
 
     /// <summary>Command that closes the application.</summary>
     public ReactiveCommand<Unit, Unit> ExitCommand { get; }
@@ -72,6 +87,43 @@ public sealed class MainWindowViewModel : ActivatableViewModel
 
         OpenProjectCommand = ReactiveCommand.CreateFromTask(OpenProjectAsync);
 
+        // Save (Ctrl+S) — enabled only when the current project has unsaved changes.
+        //
+        // The canExecute observable must react to two independent events:
+        //   1. CurrentProject itself changing  (null → project → different project → null)
+        //   2. IsDirty changing on the SAME project (false → true → false as the user edits)
+        //
+        // A simple `WhenAnyValue(CurrentProject).Select(p => p?.IsDirty)` only handles case 1
+        // because `WhenAnyValue` re-evaluates only when the referenced property (CurrentProject)
+        // changes, not when a nested property (IsDirty) changes.
+        //
+        // The solution uses ReactiveUI's `Switch` combinator:
+        //
+        //   Outer observable         Inner observables (one per project)
+        //   ─────────────────        ────────────────────────────────────
+        //   CurrentProject = null ─► Observable.Return(false) → emits false
+        //   CurrentProject = P1   ─► P1.WhenAnyValue(doc => doc.IsDirty) → emits P1.IsDirty changes
+        //   P1.IsDirty → true     ─► … same inner, emits true → Save enabled
+        //   P1.IsDirty → false    ─► … same inner, emits false → Save disabled
+        //   CurrentProject = P2   ─► Switch disposes P1's inner, subscribes to P2's inner
+        //   CurrentProject = null ─► Switch disposes P2's inner, subscribes to Return(false)
+        //
+        // `Switch` remembers the latest inner observable and auto-disposes the previous one.
+        var canSaveProject =
+            this.WhenAnyValue(vm => vm.CurrentProject)             // outer: fires when project ref changes
+                .Select(project => project is not null
+                    ? project.WhenAnyValue(doc => doc.IsDirty)     // inner: fires when IsDirty changes
+                    : Observable.Return(false))                    // no project → always disabled
+                .Switch();
+
+        SaveCommand = ReactiveCommand.CreateFromTask(SaveAsync, canSaveProject);
+
+
+        var canSaveAsProject = this.WhenAnyValue(vm => vm.CurrentProject).Select(project => project is not null);
+
+        SaveAsCommand = ReactiveCommand.CreateFromTask(SaveAsAsync, canSaveAsProject);
+
+
         ExitCommand = ReactiveCommand.Create(() => { });
 
         // Populate navigation items.
@@ -84,7 +136,14 @@ public sealed class MainWindowViewModel : ActivatableViewModel
                 ConfigureViewModel = viewModel =>
                 {
                     Throw<InvalidOperationException>.WhenNull(CurrentProject, "The current project has not been assigned");
-                    ((ProjectViewModel)viewModel).LoadFrom(CurrentProject.Document);
+
+                    var projectVm = (ProjectViewModel)viewModel;
+
+                    projectVm.LoadFrom(CurrentProject.Document);
+
+                    // Wire per-page dirty tracking to the document VM.
+                    projectVm.WhenAnyValue(vm => vm.IsDirty)
+                        .BindTo(CurrentProject, doc => doc.IsProjectPageDirty);
                 }
             }
         ];
@@ -111,6 +170,21 @@ public sealed class MainWindowViewModel : ActivatableViewModel
 
     private async Task OpenProjectAsync()
     {
+        if (CurrentProject is { IsDirty: true })
+        {
+            var shouldSave = await PromptDiscardAsync(CurrentProject);
+
+            if (shouldSave is null)
+            {
+                return; // Cancelled
+            }
+
+            if (shouldSave.Value)
+            {
+                await SaveAsync();
+            }
+        }
+
         var filePath = await OpenFileInteraction.Handle(
             "SlnDependencyStudio project files (*.sds)|*.sds|All files (*.*)|*.*");
 
@@ -126,6 +200,73 @@ public sealed class MainWindowViewModel : ActivatableViewModel
 
         // Navigate to the Project page - will trigger the subscription attached to SelectedNavigationItem.
         SelectNavigationItem<ProjectViewModel>();
+    }
+
+    private async Task SaveAsync()
+    {
+        Throw<InvalidOperationException>.WhenNull(CurrentProject, "No project is loaded");
+        Throw<InvalidOperationException>.WhenNull(CurrentProject.CurrentFilePath, "Current project has no file path — use Save As");
+
+        // Apply all page VM changes to the document before saving.
+        ApplyAllPageChanges();
+
+        await _projectService.SaveAsync(CurrentProject.Document, CurrentProject.CurrentFilePath);
+
+        // Mark all page VMs as clean (updates IsDirty).
+        MarkAllPagesClean();
+    }
+
+    private async Task SaveAsAsync()
+    {
+        Throw<InvalidOperationException>.WhenNull(CurrentProject, "No project is loaded");
+
+        var filePath = await SaveFileInteraction.Handle(
+            "SlnDependencyStudio project files (*.sds)|*.sds|All files (*.*)|*.*");
+
+        if (filePath is null)
+        {
+            return;
+        }
+
+        // Apply all page VM changes to the document before saving.
+        ApplyAllPageChanges();
+
+        await _projectService.SaveAsync(CurrentProject.Document, filePath);
+
+        CurrentProject.CurrentFilePath = filePath;
+
+        // Mark all page VMs as clean.
+        MarkAllPagesClean();
+    }
+
+    /// <summary>Applies changes from the currently displayed page VM to the document.
+    /// Called before save operations to ensure the document reflects the latest edits.</summary>
+    private void ApplyAllPageChanges()
+    {
+        if (CurrentPage is ProjectView projectView)
+        {
+            projectView.ViewModel!.ApplyToDocument();
+        }
+    }
+
+    /// <summary>Marks all page VMs as clean. Called after a successful save.</summary>
+    private void MarkAllPagesClean()
+    {
+        if (CurrentPage is ProjectView projectView)
+        {
+            projectView.ViewModel!.MarkClean();
+        }
+    }
+
+    /// <summary>Prompts the user to save or discard changes. Returns <see langword="true"/> for save,
+    /// <see langword="false"/> for discard, and <see langword="null"/> for cancel.</summary>
+    public async Task<bool?> PromptDiscardAsync(DependencyProjectViewModel project)
+    {
+        var projectName = project.Document.Metadata.ProjectName.IsNotNullOrEmpty()
+            ? project.Document.Metadata.ProjectName
+            : "Untitled";
+
+        return await ConfirmDiscardInteraction.Handle(projectName);
     }
 
     /// <summary>Selects the navigation item whose <see cref="NavigationItemViewModel.ViewModelType"/>
