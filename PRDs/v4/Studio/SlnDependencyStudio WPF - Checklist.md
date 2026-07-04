@@ -311,7 +311,7 @@ The selected nav item gets a left-accent border (4px `MaterialDesignPrimary`) an
 
 **Intent:** Implement the full document lifecycle: create from defaults, create by loading an existing `.sds` file, open, save, save-as, close. Track unsaved changes and prompt before discard. Maintain a recent-projects list. Build the empty-state view so first-run users understand what a dependency project is and how to start.
 
-> **Architecture note (2026-07-04):** Phase 3 was refactored to use a centralized **Project Document Store** pattern. The store (`IProjectDocumentStore` / `ProjectDocumentStore`) is a singleton that holds the deserialized `DependencyProjectDocument`, owns **editor wrappers** (one per document sub-object, e.g. `ProjectMetadataEditor` for `DependencyProjectMetadata`), and derives global `IsDirty` from all wrappers. Page view models receive `IProjectDocumentStore` via DI and expose TrackableValues via pass-through properties. This replaces the earlier `DependencyProjectViewModel` + `ConfigureViewModel` + per-page dirty tracking design. See `PRDs/v4/Studio/refactor-store-pattern.md` for the full design.
+> **Architecture note (2026-07-04):** Phase 3 was refactored to use a centralized **Project Document Store** pattern. The store (`IProjectDocumentStore` / `ProjectDocumentStore`) is a singleton that holds the deserialized `DependencyProjectDocument`, owns **editor wrappers** (one per document sub-object, e.g. `ProjectMetadataEditor` for `DependencyProjectMetadata`), and derives global `IsDirty` from all wrappers. Page view models receive `IProjectDocumentStore` via DI and expose TrackableValues via pass-through properties. This replaces the earlier `DependencyProjectViewModel` + `ConfigureViewModel` + per-page dirty tracking design.
 
 ### 3.1 Slice A — Open + Display + Edit
 
@@ -347,8 +347,8 @@ The selected nav item gets a left-accent border (4px `MaterialDesignPrimary`) an
 
 **Goal:** User can start from defaults or from an existing `.sds` via the empty-state landing page. Recent projects are persisted and clickable.
 
-- [ ] 3.3.1 Add `CreateFromDefaultsAsync()` and `CreateFromExistingAsync(string filePath)` to `IDependencyProjectService`. Implement both delegating to `IDependencyProjectSerializer`.
-- [ ] 3.3.2 Wire "New Project" command (creates from defaults, loads into store via `_store.OpenAsync` or a dedicated `CreateNew` method, navigates to Project page).
+- [x] 3.3.1 Add `CreateFromDefaults()` to `IDependencyProjectService`. Returns a new `DependencyProjectDocument` with default values. `CreateFromExistingAsync` was intentionally omitted — the save-first-then-open pattern uses the existing `OpenAsync` instead. _(Revised 2026-07-04: save-first approach — New Project and New from Existing both prompt for a save path immediately, write the file, then `OpenAsync`.)_
+- [x] 3.3.2 Wire "New Project" command (creates defaults → prompts save dialog → saves → `OpenAsync` into store → navigates to Project page). "New from Existing" prompts for source file → prompts save dialog for destination → saves → `OpenAsync`.
 - [ ] 3.3.3 Create `IRecentProjectsService` with `AddAsync`, `GetRecentAsync`, `RemoveAsync`. Implement using `ApplicationState` (from Phase 2). Store up to 10 recent paths.
 - [ ] 3.3.4 In the left nav, display recent projects below the navigation sections. Each entry shows the file name (no extension). Clicking calls `_store.OpenAsync(filePath)`.
 - [ ] 3.3.5 Create `EmptyStateView.xaml` and `EmptyStateViewModel` under `Features/EmptyState/` with: large icon, app title/subtitle, "New Project" card, "Open Project" card (file picker for `.sds`), recent projects list, and Settings shortcut. Use Material Design `Card` + `PackIcon` styling.

@@ -54,6 +54,14 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             this.BindCommand(ViewModel, vm => vm.OpenProjectCommand, view => view.OpenProjectMenuItem)
                 .DisposeWith(disposables);
 
+            // New Project menu item (Ctrl+N).
+            this.BindCommand(ViewModel, vm => vm.NewProjectCommand, view => view.NewProjectMenuItem)
+                .DisposeWith(disposables);
+
+            // New from Existing menu item.
+            this.BindCommand(ViewModel, vm => vm.NewFromExistingCommand, view => view.NewFromExistingMenuItem)
+                .DisposeWith(disposables);
+
             // Save menu item (Ctrl+S).
             this.BindCommand(ViewModel, vm => vm.SaveCommand, view => view.SaveMenuItem)
                 .DisposeWith(disposables);

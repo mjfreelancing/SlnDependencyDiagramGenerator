@@ -19,8 +19,11 @@ namespace SlnDependencyStudio.Wpf;
 /// <summary>View model for the main application shell window.</summary>
 public sealed class MainWindowViewModel : ActivatableViewModel
 {
+    const string StudioFilesFilter = "Studio Project files (*.sds)|*.sds|All files (*.*)|*.*";
+
     private ObservableAsPropertyHelper<bool> _hasValidationSummaryItems = null!;
     private readonly IProjectDocumentStore _store;
+    private readonly IDependencyProjectService _projectService;
     private readonly IViewFactory _viewFactory;
     private readonly ILogger<MainWindowViewModel> _logger;
 
@@ -59,6 +62,12 @@ public sealed class MainWindowViewModel : ActivatableViewModel
     /// <summary>Command that opens an existing <c>.sds</c> project file.</summary>
     public ReactiveCommand<Unit, Unit> OpenProjectCommand { get; }
 
+    /// <summary>Command that creates a new project from defaults.</summary>
+    public ReactiveCommand<Unit, Unit> NewProjectCommand { get; }
+
+    /// <summary>Command that creates a new project by loading an existing <c>.sds</c> file as a starting point.</summary>
+    public ReactiveCommand<Unit, Unit> NewFromExistingCommand { get; }
+
     /// <summary>Command that saves the current project via the store.</summary>
     public ReactiveCommand<Unit, Unit> SaveCommand { get; }
 
@@ -81,14 +90,18 @@ public sealed class MainWindowViewModel : ActivatableViewModel
     public ReactiveCommand<Unit, Unit> ExitCommand { get; }
 
     /// <summary>Initializes a new instance of <see cref="MainWindowViewModel"/>.</summary>
-    public MainWindowViewModel(IProjectDocumentStore store, IViewFactory viewFactory, ILogger<MainWindowViewModel> logger)
+    public MainWindowViewModel(IProjectDocumentStore store, IDependencyProjectService projectService, IViewFactory viewFactory,
+        ILogger<MainWindowViewModel> logger)
     {
         _store = store;
+        _projectService = projectService;
         _viewFactory = viewFactory;
         _logger = logger;
 
         OpenSettingsCommand = ReactiveCommand.Create(() => { });
         OpenProjectCommand = ReactiveCommand.CreateFromTask(OpenProjectAsync);
+        NewProjectCommand = ReactiveCommand.CreateFromTask(NewProjectAsync);
+        NewFromExistingCommand = ReactiveCommand.CreateFromTask(NewFromExistingAsync);
         SaveCommand = CreateSaveCommand();
         SaveAsCommand = CreateSaveAsCommand();
         CloseProjectCommand = CreateCloseProjectCommand();
@@ -195,7 +208,7 @@ public sealed class MainWindowViewModel : ActivatableViewModel
             }
         }
 
-        var filePath = await OpenFileInteraction.Handle("Studio Project files (*.sds)|*.sds|All files (*.*)|*.*");
+        var filePath = await OpenFileInteraction.Handle(StudioFilesFilter);
 
         if (filePath is null)
         {
@@ -208,6 +221,84 @@ public sealed class MainWindowViewModel : ActivatableViewModel
         SelectNavigationItem<ProjectViewModel>();
     }
 
+    private async Task NewProjectAsync()
+    {
+        if (_store.IsDirty)
+        {
+            var action = await PromptDiscardAsync();
+
+            if (action == DiscardAction.Cancel)
+            {
+                return;
+            }
+
+            if (action == DiscardAction.Save)
+            {
+                await SaveAsync();
+            }
+        }
+
+        var document = _projectService.CreateFromDefaults();
+
+        var filePath = await SaveFileInteraction.Handle(StudioFilesFilter);
+
+        if (filePath is null)
+        {
+            return;
+        }
+
+        await _projectService.SaveAsync(document, filePath);
+
+        await _store.OpenAsync(filePath);
+
+        _logger.LogInformation("New project created: {FilePath}", filePath);
+
+        SelectNavigationItem<ProjectViewModel>();
+    }
+
+    private async Task NewFromExistingAsync()
+    {
+        if (_store.IsDirty)
+        {
+            var action = await PromptDiscardAsync();
+
+            if (action == DiscardAction.Cancel)
+            {
+                return;
+            }
+
+            if (action == DiscardAction.Save)
+            {
+                await SaveAsync();
+            }
+        }
+
+        var sourcePath = await OpenFileInteraction.Handle(StudioFilesFilter);
+
+        if (sourcePath is null)
+        {
+            return;
+        }
+
+        var document = await _projectService.OpenAsync(sourcePath);
+
+        var destinationPath = await SaveFileInteraction.Handle(StudioFilesFilter);
+
+        if (destinationPath is null)
+        {
+            return;
+        }
+
+        await _projectService.SaveAsync(document, destinationPath);
+
+        await _store.OpenAsync(destinationPath);
+
+        _logger.LogInformation("New project created from existing: {SourcePath} → {DestinationPath}",
+            sourcePath, destinationPath);
+
+        SelectNavigationItem<ProjectViewModel>();
+    }
+
     private async Task SaveAsync()
     {
         await _store.SaveAsync();
@@ -215,8 +306,7 @@ public sealed class MainWindowViewModel : ActivatableViewModel
 
     private async Task SaveAsAsync()
     {
-        var filePath = await SaveFileInteraction.Handle(
-            "SlnDependencyStudio project files (*.sds)|*.sds|All files (*.*)|*.*");
+        var filePath = await SaveFileInteraction.Handle("Studio Project files (*.sds)|*.sds|All files (*.*)|*.*");
 
         if (filePath is null)
         {

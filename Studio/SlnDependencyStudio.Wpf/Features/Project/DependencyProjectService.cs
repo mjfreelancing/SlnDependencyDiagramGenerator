@@ -13,6 +13,13 @@ internal sealed class DependencyProjectService : IDependencyProjectService
         _serializer = serializer.WhenNotNull();
     }
 
+    /// <inheritdoc />
+    public DependencyProjectDocument CreateFromDefaults()
+    {
+        return new DependencyProjectDocument();
+    }
+
+    /// <inheritdoc />
     public Task<DependencyProjectDocument> OpenAsync(string filePath, CancellationToken cancellationToken = default)
     {
         filePath.WhenNotNull();
@@ -20,6 +27,7 @@ internal sealed class DependencyProjectService : IDependencyProjectService
         return _serializer.DeserializeAsync(filePath, cancellationToken);
     }
 
+    /// <inheritdoc />
     public Task SaveAsync(DependencyProjectDocument document, string filePath, CancellationToken cancellationToken = default)
     {
         filePath.WhenNotNull();

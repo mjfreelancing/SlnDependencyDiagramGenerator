@@ -49,6 +49,16 @@
 
             <MenuItem Header="_File">
                 <MenuItem
+                    x:Name="NewProjectMenuItem"
+                    Header="_New Project"
+                    Command="{Binding NewProjectCommand}"
+                    InputGestureText="Ctrl+N" />
+                <MenuItem
+                    x:Name="NewFromExistingMenuItem"
+                    Header="New from _Existing..."
+                    Command="{Binding NewFromExistingCommand}" />
+                <Separator />
+                <MenuItem
                     x:Name="OpenProjectMenuItem"
                     Header="_Open Project..."
                     Command="{Binding OpenProjectCommand}"
