@@ -35,15 +35,14 @@ public partial class SettingsEditor : ReactiveUserControl<SettingsEditorViewMode
 
             ViewModel!.BrowseFolder.RegisterHandler(context =>
             {
-                using var dialog = new System.Windows.Forms.FolderBrowserDialog
+                var dialog = new OpenFolderDialog
                 {
-                    Description = "Select default project folder",
-                    UseDescriptionForTitle = true,
-                    SelectedPath = context.Input
+                    Title = "Select default project folder",
+                    InitialDirectory = context.Input
                 };
 
-                var result = dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK
-                    ? dialog.SelectedPath
+                var result = dialog.ShowDialog() == true
+                    ? dialog.FolderName
                     : null;
 
                 context.SetOutput(result);
