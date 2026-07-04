@@ -30,8 +30,7 @@ public abstract class NavigationItemViewModel : ReactiveObject
     /// Used to resolve the correct view via <see cref="IViewFactory"/>.</summary>
     public abstract Type ViewModelType { get; }
 
-    /// <summary>Creates the view for this nav item's page, invoking <see cref="ConfigureViewModel"/>
-    /// if set.</summary>
+    /// <summary>Creates the view for this nav item's page via the view factory.</summary>
     /// <param name="viewFactory">The view factory used to create view/view-model pairs.</param>
     /// <returns>The created view, with its <c>ViewModel</c> populated.</returns>
     public abstract IViewFor CreateView(IViewFactory viewFactory);

@@ -26,7 +26,7 @@ internal sealed class SlnDependencyWpfAppBootstrapper
         }
         catch (Exception ex)
         {
-            // TODO: Decide what to do ehere
+            // TODO: Decide what to do here
         }
     }
 }
