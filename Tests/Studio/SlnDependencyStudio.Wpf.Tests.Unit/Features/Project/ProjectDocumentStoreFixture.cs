@@ -55,7 +55,8 @@ public class ProjectDocumentStoreFixture
         [Fact]
         public async Task Should_Populate_MetadataEditor()
         {
-            _projectService.OpenAsync("test.sds", Arg.Any<CancellationToken>())
+            _projectService
+                .OpenAsync("test.sds", Arg.Any<CancellationToken>())
                 .Returns(CreateDocument("Test Project", "A description"));
 
             await _store.OpenAsync("test.sds");
@@ -67,10 +68,52 @@ public class ProjectDocumentStoreFixture
         [Fact]
         public async Task Should_Leave_IsDirty_False()
         {
-            _projectService.OpenAsync("test.sds", Arg.Any<CancellationToken>())
+            _projectService
+                .OpenAsync("test.sds", Arg.Any<CancellationToken>())
                 .Returns(CreateDocument("Name", "Desc"));
 
             await _store.OpenAsync("test.sds");
+
+            _store.IsDirty.ShouldBeFalse();
+        }
+
+        [Fact]
+        public async Task Should_Replace_Previous_Document()
+        {
+            _projectService
+                .OpenAsync("first.sds", Arg.Any<CancellationToken>())
+                .Returns(CreateDocument("First", "FirstDesc"));
+
+            _projectService
+                .OpenAsync("second.sds", Arg.Any<CancellationToken>())
+                .Returns(CreateDocument("Second", "SecondDesc"));
+
+            await _store.OpenAsync("first.sds");
+            await _store.OpenAsync("second.sds");
+
+            _store.CurrentFilePath.ShouldBe("second.sds");
+            _store.MetadataEditor.ProjectName.Value.ShouldBe("Second");
+            _store.MetadataEditor.Description.Value.ShouldBe("SecondDesc");
+        }
+
+        [Fact]
+        public async Task Should_Be_Clean_When_Opening_Different_File_After_Edit()
+        {
+            _projectService
+                .OpenAsync("first.sds", Arg.Any<CancellationToken>())
+                .Returns(CreateDocument("First", "Desc"));
+
+            _projectService
+                .OpenAsync("second.sds", Arg.Any<CancellationToken>())
+                .Returns(CreateDocument("Second", "Desc"));
+
+            await _store.OpenAsync("first.sds");
+            _store.MetadataEditor.ProjectName.Value = "Changed";
+
+            _store.IsDirty.ShouldBeTrue();
+
+            // Opening a different file discards changes — should be clean.
+            await _store.OpenAsync("second.sds");
 
             _store.IsDirty.ShouldBeFalse();
         }
@@ -162,6 +205,49 @@ public class ProjectDocumentStoreFixture
             _store.HasDocument.ShouldBeFalse();
             _store.CurrentFilePath.ShouldBeNull();
             _store.IsDirty.ShouldBeFalse();
+        }
+
+        [Fact]
+        public async Task Should_Allow_Reopen_After_Close()
+        {
+            _projectService
+                .OpenAsync("first.sds", Arg.Any<CancellationToken>())
+                .Returns(CreateDocument("First", "Desc"));
+
+            _projectService
+                .OpenAsync("second.sds", Arg.Any<CancellationToken>())
+                .Returns(CreateDocument("Second", "Desc"));
+
+            await _store.OpenAsync("first.sds");
+            _store.Close();
+
+            await _store.OpenAsync("second.sds");
+
+            _store.HasDocument.ShouldBeTrue();
+            _store.CurrentFilePath.ShouldBe("second.sds");
+            _store.MetadataEditor.ProjectName.Value.ShouldBe("Second");
+        }
+    }
+
+    public class HasDocument : ProjectDocumentStoreFixture
+    {
+        [Fact]
+        public async Task Should_Toggle_Through_Open_Close_Open_Cycle()
+        {
+            _projectService
+                .OpenAsync("test.sds", Arg.Any<CancellationToken>())
+                .Returns(CreateDocument("Name", "Desc"));
+
+            _store.HasDocument.ShouldBeFalse();
+
+            await _store.OpenAsync("test.sds");
+            _store.HasDocument.ShouldBeTrue();
+
+            _store.Close();
+            _store.HasDocument.ShouldBeFalse();
+
+            await _store.OpenAsync("test.sds");
+            _store.HasDocument.ShouldBeTrue();
         }
     }
 
