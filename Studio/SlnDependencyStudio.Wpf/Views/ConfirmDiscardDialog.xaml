@@ -3,43 +3,41 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-    xmlns:wpf="clr-namespace:SlnDependencyStudio.Wpf"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:models="clr-namespace:SlnDependencyStudio.Wpf.Models"
-    mc:Ignorable="d"
-    d:DesignWidth="350">
+    xmlns:wpf="clr-namespace:SlnDependencyStudio.Wpf"
+    d:DesignWidth="350"
+    mc:Ignorable="d">
 
     <StackPanel Margin="16">
         <TextBlock
             x:Name="MessageText"
+            Margin="0,0,0,16"
             FontSize="14"
-            TextWrapping="Wrap"
-            Margin="0,0,0,16" />
+            TextWrapping="Wrap" />
 
-        <StackPanel
-            Orientation="Horizontal"
-            HorizontalAlignment="Right">
+        <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
 
             <Button
-                Content="Save"
-                Style="{StaticResource MaterialDesignFlatButton}"
+                Margin="0,0,8,0"
                 Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}"
                 CommandParameter="{x:Static models:DiscardAction.Save}"
-                Margin="0,0,8,0" />
+                Content="Save"
+                Style="{StaticResource MaterialDesignFlatButton}" />
 
             <Button
-                Content="Discard"
-                Style="{StaticResource MaterialDesignOutlinedButton}"
+                Margin="0,0,8,0"
                 Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}"
                 CommandParameter="{x:Static models:DiscardAction.Discard}"
-                Margin="0,0,8,0" />
+                Content="Discard"
+                Style="{StaticResource MaterialDesignOutlinedButton}" />
 
             <Button
-                Content="Cancel"
-                IsCancel="True"
                 Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}"
-                CommandParameter="{x:Static models:DiscardAction.Cancel}" />
+                CommandParameter="{x:Static models:DiscardAction.Cancel}"
+                Content="Cancel"
+                IsCancel="True" />
         </StackPanel>
     </StackPanel>
 </UserControl>

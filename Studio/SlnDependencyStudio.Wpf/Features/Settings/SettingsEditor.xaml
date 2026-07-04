@@ -1,16 +1,16 @@
 <reactiveui:ReactiveUserControl
     x:Class="SlnDependencyStudio.Wpf.Features.Settings.SettingsEditor"
-    x:TypeArguments="settings:SettingsEditorViewModel"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:reactiveui="http://reactiveui.net"
-    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:settings="clr-namespace:SlnDependencyStudio.Wpf.Features.Settings"
-    mc:Ignorable="d"
     d:DesignHeight="400"
-    d:DesignWidth="500">
+    d:DesignWidth="500"
+    x:TypeArguments="settings:SettingsEditorViewModel"
+    mc:Ignorable="d">
 
     <Grid Margin="16">
         <Grid.RowDefinitions>
@@ -29,123 +29,141 @@
             <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
 
-        <!-- Header -->
+        <!--  Header  -->
         <materialDesign:PackIcon
-            Grid.Row="0" Grid.Column="0"
-            Kind="Cog"
-            Width="24" Height="24"
+            Grid.Row="0"
+            Grid.Column="0"
+            Width="24"
+            Height="24"
+            Margin="0,0,12,0"
             VerticalAlignment="Center"
-            Margin="0,0,12,0" />
+            Kind="Cog" />
 
         <TextBlock
-            Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2"
-            Text="Application Settings"
+            Grid.Row="0"
+            Grid.Column="1"
+            Grid.ColumnSpan="2"
+            Margin="0,0,0,16"
             FontSize="18"
             FontWeight="SemiBold"
-            Margin="0,0,0,16" />
+            Text="Application Settings" />
 
-        <!-- Default Project Folder -->
+        <!--  Default Project Folder  -->
         <TextBlock
-            Grid.Row="1" Grid.Column="0"
-            Text="Default project folder"
-            FontSize="13"
+            Grid.Row="1"
+            Grid.Column="0"
+            Margin="0,0,12,8"
             VerticalAlignment="Center"
-            Margin="0,0,12,8" />
+            FontSize="13"
+            Text="Default project folder" />
 
         <TextBox
-            Grid.Row="1" Grid.Column="1"
-            Text="{Binding DefaultProjectFolder, UpdateSourceTrigger=PropertyChanged}"
-            materialDesign:HintAssist.Hint="Leave empty for no default"
+            Grid.Row="1"
+            Grid.Column="1"
+            Margin="0,0,8,8"
             VerticalAlignment="Center"
-            Margin="0,0,8,8" />
+            materialDesign:HintAssist.Hint="Leave empty for no default"
+            Text="{Binding DefaultProjectFolder, UpdateSourceTrigger=PropertyChanged}" />
 
         <Button
             x:Name="BrowseDefaultProjectFolderButton"
-            Grid.Row="1" Grid.Column="2"
+            Grid.Row="1"
+            Grid.Column="2"
+            Margin="0,0,0,8"
+            VerticalAlignment="Center"
             Content="{materialDesign:PackIcon FolderOpenOutline}"
             Style="{StaticResource MaterialDesignIconButton}"
-            ToolTip="Browse for folder"
-            VerticalAlignment="Center"
-            Margin="0,0,0,8" />
+            ToolTip="Browse for folder" />
 
-        <!-- d2 Tool Path -->
+        <!--  d2 Tool Path  -->
         <TextBlock
-            Grid.Row="2" Grid.Column="0"
-            Text="d2 executable"
-            FontSize="13"
+            Grid.Row="2"
+            Grid.Column="0"
+            Margin="0,0,12,8"
             VerticalAlignment="Center"
-            Margin="0,0,12,8" />
+            FontSize="13"
+            Text="d2 executable" />
 
         <TextBox
-            Grid.Row="2" Grid.Column="1"
-            Text="{Binding D2ToolPath, UpdateSourceTrigger=PropertyChanged}"
-            materialDesign:HintAssist.Hint="Auto-detected if empty"
+            Grid.Row="2"
+            Grid.Column="1"
+            Margin="0,0,8,8"
             VerticalAlignment="Center"
-            Margin="0,0,8,8" />
+            materialDesign:HintAssist.Hint="Auto-detected if empty"
+            Text="{Binding D2ToolPath, UpdateSourceTrigger=PropertyChanged}" />
 
         <Button
             x:Name="BrowseD2ToolPathButton"
-            Grid.Row="2" Grid.Column="2"
+            Grid.Row="2"
+            Grid.Column="2"
+            Margin="0,0,0,8"
+            VerticalAlignment="Center"
             Content="{materialDesign:PackIcon FileSearchOutline}"
             Style="{StaticResource MaterialDesignIconButton}"
-            ToolTip="Browse for d2 executable"
-            VerticalAlignment="Center"
-            Margin="0,0,0,8" />
+            ToolTip="Browse for d2 executable" />
 
-        <!-- mmdc Tool Path -->
+        <!--  mmdc Tool Path  -->
         <TextBlock
-            Grid.Row="3" Grid.Column="0"
-            Text="mmdc executable"
-            FontSize="13"
+            Grid.Row="3"
+            Grid.Column="0"
+            Margin="0,0,12,8"
             VerticalAlignment="Center"
-            Margin="0,0,12,8" />
+            FontSize="13"
+            Text="mmdc executable" />
 
         <TextBox
-            Grid.Row="3" Grid.Column="1"
-            Text="{Binding MmdcToolPath, UpdateSourceTrigger=PropertyChanged}"
-            materialDesign:HintAssist.Hint="Auto-detected if empty"
+            Grid.Row="3"
+            Grid.Column="1"
+            Margin="0,0,8,8"
             VerticalAlignment="Center"
-            Margin="0,0,8,8" />
+            materialDesign:HintAssist.Hint="Auto-detected if empty"
+            Text="{Binding MmdcToolPath, UpdateSourceTrigger=PropertyChanged}" />
 
         <Button
             x:Name="BrowseMmdcToolPathButton"
-            Grid.Row="3" Grid.Column="2"
+            Grid.Row="3"
+            Grid.Column="2"
+            Margin="0,0,0,8"
+            VerticalAlignment="Center"
             Content="{materialDesign:PackIcon FileSearchOutline}"
             Style="{StaticResource MaterialDesignIconButton}"
-            ToolTip="Browse for mmdc executable"
-            VerticalAlignment="Center"
-            Margin="0,0,0,8" />
+            ToolTip="Browse for mmdc executable" />
 
-        <!-- Log Retention Days -->
+        <!--  Log Retention Days  -->
         <TextBlock
-            Grid.Row="4" Grid.Column="0"
-            Text="Log retention (days)"
-            FontSize="13"
+            Grid.Row="4"
+            Grid.Column="0"
+            Margin="0,0,12,8"
             VerticalAlignment="Center"
-            Margin="0,0,12,8" />
+            FontSize="13"
+            Text="Log retention (days)" />
 
         <Slider
             x:Name="LogRetentionDaysSlider"
-            Grid.Row="4" Grid.Column="1"
-            Minimum="1"
-            Maximum="90"
-            IsSnapToTickEnabled="True"
-            TickFrequency="1"
-            Value="{Binding LogRetentionDays}"
+            Grid.Row="4"
+            Grid.Column="1"
+            Margin="0,0,8,8"
             VerticalAlignment="Center"
-            Margin="0,0,8,8" />
+            IsSnapToTickEnabled="True"
+            Maximum="90"
+            Minimum="1"
+            TickFrequency="1"
+            Value="{Binding LogRetentionDays}" />
 
         <TextBlock
-            Grid.Row="4" Grid.Column="2"
-            Text="{Binding LogRetentionDays, StringFormat={}{0} days}"
+            Grid.Row="4"
+            Grid.Column="2"
+            Margin="0,0,0,8"
+            VerticalAlignment="Center"
             FontSize="12"
             Foreground="{DynamicResource MaterialDesignHintForeground}"
-            VerticalAlignment="Center"
-            Margin="0,0,0,8" />
+            Text="{Binding LogRetentionDays, StringFormat={}{0} days}" />
 
-        <!-- Spacer -->
+        <!--  Spacer  -->
         <Border
-            Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="3"
+            Grid.Row="5"
+            Grid.Column="0"
+            Grid.ColumnSpan="3"
             Height="16" />
     </Grid>
 
