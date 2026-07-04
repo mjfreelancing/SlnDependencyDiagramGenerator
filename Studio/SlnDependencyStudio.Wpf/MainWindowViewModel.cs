@@ -65,6 +65,9 @@ public sealed class MainWindowViewModel : ActivatableViewModel
     /// <summary>Command that saves the current project to a new file path.</summary>
     public ReactiveCommand<Unit, Unit> SaveAsCommand { get; }
 
+    /// <summary>Command that closes the current project.</summary>
+    public ReactiveCommand<Unit, Unit> CloseProjectCommand { get; }
+
     /// <summary>Interaction for showing an open-file dialog. Returns the selected path or <see langword="null"/>.</summary>
     public Interaction<string, string?> OpenFileInteraction { get; } = new();
 
@@ -85,19 +88,10 @@ public sealed class MainWindowViewModel : ActivatableViewModel
         _logger = logger;
 
         OpenSettingsCommand = ReactiveCommand.Create(() => { });
-
         OpenProjectCommand = ReactiveCommand.CreateFromTask(OpenProjectAsync);
-
-        // Save is enabled when the store reports dirty state. Since the store is a singleton,
-        // its IsDirty changes are directly observable — no Switch combinator needed.
-        var canSaveProject = _store.WhenAnyValue(s => s.IsDirty);
-
-        SaveCommand = ReactiveCommand.CreateFromTask(SaveAsync, canSaveProject);
-
-        var canSaveAsProject = _store.WhenAnyValue(s => s.HasDocument);
-
-        SaveAsCommand = ReactiveCommand.CreateFromTask(SaveAsAsync, canSaveAsProject);
-
+        SaveCommand = CreateSaveCommand();
+        SaveAsCommand = CreateSaveAsCommand();
+        CloseProjectCommand = CreateCloseProjectCommand();
         ExitCommand = ReactiveCommand.Create(() => { });
 
         // Populate navigation items. Each page VM receives the store via DI and self-initialises.
@@ -114,12 +108,20 @@ public sealed class MainWindowViewModel : ActivatableViewModel
     /// <inheritdoc />
     protected override void OnActivated(CompositeDisposable disposables)
     {
+        WireDocumentStateTracking(disposables);
+        WireSaveCommandLogging(disposables);
+        WireValidationTracking(disposables);
+        WireNavigation(disposables);
+    }
+
+    private void WireDocumentStateTracking(CompositeDisposable disposables)
+    {
         _store.WhenAnyValue(store => store.HasDocument)
             .ToPropertyEx(this, vm => vm.HasDocument)
             .DisposeWith(disposables);
 
         _store
-            .WhenAnyValue(s => s.CurrentFilePath)
+            .WhenAnyValue(store => store.CurrentFilePath)
             .Subscribe(filePath =>
             {
                 if (filePath is null)
@@ -134,7 +136,7 @@ public sealed class MainWindowViewModel : ActivatableViewModel
             .DisposeWith(disposables);
 
         _store
-            .WhenAnyValue(s => s.IsDirty)
+            .WhenAnyValue(store => store.IsDirty)
             .Subscribe(isDirty =>
             {
                 if (isDirty)
@@ -147,11 +149,17 @@ public sealed class MainWindowViewModel : ActivatableViewModel
                 }
             })
             .DisposeWith(disposables);
+    }
 
+    private void WireSaveCommandLogging(CompositeDisposable disposables)
+    {
         SaveCommand.CanExecute
             .Subscribe(enabled => _logger.LogInformation("Project can be saved: {Enabled}", enabled))
             .DisposeWith(disposables);
+    }
 
+    private void WireValidationTracking(CompositeDisposable disposables)
+    {
         Observable
             .FromEventPattern<NotifyCollectionChangedEventHandler, NotifyCollectionChangedEventArgs>(
                 handler => CurrentValidationSummary.CollectionChanged += handler,
@@ -160,8 +168,10 @@ public sealed class MainWindowViewModel : ActivatableViewModel
             .StartWith(CurrentValidationSummary.Count > 0)
             .ToProperty(this, vm => vm.HasValidationSummaryItems, out _hasValidationSummaryItems)
             .DisposeWith(disposables);
+    }
 
-        // Navigate to the page view when a nav item is selected.
+    private void WireNavigation(CompositeDisposable disposables)
+    {
         this.WhenAnyValue(vm => vm.SelectedNavigationItem)
             .Where(navItem => navItem is not null)
             .Subscribe(navItem => NavigateToPage(navItem!))
@@ -214,6 +224,51 @@ public sealed class MainWindowViewModel : ActivatableViewModel
         }
 
         await _store.SaveAsAsync(filePath);
+    }
+
+    private async Task CloseProjectAsync()
+    {
+        if (_store.IsDirty)
+        {
+            var action = await PromptDiscardAsync();
+
+            if (action == DiscardAction.Cancel)
+            {
+                return;
+            }
+
+            if (action == DiscardAction.Save)
+            {
+                await SaveAsync();
+            }
+        }
+
+        _store.Close();
+
+        // Clear the workspace and deselect navigation so the next open triggers the nav subscription.
+        CurrentPage = null;
+        SelectedNavigationItem = null;
+    }
+
+    private ReactiveCommand<Unit, Unit> CreateSaveCommand()
+    {
+        var canSave = _store.WhenAnyValue(store => store.IsDirty);
+
+        return ReactiveCommand.CreateFromTask(SaveAsync, canSave);
+    }
+
+    private ReactiveCommand<Unit, Unit> CreateSaveAsCommand()
+    {
+        var canSaveAs = _store.WhenAnyValue(store => store.HasDocument);
+
+        return ReactiveCommand.CreateFromTask(SaveAsAsync, canSaveAs);
+    }
+
+    private ReactiveCommand<Unit, Unit> CreateCloseProjectCommand()
+    {
+        var canClose = _store.WhenAnyValue(store => store.HasDocument);
+
+        return ReactiveCommand.CreateFromTask(CloseProjectAsync, canClose);
     }
 
     /// <summary>Prompts the user to save or discard changes.</summary>

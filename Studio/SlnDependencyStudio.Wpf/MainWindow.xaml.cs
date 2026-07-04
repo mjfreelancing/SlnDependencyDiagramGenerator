@@ -62,6 +62,10 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             this.BindCommand(ViewModel, vm => vm.SaveAsCommand, view => view.SaveAsMenuItem)
                 .DisposeWith(disposables);
 
+            // Close Project menu item.
+            this.BindCommand(ViewModel, vm => vm.CloseProjectCommand, view => view.CloseProjectMenuItem)
+                .DisposeWith(disposables);
+
             // Open-file dialog interaction.
             ViewModel!
                 .OpenFileInteraction

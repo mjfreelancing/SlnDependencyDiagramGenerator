@@ -65,6 +65,12 @@
                     Command="{Binding SaveAsCommand}" />
                 <Separator />
                 <MenuItem
+                    x:Name="CloseProjectMenuItem"
+                    Header="_Close"
+                    Command="{Binding CloseProjectCommand}"
+                    InputGestureText="Ctrl+F4" />
+                <Separator />
+                <MenuItem
                     Header="_Recent Projects"
                     IsEnabled="False"
                     ToolTip="Opened recently — available after first save" />
