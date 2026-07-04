@@ -306,7 +306,7 @@ public sealed class MainWindowViewModel : ActivatableViewModel
 
     private async Task SaveAsAsync()
     {
-        var filePath = await SaveFileInteraction.Handle("Studio Project files (*.sds)|*.sds|All files (*.*)|*.*");
+        var filePath = await SaveFileInteraction.Handle(StudioFilesFilter);
 
         if (filePath is null)
         {

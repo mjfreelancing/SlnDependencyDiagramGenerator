@@ -4,6 +4,7 @@ using MaterialDesignThemes.Wpf;
 using Microsoft.Win32;
 using ReactiveUI;
 using SlnDependencyStudio.Wpf.Features.Application;
+using SlnDependencyStudio.Wpf.Features.Application.Extensions;
 using SlnDependencyStudio.Wpf.Features.Application.Models;
 using SlnDependencyStudio.Wpf.Features.Project;
 using SlnDependencyStudio.Wpf.Features.Settings;
@@ -83,7 +84,8 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                     {
                         Title = "Open Dependency Project",
                         Filter = context.Input,
-                        CheckFileExists = true
+                        CheckFileExists = true,
+                        InitialDirectory = _settingsService.ResolveProjectFolder()
                     };
 
                     var output = dialog.ShowDialog() == true ? dialog.FileName : null;
@@ -102,7 +104,8 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                         Title = "Save Dependency Project As",
                         Filter = context.Input,
                         DefaultExt = ".sds",
-                        AddExtension = true
+                        AddExtension = true,
+                        InitialDirectory = _settingsService.ResolveProjectFolder()
                     };
 
                     var output = dialog.ShowDialog() == true ? dialog.FileName : null;
