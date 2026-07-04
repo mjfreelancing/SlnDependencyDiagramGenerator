@@ -26,11 +26,6 @@ public abstract class NavigationItemViewModel : ReactiveObject
     [Reactive]
     public bool IsAdvanced { get; set; }
 
-    /// <summary>Optional action invoked after the view is created, before it is displayed.
-    /// Receives the view's <c>ViewModel</c> instance so page-specific setup (e.g. loading
-    /// document data) can be performed.</summary>
-    public Action<object>? ConfigureViewModel { get; set; }
-
     /// <summary>The CLR <see cref="Type"/> of the page view model associated with this nav item.
     /// Used to resolve the correct view via <see cref="IViewFactory"/>.</summary>
     public abstract Type ViewModelType { get; }
@@ -54,10 +49,6 @@ public sealed class NavigationItemViewModel<TViewModel> : NavigationItemViewMode
     /// <inheritdoc />
     public override IViewFor CreateView(IViewFactory viewFactory)
     {
-        var view = viewFactory.CreateViewFor<TViewModel>();
-
-        ConfigureViewModel?.Invoke(view.ViewModel!);
-
-        return view;
+        return viewFactory.CreateViewFor<TViewModel>();
     }
 }

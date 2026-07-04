@@ -7,7 +7,9 @@
   "diagramGenerator": {
     "projects": {
       "solutionPath": "..\\..\\..\\AllOverIt\\AllOverIt.sln",
-      "regexToInclude": ["\\\\.*\\.csproj"],
+      "regexToInclude": [
+        "\\\\.*\\.csproj"
+      ],
       "regexToExclude": [
         ".*Test.*\\.csproj",
         ".*Demo.*\\.csproj",
@@ -22,7 +24,9 @@
         "Shouldly",
         "coverlet.collector"
       ],
-      "frameworksToExclude": ["Microsoft.NETCore.App"],
+      "frameworksToExclude": [
+        "Microsoft.NETCore.App"
+      ],
       "individual": {
         "enabled": true,
         "includeDependencies": true,
@@ -54,15 +58,20 @@
         "enabled": true,
         "backgroundStyle": {
           "fill": "#E7EBFC",
-          "opacity": 1.0
+          "opacity": 1
         }
       },
-      "formats": ["D2"]
+      "formats": [
+        "D2"
+      ]
     },
     "export": {
       "clearContents": true,
       "rootPath": ".\\Output",
-      "imageFormats": ["Png", "Svg"]
+      "imageFormats": [
+        "Png",
+        "Svg"
+      ]
     }
   },
   "preGeneration": {

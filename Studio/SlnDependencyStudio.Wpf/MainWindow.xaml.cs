@@ -5,9 +5,11 @@ using Microsoft.Win32;
 using ReactiveUI;
 using SlnDependencyStudio.Wpf.Features.Application;
 using SlnDependencyStudio.Wpf.Features.Application.Models;
+using SlnDependencyStudio.Wpf.Features.Project;
 using SlnDependencyStudio.Wpf.Features.Settings;
 using SlnDependencyStudio.Wpf.Models;
 using System.ComponentModel;
+using System.IO;
 using System.Reactive.Disposables.Fluent;
 using System.Reactive.Linq;
 using System.Windows;
@@ -18,14 +20,20 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 {
     private readonly IViewFactory _viewFactory;
     private readonly IApplicationSettingsService _settingsService;
+    private readonly IProjectDocumentStore _store;
 
-    public MainWindow(MainWindowViewModel vieModel, IViewFactory viewFactory, IApplicationSettingsService settingsService)
+    public MainWindow(
+        MainWindowViewModel viewModel,
+        IViewFactory viewFactory,
+        IApplicationSettingsService settingsService,
+        IProjectDocumentStore store)
     {
         _viewFactory = viewFactory.WhenNotNull();
         _settingsService = settingsService.WhenNotNull();
+        _store = store.WhenNotNull();
 
-        ViewModel = vieModel;
-        DataContext = vieModel;
+        ViewModel = viewModel;
+        DataContext = viewModel;
 
         InitializeComponent();
 
@@ -103,7 +111,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                         Message = $"Save changes to \"{projectName}\"?"
                     };
 
-                    // The buttons in the dialog are bound to the DiscardAction enum values - see the CommandParameter bindings in the XAML.
+                    // The buttons in the dialog are bound to the DiscardAction enum values — see the CommandParameter bindings in the XAML.
                     var result = await DialogHost.Show(dialog, "MainDialogHost");
 
                     context.SetOutput((DiscardAction)result!);
@@ -119,26 +127,14 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                 .Subscribe(_ => Close())
                 .DisposeWith(disposables);
 
-            // Title bar: reflect dirty state and file path.
-            ViewModel!
-                .WhenAnyValue(
-                    vm => vm.CurrentProject!.IsDirty,
-                    vm => vm.CurrentProject!.CurrentFilePath,
-                    (isDirty, filePath) => (isDirty, filePath))
-                .Subscribe(state =>
-                {
-                    if (state.filePath is null)
-                    {
-                        Title = "SlnDependencyStudio";
-                    }
-                    else
-                    {
-                        var name = System.IO.Path.GetFileNameWithoutExtension(state.filePath);
-                        Title = state.isDirty
-                            ? $"SlnDependencyStudio — {name} *"
-                            : $"SlnDependencyStudio — {name}";
-                    }
-                })
+            _store
+                .WhenAnyValue(store => store.CurrentFilePath)
+                .Subscribe(_ => UpdateTitle())
+                .DisposeWith(disposables);
+
+            _store
+                .WhenAnyValue(store => store.IsDirty)
+                .Subscribe(_ => UpdateTitle())
                 .DisposeWith(disposables);
 
             // Track generation state for UI gating (Phase 8).
@@ -164,9 +160,9 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         }
 
         // Prompt before discarding unsaved changes.
-        if (ViewModel?.CurrentProject is { IsDirty: true })
+        if (_store.IsDirty)
         {
-            var action = await ViewModel.PromptDiscardAsync(ViewModel.CurrentProject);
+            var action = await ViewModel!.PromptDiscardAsync();
 
             if (action == DiscardAction.Cancel)
             {
@@ -198,6 +194,22 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         var view = (Window)_viewFactory.CreateViewFor<SettingsWindowViewModel>();
         view.Owner = this;
         view.ShowDialog();
+    }
+
+    private void UpdateTitle()
+    {
+        if (_store.CurrentFilePath is null)
+        {
+            Title = "SlnDependencyStudio";
+        }
+        else
+        {
+            var name = Path.GetFileNameWithoutExtension(_store.CurrentFilePath);
+
+            Title = _store.IsDirty
+                ? $"SlnDependencyStudio — {name} *"
+                : $"SlnDependencyStudio — {name}";
+        }
     }
 
     private void RestorePlacement(WindowPlacement? placement)

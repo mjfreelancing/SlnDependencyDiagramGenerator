@@ -1,7 +1,7 @@
-using AllOverIt.Assertion;
 using AllOverIt.Extensions;   // IsNotNullOrEmpty
 using AllOverIt.ReactiveUI;
 using AllOverIt.ReactiveUI.Factories;
+using Microsoft.Extensions.Logging;
 using ReactiveUI;
 using ReactiveUI.Fody.Helpers;
 using SlnDependencyStudio.Wpf.Features.Project;
@@ -20,8 +20,9 @@ namespace SlnDependencyStudio.Wpf;
 public sealed class MainWindowViewModel : ActivatableViewModel
 {
     private ObservableAsPropertyHelper<bool> _hasValidationSummaryItems = null!;
-    private readonly IDependencyProjectService _projectService;
+    private readonly IProjectDocumentStore _store;
     private readonly IViewFactory _viewFactory;
+    private readonly ILogger<MainWindowViewModel> _logger;
 
     /// <summary>The navigation items displayed in the left sidebar.</summary>
     public ObservableCollection<NavigationItemViewModel> NavigationItems { get; } = [];
@@ -34,16 +35,16 @@ public sealed class MainWindowViewModel : ActivatableViewModel
     [Reactive]
     public object? CurrentPage { get; set; }
 
-    /// <summary>The currently loaded project, or <see langword="null"/> if none is open.</summary>
-    [Reactive]
-    public DependencyProjectViewModel? CurrentProject { get; set; }
-
     /// <summary>Validation errors collected across all editable sections.</summary>
     public ObservableCollection<ValidationSummaryItem> CurrentValidationSummary { get; } = [];
 
     /// <summary>Whether the main window can be closed.</summary>
     [Reactive]
     public bool CanClose { get; set; } = true;
+
+    /// <summary><see langword="true"/> when a document is currently loaded in the store.</summary>
+    [ObservableAsProperty]
+    public bool HasDocument { get; }
 
     /// <summary>Whether a generation run is currently in progress.</summary>
     [Reactive]
@@ -58,7 +59,7 @@ public sealed class MainWindowViewModel : ActivatableViewModel
     /// <summary>Command that opens an existing <c>.sds</c> project file.</summary>
     public ReactiveCommand<Unit, Unit> OpenProjectCommand { get; }
 
-    /// <summary>Command that saves the current project via the <c>IDependencyProjectService</c>.</summary>
+    /// <summary>Command that saves the current project via the store.</summary>
     public ReactiveCommand<Unit, Unit> SaveCommand { get; }
 
     /// <summary>Command that saves the current project to a new file path.</summary>
@@ -77,73 +78,35 @@ public sealed class MainWindowViewModel : ActivatableViewModel
     public ReactiveCommand<Unit, Unit> ExitCommand { get; }
 
     /// <summary>Initializes a new instance of <see cref="MainWindowViewModel"/>.</summary>
-    public MainWindowViewModel(IDependencyProjectService projectService, IViewFactory viewFactory)
+    public MainWindowViewModel(IProjectDocumentStore store, IViewFactory viewFactory, ILogger<MainWindowViewModel> logger)
     {
-        _projectService = projectService;
+        _store = store;
         _viewFactory = viewFactory;
+        _logger = logger;
 
         OpenSettingsCommand = ReactiveCommand.Create(() => { });
 
         OpenProjectCommand = ReactiveCommand.CreateFromTask(OpenProjectAsync);
 
-        // Save (Ctrl+S) — enabled only when the current project has unsaved changes.
-        //
-        // The canExecute observable must react to two independent events:
-        //   1. CurrentProject itself changing  (null → project → different project → null)
-        //   2. IsDirty changing on the SAME project (false → true → false as the user edits)
-        //
-        // A simple `WhenAnyValue(CurrentProject).Select(p => p?.IsDirty)` only handles case 1
-        // because `WhenAnyValue` re-evaluates only when the referenced property (CurrentProject)
-        // changes, not when a nested property (IsDirty) changes.
-        //
-        // The solution uses ReactiveUI's `Switch` combinator:
-        //
-        //   Outer observable         Inner observables (one per project)
-        //   ─────────────────        ────────────────────────────────────
-        //   CurrentProject = null ─► Observable.Return(false) → emits false
-        //   CurrentProject = P1   ─► P1.WhenAnyValue(doc => doc.IsDirty) → emits P1.IsDirty changes
-        //   P1.IsDirty → true     ─► … same inner, emits true → Save enabled
-        //   P1.IsDirty → false    ─► … same inner, emits false → Save disabled
-        //   CurrentProject = P2   ─► Switch disposes P1's inner, subscribes to P2's inner
-        //   CurrentProject = null ─► Switch disposes P2's inner, subscribes to Return(false)
-        //
-        // `Switch` remembers the latest inner observable and auto-disposes the previous one.
-        var canSaveProject =
-            this.WhenAnyValue(vm => vm.CurrentProject)             // outer: fires when project ref changes
-                .Select(project => project is not null
-                    ? project.WhenAnyValue(doc => doc.IsDirty)     // inner: fires when IsDirty changes
-                    : Observable.Return(false))                    // no project → always disabled
-                .Switch();
+        // Save is enabled when the store reports dirty state. Since the store is a singleton,
+        // its IsDirty changes are directly observable — no Switch combinator needed.
+        var canSaveProject = _store.WhenAnyValue(s => s.IsDirty);
 
         SaveCommand = ReactiveCommand.CreateFromTask(SaveAsync, canSaveProject);
 
-
-        var canSaveAsProject = this.WhenAnyValue(vm => vm.CurrentProject).Select(project => project is not null);
+        var canSaveAsProject = _store.WhenAnyValue(s => s.HasDocument);
 
         SaveAsCommand = ReactiveCommand.CreateFromTask(SaveAsAsync, canSaveAsProject);
 
-
         ExitCommand = ReactiveCommand.Create(() => { });
 
-        // Populate navigation items.
+        // Populate navigation items. Each page VM receives the store via DI and self-initialises.
         NavigationItems =
         [
             new NavigationItemViewModel<ProjectViewModel>
             {
                 DisplayName = "Project",
-                IconKind = MaterialDesignThemes.Wpf.PackIconKind.FileDocumentOutline,
-                ConfigureViewModel = viewModel =>
-                {
-                    Throw<InvalidOperationException>.WhenNull(CurrentProject, "The current project has not been assigned");
-
-                    var projectVm = (ProjectViewModel)viewModel;
-
-                    projectVm.LoadFrom(CurrentProject.Document);
-
-                    // Wire per-page dirty tracking to the document VM.
-                    projectVm.WhenAnyValue(vm => vm.IsDirty)
-                        .BindTo(CurrentProject, doc => doc.IsProjectPageDirty);
-                }
+                IconKind = MaterialDesignThemes.Wpf.PackIconKind.FileDocumentOutline
             }
         ];
     }
@@ -151,6 +114,44 @@ public sealed class MainWindowViewModel : ActivatableViewModel
     /// <inheritdoc />
     protected override void OnActivated(CompositeDisposable disposables)
     {
+        _store.WhenAnyValue(store => store.HasDocument)
+            .ToPropertyEx(this, vm => vm.HasDocument)
+            .DisposeWith(disposables);
+
+        _store
+            .WhenAnyValue(s => s.CurrentFilePath)
+            .Subscribe(filePath =>
+            {
+                if (filePath is null)
+                {
+                    _logger.LogInformation("No project is currently loaded");
+                }
+                else
+                {
+                    _logger.LogInformation("Current project: {FilePath}", filePath);
+                }
+            })
+            .DisposeWith(disposables);
+
+        _store
+            .WhenAnyValue(s => s.IsDirty)
+            .Subscribe(isDirty =>
+            {
+                if (isDirty)
+                {
+                    _logger.LogInformation("Current project has unsaved changes");
+                }
+                else
+                {
+                    _logger.LogInformation("Current project is clean (no unsaved changes)");
+                }
+            })
+            .DisposeWith(disposables);
+
+        SaveCommand.CanExecute
+            .Subscribe(enabled => _logger.LogInformation("Project can be saved: {Enabled}", enabled))
+            .DisposeWith(disposables);
+
         Observable
             .FromEventPattern<NotifyCollectionChangedEventHandler, NotifyCollectionChangedEventArgs>(
                 handler => CurrentValidationSummary.CollectionChanged += handler,
@@ -162,16 +163,16 @@ public sealed class MainWindowViewModel : ActivatableViewModel
 
         // Navigate to the page view when a nav item is selected.
         this.WhenAnyValue(vm => vm.SelectedNavigationItem)
-            .Where(item => item is not null && CurrentProject is not null)
-            .Subscribe(item => NavigateToPage(item!))
+            .Where(navItem => navItem is not null)
+            .Subscribe(navItem => NavigateToPage(navItem!))
             .DisposeWith(disposables);
     }
 
     private async Task OpenProjectAsync()
     {
-        if (CurrentProject is { IsDirty: true })
+        if (_store.IsDirty)
         {
-            var action = await PromptDiscardAsync(CurrentProject);
+            var action = await PromptDiscardAsync();
 
             if (action == DiscardAction.Cancel)
             {
@@ -184,41 +185,26 @@ public sealed class MainWindowViewModel : ActivatableViewModel
             }
         }
 
-        var filePath = await OpenFileInteraction.Handle(
-            "SlnDependencyStudio project files (*.sds)|*.sds|All files (*.*)|*.*");
+        var filePath = await OpenFileInteraction.Handle("Studio Project files (*.sds)|*.sds|All files (*.*)|*.*");
 
         if (filePath is null)
         {
             return;
         }
 
-        var document = await _projectService.OpenAsync(filePath);
-        var projectViewModel = new DependencyProjectViewModel(document, filePath);
+        await _store.OpenAsync(filePath);
 
-        CurrentProject = projectViewModel;
-
-        // Navigate to the Project page - will trigger the subscription attached to SelectedNavigationItem.
+        // Navigate to the Project page — triggers SelectedNavigationItem subscription.
         SelectNavigationItem<ProjectViewModel>();
     }
 
     private async Task SaveAsync()
     {
-        Throw<InvalidOperationException>.WhenNull(CurrentProject, "No project is loaded");
-        Throw<InvalidOperationException>.WhenNull(CurrentProject.CurrentFilePath, "Current project has no file path — use Save As");
-
-        // Apply all page VM changes to the document before saving.
-        ApplyAllPageChanges();
-
-        await _projectService.SaveAsync(CurrentProject.Document, CurrentProject.CurrentFilePath);
-
-        // Mark all page VMs as clean (updates IsDirty).
-        MarkAllPagesClean();
+        await _store.SaveAsync();
     }
 
     private async Task SaveAsAsync()
     {
-        Throw<InvalidOperationException>.WhenNull(CurrentProject, "No project is loaded");
-
         var filePath = await SaveFileInteraction.Handle(
             "SlnDependencyStudio project files (*.sds)|*.sds|All files (*.*)|*.*");
 
@@ -227,44 +213,19 @@ public sealed class MainWindowViewModel : ActivatableViewModel
             return;
         }
 
-        // Apply all page VM changes to the document before saving.
-        ApplyAllPageChanges();
-
-        await _projectService.SaveAsync(CurrentProject.Document, filePath);
-
-        CurrentProject.CurrentFilePath = filePath;
-
-        // Mark all page VMs as clean.
-        MarkAllPagesClean();
-    }
-
-    /// <summary>Applies changes from the currently displayed page VM to the document.
-    /// Called before save operations to ensure the document reflects the latest edits.</summary>
-    private void ApplyAllPageChanges()
-    {
-        if (CurrentPage is ProjectView projectView)
-        {
-            projectView.ViewModel!.ApplyToDocument();
-        }
-    }
-
-    /// <summary>Marks all page VMs as clean. Called after a successful save.</summary>
-    private void MarkAllPagesClean()
-    {
-        if (CurrentPage is ProjectView projectView)
-        {
-            projectView.ViewModel!.MarkClean();
-        }
+        await _store.SaveAsAsync(filePath);
     }
 
     /// <summary>Prompts the user to save or discard changes.</summary>
-    public async Task<DiscardAction> PromptDiscardAsync(DependencyProjectViewModel project)
+    public async Task<DiscardAction> PromptDiscardAsync()
     {
-        var projectName = project.Document.Metadata.ProjectName.IsNotNullOrEmpty()
-            ? project.Document.Metadata.ProjectName
+        var projectName = _store.MetadataEditor.ProjectName.Value;
+
+        var displayName = projectName.IsNotNullOrEmpty()
+            ? projectName
             : "Untitled";
 
-        return await ConfirmDiscardInteraction.Handle(projectName);
+        return await ConfirmDiscardInteraction.Handle(displayName);
     }
 
     /// <summary>Selects the navigation item whose <see cref="NavigationItemViewModel.ViewModelType"/>
@@ -273,14 +234,16 @@ public sealed class MainWindowViewModel : ActivatableViewModel
     /// <typeparam name="TViewModel">The page view model type to select.</typeparam>
     private void SelectNavigationItem<TViewModel>()
     {
-        // Will result in NavigateToPage() being called via the SelectedNavigationItem subscription.
         SelectedNavigationItem = NavigationItems.Single(item => item.ViewModelType == typeof(TViewModel));
+
+        _logger.LogInformation("Selected navigation item: {PageName}", SelectedNavigationItem.DisplayName);
     }
 
     /// <summary>Navigates to the workspace page corresponding to the selected navigation item.</summary>
-    private void NavigateToPage(NavigationItemViewModel item)
+    private void NavigateToPage(NavigationItemViewModel viewModel)
     {
-        // CreateView() will invoke the item's ConfigureViewModel action
-        CurrentPage = item.CreateView(_viewFactory);
+        _logger.LogInformation("Navigating to page: {PageName}", viewModel.DisplayName);
+
+        CurrentPage = viewModel.CreateView(_viewFactory);
     }
 }

@@ -100,7 +100,7 @@
                     <ListBox
                         x:Name="NavigationListBox"
                         Grid.Row="1"
-                        IsEnabled="{Binding CurrentProject, Converter={StaticResource NullToBool}}"
+                        IsEnabled="{Binding HasDocument}"
                         ItemsSource="{Binding NavigationItems}"
                         SelectedItem="{Binding SelectedNavigationItem, Mode=TwoWay}"
                         Background="Transparent"

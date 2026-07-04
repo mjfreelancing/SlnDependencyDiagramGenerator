@@ -21,7 +21,7 @@ namespace SlnDependencyStudio.Wpf.Controls;
 /// to establish a baseline and begin observing changes. Calling
 /// <see cref="SetOriginalValue"/> again resets the baseline and restarts tracking.
 /// </remarks>
-public sealed class TrackableValue<T> : ReactiveObject
+public sealed class TrackableValue<T> : ReactiveObject, IDisposable
 {
     private T _original = default!;
     private T _value = default!;
@@ -42,22 +42,28 @@ public sealed class TrackableValue<T> : ReactiveObject
     {
     }
 
-    /// <summary>Establishes the baseline value and sets <see cref="Value"/> to match.
-    /// Disposes any previous dirty-tracking subscription and creates a new one that
-    /// compares future <see cref="Value"/> changes to this baseline.</summary>
-    /// <param name="value">The value to use as both the baseline and the initial
-    /// <see cref="Value"/>.</param>
+    /// <summary>Resets the baseline to the given value and marks the tracked value as clean.</summary>
+    /// <param name="value">The value to use as both the baseline and the current <see cref="Value"/>.</param>
     public void SetOriginalValue(T value)
     {
-        // Dispose previous dirty-tracking subscription.
         _dirtySubscription.Disposable = null;
 
         _original = value;
         Value = value;
 
-        // Re-establish: IsDirty is true when Value != _original.
         _dirtySubscription.Disposable = this.WhenAnyValue(property => property.Value)
             .Select(current => !EqualityComparer<T>.Default.Equals(current, _original))
             .ToProperty(this, name => name.IsDirty, out _isDirty);
+
+        // The new OAPH starts with default(false) but its source observable hasn't emitted
+        // yet (Value didn't change, so WhenAnyValue didn't fire). Manually notify downstream
+        // observers that IsDirty may have transitioned.
+        this.RaisePropertyChanged(nameof(IsDirty));
+    }
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        _dirtySubscription.Dispose();
     }
 }

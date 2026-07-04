@@ -26,12 +26,13 @@ Features/
 │       └── <ModelName>.cs
 ```
 
-**Existing features (as of 2026-06-24):**
+**Existing features (as of 2026-07-04):**
 
-| Feature Folder          | Namespace                                      | Contents                                                                                                                        |
-| ----------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `Features/Application/` | `SlnDependencyStudio.Wpf.Features.Application` | `IApplicationSettingsService`, `ApplicationSettingsService`, `Models/` (ApplicationSettings, ApplicationState, WindowPlacement) |
-| `Features/CardSession/` | `SlnDependencyStudio.Wpf.Features.CardSession` | `ICardSessionState`, `CardSessionState`                                                                                         |
+| Feature Folder          | Namespace                                      | Contents                                                                                                                                                                                       |
+| ----------------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Features/Application/` | `SlnDependencyStudio.Wpf.Features.Application` | `IApplicationSettingsService`, `ApplicationSettingsService`, `Models/` (ApplicationSettings, ApplicationState, WindowPlacement)                                                                |
+| `Features/CardSession/` | `SlnDependencyStudio.Wpf.Features.CardSession` | `ICardSessionState`, `CardSessionState`                                                                                                                                                        |
+| `Features/Project/`     | `SlnDependencyStudio.Wpf.Features.Project`     | `IProjectDocumentStore`, `ProjectDocumentStore`, `IProjectMetadataEditor`, `ProjectMetadataEditor`, `ProjectViewModel`, `ProjectView`, `IDependencyProjectService`, `DependencyProjectService` |
 
 **Rules:**
 
@@ -47,10 +48,10 @@ Features/
 
 | Phase | Description                           | Status |
 | ----- | ------------------------------------- | ------ |
-| 1     | Project Scaffold & Shell Foundation   | ⬜     |
-| 2     | Application Settings Service          | ⬜     |
-| 3     | Dependency Project Lifecycle          | ⬜     |
-| 4     | Metadata & Core Configuration Editing | ⬜     |
+| 1     | Project Scaffold & Shell Foundation   | ✅     |
+| 2     | Application Settings Service          | ✅     |
+| 3     | Dependency Project Lifecycle          | 🔶     |
+| 4     | Metadata & Core Configuration Editing | 🔶     |
 | 5     | Advanced Configuration Editing        | ⬜     |
 | 6     | Tool Detection & Status               | ⬜     |
 | 7     | Pre-Generation Analysis               | ⬜     |
@@ -310,70 +311,50 @@ The selected nav item gets a left-accent border (4px `MaterialDesignPrimary`) an
 
 **Intent:** Implement the full document lifecycle: create from defaults, create by loading an existing `.sds` file, open, save, save-as, close. Track unsaved changes and prompt before discard. Maintain a recent-projects list. Build the empty-state view so first-run users understand what a dependency project is and how to start.
 
+> **Architecture note (2026-07-04):** Phase 3 was refactored to use a centralized **Project Document Store** pattern. The store (`IProjectDocumentStore` / `ProjectDocumentStore`) is a singleton that holds the deserialized `DependencyProjectDocument`, owns **editor wrappers** (one per document sub-object, e.g. `ProjectMetadataEditor` for `DependencyProjectMetadata`), and derives global `IsDirty` from all wrappers. Page view models receive `IProjectDocumentStore` via DI and expose TrackableValues via pass-through properties. This replaces the earlier `DependencyProjectViewModel` + `ConfigureViewModel` + per-page dirty tracking design. See `PRDs/v4/Studio/refactor-store-pattern.md` for the full design.
+
 ### 3.1 Slice A — Open + Display + Edit
 
 **Goal:** User browses for an `.sds` file → document is loaded → metadata is visible and editable on screen. Pipeline is testable end-to-end before any save/create logic exists.
 
-- [x] 3.1.1 Define `OpenAsync(string filePath)` only on `IDependencyProjectService` (defer other methods to Slices B/C). Implement it by delegating to `IDependencyProjectSerializer`.
-- [x] 3.1.2 Create `DependencyProjectViewModel` wrapping `DependencyProjectDocument`. The `NavigationItemViewModel<T>` + `ConfigureViewModel` pattern passes the document directly to each page VM rather than routing through intermediate child VMs, which would add unnecessary indirection. Defer `DiagramGenerator` and `PreGeneration` child VMs to Phase 4/5.
-- [x] 3.1.3 Create `ProjectView.xaml` and `ProjectViewModel` under `Features/Project/` — the "Project" nav item page showing name + description fields bound to the document metadata. Form fields use the reusable `FormField` component from `Controls/`. Use `WhenAnyValue` for two-way binding.
-- [x] 3.1.4 Wire the "Open Project" action on `MainWindowViewModel`: calls an `OpenFileDialog` filtered to `.sds` files, then `IDependencyProjectService.OpenAsync()`, assigns the result to `CurrentProject`, and navigates the centre workspace to `ProjectView`. Menu bar added with File → Open Project, Settings, Exit. Nav list disabled until project is loaded.
-- [x] 3.1.5 Verify: load a real `.sds` file → name and description appear in the Project page → edit a field → dirty state updates → UI reflects the change.
+- [x] 3.1.1 Define `OpenAsync(string filePath)` on `IDependencyProjectService`. Implement by delegating to `IDependencyProjectSerializer`. Register `IDependencyProjectService` as scoped via `IStudioScopedDependency`.
+- [x] 3.1.2 Create `IProjectDocumentStore` / `ProjectDocumentStore` under `Features/Project/`. The store is a **singleton** (`IStudioSingletonDependency`) that holds the deserialized `DependencyProjectDocument` privately, exposes `HasDocument` (`[Reactive]`), `CurrentFilePath` (`[Reactive]`), `IsDirty` (`[ObservableAsProperty]` derived from editor wrappers), and `MetadataEditor` (`IProjectMetadataEditor`). Provides `OpenAsync`, `SaveAsync`, `SaveAsAsync`, and `Close` methods. Page view models receive `IProjectDocumentStore` via DI — no `ConfigureViewModel` or document-passing callback is needed.
+- [x] 3.1.3 Create `IProjectMetadataEditor` / `ProjectMetadataEditor` under `Features/Project/` — a reactive wrapper for `DependencyProjectMetadata`. Holds `TrackableValue<string>` for `ProjectName` and `Description`, derives its own `IsDirty`, and provides `SetOriginalValues` / `FlushTo` for document ↔ editor mapping. The store owns the concrete instance internally and exposes the interface.
+- [x] 3.1.4 Create `TrackableValue<T>` under `Controls/` — a `ReactiveObject` wrapper that tracks whether `Value` has diverged from its original baseline. Uses OAPH for `IsDirty` with a manual `RaisePropertyChanged` seed after `SetOriginalValue` to notify downstream observers. Lives in `Controls/` (shared utility, not feature-specific).
+- [x] 3.1.5 Create `ProjectView.xaml` and `ProjectViewModel` under `Features/Project/` — the "Project" nav item page. `ProjectViewModel` is a **plain class** (not `ReactiveObject`) that receives `IProjectDocumentStore` via DI and exposes pass-through properties `ProjectName` and `Description` delegating to `store.MetadataEditor.ProjectName` and `store.MetadataEditor.Description`. XAML binds to `{Binding ProjectName.Value}` etc. Form fields use the reusable `FormField` component from `Controls/`. No `LoadFrom` / `ApplyToDocument` / `MarkClean` methods — the store owns all editing state.
+- [x] 3.1.6 Wire the "Open Project" action on `MainWindowViewModel`: calls an `OpenFileDialog` filtered to `.sds` files, then `_store.OpenAsync(filePath)`, and navigates the centre workspace to `ProjectView`. Menu bar added with File → Open Project, Settings, Exit. Nav list enabled/disabled via `HasDocument` property on `MainWindowViewModel` (delegates to `_store.HasDocument`).
+- [x] 3.1.7 Verify: load a real `.sds` file → name and description appear in the Project page → edit a field → dirty state updates → UI reflects the change.
 
 ### 3.2 Slice B — Save + Dirty Tracking
 
-**Goal:** User can save changes via File menu (Ctrl+S), see dirty state reflected in the window title, and is prompted before discarding unsaved work. No toolbar needed — menu items handle save operations. Dirty tracking uses a lightweight `ObservableValue<T>` wrapper on each editable property so dirty state is self-contained and composes without per-page records.
+**Goal:** User can save changes via File menu (Ctrl+S), see dirty state reflected in the window title, and is prompted before discarding unsaved work. No toolbar needed — menu items handle save operations. Dirty tracking is centralized in the store via editor wrappers; no per-page `IsDirty` wiring is needed.
 
-- [ ] 3.2.1 Add `SaveAsync(DependencyProjectDocument, string filePath)` to `IDependencyProjectService`. Implement by delegating to `IDependencyProjectSerializer`.
-- [ ] 3.2.2 Create `ObservableValue<T>` — a `ReactiveObject` wrapper that knows its original value and exposes `IsDirty`. Lives in a shared location (e.g. a `Types/` folder):
-
-  ```csharp
-  public sealed class ObservableValue<T> : ReactiveObject
-  {
-      private T _original;
-
-      [Reactive] public T Value { get; set; }
-      public bool IsDirty => !EqualityComparer<T>.Default.Equals(Value, _original);
-
-      public ObservableValue(T initial) { _original = initial; Value = initial; }
-      public void MarkClean() { _original = Value; this.RaisePropertyChanged(nameof(IsDirty)); }
-  }
-  ```
-
-  Apply to `ProjectViewModel`:
-  - Replace `[Reactive] string ProjectName` and `[Reactive] string Description` with `ObservableValue<string>`.
-  - Update XAML bindings: `{Binding ProjectName}` → `{Binding ProjectName.Value}`; same for `Description`.
-  - `LoadFrom()` sets `Name.Value = doc.Metadata.ProjectName`, `Description.Value = doc.Metadata.Description`, then calls `Name.MarkClean()` and `Description.MarkClean()` to establish the original.
-  - `ApplyToDocument()` writes `Name.Value` and `Description.Value` back to `document.Metadata`.
-  - Expose a computed `bool IsDirty => ProjectName.IsDirty || Description.IsDirty;` with `this.RaisePropertyChanged(nameof(IsDirty))` triggered via `WhenAnyValue` on each `ObservableValue.IsDirty`.
-
-  Apply to `DependencyProjectViewModel`:
-  - Expose `[Reactive] bool IsProjectPageDirty { get; set; }`.
-  - Expose computed `bool IsDirty => IsProjectPageDirty /* || IsSourcesPageDirty in future */`.
-  - The `NavigationItem.ConfigureViewModel` lambda wires: `projectVm.WhenAnyValue(vm => vm.IsDirty).BindTo(CurrentProject!, doc => doc.IsProjectPageDirty)`.
-
-  **Why this scales:** Adding a new page means adding one `IsXxxPageDirty` slot + one `BindTo` + one `||` clause — no existing code changes. Adding a new property to any page means adding one `ObservableValue<T>` field and one `||` clause to that page's `IsDirty`. No records to update, no snapshots to compare.
-
-- [ ] 3.2.3 Add `SaveCommand` and `SaveAsCommand` to `DependencyProjectViewModel`. Wire to File → Save (Ctrl+S) and File → Save As menu items. `Save` serializes via `IDependencyProjectService.SaveAsync`. On success: (a) calls `MarkClean()` on every `ObservableValue<T>` in every page VM, (b) sets `CurrentFilePath` (for SaveAs), (c) notifies `IRecentProjectsService` of the saved path.
-- [ ] 3.2.4 Update the main window title to reflect dirty state and file path. Bind `Title` via `WhenAnyValue` on `CurrentProject.IsDirty` and `CurrentProject.CurrentFilePath`:
+- [x] 3.2.1 Add `SaveAsync(DependencyProjectDocument, string filePath)` to `IDependencyProjectService`. Implement by delegating to `IDependencyProjectSerializer`.
+- [x] 3.2.2 Dirty tracking is centralized in `ProjectDocumentStore`:
+  - Each editor wrapper (e.g. `ProjectMetadataEditor`) holds `TrackableValue<T>` instances for each editable field and derives its own `IsDirty` via `WhenAnyValue` on the constituent TrackableValues' `IsDirty`.
+  - The store's `IsDirty` is an `[ObservableAsProperty]` derived from `MetadataEditor.WhenAnyValue(e => e.IsDirty)`. When future editor wrappers are added, their `IsDirty` values are combined here.
+  - `TrackableValue<T>` uses an OAPH for `IsDirty`. `SetOriginalValue` disposes the old subscription, creates a new one, and calls `RaisePropertyChanged(nameof(IsDirty))` to seed the initial value.
+  - No `ConfigureViewModel`, no `BindTo` wiring, no per-page `IsXxxPageDirty` slots. Each new page adds its editor wrapper to the store and its `IsDirty` is automatically included.
+- [x] 3.2.3 Add `SaveCommand` and `SaveAsCommand` to `MainWindowViewModel`. `SaveCommand.CanExecute` observes `_store.WhenAnyValue(s => s.IsDirty)`. `SaveAsync` delegates to `_store.SaveAsync()` which: (a) calls `FlushTo` on all editor wrappers, (b) serializes via `IDependencyProjectService.SaveAsync`, (c) calls `SetOriginalValues` on all wrappers to mark clean. `SaveAsAsync` additionally updates `CurrentFilePath`. No `ApplyAllPageChanges` or `MarkAllPagesClean` methods — the store owns the full save pipeline.
+- [x] 3.2.4 Update the main window title to reflect dirty state and file path. `MainWindow.xaml.cs` subscribes to `_store.WhenAnyValue(store => store.HasDocument)` and `_store.WhenAnyValue(store => store.IsDirty)` (separate subscriptions to avoid `CombineLatest` starvation). `UpdateTitle()` reads `_store.CurrentFilePath` and `_store.IsDirty` imperatively:
   - No project: `"SlnDependencyStudio"`
   - Clean: `"SlnDependencyStudio — MyProject.sds"`
   - Dirty: `"SlnDependencyStudio — MyProject.sds *"`
-- [ ] 3.2.5 Wire "Before discard" prompt using `DialogHost` (Material Design modal). On File → Open/New/Recent or window close while `IsDirty == true`, show `"Save changes to {project name}?"` with **Save** / **Discard** / **Cancel**. Dialog fires from code-behind (`DialogHost.Show()` is UI code).
-- [ ] 3.2.6 Verify: edit name → title shows `*` → File → Save → `*` disappears. Edit name → edit back to original → `*` disappears. Edit name + description → revert description → `*` stays (name still dirty). Close with unsaved changes → dialog appears.
+- [x] 3.2.5 Wire "Before discard" prompt using `DialogHost` (Material Design modal). On File → Open/New/Recent or window close while `_store.IsDirty == true`, show `"Save changes to {project name}?"` with **Save** / **Discard** / **Cancel**. Dialog fires from code-behind. `PromptDiscardAsync()` on `MainWindowViewModel` reads the project name from `_store.MetadataEditor.ProjectName.Value`.
+- [x] 3.2.6 Verify: edit name → title shows `*` → File → Save → `*` disappears. Edit name → edit back to original → `*` disappears. Edit name + description → revert description → `*` stays (name still dirty). Close with unsaved changes → dialog appears. Open same file → discard → title shows clean.
 
 ### 3.3 Slice C — Create + Recent + Empty State
 
 **Goal:** User can start from defaults or from an existing `.sds` via the empty-state landing page. Recent projects are persisted and clickable.
 
 - [ ] 3.3.1 Add `CreateFromDefaultsAsync()` and `CreateFromExistingAsync(string filePath)` to `IDependencyProjectService`. Implement both delegating to `IDependencyProjectSerializer`.
-- [ ] 3.3.2 Wire "New Project" command (creates from defaults, loads into `CurrentProject`, navigates to Project page).
+- [ ] 3.3.2 Wire "New Project" command (creates from defaults, loads into store via `_store.OpenAsync` or a dedicated `CreateNew` method, navigates to Project page).
 - [ ] 3.3.3 Create `IRecentProjectsService` with `AddAsync`, `GetRecentAsync`, `RemoveAsync`. Implement using `ApplicationState` (from Phase 2). Store up to 10 recent paths.
-- [ ] 3.3.4 In the left nav, display recent projects below the navigation sections. Each entry shows the file name (no extension). Clicking calls `IDependencyProjectService.OpenAsync()`.
+- [ ] 3.3.4 In the left nav, display recent projects below the navigation sections. Each entry shows the file name (no extension). Clicking calls `_store.OpenAsync(filePath)`.
 - [ ] 3.3.5 Create `EmptyStateView.xaml` and `EmptyStateViewModel` under `Features/EmptyState/` with: large icon, app title/subtitle, "New Project" card, "Open Project" card (file picker for `.sds`), recent projects list, and Settings shortcut. Use Material Design `Card` + `PackIcon` styling.
-- [ ] 3.3.6 Wire `MainWindowViewModel` to show `EmptyStateView` when `CurrentProject == null`. On project load (New or Open), navigate to the Project page.
+- [ ] 3.3.6 Wire `MainWindowViewModel` to show `EmptyStateView` when `!_store.HasDocument`. On project load (New or Open), navigate to the Project page.
 
-**Phase 3 completion:** The user can create, open, save, and save-as dependency projects. Unsaved changes are tracked and prompt on close. Recent files are persisted and clickable. The first-run empty state guides new users.
+**Phase 3 completion:** The user can create, open, save, and save-as dependency projects. Unsaved changes are tracked via the centralized store and prompt on close. Recent files are persisted and clickable. The first-run empty state guides new users.
 
 ---
 
@@ -383,8 +364,8 @@ The selected nav item gets a left-accent border (4px `MaterialDesignPrimary`) an
 
 ### 4.1 Metadata Editing
 
-- [x] 4.1.1 ~~Create `ProjectMetadataView.xaml` and `ProjectMetadataViewModel`.~~ — Already done as `ProjectView` + `ProjectViewModel` in Phase 3.1.3.
-- [x] 4.1.2 ~~Bind `ProjectName` and `Description` to `DependencyProjectMetadata`~~ — Already done in 3.1.3 via `ProjectViewModel.LoadFrom()` / `ApplyToDocument()`.
+- [x] 4.1.1 ~~Create `ProjectMetadataView.xaml` and `ProjectMetadataViewModel`.~~ — Already done as `ProjectView` + `ProjectViewModel` in Phase 3.1.5. `ProjectViewModel` is a plain class that pass-throughs to `IProjectDocumentStore.MetadataEditor`.
+- [x] 4.1.2 ~~Bind `ProjectName` and `Description` to `DependencyProjectMetadata`~~ — Already done in 3.1.5 via `TrackableValue<T>` pass-through from the store's `MetadataEditor`. Bindings use `{Binding ProjectName.Value}` and `{Binding Description.Value}`. No `LoadFrom` / `ApplyToDocument` — the store owns editing state and flushes on save.
 - [ ] 4.1.3 Add a `ReactiveUI.Validation` rule: `ProjectName` must not be empty. Show inline validation error below the TextBox.
 
 ### 4.2 Solution & Export Paths
@@ -610,9 +591,9 @@ The selected nav item gets a left-accent border (4px `MaterialDesignPrimary`) an
 
 ### 10.2 ViewModel Tests
 
-- [ ] 10.2.1 Test `DependencyProjectViewModel`: dirty tracking (changes set `IsDirty`), save clears dirty, close-with-dirty prompts.
+- [ ] 10.2.1 Test `ProjectDocumentStore`: dirty tracking (edits set `IsDirty`), save clears dirty via `MarkAllEditorsClean`, close-with-dirty prompts, `OpenAsync` loads and populates editors.
 - [ ] 10.2.2 Test `NavigationItemViewModel`: selection changes update `IsSelected`.
-- [ ] 10.2.3 Test `ProjectMetadataViewModel`: `ProjectName` empty validation, property change propagation to parent document.
+- [ ] 10.2.3 Test `ProjectMetadataEditor`: `SetOriginalValues` populates TrackableValues and marks clean, `FlushTo` writes back, `IsDirty` derived correctly from constituent TrackableValues.
 - [ ] 10.2.4 Test configuration view models: format toggles add/remove from collections, path validation, scope enablement gates sub-controls.
 - [ ] 10.2.5 Test `ToolStatusViewModel`: re-scan updates observable, explicit path triggers re-check.
 - [ ] 10.2.6 Test `OutputPanelViewModel`: log entries appear in collection, auto-scroll trigger fires, clear resets collection.

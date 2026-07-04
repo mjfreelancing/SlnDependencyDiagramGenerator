@@ -7,10 +7,19 @@
   "diagramGenerator": {
     "projects": {
       "solutionPath": "..\\..\\SlnDependencyDiagramGenerator.sln",
-      "regexToInclude": ["\\.*\\.csproj"],
-      "regexToExclude": ["Tests|Studio"],
-      "packagesToExclude": ["Microsoft.Build", "Microsoft.SourceLink.GitHub"],
-      "frameworksToExclude": ["Microsoft.NETCore.App"],
+      "regexToInclude": [
+        "\\.*\\.csproj"
+      ],
+      "regexToExclude": [
+        "Tests|Studio"
+      ],
+      "packagesToExclude": [
+        "Microsoft.Build",
+        "Microsoft.SourceLink.GitHub"
+      ],
+      "frameworksToExclude": [
+        "Microsoft.NETCore.App"
+      ],
       "individual": {
         "enabled": true,
         "includeDependencies": true,
@@ -42,15 +51,22 @@
         "enabled": false,
         "backgroundStyle": {
           "fill": "#E7EBFC",
-          "opacity": 1.0
+          "opacity": 1
         }
       },
-      "formats": ["D2", "Mermaid"]
+      "formats": [
+        "D2",
+        "Mermaid"
+      ]
     },
     "export": {
       "clearContents": true,
       "rootPath": "..\\..\\Output",
-      "imageFormats": ["Png", "Svg", "Pdf"]
+      "imageFormats": [
+        "Png",
+        "Svg",
+        "Pdf"
+      ]
     }
   },
   "preGeneration": {
