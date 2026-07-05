@@ -12,7 +12,6 @@ using SlnDependencyStudio.Wpf.Features.Project;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
 using SlnDependencyStudio.Wpf.Features.RecentProjects;
 using SlnDependencyStudio.Wpf.Models;
-using System.Reactive;
 using System.Reactive.Linq;
 
 namespace SlnDependencyStudio.Wpf.Tests.Unit;
