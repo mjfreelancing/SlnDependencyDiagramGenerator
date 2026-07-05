@@ -24,6 +24,7 @@
             Text="{Binding Label, ElementName=FormFieldRoot}"
             FontSize="14"
             FontWeight="Bold"
+            Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
             VerticalAlignment="{Binding LabelVerticalAlignment, ElementName=FormFieldRoot}"
             Margin="0,0,12,0" />
 
@@ -38,7 +39,7 @@
         <Rectangle
             Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
             Height="1"
-            Fill="{DynamicResource MaterialDesignDivider}"
+            Fill="{DynamicResource MaterialDesign.Brush.Separator.Background}"
             Margin="0,8,0,8" />
     </Grid>
 </UserControl>

@@ -2,6 +2,7 @@ using AllOverIt.Assertion;
 using ReactiveUI;
 using ReactiveUI.Fody.Helpers;
 using SlnDependencyStudio.Wpf.Features.Application;
+using SlnDependencyStudio.Wpf.Features.Theming;
 using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
@@ -17,6 +18,7 @@ public sealed class SettingsWindowViewModel : ReactiveObject
     private sealed record RestartSensitiveSettings(int LogRetentionDays /* , string someOtherProp */);
 
     private readonly IApplicationSettingsService _settingsService;
+    private readonly IThemeService _themeService;
 
     private readonly RestartSensitiveSettings _originalRestartSettings;
 
@@ -38,15 +40,15 @@ public sealed class SettingsWindowViewModel : ReactiveObject
     /// <summary>Saves the current settings to disk and requests the window to close.</summary>
     public ReactiveCommand<Unit, Unit> SaveCommand { get; }
 
-    /// <summary>Closes the window without saving. The editor operates on a view model
-    /// populated from current settings and never mutates them directly — no revert needed.</summary>
+    /// <summary>Closes the window without saving. Reverts the live-previewed theme to its original value.</summary>
     public ReactiveCommand<Unit, Unit> CancelCommand { get; }
 
     /// <summary>Initializes a new instance of <see cref="SettingsWindowViewModel"/>.
     /// Captures the original restart-sensitive values for comparison during editing.</summary>
-    public SettingsWindowViewModel(IApplicationSettingsService settingsService)
+    public SettingsWindowViewModel(IApplicationSettingsService settingsService, IThemeService themeService)
     {
         _settingsService = settingsService;
+        _themeService = themeService;
 
         _originalRestartSettings = new(settingsService.CurrentSettings.LogRetentionDays);
 
@@ -54,8 +56,15 @@ public sealed class SettingsWindowViewModel : ReactiveObject
         // The window code-behind subscribes to this command and closes the window when executed.
         SaveCommand = ReactiveCommand.CreateFromTask(SaveAsync);
 
-        // Do nothing — the window code-behind subscribes to this command and closes the window when executed.
-        CancelCommand = ReactiveCommand.Create(() => { });
+        // Revert the live-previewed theme to its original value, then close.
+        CancelCommand = ReactiveCommand.Create(() =>
+        {
+            if (SettingsEditorViewModel is not null)
+            {
+                var originalTheme = SettingsEditorViewModel.GetOriginalTheme();
+                _themeService.ApplyTheme(originalTheme);
+            }
+        });
 
         // When the window code-behind assigns SettingsEditorViewModel, wire up restart tracking.
         this.WhenAnyValue(x => x.SettingsEditorViewModel)

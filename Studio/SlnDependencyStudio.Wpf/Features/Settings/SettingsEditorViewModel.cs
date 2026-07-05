@@ -3,6 +3,8 @@ using ReactiveUI;
 using ReactiveUI.Fody.Helpers;
 using SlnDependencyStudio.Wpf.Features.Application;
 using SlnDependencyStudio.Wpf.Features.Application.Models;
+using SlnDependencyStudio.Wpf.Features.Theming;
+using SlnDependencyStudio.Wpf.Models;
 using System.Reactive;
 using System.Reactive.Linq;
 
@@ -11,6 +13,8 @@ namespace SlnDependencyStudio.Wpf.Features.Settings;
 /// <summary>View model for the <see cref="SettingsEditor"/> control.</summary>
 public sealed class SettingsEditorViewModel : ReactiveObject
 {
+    private readonly StudioTheme _originalTheme;
+
     /// <summary>The default folder for Open/Save file dialogs.</summary>
     [Reactive]
     public string DefaultProjectFolder { get; set; } = string.Empty;
@@ -26,6 +30,10 @@ public sealed class SettingsEditorViewModel : ReactiveObject
     /// <summary>Number of days to retain log files.</summary>
     [Reactive]
     public int LogRetentionDays { get; set; } = ApplicationSettings.DefaultLogRetentionDays;
+
+    /// <summary><see langword="true"/> when the dark theme is selected; <see langword="false"/> for light.</summary>
+    [Reactive]
+    public bool IsDarkTheme { get; set; }
 
     /// <summary>Interaction that asks the View to browse for a folder and return the selected path.
     /// Input is the initial folder path; output is the selected path, or <see langword="null"/> if cancelled.</summary>
@@ -53,9 +61,13 @@ public sealed class SettingsEditorViewModel : ReactiveObject
     /// <summary>Initializes a new instance of <see cref="SettingsEditorViewModel"/>.
     /// Populates editing properties from the current durable settings.</summary>
     /// <param name="settingsService">The application settings service.</param>
-    public SettingsEditorViewModel(IApplicationSettingsService settingsService)
+    /// <param name="themeService">The theme service for live preview when the toggle changes.</param>
+    public SettingsEditorViewModel(IApplicationSettingsService settingsService, IThemeService themeService)
     {
         var currentSettings = settingsService.CurrentSettings;
+
+        // Capture the original theme so it can be reverted on Cancel.
+        _originalTheme = currentSettings.Theme;
 
         // Take a snapshot of the current settings to populate the editing properties.
         // The editor operates on a copy of these settings.
@@ -63,6 +75,13 @@ public sealed class SettingsEditorViewModel : ReactiveObject
         D2ToolPath = GetToolPathOverride(currentSettings, "d2");
         MmdcToolPath = GetToolPathOverride(currentSettings, "mmdc");
         LogRetentionDays = currentSettings.LogRetentionDays;
+        IsDarkTheme = currentSettings.Theme == StudioTheme.Dark;
+
+        // Apply the theme live as the user toggles — no need to wait for Save.
+        var studioTheme = currentSettings.Theme;
+
+        this.WhenAnyValue(vm => vm.IsDarkTheme)
+            .Subscribe(isDark => themeService.ApplyTheme(isDark ? StudioTheme.Dark : StudioTheme.Light));
 
         BrowseDefaultProjectFolderCommand = ReactiveCommand.CreateFromTask(BrowseDefaultProjectFolderAsync);
         BrowseD2ToolPathCommand = ReactiveCommand.CreateFromTask(BrowseD2ToolPathAsync);
@@ -75,10 +94,15 @@ public sealed class SettingsEditorViewModel : ReactiveObject
     {
         settings.DefaultProjectFolder = DefaultProjectFolder;
         settings.LogRetentionDays = LogRetentionDays;
+        settings.Theme = IsDarkTheme ? StudioTheme.Dark : StudioTheme.Light;
 
         SetToolPathOverride(settings, "d2", D2ToolPath);
         SetToolPathOverride(settings, "mmdc", MmdcToolPath);
     }
+
+    /// <summary>Returns the theme that was active when this editor was opened,
+    /// before any live-preview toggling occurred.</summary>
+    public StudioTheme GetOriginalTheme() => _originalTheme;
 
     private static void SetToolPathOverride(ApplicationSettings settings, string toolName, string path)
     {

@@ -15,6 +15,7 @@
             x:Name="MessageText"
             Margin="0,0,0,16"
             FontSize="14"
+            Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
             TextWrapping="Wrap" />
 
         <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">

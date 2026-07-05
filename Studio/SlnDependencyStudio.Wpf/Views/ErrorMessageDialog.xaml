@@ -8,44 +8,45 @@
     d:DesignWidth="420"
     mc:Ignorable="d">
 
-    <StackPanel Margin="24" MaxWidth="480">
-        <!-- Title row -->
-        <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+    <StackPanel MaxWidth="480" Margin="24">
+        <!--  Title row  -->
+        <StackPanel Margin="0,0,0,16" Orientation="Horizontal">
             <materialDesign:PackIcon
-                Kind="ErrorOutline"
                 Width="22"
                 Height="22"
-                VerticalAlignment="Center"
                 Margin="0,0,12,0"
-                Foreground="{DynamicResource MaterialDesignValidationErrorBrush}" />
+                VerticalAlignment="Center"
+                Foreground="{DynamicResource MaterialDesign.Brush.ValidationError}"
+                Kind="ErrorOutline" />
             <TextBlock
                 x:Name="TitleText"
+                VerticalAlignment="Center"
                 FontSize="16"
                 FontWeight="SemiBold"
-                VerticalAlignment="Center"
+                Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
                 TextTrimming="CharacterEllipsis" />
         </StackPanel>
 
-        <!-- Message body -->
+        <!--  Message body  -->
         <ScrollViewer
             MaxHeight="200"
-            VerticalScrollBarVisibility="Auto"
-            Margin="0,0,0,20">
+            Margin="0,0,0,20"
+            VerticalScrollBarVisibility="Auto">
             <TextBlock
                 x:Name="MessageText"
                 FontSize="13"
-                TextWrapping="Wrap"
+                Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
                 LineHeight="20"
-                Foreground="{DynamicResource MaterialDesignBody}" />
+                TextWrapping="Wrap" />
         </ScrollViewer>
 
-        <!-- OK button -->
+        <!--  OK button  -->
         <Button
+            MinWidth="80"
             HorizontalAlignment="Right"
             Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}"
             Content="OK"
             IsDefault="True"
-            MinWidth="80"
             Style="{StaticResource MaterialDesignFlatButton}" />
     </StackPanel>
 </UserControl>

@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Windows.Data;
 
-namespace SlnDependencyStudio.Wpf.Converters;
+namespace SlnDependencyStudio.Wpf.Converters.Xaml;
 
 /// <summary>Returns <see langword="true"/> when the bound value is not <see langword="null"/>,
 /// and <see langword="false"/> when it is.</summary>

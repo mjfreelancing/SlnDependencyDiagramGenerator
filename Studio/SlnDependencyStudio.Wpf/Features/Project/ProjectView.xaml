@@ -23,16 +23,18 @@
                     Height="28"
                     Margin="0,0,12,0"
                     VerticalAlignment="Center"
+                    Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
                     Kind="FileDocumentOutline" />
                 <StackPanel>
                     <TextBlock
                         FontSize="22"
                         FontWeight="SemiBold"
+                        Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
                         Text="Project" />
                     <TextBlock
                         Margin="0,2,0,0"
                         FontSize="12"
-                        Foreground="{DynamicResource MaterialDesignHintForeground}"
+                        Foreground="{DynamicResource MaterialDesign.Brush.ForegroundLight}"
                         Text="Project dependency settings" />
                 </StackPanel>
             </StackPanel>
@@ -42,7 +44,10 @@
                 Margin="0,0,0,16"
                 VerticalAlignment="Top"
                 Label="Project name">
-                <TextBox materialDesign:HintAssist.Hint="Enter a name for this project" Text="{Binding ProjectName.Value, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBox
+                    materialDesign:HintAssist.Hint="Enter a name for this project"
+                    Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+                    Text="{Binding ProjectName.Value, UpdateSourceTrigger=PropertyChanged}" />
             </studioControls:FormField>
 
             <!--  Description  -->
@@ -50,7 +55,10 @@
                 Margin="0,0,0,16"
                 VerticalAlignment="Top"
                 Label="Description">
-                <TextBox materialDesign:HintAssist.Hint="Optional description" Text="{Binding Description.Value, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBox
+                    materialDesign:HintAssist.Hint="Optional description"
+                    Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+                    Text="{Binding Description.Value, UpdateSourceTrigger=PropertyChanged}" />
             </studioControls:FormField>
 
         </StackPanel>

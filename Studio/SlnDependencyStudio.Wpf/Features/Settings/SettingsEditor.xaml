@@ -37,6 +37,7 @@
             Height="24"
             Margin="0,0,12,0"
             VerticalAlignment="Center"
+            Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
             Kind="Cog" />
 
         <TextBlock
@@ -46,6 +47,7 @@
             Margin="0,0,0,16"
             FontSize="18"
             FontWeight="SemiBold"
+            Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
             Text="Application Settings" />
 
         <!--  Default Project Folder  -->
@@ -55,6 +57,7 @@
             Margin="0,0,12,8"
             VerticalAlignment="Center"
             FontSize="13"
+            Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
             Text="Default project folder" />
 
         <TextBox
@@ -63,6 +66,7 @@
             Margin="0,0,8,8"
             VerticalAlignment="Center"
             materialDesign:HintAssist.Hint="Leave empty for no default"
+            Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
             Text="{Binding DefaultProjectFolder, UpdateSourceTrigger=PropertyChanged}" />
 
         <Button
@@ -82,6 +86,7 @@
             Margin="0,0,12,8"
             VerticalAlignment="Center"
             FontSize="13"
+            Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
             Text="d2 executable" />
 
         <TextBox
@@ -90,6 +95,7 @@
             Margin="0,0,8,8"
             VerticalAlignment="Center"
             materialDesign:HintAssist.Hint="Auto-detected if empty"
+            Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
             Text="{Binding D2ToolPath, UpdateSourceTrigger=PropertyChanged}" />
 
         <Button
@@ -109,6 +115,7 @@
             Margin="0,0,12,8"
             VerticalAlignment="Center"
             FontSize="13"
+            Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
             Text="mmdc executable" />
 
         <TextBox
@@ -117,6 +124,7 @@
             Margin="0,0,8,8"
             VerticalAlignment="Center"
             materialDesign:HintAssist.Hint="Auto-detected if empty"
+            Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
             Text="{Binding MmdcToolPath, UpdateSourceTrigger=PropertyChanged}" />
 
         <Button
@@ -136,6 +144,7 @@
             Margin="0,0,12,8"
             VerticalAlignment="Center"
             FontSize="13"
+            Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
             Text="Log retention (days)" />
 
         <Slider
@@ -156,12 +165,50 @@
             Margin="0,0,0,8"
             VerticalAlignment="Center"
             FontSize="12"
-            Foreground="{DynamicResource MaterialDesignHintForeground}"
+            Foreground="{DynamicResource MaterialDesign.Brush.ForegroundLight}"
             Text="{Binding LogRetentionDays, StringFormat={}{0} days}" />
+
+        <!--  Theme  -->
+        <TextBlock
+            Grid.Row="5"
+            Grid.Column="0"
+            Margin="0,0,12,8"
+            VerticalAlignment="Center"
+            FontSize="13"
+            Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+            Text="Theme" />
+
+        <StackPanel
+            Grid.Row="5"
+            Grid.Column="1"
+            Grid.ColumnSpan="2"
+            Margin="0,0,0,8"
+            Orientation="Horizontal">
+
+            <TextBlock
+                VerticalAlignment="Center"
+                FontSize="13"
+                Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+                Text="Light" />
+
+            <ToggleButton
+                x:Name="ThemeToggle"
+                Margin="10,0"
+                VerticalAlignment="Center"
+                IsChecked="{Binding IsDarkTheme, UpdateSourceTrigger=PropertyChanged}"
+                Style="{StaticResource MaterialDesignSwitchToggleButton}"
+                ToolTip="Toggle between light and dark theme" />
+
+            <TextBlock
+                VerticalAlignment="Center"
+                FontSize="13"
+                Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+                Text="Dark" />
+        </StackPanel>
 
         <!--  Spacer  -->
         <Border
-            Grid.Row="5"
+            Grid.Row="6"
             Grid.Column="0"
             Grid.ColumnSpan="3"
             Height="16" />

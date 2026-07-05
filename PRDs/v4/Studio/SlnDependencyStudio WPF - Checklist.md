@@ -28,15 +28,16 @@ Features/
 
 **Existing features (as of 2026-07-05):**
 
-| Feature Folder          | Namespace                                      | Contents                                                                                                                                                                                       |
-| ----------------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Features/Application/` | `SlnDependencyStudio.Wpf.Features.Application` | `IApplicationSettingsService`, `ApplicationSettingsService`, `Extensions/ApplicationSettingsServiceExtensions`, `Models/` (ApplicationSettings, ApplicationState, WindowPlacement)             |
-| `Features/CardSession/` | `SlnDependencyStudio.Wpf.Features.CardSession` | `ICardSessionState`, `CardSessionState`                                                                                                                                                        |
-| `Features/EmptyState/`  | `SlnDependencyStudio.Wpf.Features.EmptyState`  | `EmptyStateViewModel`, `EmptyStateView`                                                                                                                                                        |
-| `Features/ErrorDialog/` | `SlnDependencyStudio.Wpf.Features.ErrorDialog` | `IErrorDialogService`, `ErrorDialogService`, `ErrorInfo`                                                                                                                                       |
-| `Features/Project/`     | `SlnDependencyStudio.Wpf.Features.Project`     | `IProjectDocumentStore`, `ProjectDocumentStore`, `IProjectMetadataEditor`, `ProjectMetadataEditor`, `ProjectViewModel`, `ProjectView`, `IDependencyProjectService`, `DependencyProjectService` |
-| `Features/RecentProjects/` | `SlnDependencyStudio.Wpf.Features.RecentProjects` | `IRecentProjectsService`, `RecentProjectsService`, `Models/` (RecentProjectEntry)                                                                                                          |
-| `Features/Settings/`    | `SlnDependencyStudio.Wpf.Features.Settings`    | `SettingsEditorViewModel`, `SettingsEditor`, `SettingsWindowViewModel`, `SettingsWindow`                                                                                                       |
+| Feature Folder             | Namespace                                         | Contents                                                                                                                                                                                       |
+| -------------------------- | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Features/Application/`    | `SlnDependencyStudio.Wpf.Features.Application`    | `IApplicationSettingsService`, `ApplicationSettingsService`, `Extensions/ApplicationSettingsServiceExtensions`, `Models/` (ApplicationSettings, ApplicationState, WindowPlacement)             |
+| `Features/CardSession/`    | `SlnDependencyStudio.Wpf.Features.CardSession`    | `ICardSessionState`, `CardSessionState`                                                                                                                                                        |
+| `Features/EmptyState/`     | `SlnDependencyStudio.Wpf.Features.EmptyState`     | `EmptyStateViewModel`, `EmptyStateView`                                                                                                                                                        |
+| `Features/ErrorDialog/`    | `SlnDependencyStudio.Wpf.Features.ErrorDialog`    | `IErrorDialogService`, `ErrorDialogService`, `ErrorInfo`                                                                                                                                       |
+| `Features/Project/`        | `SlnDependencyStudio.Wpf.Features.Project`        | `IProjectDocumentStore`, `ProjectDocumentStore`, `IProjectMetadataEditor`, `ProjectMetadataEditor`, `ProjectViewModel`, `ProjectView`, `IDependencyProjectService`, `DependencyProjectService` |
+| `Features/RecentProjects/` | `SlnDependencyStudio.Wpf.Features.RecentProjects` | `IRecentProjectsService`, `RecentProjectsService`, `Models/` (RecentProjectEntry)                                                                                                              |
+| `Features/Settings/`       | `SlnDependencyStudio.Wpf.Features.Settings`       | `SettingsEditorViewModel`, `SettingsEditor`, `SettingsWindowViewModel`, `SettingsWindow`                                                                                                       |
+| `Features/Theming/`        | `SlnDependencyStudio.Wpf.Features.Theming`        | `IThemeService`, `ThemeService`                                                                                                                                                                |
 
 **Rules:**
 
@@ -54,7 +55,7 @@ Features/
 | ----- | ------------------------------------- | ------ |
 | 1     | Project Scaffold & Shell Foundation   | ✅     |
 | 2     | Application Settings Service          | ✅     |
-| 3     | Dependency Project Lifecycle          | 🔶     |
+| 3     | Dependency Project Lifecycle          | ✅     |
 | 4     | Metadata & Core Configuration Editing | 🔶     |
 | 5     | Advanced Configuration Editing        | ⬜     |
 | 6     | Tool Detection & Status               | ⬜     |
@@ -362,12 +363,13 @@ The selected nav item gets a left-accent border (4px `MaterialDesignPrimary`) an
 
 **Goal:** The user can switch between light and dark themes via the Settings dialog. The preference persists across restarts. All views render correctly in both themes using only `DynamicResource` brushes.
 
-- [ ] 3.4.1 Add a `Theme` property to `ApplicationSettings` with values `"Light"` (default) and `"Dark"`. Persist alongside existing settings.
-- [ ] 3.4.2 In `SettingsView`, add a `ComboBox` or `ToggleSwitch` for theme selection (Light / Dark). Bind to `ApplicationSettings.Theme`.
-- [ ] 3.4.3 Implement `IThemeService` with `ApplyTheme(string theme)` that swaps `MaterialDesignThemes.BundledTheme.BaseTheme` and the `MaterialDesign3.Defaults.xaml` resource dictionary at runtime via `Application.Current.Resources.MergedDictionaries`.
-- [ ] 3.4.4 Call `IThemeService.ApplyTheme` on application startup (from saved preference) and whenever the user changes the theme in settings.
-- [ ] 3.4.5 Audit all existing views (MainWindow, ProjectView, SettingsView, dialogs) to ensure no hardcoded colour values are used — only `DynamicResource` brushes (e.g., `MaterialDesignBackground`, `MaterialDesignPaper`, `MaterialDesignBody`, `PrimaryHueMidBrush`). Fix any violations found.
-- [ ] 3.4.6 Verify both themes render correctly: toggle theme → all open windows and dialogs update immediately → restart app → theme preference is restored.
+- [x] 3.4.1 Add a `Theme` property to `ApplicationSettings` with values `"Light"` (default) and `"Dark"`. Persist alongside existing settings.
+- [x] 3.4.2 In `SettingsView`, add a `ToggleSwitch` for theme selection (Light / Dark). Bind to `ApplicationSettings.Theme`.
+- [x] 3.4.3 Implement `IThemeService` with `ApplyTheme(string theme)` that swaps `MaterialDesignThemes.BundledTheme.BaseTheme` at runtime via `Application.Current.Resources.MergedDictionaries`.
+- [x] 3.4.4 Call `IThemeService.ApplyTheme` on application startup (from saved preference) and whenever the user changes the theme in settings.
+- [x] 3.4.5 Audit all existing views (MainWindow, ProjectView, SettingsView, dialogs) to ensure no hardcoded colour values are used — only `DynamicResource` brushes (e.g., `MaterialDesignBackground`, `MaterialDesignPaper`, `MaterialDesignBody`, `PrimaryHueMidBrush`). Fix any violations found.
+- [x] 3.4.6 Verify both themes render correctly: toggle theme → all open windows and dialogs update immediately → restart app → theme preference is restored.
+- [x] 3.4.7 If the theme change cannot be applied without a restart, ensure this is reflected in the UI as per LogRetentionDays — **N/A: MaterialDesignThemes supports runtime theme switching via `BundledTheme.BaseTheme`; all views use `DynamicResource` and update immediately. No restart required.**
 
 **Phase 3 completion:** The user can create, open, save, and save-as dependency projects. Unsaved changes are tracked via the centralized store and prompt on close. Recent files are persisted and clickable. The first-run empty state guides new users. Light and dark themes are supported with persisted preference.
 

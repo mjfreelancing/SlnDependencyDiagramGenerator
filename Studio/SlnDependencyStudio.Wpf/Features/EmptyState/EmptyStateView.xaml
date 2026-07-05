@@ -52,7 +52,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="RowBorder" Property="Background" Value="{DynamicResource MaterialDesignDivider}" />
+                                <Setter TargetName="RowBorder" Property="Background" Value="{DynamicResource MaterialDesign.Brush.Separator.Background}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -61,7 +61,7 @@
         </Style>
     </UserControl.Resources>
 
-    <ScrollViewer VerticalScrollBarVisibility="Hidden">
+    <ScrollViewer Background="{DynamicResource MaterialDesign.Brush.Card.Background}" VerticalScrollBarVisibility="Hidden">
         <Grid
             MaxWidth="640"
             Margin="48,0,48,0"
@@ -83,14 +83,14 @@
                         HorizontalAlignment="Center"
                         FontSize="28"
                         FontWeight="SemiBold"
-                        Foreground="{DynamicResource MaterialDesignBody}"
+                        Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
                         Text="SlnDependencyStudio" />
 
                     <TextBlock
                         Margin="0,6,0,0"
                         HorizontalAlignment="Center"
                         FontSize="14"
-                        Foreground="{DynamicResource MaterialDesignHintForeground}"
+                        Foreground="{DynamicResource MaterialDesign.Brush.ForegroundLight}"
                         Text="Dependency diagram generator for .NET solutions"
                         TextWrapping="Wrap" />
                 </StackPanel>
@@ -110,7 +110,7 @@
                         Command="{Binding NewProjectCommand}"
                         Style="{StaticResource CardButtonStyle}"
                         ToolTip="Create a new project from default settings (Ctrl+N)">
-                        <materialDesign:Card Padding="0" materialDesign:ElevationAssist.Elevation="Dp2">
+                        <materialDesign:Card Padding="0" Background="{DynamicResource MaterialDesign.Brush.Background}">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
@@ -119,24 +119,24 @@
                                 <Border
                                     Grid.Row="0"
                                     Height="4"
-                                    Background="{DynamicResource PrimaryHueMidBrush}"
+                                    Background="{DynamicResource MaterialDesign.Brush.Primary}"
                                     CornerRadius="4,4,0,0" />
                                 <StackPanel Grid.Row="1" Margin="20,20,20,24">
                                     <materialDesign:PackIcon
                                         Width="32"
                                         Height="32"
-                                        Foreground="{DynamicResource PrimaryHueMidBrush}"
+                                        Foreground="{DynamicResource MaterialDesign.Brush.Primary}"
                                         Kind="FileDocumentPlus" />
                                     <TextBlock
                                         Margin="0,10,0,0"
                                         FontSize="15"
                                         FontWeight="SemiBold"
-                                        Foreground="{DynamicResource MaterialDesignBody}"
+                                        Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
                                         Text="New Project" />
                                     <TextBlock
                                         Margin="0,4,0,0"
                                         FontSize="12"
-                                        Foreground="{DynamicResource MaterialDesignHintForeground}"
+                                        Foreground="{DynamicResource MaterialDesign.Brush.ForegroundLight}"
                                         Text="Start from defaults"
                                         TextWrapping="Wrap" />
                                 </StackPanel>
@@ -151,7 +151,7 @@
                         Command="{Binding OpenProjectCommand}"
                         Style="{StaticResource CardButtonStyle}"
                         ToolTip="Browse for an existing .sds project file (Ctrl+O)">
-                        <materialDesign:Card Padding="0" materialDesign:ElevationAssist.Elevation="Dp2">
+                        <materialDesign:Card Padding="0" Background="{DynamicResource MaterialDesign.Brush.Background}">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
@@ -160,24 +160,24 @@
                                 <Border
                                     Grid.Row="0"
                                     Height="4"
-                                    Background="{DynamicResource SecondaryHueMidBrush}"
+                                    Background="{DynamicResource MaterialDesign.Brush.Primary}"
                                     CornerRadius="4,4,0,0" />
                                 <StackPanel Grid.Row="1" Margin="20,20,20,24">
                                     <materialDesign:PackIcon
                                         Width="32"
                                         Height="32"
-                                        Foreground="{DynamicResource SecondaryHueMidBrush}"
+                                        Foreground="{DynamicResource MaterialDesign.Brush.Primary}"
                                         Kind="FolderOpen" />
                                     <TextBlock
                                         Margin="0,10,0,0"
                                         FontSize="15"
                                         FontWeight="SemiBold"
-                                        Foreground="{DynamicResource MaterialDesignBody}"
+                                        Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
                                         Text="Open Project" />
                                     <TextBlock
                                         Margin="0,4,0,0"
                                         FontSize="12"
-                                        Foreground="{DynamicResource MaterialDesignHintForeground}"
+                                        Foreground="{DynamicResource MaterialDesign.Brush.ForegroundLight}"
                                         Text="Browse for an .sds file"
                                         TextWrapping="Wrap" />
                                 </StackPanel>
@@ -192,7 +192,7 @@
                     Margin="0,32,0,8"
                     FontSize="11"
                     FontWeight="SemiBold"
-                    Foreground="{DynamicResource MaterialDesignHintForeground}"
+                    Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
                     Text="RECENT PROJECTS"
                     Visibility="{Binding HasRecentProjects, Converter={StaticResource BoolToVis}}" />
 
@@ -221,7 +221,7 @@
                                         Height="20"
                                         Margin="0,0,12,0"
                                         VerticalAlignment="Center"
-                                        Foreground="{DynamicResource MaterialDesignHintForeground}"
+                                        Foreground="{DynamicResource MaterialDesign.Brush.ForegroundLight}"
                                         Kind="FolderOpen" />
 
                                     <TextBlock
@@ -229,7 +229,7 @@
                                         Grid.Column="1"
                                         FontSize="13"
                                         FontWeight="Medium"
-                                        Foreground="{DynamicResource MaterialDesignBody}"
+                                        Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
                                         Text="{Binding DisplayName}" />
 
                                     <TextBlock
@@ -237,7 +237,7 @@
                                         Grid.Column="1"
                                         Margin="0,2,0,0"
                                         FontSize="11"
-                                        Foreground="{DynamicResource MaterialDesignHintForeground}"
+                                        Foreground="{DynamicResource MaterialDesign.Brush.ForegroundLight}"
                                         Text="{Binding FilePath}"
                                         TextTrimming="CharacterEllipsis"
                                         ToolTip="{Binding FilePath}" />

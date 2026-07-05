@@ -2,22 +2,23 @@
     x:Class="SlnDependencyStudio.Wpf.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="clr-namespace:SlnDependencyStudio.Wpf.Converters.Xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:reactiveui="http://reactiveui.net"
-    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:viewModels="clr-namespace:SlnDependencyStudio.Wpf.ViewModels"
     xmlns:wpf="clr-namespace:SlnDependencyStudio.Wpf"
-    xmlns:converters="clr-namespace:SlnDependencyStudio.Wpf.Converters"
     Title="SlnDependencyStudio"
-    Icon="app.ico"
     Width="1200"
     Height="800"
     MinWidth="900"
     MinHeight="600"
     x:TypeArguments="wpf:MainWindowViewModel"
+    Background="{DynamicResource MaterialDesign.Brush.Background}"
+    Icon="app.ico"
+    TextElement.Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
     WindowStartupLocation="CenterScreen"
-    Style="{StaticResource MaterialDesignWindow}"
     mc:Ignorable="d">
 
     <Window.Resources>
@@ -25,234 +26,237 @@
         <converters:NullToBoolConverter x:Key="NullToBool" />
     </Window.Resources>
 
-    <Grid Background="{DynamicResource MaterialDesignBackground}">
+    <Grid Background="{DynamicResource MaterialDesign.Brush.Card.Background}">
         <materialDesign:DialogHost x:Name="MainDialogHost" Identifier="MainDialogHost">
-        <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="180" />
-            <ColumnDefinition Width="*" />
-        </Grid.ColumnDefinitions>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="180" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
 
-        <!-- ====== MENU BAR ====== -->
+                <!--  ====== MENU BAR ======  -->
 
-        <Menu
-            Grid.Row="0"
-            Grid.ColumnSpan="2"
-            Background="{DynamicResource MaterialDesignPaper}"
-            BorderBrush="{DynamicResource MaterialDesignDivider}"
-            BorderThickness="0,0,0,1"
-            Padding="4,2,0,2">
+                <Menu
+                    Grid.Row="0"
+                    Grid.ColumnSpan="2"
+                    Padding="4,2,0,2"
+                    Background="{DynamicResource MaterialDesign.Brush.Background}"
+                    BorderBrush="{DynamicResource MaterialDesign.Brush.Separator.Background}"
+                    BorderThickness="0,0,0,1"
+                    Foreground="{DynamicResource MaterialDesign.Brush.Foreground}">
 
-            <MenuItem Header="_File">
-                <MenuItem
-                    x:Name="NewProjectMenuItem"
-                    Header="_New Project"
-                    Command="{Binding NewProjectCommand}"
-                    InputGestureText="Ctrl+N" />
-                <MenuItem
-                    x:Name="NewFromExistingMenuItem"
-                    Header="New from _Existing..."
-                    Command="{Binding NewFromExistingCommand}" />
-                <Separator />
-                <MenuItem
-                    x:Name="OpenProjectMenuItem"
-                    Header="_Open Project..."
-                    Command="{Binding OpenProjectCommand}"
-                    InputGestureText="Ctrl+O" />
-                <Separator />
-                <MenuItem
-                    x:Name="SaveMenuItem"
-                    Header="_Save"
-                    Command="{Binding SaveCommand}"
-                    InputGestureText="Ctrl+S" />
-                <MenuItem
-                    x:Name="SaveAsMenuItem"
-                    Header="Save _As..."
-                    Command="{Binding SaveAsCommand}" />
-                <Separator />
-                <MenuItem
-                    x:Name="CloseProjectMenuItem"
-                    Header="_Close"
-                    Command="{Binding CloseProjectCommand}"
-                    InputGestureText="Ctrl+F4" />
-                <Separator />
-                <MenuItem
-                    x:Name="RecentProjectsMenu"
-                    Header="_Recent Projects"
-                    ItemsSource="{Binding RecentProjects}"
-                    IsEnabled="{Binding HasRecentProjects}">
-                    <MenuItem.ItemContainerStyle>
-                        <Style TargetType="MenuItem">
-                            <Setter Property="Header" Value="{Binding DisplayName}" />
-                            <Setter Property="Padding" Value="0,6,0,6" />
-                            <Setter Property="Command" Value="{Binding DataContext.OpenRecentProjectCommand, RelativeSource={RelativeSource AncestorType=MenuItem}}" />
-                            <Setter Property="CommandParameter" Value="{Binding FilePath}" />
-                            <Setter Property="ToolTip" Value="{Binding FilePath}" />
-                        </Style>
-                    </MenuItem.ItemContainerStyle>
-                </MenuItem>
-                <Separator />
-                <MenuItem
-                    x:Name="SettingsMenuItem"
-                    Header="_Settings..."
-                    Command="{Binding OpenSettingsCommand}" />
-                <Separator />
-                <MenuItem
-                    x:Name="ExitMenuItem"
-                    Header="E_xit"
-                    InputGestureText="Alt+F4" />
-            </MenuItem>
-        </Menu>
+                    <MenuItem Header="_File">
+                        <MenuItem
+                            x:Name="NewProjectMenuItem"
+                            Command="{Binding NewProjectCommand}"
+                            Header="_New Project"
+                            InputGestureText="Ctrl+N" />
+                        <MenuItem
+                            x:Name="NewFromExistingMenuItem"
+                            Command="{Binding NewFromExistingCommand}"
+                            Header="New from _Existing..." />
+                        <Separator />
+                        <MenuItem
+                            x:Name="OpenProjectMenuItem"
+                            Command="{Binding OpenProjectCommand}"
+                            Header="_Open Project..."
+                            InputGestureText="Ctrl+O" />
+                        <Separator />
+                        <MenuItem
+                            x:Name="SaveMenuItem"
+                            Command="{Binding SaveCommand}"
+                            Header="_Save"
+                            InputGestureText="Ctrl+S" />
+                        <MenuItem
+                            x:Name="SaveAsMenuItem"
+                            Command="{Binding SaveAsCommand}"
+                            Header="Save _As..." />
+                        <Separator />
+                        <MenuItem
+                            x:Name="CloseProjectMenuItem"
+                            Command="{Binding CloseProjectCommand}"
+                            Header="_Close"
+                            InputGestureText="Ctrl+F4" />
+                        <Separator />
+                        <MenuItem
+                            x:Name="RecentProjectsMenu"
+                            Header="_Recent Projects"
+                            IsEnabled="{Binding HasRecentProjects}"
+                            ItemsSource="{Binding RecentProjects}">
+                            <MenuItem.ItemContainerStyle>
+                                <Style TargetType="MenuItem">
+                                    <Setter Property="Header" Value="{Binding DisplayName}" />
+                                    <Setter Property="Padding" Value="0,6,0,6" />
+                                    <Setter Property="Command" Value="{Binding DataContext.OpenRecentProjectCommand, RelativeSource={RelativeSource AncestorType=MenuItem}}" />
+                                    <Setter Property="CommandParameter" Value="{Binding FilePath}" />
+                                    <Setter Property="ToolTip" Value="{Binding FilePath}" />
+                                </Style>
+                            </MenuItem.ItemContainerStyle>
+                        </MenuItem>
+                        <Separator />
+                        <MenuItem
+                            x:Name="SettingsMenuItem"
+                            Command="{Binding OpenSettingsCommand}"
+                            Header="_Settings..." />
+                        <Separator />
+                        <MenuItem
+                            x:Name="ExitMenuItem"
+                            Header="E_xit"
+                            InputGestureText="Alt+F4" />
+                    </MenuItem>
+                </Menu>
 
-        <!-- ====== LEFT NAVIGATION ====== -->
+                <!--  ====== LEFT NAVIGATION ======  -->
 
-        <Border
-            Grid.Row="1"
-            Grid.Column="0"
-            Background="{DynamicResource MaterialDesignPaper}"
-            BorderBrush="{DynamicResource MaterialDesignDivider}"
-            BorderThickness="0,0,1,0">
+                <Border
+                    Grid.Row="1"
+                    Grid.Column="0"
+                    Background="{DynamicResource MaterialDesign.Brush.Background}"
+                    BorderBrush="{DynamicResource MaterialDesign.Brush.Separator.Background}"
+                    BorderThickness="0,0,1,0">
 
-            <DockPanel>
-                <ListBox
-                    x:Name="NavigationListBox"
-                    IsEnabled="{Binding HasDocument}"
-                    ItemsSource="{Binding NavigationItems}"
-                    SelectedItem="{Binding SelectedNavigationItem, Mode=TwoWay}"
-                    Background="Transparent"
-                    BorderThickness="0"
-                    SelectionMode="Single"
-                    HorizontalContentAlignment="Stretch"
-                    Padding="0,4,0,4">
+                    <DockPanel>
+                        <ListBox
+                            x:Name="NavigationListBox"
+                            Padding="0,4,0,4"
+                            HorizontalContentAlignment="Stretch"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            IsEnabled="{Binding HasDocument}"
+                            ItemsSource="{Binding NavigationItems}"
+                            SelectedItem="{Binding SelectedNavigationItem, Mode=TwoWay}"
+                            SelectionMode="Single">
 
-                        <ListBox.ItemContainerStyle>
-                            <Style TargetType="ListBoxItem">
-                                <Setter Property="Padding" Value="0" />
-                                <Setter Property="Margin" Value="0" />
-                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                                <Setter Property="VerticalContentAlignment" Value="Center" />
-                                <Setter Property="Template">
-                                    <Setter.Value>
-                                        <ControlTemplate TargetType="ListBoxItem">
-                                            <Border
-                                                x:Name="ItemBorder"
-                                                Background="Transparent"
-                                                BorderBrush="Transparent"
-                                                BorderThickness="4,0,0,0"
-                                                Padding="12,10,12,10">
-                                                <ContentPresenter />
-                                            </Border>
-                                            <ControlTemplate.Triggers>
-                                                <Trigger Property="IsSelected" Value="True">
-                                                    <Setter TargetName="ItemBorder" Property="BorderBrush" Value="{DynamicResource PrimaryHueMidBrush}" />
-                                                    <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource MaterialDesignDivider}" />
-                                                </Trigger>
-                                                <MultiTrigger>
-                                                    <MultiTrigger.Conditions>
-                                                        <Condition Property="IsMouseOver" Value="True" />
-                                                        <Condition Property="IsSelected" Value="False" />
-                                                    </MultiTrigger.Conditions>
-                                                    <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource MaterialDesignDivider}" />
-                                                </MultiTrigger>
-                                            </ControlTemplate.Triggers>
-                                        </ControlTemplate>
-                                    </Setter.Value>
-                                </Setter>
-                            </Style>
-                        </ListBox.ItemContainerStyle>
+                            <ListBox.ItemContainerStyle>
+                                <Style TargetType="ListBoxItem">
+                                    <Setter Property="Padding" Value="0" />
+                                    <Setter Property="Margin" Value="0" />
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                    <Setter Property="VerticalContentAlignment" Value="Center" />
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="ListBoxItem">
+                                                <Border
+                                                    x:Name="ItemBorder"
+                                                    Padding="12,10,12,10"
+                                                    Background="Transparent"
+                                                    BorderBrush="Transparent"
+                                                    BorderThickness="4,0,0,0">
+                                                    <ContentPresenter />
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsSelected" Value="True">
+                                                        <Setter TargetName="ItemBorder" Property="BorderBrush" Value="{DynamicResource MaterialDesign.Brush.Primary}" />
+                                                        <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource MaterialDesign.Brush.Separator.Background}" />
+                                                    </Trigger>
+                                                    <MultiTrigger>
+                                                        <MultiTrigger.Conditions>
+                                                            <Condition Property="IsMouseOver" Value="True" />
+                                                            <Condition Property="IsSelected" Value="False" />
+                                                        </MultiTrigger.Conditions>
+                                                        <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource MaterialDesign.Brush.Separator.Background}" />
+                                                    </MultiTrigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </ListBox.ItemContainerStyle>
 
-                        <ListBox.ItemTemplate>
-                            <DataTemplate DataType="{x:Type viewModels:NavigationItemViewModel}">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate DataType="{x:Type viewModels:NavigationItemViewModel}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
 
-                                    <materialDesign:PackIcon
-                                        Grid.Column="0"
-                                        Kind="{Binding IconKind}"
-                                        Width="20"
-                                        Height="20"
-                                        VerticalAlignment="Center"
-                                        Margin="0,0,10,0" />
+                                        <materialDesign:PackIcon
+                                            Grid.Column="0"
+                                            Width="20"
+                                            Height="20"
+                                            Margin="0,0,10,0"
+                                            VerticalAlignment="Center"
+                                            Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+                                            Kind="{Binding IconKind}" />
 
-                                    <TextBlock
-                                        Grid.Column="1"
-                                        Text="{Binding DisplayName}"
-                                        FontSize="13"
-                                        VerticalAlignment="Center"
-                                        TextTrimming="CharacterEllipsis" />
+                                        <TextBlock
+                                            Grid.Column="1"
+                                            VerticalAlignment="Center"
+                                            FontSize="13"
+                                            Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+                                            Text="{Binding DisplayName}"
+                                            TextTrimming="CharacterEllipsis" />
 
-                                    <Ellipse
-                                        Grid.Column="2"
-                                        Width="8"
-                                        Height="8"
-                                        Fill="Red"
-                                        Margin="6,0,0,0"
-                                        ToolTip="This section has validation errors"
-                                        Visibility="{Binding HasValidationError, Converter={StaticResource BoolToVis}}" />
+                                        <Ellipse
+                                            Grid.Column="2"
+                                            Width="8"
+                                            Height="8"
+                                            Margin="6,0,0,0"
+                                            Fill="{DynamicResource MaterialDesign.Brush.ValidationError}"
+                                            ToolTip="This section has validation errors"
+                                            Visibility="{Binding HasValidationError, Converter={StaticResource BoolToVis}}" />
 
-                                    <materialDesign:Chip
-                                        Grid.Column="3"
-                                        Content="opt"
-                                        FontSize="9"
-                                        Height="18"
-                                        Padding="4,0"
-                                        Margin="4,0,0,0"
-                                        VerticalAlignment="Center"
-                                        IsHitTestVisible="False"
-                                        Visibility="{Binding IsAdvanced, Converter={StaticResource BoolToVis}}" />
-                                </Grid>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-            </DockPanel>
-        </Border>
+                                        <materialDesign:Chip
+                                            Grid.Column="3"
+                                            Height="18"
+                                            Margin="4,0,0,0"
+                                            Padding="4,0"
+                                            VerticalAlignment="Center"
+                                            Content="opt"
+                                            FontSize="9"
+                                            IsHitTestVisible="False"
+                                            Visibility="{Binding IsAdvanced, Converter={StaticResource BoolToVis}}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </DockPanel>
+                </Border>
 
-        <!-- ====== CENTRE WORKSPACE ====== -->
+                <!--  ====== CENTRE WORKSPACE ======  -->
 
-        <Grid Grid.Row="1" Grid.Column="1">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="4*" MinHeight="60" />
-                <RowDefinition Height="5" />
-                <RowDefinition Height="*" MinHeight="60" />
-            </Grid.RowDefinitions>
+                <Grid Grid.Row="1" Grid.Column="1">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="4*" MinHeight="60" />
+                        <RowDefinition Height="5" />
+                        <RowDefinition Height="*" MinHeight="60" />
+                    </Grid.RowDefinitions>
 
-            <ContentControl
-                Grid.Row="0"
-                Content="{Binding CurrentPage}"
-                Background="{DynamicResource MaterialDesignBackground}"
-                Padding="16" />
+                    <ContentControl
+                        Grid.Row="0"
+                        Padding="16"
+                        Background="{DynamicResource MaterialDesign.Brush.Card.Background}"
+                        Content="{Binding CurrentPage}" />
 
-            <GridSplitter
-                Grid.Row="1"
-                Height="5"
-                HorizontalAlignment="Stretch"
-                Background="{DynamicResource MaterialDesignDivider}"
-                ResizeDirection="Rows"
-                ResizeBehavior="PreviousAndNext" />
+                    <GridSplitter
+                        Grid.Row="1"
+                        Height="5"
+                        HorizontalAlignment="Stretch"
+                        Background="{DynamicResource MaterialDesign.Brush.Separator.Background}"
+                        ResizeBehavior="PreviousAndNext"
+                        ResizeDirection="Rows" />
 
-            <Border
-                Grid.Row="2"
-                Background="{DynamicResource MaterialDesignPaper}"
-                BorderBrush="{DynamicResource MaterialDesignDivider}"
-                BorderThickness="0,1,0,0"
-                Padding="12">
-                <TextBlock
-                    Text="Output"
-                    FontSize="12"
-                    Foreground="{DynamicResource MaterialDesignHintForeground}" />
-            </Border>
-        </Grid>
-        </Grid>
-    </materialDesign:DialogHost>
+                    <Border
+                        Grid.Row="2"
+                        Padding="12"
+                        Background="{DynamicResource MaterialDesign.Brush.Background}"
+                        BorderBrush="{DynamicResource MaterialDesign.Brush.Separator.Background}"
+                        BorderThickness="0,1,0,0">
+                        <TextBlock
+                            FontSize="12"
+                            Foreground="{DynamicResource MaterialDesign.Brush.ForegroundLight}"
+                            Text="Output" />
+                    </Border>
+                </Grid>
+            </Grid>
+        </materialDesign:DialogHost>
     </Grid>
 
 </reactiveui:ReactiveWindow>

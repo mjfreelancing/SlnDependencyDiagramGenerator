@@ -9,12 +9,11 @@
     xmlns:settings="clr-namespace:SlnDependencyStudio.Wpf.Features.Settings"
     Title="Settings"
     Width="650"
-    Height="450"
+    Height="480"
     MinWidth="450"
-    MinHeight="380"
-    MaxWidth="900"
-    MaxHeight="380"
+    MinHeight="400"
     x:TypeArguments="settings:SettingsWindowViewModel"
+    Background="{DynamicResource MaterialDesign.Brush.Background}"
     ResizeMode="CanResizeWithGrip"
     WindowStartupLocation="CenterOwner"
     WindowStyle="ToolWindow"
@@ -31,10 +30,12 @@
         </Grid.RowDefinitions>
 
         <!--  Settings content area — populated in code-behind via ContentControl  -->
-        <ContentControl
-            x:Name="SettingsContent"
-            Grid.Row="0"
-            Margin="0,0,0,0" />
+        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Hidden">
+            <ContentControl
+                x:Name="SettingsContent"
+                HorizontalAlignment="Stretch"
+                HorizontalContentAlignment="Stretch" />
+        </ScrollViewer>
 
         <!--  Separator  -->
         <Separator
@@ -63,13 +64,13 @@
                     Height="16"
                     Margin="0,0,6,0"
                     VerticalAlignment="Center"
-                    Foreground="{DynamicResource MaterialDesignHintForeground}"
+                    Foreground="{DynamicResource MaterialDesign.Brush.ForegroundLight}"
                     Kind="Restart" />
 
                 <TextBlock
                     VerticalAlignment="Center"
                     FontSize="11"
-                    Foreground="{DynamicResource MaterialDesignHintForeground}"
+                    Foreground="{DynamicResource MaterialDesign.Brush.ForegroundLight}"
                     Text="Restart required for log retention change" />
             </StackPanel>
 
