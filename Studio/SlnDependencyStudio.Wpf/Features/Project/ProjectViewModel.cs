@@ -1,4 +1,5 @@
 using SlnDependencyStudio.Wpf.Controls;
+using SlnDependencyStudio.Wpf.Features.Project.Stores;
 
 namespace SlnDependencyStudio.Wpf.Features.Project;
 

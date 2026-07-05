@@ -2,9 +2,10 @@ using NSubstitute;
 using Shouldly;
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Wpf.Features.Project;
+using SlnDependencyStudio.Wpf.Features.Project.Stores;
 using SlnDependencyStudio.Wpf.Features.RecentProjects;
 
-namespace SlnDependencyStudio.Wpf.Tests.Unit.Features.Project;
+namespace SlnDependencyStudio.Wpf.Tests.Unit.Features.Project.Stores;
 
 [Collection(nameof(ReactiveUIInitializer))]
 public class ProjectDocumentStoreFixture
@@ -99,6 +100,18 @@ public class ProjectDocumentStoreFixture
         }
 
         [Fact]
+        public async Task Should_Add_To_Recent_Projects()
+        {
+            _projectService
+                .OpenAsync("test.sds", Arg.Any<CancellationToken>())
+                .Returns(CreateDocument("Name", "Desc"));
+
+            await _store.OpenAsync("test.sds");
+
+            _recentProjects.Received(1).Add("test.sds");
+        }
+
+        [Fact]
         public async Task Should_Be_Clean_When_Opening_Different_File_After_Edit()
         {
             _projectService
@@ -176,6 +189,19 @@ public class ProjectDocumentStoreFixture
 
             _store.CurrentFilePath.ShouldBe("new.sds");
             _store.IsDirty.ShouldBeFalse();
+        }
+
+        [Fact]
+        public async Task Should_Add_To_Recent_Projects()
+        {
+            _projectService
+                .OpenAsync("old.sds", Arg.Any<CancellationToken>())
+                .Returns(CreateDocument("Name", "Desc"));
+
+            await _store.OpenAsync("old.sds");
+            await _store.SaveAsAsync("new.sds");
+
+            _recentProjects.Received(1).Add("new.sds");
         }
     }
 

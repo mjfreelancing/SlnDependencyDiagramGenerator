@@ -7,7 +7,7 @@ using SlnDependencyStudio.Wpf.Features.Application;
 using SlnDependencyStudio.Wpf.Features.Application.Extensions;
 using SlnDependencyStudio.Wpf.Features.Application.Models;
 using SlnDependencyStudio.Wpf.Features.ErrorDialog;
-using SlnDependencyStudio.Wpf.Features.Project;
+using SlnDependencyStudio.Wpf.Features.Project.Stores;
 using SlnDependencyStudio.Wpf.Features.Settings;
 using SlnDependencyStudio.Wpf.Models;
 using System.ComponentModel;
@@ -173,14 +173,8 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                 .Subscribe(_ => UpdateTitle())
                 .DisposeWith(disposables);
 
-            // Track generation state for UI gating (Phase 8).
-            ViewModel!
-                .WhenAnyValue(vm => vm.IsGenerating)
-                .Subscribe(isGenerating =>
-                {
-                    // TODO Phase 8: disable editing controls, prevent close, show progress.
-                })
-                .DisposeWith(disposables);
+            // Recent Projects menu — refresh on open (lazy, no manual refresh points).
+            RecentProjectsMenu.SubmenuOpened += (_, _) => ViewModel!.RefreshRecentProjects();
         });
     }
 

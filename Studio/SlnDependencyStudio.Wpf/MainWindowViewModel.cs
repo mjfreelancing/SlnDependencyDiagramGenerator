@@ -4,8 +4,10 @@ using AllOverIt.ReactiveUI.Factories;
 using Microsoft.Extensions.Logging;
 using ReactiveUI;
 using ReactiveUI.Fody.Helpers;
+using SlnDependencyStudio.Wpf.Features.EmptyState;
 using SlnDependencyStudio.Wpf.Features.ErrorDialog;
 using SlnDependencyStudio.Wpf.Features.Project;
+using SlnDependencyStudio.Wpf.Features.Project.Stores;
 using SlnDependencyStudio.Wpf.Features.RecentProjects;
 using SlnDependencyStudio.Wpf.Features.RecentProjects.Models;
 using SlnDependencyStudio.Wpf.Models;
@@ -135,6 +137,10 @@ public sealed class MainWindowViewModel : ActivatableViewModel
                 IconKind = MaterialDesignThemes.Wpf.PackIconKind.FileDocumentOutline
             }
         ];
+
+        // Defer: the HasDocument subscription in OnActivated fires immediately
+        // with HasDocument=false and calls ShowEmptyState() — but only after the
+        // window is activated and the visual tree is ready for Loaded events.
     }
 
     /// <inheritdoc />
@@ -151,6 +157,21 @@ public sealed class MainWindowViewModel : ActivatableViewModel
     {
         _store.WhenAnyValue(store => store.HasDocument)
             .ToPropertyEx(this, vm => vm.HasDocument)
+            .DisposeWith(disposables);
+
+        _store
+            .WhenAnyValue(store => store.HasDocument)
+            .Subscribe(hasDocument =>
+            {
+                if (hasDocument)
+                {
+                    SelectNavigationItem<ProjectViewModel>();
+                }
+                else
+                {
+                    ShowEmptyState();
+                }
+            })
             .DisposeWith(disposables);
 
         _store
@@ -367,9 +388,9 @@ public sealed class MainWindowViewModel : ActivatableViewModel
 
         _store.Close();
 
-        // Clear the workspace and deselect navigation so the next open triggers the nav subscription.
-        CurrentPage = null;
-        SelectedNavigationItem = null;
+        // The HasDocument subscription in WireDocumentStateTracking automatically
+        // calls ShowEmptyState() when HasDocument becomes false. No need to
+        // manually clear CurrentPage/SelectedNavigationItem here.
     }
 
     private ReactiveCommand<Unit, Unit> CreateSaveCommand()
@@ -424,14 +445,47 @@ public sealed class MainWindowViewModel : ActivatableViewModel
         CurrentPage = viewModel.CreateView(_viewFactory);
     }
 
+    /// <summary>Shows the empty-state landing page in the centre workspace, delegating
+    /// all action commands from the shell so the empty-state cards trigger the same
+    /// project lifecycle operations as the menu bar.</summary>
+    internal void ShowEmptyState()
+    {
+        // Clear the selected nav item so the next SelectNavigationItem call
+        // triggers a genuine WhenAnyValue change. Without this, if the user
+        // opens a project, closes it, then opens another, SelectedNavigationItem
+        // stays "Project" and the navigation subscription never fires.
+        SelectedNavigationItem = null;
+
+        var view = _viewFactory.CreateViewFor<EmptyStateViewModel>();
+        var viewModel = view.ViewModel!;
+
+        // Wire shell commands to the empty-state's interactions.
+        viewModel.NewProjectRequested.RegisterHandler(async ctx =>
+        {
+            await NewProjectCommand.Execute();
+            ctx.SetOutput(Unit.Default);
+        });
+
+        viewModel.OpenProjectRequested.RegisterHandler(async ctx =>
+        {
+            await OpenProjectCommand.Execute();
+            ctx.SetOutput(Unit.Default);
+        });
+
+        viewModel.OpenRecentProjectRequested.RegisterHandler(async ctx =>
+        {
+            await OpenRecentProjectCommand.Execute(ctx.Input);
+            ctx.SetOutput(Unit.Default);
+        });
+
+        CurrentPage = view;
+
+        _logger.LogInformation("Showing empty-state landing page");
+    }
+
     private void WireRecentProjects(CompositeDisposable disposables)
     {
         RefreshRecentProjects();
-
-        _store
-            .WhenAnyValue(store => store.HasDocument)
-            .Subscribe(_ => RefreshRecentProjects())
-            .DisposeWith(disposables);
 
         Observable
             .FromEventPattern<NotifyCollectionChangedEventHandler, NotifyCollectionChangedEventArgs>(
@@ -443,7 +497,7 @@ public sealed class MainWindowViewModel : ActivatableViewModel
             .DisposeWith(disposables);
     }
 
-    private void RefreshRecentProjects()
+    internal void RefreshRecentProjects()
     {
         RecentProjects.Clear();
 

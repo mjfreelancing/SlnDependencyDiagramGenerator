@@ -1,7 +1,7 @@
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Shared.DependencyInjection;
 
-namespace SlnDependencyStudio.Wpf.Features.Project;
+namespace SlnDependencyStudio.Wpf.Features.Project.Stores;
 
 /// <summary>
 /// The observable source of truth for the currently open dependency project document.

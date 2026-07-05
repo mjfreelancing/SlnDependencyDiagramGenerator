@@ -4,7 +4,7 @@ using ReactiveUI.Fody.Helpers;
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Wpf.Features.RecentProjects;
 
-namespace SlnDependencyStudio.Wpf.Features.Project;
+namespace SlnDependencyStudio.Wpf.Features.Project.Stores;
 
 /// <summary>
 /// Singleton store that is the observable source of truth for the currently open
@@ -88,6 +88,8 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
         await _projectService.SaveAsync(_document, filePath, cancellationToken);
 
         CurrentFilePath = filePath;
+
+        _recentProjects.Add(filePath);
 
         MarkAllEditorsClean();
     }

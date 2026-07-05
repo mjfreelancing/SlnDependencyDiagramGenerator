@@ -26,13 +26,17 @@ Features/
 │       └── <ModelName>.cs
 ```
 
-**Existing features (as of 2026-07-04):**
+**Existing features (as of 2026-07-05):**
 
 | Feature Folder          | Namespace                                      | Contents                                                                                                                                                                                       |
 | ----------------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `Features/Application/` | `SlnDependencyStudio.Wpf.Features.Application` | `IApplicationSettingsService`, `ApplicationSettingsService`, `Extensions/ApplicationSettingsServiceExtensions`, `Models/` (ApplicationSettings, ApplicationState, WindowPlacement)             |
 | `Features/CardSession/` | `SlnDependencyStudio.Wpf.Features.CardSession` | `ICardSessionState`, `CardSessionState`                                                                                                                                                        |
+| `Features/EmptyState/`  | `SlnDependencyStudio.Wpf.Features.EmptyState`  | `EmptyStateViewModel`, `EmptyStateView`                                                                                                                                                        |
+| `Features/ErrorDialog/` | `SlnDependencyStudio.Wpf.Features.ErrorDialog` | `IErrorDialogService`, `ErrorDialogService`, `ErrorInfo`                                                                                                                                       |
 | `Features/Project/`     | `SlnDependencyStudio.Wpf.Features.Project`     | `IProjectDocumentStore`, `ProjectDocumentStore`, `IProjectMetadataEditor`, `ProjectMetadataEditor`, `ProjectViewModel`, `ProjectView`, `IDependencyProjectService`, `DependencyProjectService` |
+| `Features/RecentProjects/` | `SlnDependencyStudio.Wpf.Features.RecentProjects` | `IRecentProjectsService`, `RecentProjectsService`, `Models/` (RecentProjectEntry)                                                                                                          |
+| `Features/Settings/`    | `SlnDependencyStudio.Wpf.Features.Settings`    | `SettingsEditorViewModel`, `SettingsEditor`, `SettingsWindowViewModel`, `SettingsWindow`                                                                                                       |
 
 **Rules:**
 
@@ -351,10 +355,21 @@ The selected nav item gets a left-accent border (4px `MaterialDesignPrimary`) an
 - [x] 3.3.2 Wire "New Project" command (creates defaults → prompts save dialog → saves → `OpenAsync` into store → navigates to Project page). "New from Existing" prompts for source file → prompts save dialog for destination → saves → `OpenAsync`.
 - [x] 3.3.3 Create `IRecentProjectsService` with `Add`, `GetRecent`, `Remove`. Implement using `ApplicationState` (from Phase 2). Store up to 10 recent paths. Registered as `IStudioSingletonDependency` for auto-DI. _(Added 2026-07-05: auto-prunes entries whose files no longer exist on `GetRecent`.)_
 - [x] 3.3.4 In the File menu, display recent projects as a submenu below the navigation sections. Each entry shows the file name (no extension). Clicking calls `_store.OpenAsync(filePath)`. Menu disabled when no recent projects exist. _(Revised 2026-07-05: moved from left-nav to File menu — the left nav is for configuration sections only.)_
-- [ ] 3.3.5 Create `EmptyStateView.xaml` and `EmptyStateViewModel` under `Features/EmptyState/` with: large icon, app title/subtitle, "New Project" card, "Open Project" card (file picker for `.sds`), recent projects list, and Settings shortcut. Use Material Design `Card` + `PackIcon` styling.
-- [ ] 3.3.6 Wire `MainWindowViewModel` to show `EmptyStateView` when `!_store.HasDocument`. On project load (New or Open), navigate to the Project page.
+- [x] 3.3.5 Create `EmptyStateView.xaml` and `EmptyStateViewModel` under `Features/EmptyState/` with: large icon, app title/subtitle, "New Project" card, "Open Project" card (file picker for `.sds`), recent projects list, and Settings shortcut. Use Material Design `Card` + `PackIcon` styling.
+- [x] 3.3.6 Wire `MainWindowViewModel` to show `EmptyStateView` when `!_store.HasDocument`. On project load (New or Open), navigate to the Project page.
 
-**Phase 3 completion:** The user can create, open, save, and save-as dependency projects. Unsaved changes are tracked via the centralized store and prompt on close. Recent files are persisted and clickable. The first-run empty state guides new users.
+### 3.4 Slice D — Light/Dark Theme (Added: 2026-07-05)
+
+**Goal:** The user can switch between light and dark themes via the Settings dialog. The preference persists across restarts. All views render correctly in both themes using only `DynamicResource` brushes.
+
+- [ ] 3.4.1 Add a `Theme` property to `ApplicationSettings` with values `"Light"` (default) and `"Dark"`. Persist alongside existing settings.
+- [ ] 3.4.2 In `SettingsView`, add a `ComboBox` or `ToggleSwitch` for theme selection (Light / Dark). Bind to `ApplicationSettings.Theme`.
+- [ ] 3.4.3 Implement `IThemeService` with `ApplyTheme(string theme)` that swaps `MaterialDesignThemes.BundledTheme.BaseTheme` and the `MaterialDesign3.Defaults.xaml` resource dictionary at runtime via `Application.Current.Resources.MergedDictionaries`.
+- [ ] 3.4.4 Call `IThemeService.ApplyTheme` on application startup (from saved preference) and whenever the user changes the theme in settings.
+- [ ] 3.4.5 Audit all existing views (MainWindow, ProjectView, SettingsView, dialogs) to ensure no hardcoded colour values are used — only `DynamicResource` brushes (e.g., `MaterialDesignBackground`, `MaterialDesignPaper`, `MaterialDesignBody`, `PrimaryHueMidBrush`). Fix any violations found.
+- [ ] 3.4.6 Verify both themes render correctly: toggle theme → all open windows and dialogs update immediately → restart app → theme preference is restored.
+
+**Phase 3 completion:** The user can create, open, save, and save-as dependency projects. Unsaved changes are tracked via the centralized store and prompt on close. Recent files are persisted and clickable. The first-run empty state guides new users. Light and dark themes are supported with persisted preference.
 
 ---
 

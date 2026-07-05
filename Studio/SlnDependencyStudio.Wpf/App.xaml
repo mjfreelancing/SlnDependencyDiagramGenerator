@@ -9,8 +9,11 @@
 
             <ResourceDictionary.MergedDictionaries>
 
-                <!-- Material Design theme -->
-                <materialDesign:BundledTheme BaseTheme="Light" PrimaryColor="Teal" SecondaryColor="Cyan" />
+                <!--  Material Design theme  -->
+                <materialDesign:BundledTheme
+                    BaseTheme="Light"
+                    PrimaryColor="Teal"
+                    SecondaryColor="Cyan" />
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesign3.Defaults.xaml" />
 
             </ResourceDictionary.MergedDictionaries>

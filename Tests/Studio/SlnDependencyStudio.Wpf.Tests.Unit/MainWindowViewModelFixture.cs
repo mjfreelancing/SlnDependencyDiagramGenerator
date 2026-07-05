@@ -1,3 +1,4 @@
+using AllOverIt.ReactiveUI.Factories;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
@@ -5,8 +6,10 @@ using ReactiveUI;
 using Shouldly;
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Wpf.Controls;
+using SlnDependencyStudio.Wpf.Features.EmptyState;
 using SlnDependencyStudio.Wpf.Features.ErrorDialog;
 using SlnDependencyStudio.Wpf.Features.Project;
+using SlnDependencyStudio.Wpf.Features.Project.Stores;
 using SlnDependencyStudio.Wpf.Features.RecentProjects;
 using SlnDependencyStudio.Wpf.Models;
 using System.Reactive;
@@ -21,6 +24,7 @@ public class MainWindowViewModelFixture
     private readonly IDependencyProjectService _projectService = Substitute.For<IDependencyProjectService>();
     private readonly IRecentProjectsService _recentProjects = Substitute.For<IRecentProjectsService>();
     private readonly IErrorDialogService _errorDialog;
+    private readonly IViewFactory _viewFactory = Substitute.For<IViewFactory>();
     private readonly MainWindowViewModel _viewModel;
 
     public MainWindowViewModelFixture()
@@ -34,7 +38,7 @@ public class MainWindowViewModelFixture
 
         var logger = Substitute.For<ILogger<MainWindowViewModel>>();
 
-        _viewModel = new MainWindowViewModel(_store, _projectService, _recentProjects, _errorDialog, null!, logger);
+        _viewModel = new MainWindowViewModel(_store, _projectService, _recentProjects, _errorDialog, _viewFactory, logger);
 
         _store.HasDocument.Returns(true);
     }
@@ -468,7 +472,7 @@ public class MainWindowViewModelFixture
             _store.IsDirty.Returns(false);
 
             var exception = new InvalidOperationException("Access denied");
-            
+
             _store
                 .OpenAsync("test.sds", Arg.Any<CancellationToken>())
                 .ThrowsAsync(exception);
@@ -488,6 +492,69 @@ public class MainWindowViewModelFixture
             capturedError.ShouldNotBeNull();
             capturedError!.Title.ShouldBe("Open Failed");
             capturedError.Message.ShouldContain("Access denied");
+        }
+    }
+
+    public class ShowEmptyState : MainWindowViewModelFixture
+    {
+        [Fact]
+        public void Should_Create_View_Via_Factory_And_Wire_NewProject_Interaction()
+        {
+            _store.IsDirty.Returns(false);
+
+            var emptyStateView = Substitute.For<IViewFor<EmptyStateViewModel>>();
+            var emptyStateVm = new EmptyStateViewModel(_recentProjects);
+
+            emptyStateView.ViewModel.Returns(emptyStateVm);
+            _viewFactory.CreateViewFor<EmptyStateViewModel>().Returns(emptyStateView);
+
+            _viewModel.ShowEmptyState();
+
+            _viewFactory.Received(1).CreateViewFor<EmptyStateViewModel>();
+            _viewModel.CurrentPage.ShouldBe(emptyStateView);
+            _viewModel.SelectedNavigationItem.ShouldBeNull();
+        }
+
+        [Fact]
+        public async Task Should_Wire_Interactions_So_NewProject_Triggers_Shell_Command()
+        {
+            _store.IsDirty.Returns(false);
+
+            var emptyStateView = Substitute.For<IViewFor<EmptyStateViewModel>>();
+            var emptyStateVm = new EmptyStateViewModel(_recentProjects);
+
+            emptyStateView.ViewModel.Returns(emptyStateVm);
+            _viewFactory.CreateViewFor<EmptyStateViewModel>().Returns(emptyStateView);
+
+            var document = new DependencyProjectDocument();
+            _projectService.CreateFromDefaults().Returns(document);
+            _viewModel.SaveFileInteraction.RegisterHandler(context => context.SetOutput("new.sds"));
+
+            _viewModel.ShowEmptyState();
+
+            // Execute the empty-state's NewProjectCommand.
+            // The handler registered in ShowEmptyState should delegate to the shell's NewProjectCommand.
+            await emptyStateVm.NewProjectCommand.Execute();
+
+            await _projectService.Received(1).SaveAsync(document, "new.sds", Arg.Any<CancellationToken>());
+        }
+
+        [Fact]
+        public async Task Should_Wire_Interactions_So_OpenRecentProject_Triggers_Shell_Command()
+        {
+            _store.IsDirty.Returns(false);
+
+            var emptyStateView = Substitute.For<IViewFor<EmptyStateViewModel>>();
+            var emptyStateVm = new EmptyStateViewModel(_recentProjects);
+
+            emptyStateView.ViewModel.Returns(emptyStateVm);
+            _viewFactory.CreateViewFor<EmptyStateViewModel>().Returns(emptyStateView);
+
+            _viewModel.ShowEmptyState();
+
+            await emptyStateVm.OpenRecentProjectCommand.Execute("recent.sds");
+
+            await _store.Received(1).OpenAsync("recent.sds", Arg.Any<CancellationToken>());
         }
     }
 

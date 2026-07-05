@@ -69,16 +69,16 @@ The application hosts the `SlnDependencyDiagramGenerator` library directly and a
 
 ### FR-1: Application Shell
 
-| ID     | Requirement                                                                                                                                                                                                                |
-| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| FR-1.1 | The application shall be a WPF desktop application located at the repository root in its own project.                                                                                                                      |
-| FR-1.2 | The application shall use `Microsoft.Extensions.Hosting` and `Microsoft.Extensions.DependencyInjection` for composition and application startup.                                                                           |
-| FR-1.3 | The application shall use ReactiveUI as the MVVM foundation for presentation logic, command handling, property change notification, validation-friendly state management, and UI enablement such as button and menu state. |
-| FR-1.4 | The application shall be structured to support future expansion without changing the saved dependency project file format unnecessarily.                                                                                   |
-| FR-1.5 | The first release shall target Windows 10 only.                                                                                                                                                                            |
-| FR-1.6 | The application shall target `net10.0-windows10.0.19041`.                                                                                                                                                                  |
+| ID     | Requirement                                                                                                                                                                                                                                                                                                                        |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FR-1.1 | The application shall be a WPF desktop application located at the repository root in its own project.                                                                                                                                                                                                                              |
+| FR-1.2 | The application shall use `Microsoft.Extensions.Hosting` and `Microsoft.Extensions.DependencyInjection` for composition and application startup.                                                                                                                                                                                   |
+| FR-1.3 | The application shall use ReactiveUI as the MVVM foundation for presentation logic, command handling, property change notification, validation-friendly state management, and UI enablement such as button and menu state.                                                                                                         |
+| FR-1.4 | The application shall be structured to support future expansion without changing the saved dependency project file format unnecessarily.                                                                                                                                                                                           |
+| FR-1.5 | The first release shall target Windows 10 only.                                                                                                                                                                                                                                                                                    |
+| FR-1.6 | The application shall target `net10.0-windows10.0.19041`.                                                                                                                                                                                                                                                                          |
 | FR-1.7 | The solution structure shall reserve room for multiple frontends by placing the WPF application under `Studio/SlnDependencyStudio.Wpf`. The project shall target `net10.0-windows10.0.19041` with `<UseWPF>true</UseWPF>` and include `ProjectReference` to both `SlnDependencyDiagramGenerator` and `SlnDependencyStudio.Shared`. |
-| FR-1.8 | A shared project shall exist for dependency-project contracts and orchestration-facing models consumed by both WPF and CLI frontends. `SlnDependencyStudio.Shared` (already implemented) serves this role and must not depend on WPF assemblies.                                                                                      |
+| FR-1.8 | A shared project shall exist for dependency-project contracts and orchestration-facing models consumed by both WPF and CLI frontends. `SlnDependencyStudio.Shared` (already implemented) serves this role and must not depend on WPF assemblies.                                                                                   |
 
 ### FR-2: Dependency Project Lifecycle
 
@@ -122,13 +122,13 @@ Proposed shape:
 
 Requirements for this format:
 
-| ID     | Requirement                                                                                                                                                            |
-| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| FR-3.1 | The file format shall include a schema version.                                                                                                                        |
-| FR-3.2 | The file format shall contain `metadata` with `projectName` and `description`.                                                                                         |
+| ID     | Requirement                                                                                                                                                                                                               |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FR-3.1 | The file format shall include a schema version.                                                                                                                                                                           |
+| FR-3.2 | The file format shall contain `metadata` with `projectName` and `description`.                                                                                                                                            |
 | FR-3.3 | The file format shall contain a `diagramGenerator` payload compatible with the current `DependencyGeneratorConfig` model. See `DependencyProjectDocument` in `SlnDependencyStudio.Shared` for the authoritative C# shape. |
-| FR-3.4 | Unknown future fields shall be ignored when loading, where practical.                                                                                                  |
-| FR-3.5 | The file format shall support optional pre-generation command configuration including enabled state, command path, arguments, working directory, and failure behavior. |
+| FR-3.4 | Unknown future fields shall be ignored when loading, where practical.                                                                                                                                                     |
+| FR-3.5 | The file format shall support optional pre-generation command configuration including enabled state, command path, arguments, working directory, and failure behavior.                                                    |
 
 ### FR-4: Configuration Editing
 
@@ -157,24 +157,24 @@ Requirements for this format:
 
 ### FR-6: Generator Integration
 
-| ID      | Requirement                                                                                                                                                                                                                                                              |
-| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| FR-6.1  | The application shall reference `SlnDependencyDiagramGenerator` via a `ProjectReference`.                                                                                                                                                                                |
-| FR-6.2  | The application shall validate configuration before invoking generation.                                                                                                                                                                                                 |
-| FR-6.3  | The application shall execute generation through an application service layer rather than directly from the view.                                                                                                                                                        |
+| ID      | Requirement                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| FR-6.1  | The application shall reference `SlnDependencyDiagramGenerator` via a `ProjectReference`.                                                                                                                                                                                                                                                                                                                                                                                            |
+| FR-6.2  | The application shall validate configuration before invoking generation.                                                                                                                                                                                                                                                                                                                                                                                                             |
+| FR-6.3  | The application shall execute generation through an application service layer rather than directly from the view.                                                                                                                                                                                                                                                                                                                                                                    |
 | FR-6.3a | **Deferred (June 2026):** The generation orchestration workflow (validate → pre-generation → generate) is currently implemented in the CLI's `CommandLineRunHandler` and is not yet a shared service. A shared `IGenerationService` is planned but deferred until both frontend implementation patterns can be compared for alignment. WPF shall implement its own orchestration in a frontend-specific service for now, with extraction to Shared planned once parity is confirmed. |
-| FR-6.4  | The application shall present success, warning, and failure outcomes clearly after generation completes.                                                                                                                                                                 |
-| FR-6.5  | The application shall provide an action to open Windows File Explorer at the export root for the most recent run.                                                                                                                                                        |
-| FR-6.6  | The application shall make clear that generated `.d2` and `.mmd` files are stored in renderer-specific subfolders under the target framework output folder.                                                                                                              |
-| FR-6.7  | The generation workflow shall support an optional pre-generation command that executes before diagram generation starts.                                                                                                                                                 |
-| FR-6.8  | The pre-generation command shall support at least executable files and common script entry points used in Windows workflows, including `.bat` and `.ps1`.                                                                                                                |
-| FR-6.9  | If configured, pre-generation command success or failure shall be evaluated before diagram generation, with behavior controlled by a per-project continue-on-failure option.                                                                                             |
-| FR-6.10 | The generation workflow shall support user-initiated cancellation end-to-end, including propagation of cancellation through the application service layer and into `SlnDependencyDiagramGenerator`.                                                                      |
-| FR-6.11 | Full cancellation support in `SlnDependencyDiagramGenerator`, including automated tests, shall be implemented before SlnDependencyStudio application implementation begins.                                                                                              |
-| FR-6.12 | If WPF pre-validation requires new public generator interfaces, shared service contracts, or internal refactoring, that requirement shall be raised explicitly and implemented properly rather than worked around with ad-hoc hacks.                                     |
-| FR-6.13 | The application shall support a pre-generation analysis step that reports all projects discovered from the configured solution path, and then classifies each project as included or excluded based on include/exclude regex and related filters before generation runs. |
-| FR-6.14 | Pre-generation analysis shall include export-tool readiness checks for configured output types and clearly indicate missing required tools for the current machine.                                                                                                      |
-| FR-6.15 | If pre-generation analysis requires new public generator interfaces, shared service contracts, or internal refactoring, that requirement shall be raised explicitly and implemented properly rather than worked around with ad-hoc hacks.                                |
+| FR-6.4  | The application shall present success, warning, and failure outcomes clearly after generation completes.                                                                                                                                                                                                                                                                                                                                                                             |
+| FR-6.5  | The application shall provide an action to open Windows File Explorer at the export root for the most recent run.                                                                                                                                                                                                                                                                                                                                                                    |
+| FR-6.6  | The application shall make clear that generated `.d2` and `.mmd` files are stored in renderer-specific subfolders under the target framework output folder.                                                                                                                                                                                                                                                                                                                          |
+| FR-6.7  | The generation workflow shall support an optional pre-generation command that executes before diagram generation starts.                                                                                                                                                                                                                                                                                                                                                             |
+| FR-6.8  | The pre-generation command shall support at least executable files and common script entry points used in Windows workflows, including `.bat` and `.ps1`.                                                                                                                                                                                                                                                                                                                            |
+| FR-6.9  | If configured, pre-generation command success or failure shall be evaluated before diagram generation, with behavior controlled by a per-project continue-on-failure option.                                                                                                                                                                                                                                                                                                         |
+| FR-6.10 | The generation workflow shall support user-initiated cancellation end-to-end, including propagation of cancellation through the application service layer and into `SlnDependencyDiagramGenerator`.                                                                                                                                                                                                                                                                                  |
+| FR-6.11 | Full cancellation support in `SlnDependencyDiagramGenerator`, including automated tests, shall be implemented before SlnDependencyStudio application implementation begins.                                                                                                                                                                                                                                                                                                          |
+| FR-6.12 | If WPF pre-validation requires new public generator interfaces, shared service contracts, or internal refactoring, that requirement shall be raised explicitly and implemented properly rather than worked around with ad-hoc hacks.                                                                                                                                                                                                                                                 |
+| FR-6.13 | The application shall support a pre-generation analysis step that reports all projects discovered from the configured solution path, and then classifies each project as included or excluded based on include/exclude regex and related filters before generation runs.                                                                                                                                                                                                             |
+| FR-6.14 | Pre-generation analysis shall include export-tool readiness checks for configured output types and clearly indicate missing required tools for the current machine.                                                                                                                                                                                                                                                                                                                  |
+| FR-6.15 | If pre-generation analysis requires new public generator interfaces, shared service contracts, or internal refactoring, that requirement shall be raised explicitly and implemented properly rather than worked around with ad-hoc hacks.                                                                                                                                                                                                                                            |
 
 ### FR-7: CLI Tool Detection and Gating
 
@@ -212,6 +212,7 @@ Requirements for this format:
 | FR-9.3 | The application shall surface an obvious empty state when no dependency project is loaded.                                                   |
 | FR-9.4 | The application shall present recent projects prominently.                                                                                   |
 | FR-9.5 | The application shall expose validation status per major configuration section.                                                              |
+| FR-9.6 | The application shall support light and dark themes with the preference persisted in application settings.                                   |
 
 ### FR-10: Pre-Generation Analysis Feedback
 
@@ -242,9 +243,10 @@ Requirements for this format:
 
 Recommended default layout for the draft:
 
-1. Left navigation rail or sidebar for recent projects, project actions, and top-level sections.
-2. Centre workspace for the active dependency project editor.
-3. Bottom docked output panel for generation logs and CLI output.
+1. Left navigation sidebar for top-level configuration sections (Project, Sources, Diagrams, Export, Pipeline).
+2. File menu for document actions (New, Open, Save, Save As, Close) and recent projects.
+3. Centre workspace for the active dependency project editor.
+4. Bottom docked output panel for generation logs and CLI output.
 
 This layout matches developer expectations shaped by IDE tools and gives generation output a persistent home without obscuring the configuration surface.
 
@@ -277,6 +279,16 @@ The empty state should clearly offer:
 4. Go to application settings.
 
 This is important because the application introduces the new concept of a dependency project and should explain it immediately.
+
+### UX-5: Light and Dark Theme
+
+The application shall support both light and dark themes using MaterialDesignThemes' `BundledTheme` mechanism:
+
+1. The initial default theme shall be Light.
+2. The user shall be able to toggle between Light and Dark from the Settings dialog.
+3. The active theme preference shall be persisted in `ApplicationSettings` so it survives restarts.
+4. All views — shell, settings, configuration pages, dialogs, and the empty state — shall render correctly in both themes without hardcoded color values. Only `DynamicResource` brushes shall be used for foregrounds, backgrounds, and borders.
+5. The Material Design `BundledTheme.BaseTheme` and the resource dictionary `MaterialDesign3.Defaults.xaml` shall be swapped at runtime using `ResourceDictionary.MergedDictionaries` manipulation.
 
 ---
 
@@ -597,6 +609,7 @@ The UI stack for the first release is:
 | NFR-12 | This PRD shall remain aligned with `PRDs/v4/Studio/SlnDependencyStudio PRD - Shared Contracts.md` and `PRDs/v4/Studio/SlnDependencyStudio PRD - CLI.md` for shared schema and orchestration behavior. |
 | NFR-13 | A documentation-evidence artifact for future user guides shall be maintained in sync with PRD evolution and implementation changes.                                                                   |
 | NFR-14 | Documentation effort prioritization shall be: PRDs and checklists first, user-guide authoring second.                                                                                                 |
+| NFR-15 | All views shall use only `DynamicResource` brushes for foreground, background, and border colours to ensure correct rendering in both light and dark themes.                                          |
 
 ---
 
