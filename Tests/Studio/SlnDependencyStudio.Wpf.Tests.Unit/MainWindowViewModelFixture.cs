@@ -1,10 +1,15 @@
 using Microsoft.Extensions.Logging;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
+using ReactiveUI;
 using Shouldly;
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Wpf.Controls;
+using SlnDependencyStudio.Wpf.Features.ErrorDialog;
 using SlnDependencyStudio.Wpf.Features.Project;
+using SlnDependencyStudio.Wpf.Features.RecentProjects;
 using SlnDependencyStudio.Wpf.Models;
+using System.Reactive;
 using System.Reactive.Linq;
 
 namespace SlnDependencyStudio.Wpf.Tests.Unit;
@@ -14,13 +19,22 @@ public class MainWindowViewModelFixture
 {
     private readonly IProjectDocumentStore _store = Substitute.For<IProjectDocumentStore>();
     private readonly IDependencyProjectService _projectService = Substitute.For<IDependencyProjectService>();
+    private readonly IRecentProjectsService _recentProjects = Substitute.For<IRecentProjectsService>();
+    private readonly IErrorDialogService _errorDialog;
     private readonly MainWindowViewModel _viewModel;
 
     public MainWindowViewModelFixture()
+        : this(Substitute.For<IErrorDialogService>())
     {
+    }
+
+    protected MainWindowViewModelFixture(IErrorDialogService errorDialog)
+    {
+        _errorDialog = errorDialog;
+
         var logger = Substitute.For<ILogger<MainWindowViewModel>>();
 
-        _viewModel = new MainWindowViewModel(_store, _projectService, null!, logger);
+        _viewModel = new MainWindowViewModel(_store, _projectService, _recentProjects, _errorDialog, null!, logger);
 
         _store.HasDocument.Returns(true);
     }
@@ -304,6 +318,188 @@ public class MainWindowViewModelFixture
 
             await _projectService.DidNotReceive().OpenAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
         }
+
+        [Fact]
+        public async Task Should_Prompt_When_Dirty_And_User_Saves_First()
+        {
+            _store.IsDirty.Returns(true);
+
+            var metadataEditor = Substitute.For<IProjectMetadataEditor>();
+            metadataEditor.ProjectName.Returns(CreateTrackableValue("OldProject"));
+            _store.MetadataEditor.Returns(metadataEditor);
+
+            _viewModel.ConfirmDiscardInteraction.RegisterHandler(context => context.SetOutput(DiscardAction.Save));
+
+            var document = new DependencyProjectDocument();
+            _projectService.OpenAsync("source.sds", Arg.Any<CancellationToken>()).Returns(document);
+
+            _viewModel.OpenFileInteraction.RegisterHandler(context => context.SetOutput("source.sds"));
+            _viewModel.SaveFileInteraction.RegisterHandler(context => context.SetOutput("dest.sds"));
+
+            await _viewModel.NewFromExistingCommand.Execute();
+
+            await _store.Received(1).SaveAsync(Arg.Any<CancellationToken>());
+            await _projectService.Received(1).SaveAsync(document, "dest.sds", Arg.Any<CancellationToken>());
+        }
+
+        [Fact]
+        public async Task Should_Prompt_When_Dirty_And_User_Discards()
+        {
+            _store.IsDirty.Returns(true);
+
+            var metadataEditor = Substitute.For<IProjectMetadataEditor>();
+            metadataEditor.ProjectName.Returns(CreateTrackableValue("OldProject"));
+            _store.MetadataEditor.Returns(metadataEditor);
+
+            _viewModel.ConfirmDiscardInteraction.RegisterHandler(context => context.SetOutput(DiscardAction.Discard));
+
+            var document = new DependencyProjectDocument();
+            _projectService.OpenAsync("source.sds", Arg.Any<CancellationToken>()).Returns(document);
+
+            _viewModel.OpenFileInteraction.RegisterHandler(context => context.SetOutput("source.sds"));
+            _viewModel.SaveFileInteraction.RegisterHandler(context => context.SetOutput("dest.sds"));
+
+            await _viewModel.NewFromExistingCommand.Execute();
+
+            await _store.DidNotReceive().SaveAsync(Arg.Any<CancellationToken>());
+            await _projectService.Received(1).SaveAsync(document, "dest.sds", Arg.Any<CancellationToken>());
+        }
+    }
+
+    public class OpenRecentProjectAsync : MainWindowViewModelFixture
+    {
+        [Fact]
+        public async Task Should_Open_File_And_Select_Navigation()
+        {
+            _store.IsDirty.Returns(false);
+
+            await _viewModel.OpenRecentProjectCommand.Execute("recent.sds");
+
+            await _store.Received(1).OpenAsync("recent.sds", Arg.Any<CancellationToken>());
+            _viewModel.SelectedNavigationItem!.ViewModelType.ShouldBe(typeof(ProjectViewModel));
+        }
+
+        [Fact]
+        public async Task Should_Prompt_When_Dirty_And_User_Cancels()
+        {
+            _store.IsDirty.Returns(true);
+
+            var metadataEditor = Substitute.For<IProjectMetadataEditor>();
+            metadataEditor.ProjectName.Returns(CreateTrackableValue("OldProject"));
+            _store.MetadataEditor.Returns(metadataEditor);
+
+            _viewModel.ConfirmDiscardInteraction.RegisterHandler(context => context.SetOutput(DiscardAction.Cancel));
+
+            await _viewModel.OpenRecentProjectCommand.Execute("recent.sds");
+
+            await _store.DidNotReceive().OpenAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+        }
+
+        [Fact]
+        public async Task Should_Prompt_When_Dirty_And_User_Saves_First()
+        {
+            _store.IsDirty.Returns(true);
+
+            var metadataEditor = Substitute.For<IProjectMetadataEditor>();
+            metadataEditor.ProjectName.Returns(CreateTrackableValue("OldProject"));
+            _store.MetadataEditor.Returns(metadataEditor);
+
+            _viewModel.ConfirmDiscardInteraction.RegisterHandler(context => context.SetOutput(DiscardAction.Save));
+
+            await _viewModel.OpenRecentProjectCommand.Execute("recent.sds");
+
+            await _store.Received(1).SaveAsync(Arg.Any<CancellationToken>());
+            await _store.Received(1).OpenAsync("recent.sds", Arg.Any<CancellationToken>());
+        }
+    }
+
+    public class OpenRecentProjectError : MainWindowViewModelFixture
+    {
+        private readonly Interaction<ErrorInfo, System.Reactive.Unit> _showErrorInteraction;
+
+        public OpenRecentProjectError()
+            : base(CreateErrorDialogSubstitute(out var interaction))
+        {
+            _showErrorInteraction = interaction;
+        }
+
+        [Fact]
+        public async Task Should_Show_Error_And_Remove_From_Recent()
+        {
+            _store.IsDirty.Returns(false);
+
+            var exception = new InvalidOperationException("File not found");
+
+            _store
+                .OpenAsync("recent.sds", Arg.Any<CancellationToken>())
+                .ThrowsAsync(exception);
+
+            ErrorInfo? capturedError = null;
+
+            _showErrorInteraction.RegisterHandler(context =>
+            {
+                capturedError = context.Input;
+                context.SetOutput(System.Reactive.Unit.Default);
+            });
+
+            await _viewModel.OpenRecentProjectCommand.Execute("recent.sds");
+
+            capturedError.ShouldNotBeNull();
+            capturedError!.Title.ShouldBe("Open Failed");
+            capturedError.Message.ShouldContain("File not found");
+
+            _recentProjects.Received(1).Remove("recent.sds");
+        }
+    }
+
+    public class OpenProjectError : MainWindowViewModelFixture
+    {
+        private readonly Interaction<ErrorInfo, System.Reactive.Unit> _showErrorInteraction;
+
+        public OpenProjectError()
+            : base(CreateErrorDialogSubstitute(out var interaction))
+        {
+            _showErrorInteraction = interaction;
+        }
+
+        [Fact]
+        public async Task Should_Show_Error_Dialog()
+        {
+            _store.IsDirty.Returns(false);
+
+            var exception = new InvalidOperationException("Access denied");
+            
+            _store
+                .OpenAsync("test.sds", Arg.Any<CancellationToken>())
+                .ThrowsAsync(exception);
+
+            ErrorInfo? capturedError = null;
+
+            _showErrorInteraction.RegisterHandler(context =>
+            {
+                capturedError = context.Input;
+                context.SetOutput(System.Reactive.Unit.Default);
+            });
+
+            _viewModel.OpenFileInteraction.RegisterHandler(context => context.SetOutput("test.sds"));
+
+            await _viewModel.OpenProjectCommand.Execute();
+
+            capturedError.ShouldNotBeNull();
+            capturedError!.Title.ShouldBe("Open Failed");
+            capturedError.Message.ShouldContain("Access denied");
+        }
+    }
+
+    private static IErrorDialogService CreateErrorDialogSubstitute(out Interaction<ErrorInfo, System.Reactive.Unit> interaction)
+    {
+        interaction = new();
+
+        var substitute = Substitute.For<IErrorDialogService>();
+
+        substitute.ShowError.Returns(interaction);
+
+        return substitute;
     }
 
     private static TrackableValue<string> CreateTrackableValue(string value)

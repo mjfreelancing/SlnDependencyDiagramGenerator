@@ -1,5 +1,7 @@
+using ReactiveUI;
 using ReactiveUI.Builder;
 using System;
+using System.Reactive.Concurrency;
 
 namespace SlnDependencyStudio.Wpf.Tests.Unit;
 
@@ -12,8 +14,12 @@ public sealed class ReactiveUIInitializer : IDisposable
     {
         if (!Initialized)
         {
+            // Use Immediate schedulers so ReactiveCommand observables emit
+            // synchronously, allowing xUnit to capture exceptions on the same call stack.
             RxAppBuilder
                 .CreateReactiveUIBuilder()
+                .WithMainThreadScheduler(ImmediateScheduler.Instance)
+                .WithTaskPoolScheduler(ImmediateScheduler.Instance)
                 .WithCoreServices()
                 .BuildApp();
 

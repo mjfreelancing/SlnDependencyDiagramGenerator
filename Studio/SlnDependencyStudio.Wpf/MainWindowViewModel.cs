@@ -4,7 +4,10 @@ using AllOverIt.ReactiveUI.Factories;
 using Microsoft.Extensions.Logging;
 using ReactiveUI;
 using ReactiveUI.Fody.Helpers;
+using SlnDependencyStudio.Wpf.Features.ErrorDialog;
 using SlnDependencyStudio.Wpf.Features.Project;
+using SlnDependencyStudio.Wpf.Features.RecentProjects;
+using SlnDependencyStudio.Wpf.Features.RecentProjects.Models;
 using SlnDependencyStudio.Wpf.Models;
 using SlnDependencyStudio.Wpf.ViewModels;
 using System.Collections.ObjectModel;
@@ -24,6 +27,8 @@ public sealed class MainWindowViewModel : ActivatableViewModel
     private ObservableAsPropertyHelper<bool> _hasValidationSummaryItems = null!;
     private readonly IProjectDocumentStore _store;
     private readonly IDependencyProjectService _projectService;
+    private readonly IRecentProjectsService _recentProjectsService;
+    private readonly IErrorDialogService _errorDialog;
     private readonly IViewFactory _viewFactory;
     private readonly ILogger<MainWindowViewModel> _logger;
 
@@ -86,15 +91,28 @@ public sealed class MainWindowViewModel : ActivatableViewModel
     /// <summary>Interaction for showing a save-before-discard confirmation dialog.</summary>
     public Interaction<string, DiscardAction> ConfirmDiscardInteraction { get; } = new();
 
+    /// <summary>Recently opened project files, most recent first.</summary>
+    public ObservableCollection<RecentProjectEntry> RecentProjects { get; } = [];
+
+    /// <summary><see langword="true"/> when at least one recent project exists.</summary>
+    [ObservableAsProperty]
+    public bool HasRecentProjects { get; }
+
+    /// <summary>Command that opens a recent project from the list.</summary>
+    public ReactiveCommand<string, Unit> OpenRecentProjectCommand { get; }
+
     /// <summary>Command that closes the application.</summary>
     public ReactiveCommand<Unit, Unit> ExitCommand { get; }
 
     /// <summary>Initializes a new instance of <see cref="MainWindowViewModel"/>.</summary>
-    public MainWindowViewModel(IProjectDocumentStore store, IDependencyProjectService projectService, IViewFactory viewFactory,
-        ILogger<MainWindowViewModel> logger)
+    public MainWindowViewModel(IProjectDocumentStore store, IDependencyProjectService projectService,
+        IRecentProjectsService recentProjectsService, IErrorDialogService errorDialog,
+        IViewFactory viewFactory, ILogger<MainWindowViewModel> logger)
     {
         _store = store;
         _projectService = projectService;
+        _recentProjectsService = recentProjectsService;
+        _errorDialog = errorDialog;
         _viewFactory = viewFactory;
         _logger = logger;
 
@@ -106,6 +124,7 @@ public sealed class MainWindowViewModel : ActivatableViewModel
         SaveAsCommand = CreateSaveAsCommand();
         CloseProjectCommand = CreateCloseProjectCommand();
         ExitCommand = ReactiveCommand.Create(() => { });
+        OpenRecentProjectCommand = ReactiveCommand.CreateFromTask<string>(OpenRecentProjectAsync);
 
         // Populate navigation items. Each page VM receives the store via DI and self-initialises.
         NavigationItems =
@@ -125,6 +144,7 @@ public sealed class MainWindowViewModel : ActivatableViewModel
         WireSaveCommandLogging(disposables);
         WireValidationTracking(disposables);
         WireNavigation(disposables);
+        WireRecentProjects(disposables);
     }
 
     private void WireDocumentStateTracking(CompositeDisposable disposables)
@@ -215,7 +235,19 @@ public sealed class MainWindowViewModel : ActivatableViewModel
             return;
         }
 
-        await _store.OpenAsync(filePath);
+        try
+        {
+            await _store.OpenAsync(filePath);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to open project: {FilePath}", filePath);
+
+            await _errorDialog.ShowError.Handle(
+                new ErrorInfo("Open Failed", $"Could not open the project file.\n\n{ex.Message}"));
+
+            return;
+        }
 
         // Navigate to the Project page — triggers SelectedNavigationItem subscription.
         SelectNavigationItem<ProjectViewModel>();
@@ -390,5 +422,73 @@ public sealed class MainWindowViewModel : ActivatableViewModel
         _logger.LogInformation("Navigating to page: {PageName}", viewModel.DisplayName);
 
         CurrentPage = viewModel.CreateView(_viewFactory);
+    }
+
+    private void WireRecentProjects(CompositeDisposable disposables)
+    {
+        RefreshRecentProjects();
+
+        _store
+            .WhenAnyValue(store => store.HasDocument)
+            .Subscribe(_ => RefreshRecentProjects())
+            .DisposeWith(disposables);
+
+        Observable
+            .FromEventPattern<NotifyCollectionChangedEventHandler, NotifyCollectionChangedEventArgs>(
+                handler => RecentProjects.CollectionChanged += handler,
+                handler => RecentProjects.CollectionChanged -= handler)
+            .Select(_ => RecentProjects.Count > 0)
+            .StartWith(RecentProjects.Count > 0)
+            .ToPropertyEx(this, vm => vm.HasRecentProjects)
+            .DisposeWith(disposables);
+    }
+
+    private void RefreshRecentProjects()
+    {
+        RecentProjects.Clear();
+
+        foreach (var entry in _recentProjectsService.GetRecent())
+        {
+            RecentProjects.Add(entry);
+        }
+    }
+
+    private async Task OpenRecentProjectAsync(string filePath)
+    {
+        if (_store.IsDirty)
+        {
+            var action = await PromptDiscardAsync();
+
+            if (action == DiscardAction.Cancel)
+            {
+                return;
+            }
+
+            if (action == DiscardAction.Save)
+            {
+                await SaveAsync();
+            }
+        }
+
+        try
+        {
+            await _store.OpenAsync(filePath);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to open recent project, removing from list: {FilePath}", filePath);
+
+            _recentProjectsService.Remove(filePath);
+            RefreshRecentProjects();
+
+            await _errorDialog.ShowError.Handle(
+                new ErrorInfo("Open Failed", $"The recent project could not be opened. It may have been moved or deleted.\n\n{ex.Message}"));
+
+            return;
+        }
+
+        _logger.LogInformation("Opened recent project: {FilePath}", filePath);
+
+        SelectNavigationItem<ProjectViewModel>();
     }
 }

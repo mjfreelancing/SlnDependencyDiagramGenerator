@@ -81,9 +81,20 @@
                     InputGestureText="Ctrl+F4" />
                 <Separator />
                 <MenuItem
+                    x:Name="RecentProjectsMenu"
                     Header="_Recent Projects"
-                    IsEnabled="False"
-                    ToolTip="Opened recently — available after first save" />
+                    ItemsSource="{Binding RecentProjects}"
+                    IsEnabled="{Binding HasRecentProjects}">
+                    <MenuItem.ItemContainerStyle>
+                        <Style TargetType="MenuItem">
+                            <Setter Property="Header" Value="{Binding DisplayName}" />
+                            <Setter Property="Padding" Value="0,6,0,6" />
+                            <Setter Property="Command" Value="{Binding DataContext.OpenRecentProjectCommand, RelativeSource={RelativeSource AncestorType=MenuItem}}" />
+                            <Setter Property="CommandParameter" Value="{Binding FilePath}" />
+                            <Setter Property="ToolTip" Value="{Binding FilePath}" />
+                        </Style>
+                    </MenuItem.ItemContainerStyle>
+                </MenuItem>
                 <Separator />
                 <MenuItem
                     x:Name="SettingsMenuItem"
@@ -107,23 +118,16 @@
             BorderThickness="0,0,1,0">
 
             <DockPanel>
-
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
-
-                    <ListBox
-                        x:Name="NavigationListBox"
-                        Grid.Row="1"
-                        IsEnabled="{Binding HasDocument}"
-                        ItemsSource="{Binding NavigationItems}"
-                        SelectedItem="{Binding SelectedNavigationItem, Mode=TwoWay}"
-                        Background="Transparent"
-                        BorderThickness="0"
-                        SelectionMode="Single"
-                        HorizontalContentAlignment="Stretch"
-                        Padding="0,4,0,4">
+                <ListBox
+                    x:Name="NavigationListBox"
+                    IsEnabled="{Binding HasDocument}"
+                    ItemsSource="{Binding NavigationItems}"
+                    SelectedItem="{Binding SelectedNavigationItem, Mode=TwoWay}"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    SelectionMode="Single"
+                    HorizontalContentAlignment="Stretch"
+                    Padding="0,4,0,4">
 
                         <ListBox.ItemContainerStyle>
                             <Style TargetType="ListBoxItem">
@@ -209,7 +213,6 @@
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
-                </Grid>
             </DockPanel>
         </Border>
 

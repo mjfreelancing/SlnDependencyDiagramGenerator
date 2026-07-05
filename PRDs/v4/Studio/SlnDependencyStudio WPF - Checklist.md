@@ -30,7 +30,7 @@ Features/
 
 | Feature Folder          | Namespace                                      | Contents                                                                                                                                                                                       |
 | ----------------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Features/Application/` | `SlnDependencyStudio.Wpf.Features.Application` | `IApplicationSettingsService`, `ApplicationSettingsService`, `Models/` (ApplicationSettings, ApplicationState, WindowPlacement)                                                                |
+| `Features/Application/` | `SlnDependencyStudio.Wpf.Features.Application` | `IApplicationSettingsService`, `ApplicationSettingsService`, `Extensions/ApplicationSettingsServiceExtensions`, `Models/` (ApplicationSettings, ApplicationState, WindowPlacement)             |
 | `Features/CardSession/` | `SlnDependencyStudio.Wpf.Features.CardSession` | `ICardSessionState`, `CardSessionState`                                                                                                                                                        |
 | `Features/Project/`     | `SlnDependencyStudio.Wpf.Features.Project`     | `IProjectDocumentStore`, `ProjectDocumentStore`, `IProjectMetadataEditor`, `ProjectMetadataEditor`, `ProjectViewModel`, `ProjectView`, `IDependencyProjectService`, `DependencyProjectService` |
 
@@ -349,8 +349,8 @@ The selected nav item gets a left-accent border (4px `MaterialDesignPrimary`) an
 
 - [x] 3.3.1 Add `CreateFromDefaults()` to `IDependencyProjectService`. Returns a new `DependencyProjectDocument` with default values. `CreateFromExistingAsync` was intentionally omitted — the save-first-then-open pattern uses the existing `OpenAsync` instead. _(Revised 2026-07-04: save-first approach — New Project and New from Existing both prompt for a save path immediately, write the file, then `OpenAsync`.)_
 - [x] 3.3.2 Wire "New Project" command (creates defaults → prompts save dialog → saves → `OpenAsync` into store → navigates to Project page). "New from Existing" prompts for source file → prompts save dialog for destination → saves → `OpenAsync`.
-- [ ] 3.3.3 Create `IRecentProjectsService` with `AddAsync`, `GetRecentAsync`, `RemoveAsync`. Implement using `ApplicationState` (from Phase 2). Store up to 10 recent paths.
-- [ ] 3.3.4 In the left nav, display recent projects below the navigation sections. Each entry shows the file name (no extension). Clicking calls `_store.OpenAsync(filePath)`.
+- [x] 3.3.3 Create `IRecentProjectsService` with `Add`, `GetRecent`, `Remove`. Implement using `ApplicationState` (from Phase 2). Store up to 10 recent paths. Registered as `IStudioSingletonDependency` for auto-DI. _(Added 2026-07-05: auto-prunes entries whose files no longer exist on `GetRecent`.)_
+- [x] 3.3.4 In the File menu, display recent projects as a submenu below the navigation sections. Each entry shows the file name (no extension). Clicking calls `_store.OpenAsync(filePath)`. Menu disabled when no recent projects exist. _(Revised 2026-07-05: moved from left-nav to File menu — the left nav is for configuration sections only.)_
 - [ ] 3.3.5 Create `EmptyStateView.xaml` and `EmptyStateViewModel` under `Features/EmptyState/` with: large icon, app title/subtitle, "New Project" card, "Open Project" card (file picker for `.sds`), recent projects list, and Settings shortcut. Use Material Design `Card` + `PackIcon` styling.
 - [ ] 3.3.6 Wire `MainWindowViewModel` to show `EmptyStateView` when `!_store.HasDocument`. On project load (New or Open), navigate to the Project page.
 

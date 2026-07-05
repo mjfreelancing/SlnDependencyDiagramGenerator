@@ -2,6 +2,7 @@ using NSubstitute;
 using Shouldly;
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Wpf.Features.Project;
+using SlnDependencyStudio.Wpf.Features.RecentProjects;
 
 namespace SlnDependencyStudio.Wpf.Tests.Unit.Features.Project;
 
@@ -9,11 +10,12 @@ namespace SlnDependencyStudio.Wpf.Tests.Unit.Features.Project;
 public class ProjectDocumentStoreFixture
 {
     private readonly IDependencyProjectService _projectService = Substitute.For<IDependencyProjectService>();
+    private readonly IRecentProjectsService _recentProjects = Substitute.For<IRecentProjectsService>();
     private readonly ProjectDocumentStore _store;
 
     public ProjectDocumentStoreFixture()
     {
-        _store = new ProjectDocumentStore(_projectService);
+        _store = new ProjectDocumentStore(_projectService, _recentProjects);
     }
 
     public class Construction : ProjectDocumentStoreFixture

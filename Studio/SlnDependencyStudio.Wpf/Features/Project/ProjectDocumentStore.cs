@@ -2,6 +2,7 @@ using AllOverIt.Assertion;
 using ReactiveUI;
 using ReactiveUI.Fody.Helpers;
 using SlnDependencyStudio.Shared.Config;
+using SlnDependencyStudio.Wpf.Features.RecentProjects;
 
 namespace SlnDependencyStudio.Wpf.Features.Project;
 
@@ -12,6 +13,7 @@ namespace SlnDependencyStudio.Wpf.Features.Project;
 internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentStore
 {
     private readonly IDependencyProjectService _projectService;
+    private readonly IRecentProjectsService _recentProjects;
     private readonly ProjectMetadataEditor _metadataEditor;
     private DependencyProjectDocument? _document;
 
@@ -32,9 +34,11 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
 
     /// <summary>Initializes a new instance of the store.</summary>
     /// <param name="projectService">The project serialization service.</param>
-    public ProjectDocumentStore(IDependencyProjectService projectService)
+    /// <param name="recentProjects">The recent projects service for MRU tracking.</param>
+    public ProjectDocumentStore(IDependencyProjectService projectService, IRecentProjectsService recentProjects)
     {
         _projectService = projectService.WhenNotNull();
+        _recentProjects = recentProjects.WhenNotNull();
 
         _metadataEditor = new ProjectMetadataEditor();
 
@@ -56,6 +60,8 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
         CurrentFilePath = filePath;
 
         _metadataEditor.SetOriginalValues(_document.Metadata);
+
+        _recentProjects.Add(filePath);
     }
 
     /// <inheritdoc />

@@ -6,11 +6,13 @@ using ReactiveUI;
 using SlnDependencyStudio.Wpf.Features.Application;
 using SlnDependencyStudio.Wpf.Features.Application.Extensions;
 using SlnDependencyStudio.Wpf.Features.Application.Models;
+using SlnDependencyStudio.Wpf.Features.ErrorDialog;
 using SlnDependencyStudio.Wpf.Features.Project;
 using SlnDependencyStudio.Wpf.Features.Settings;
 using SlnDependencyStudio.Wpf.Models;
 using System.ComponentModel;
 using System.IO;
+using System.Reactive;
 using System.Reactive.Disposables.Fluent;
 using System.Reactive.Linq;
 using System.Windows;
@@ -22,16 +24,16 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     private readonly IViewFactory _viewFactory;
     private readonly IApplicationSettingsService _settingsService;
     private readonly IProjectDocumentStore _store;
+    private readonly IErrorDialogService _errorDialog;
+    private bool _isClosing;
 
-    public MainWindow(
-        MainWindowViewModel viewModel,
-        IViewFactory viewFactory,
-        IApplicationSettingsService settingsService,
-        IProjectDocumentStore store)
+    public MainWindow(MainWindowViewModel viewModel, IViewFactory viewFactory, IApplicationSettingsService settingsService,
+        IProjectDocumentStore store, IErrorDialogService errorDialog)
     {
         _viewFactory = viewFactory.WhenNotNull();
         _settingsService = settingsService.WhenNotNull();
         _store = store.WhenNotNull();
+        _errorDialog = errorDialog.WhenNotNull();
 
         ViewModel = viewModel;
         DataContext = viewModel;
@@ -133,6 +135,25 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                 })
                 .DisposeWith(disposables);
 
+            // Error dialog handler.
+            _errorDialog
+                .ShowError
+                .RegisterHandler(async context =>
+                {
+                    var error = context.Input;
+
+                    var dialog = new Views.ErrorMessageDialog
+                    {
+                        Title = error.Title,
+                        Message = error.Message
+                    };
+
+                    await DialogHost.Show(dialog, "MainDialogHost");
+
+                    context.SetOutput(Unit.Default);
+                })
+                .DisposeWith(disposables);
+
             // Exit menu item.
             this.BindCommand(ViewModel, vm => vm.ExitCommand, view => view.ExitMenuItem)
                 .DisposeWith(disposables);
@@ -168,9 +189,18 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     {
         base.OnClosing(e);
 
+        // Allow the close to proceed when re-triggered programmatically.
+        if (_isClosing)
+        {
+            return;
+        }
+
+        // Cancel immediately — WPF does not await async void, so any async work
+        // after the first await would be skipped and the window would close prematurely.
+        e.Cancel = true;
+
         if (ViewModel is not null && !ViewModel.CanClose)
         {
-            e.Cancel = true;
             return;
         }
 
@@ -181,7 +211,6 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 
             if (action == DiscardAction.Cancel)
             {
-                e.Cancel = true;
                 return;
             }
 
@@ -202,6 +231,12 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 
         _settingsService.CurrentState.WindowPlacement = placement;
         _settingsService.SaveState();
+
+        _isClosing = true;
+
+        // Close must be deferred — calling it directly while still inside the Closing
+        // event sequence throws InvalidOperationException.
+        await Dispatcher.InvokeAsync(Close);
     }
 
     private void OpenSettingsDialog()
