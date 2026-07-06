@@ -15,9 +15,8 @@
     MinWidth="900"
     MinHeight="600"
     x:TypeArguments="wpf:MainWindowViewModel"
-    Background="{DynamicResource MaterialDesign.Brush.Background}"
+    Style="{StaticResource MaterialDesignWindow}"
     Icon="app.ico"
-    TextElement.Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
     WindowStartupLocation="CenterScreen"
     mc:Ignorable="d">
 
