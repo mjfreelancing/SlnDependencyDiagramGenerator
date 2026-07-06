@@ -3,7 +3,6 @@ using AllOverIt.ReactiveUI;
 using AllOverIt.ReactiveUI.Factories;
 using Microsoft.Extensions.Logging;
 using ReactiveUI;
-using ReactiveUI.Fody.Helpers;
 using SlnDependencyStudio.Wpf.Features.EmptyState;
 using SlnDependencyStudio.Wpf.Features.ErrorDialog;
 using SlnDependencyStudio.Wpf.Features.Project;
@@ -26,7 +25,6 @@ public sealed class MainWindowViewModel : ActivatableViewModel
 {
     const string StudioFilesFilter = "Studio Project files (*.sds)|*.sds|All files (*.*)|*.*";
 
-    private ObservableAsPropertyHelper<bool> _hasValidationSummaryItems = null!;
     private readonly IProjectDocumentStore _store;
     private readonly IDependencyProjectService _projectService;
     private readonly IRecentProjectsService _recentProjectsService;
@@ -34,34 +32,49 @@ public sealed class MainWindowViewModel : ActivatableViewModel
     private readonly IViewFactory _viewFactory;
     private readonly ILogger<MainWindowViewModel> _logger;
 
+    private readonly ObservableAsPropertyHelper<bool> _hasDocument;
+    private readonly ObservableAsPropertyHelper<bool> _hasRecentProjects;
+    private NavigationItemViewModel? _selectedNavigationItem;
+    private object? _currentPage;
+    private bool _canClose = true;
+    private bool _isGenerating;
+
     /// <summary>The navigation items displayed in the left sidebar.</summary>
     public ObservableCollection<NavigationItemViewModel> NavigationItems { get; } = [];
 
     /// <summary>The currently selected navigation item.</summary>
-    [Reactive]
-    public NavigationItemViewModel? SelectedNavigationItem { get; set; }
+    public NavigationItemViewModel? SelectedNavigationItem
+    {
+        get => _selectedNavigationItem;
+        set => this.RaiseAndSetIfChanged(ref _selectedNavigationItem, value);
+    }
 
     /// <summary>The view for the current centre workspace page.</summary>
-    [Reactive]
-    public object? CurrentPage { get; set; }
+    public object? CurrentPage
+    {
+        get => _currentPage;
+        set => this.RaiseAndSetIfChanged(ref _currentPage, value);
+    }
 
     /// <summary>Validation errors collected across all editable sections.</summary>
     public ObservableCollection<ValidationSummaryItem> CurrentValidationSummary { get; } = [];
 
     /// <summary>Whether the main window can be closed.</summary>
-    [Reactive]
-    public bool CanClose { get; set; } = true;
+    public bool CanClose
+    {
+        get => _canClose;
+        set => this.RaiseAndSetIfChanged(ref _canClose, value);
+    }
 
     /// <summary><see langword="true"/> when a document is currently loaded in the store.</summary>
-    [ObservableAsProperty]
-    public bool HasDocument { get; }
+    public bool HasDocument => _hasDocument.Value;
 
     /// <summary>Whether a generation run is currently in progress.</summary>
-    [Reactive]
-    public bool IsGenerating { get; set; }
-
-    /// <summary><see langword="true"/> when the validation summary bar should be visible.</summary>
-    public bool HasValidationSummaryItems => _hasValidationSummaryItems.Value;
+    public bool IsGenerating
+    {
+        get => _isGenerating;
+        set => this.RaiseAndSetIfChanged(ref _isGenerating, value);
+    }
 
     /// <summary>Command that opens the application settings dialog.</summary>
     public ReactiveCommand<Unit, Unit> OpenSettingsCommand { get; }
@@ -97,8 +110,7 @@ public sealed class MainWindowViewModel : ActivatableViewModel
     public ObservableCollection<RecentProjectEntry> RecentProjects { get; } = [];
 
     /// <summary><see langword="true"/> when at least one recent project exists.</summary>
-    [ObservableAsProperty]
-    public bool HasRecentProjects { get; }
+    public bool HasRecentProjects => _hasRecentProjects.Value;
 
     /// <summary>Command that opens a recent project from the list.</summary>
     public ReactiveCommand<string, Unit> OpenRecentProjectCommand { get; }
@@ -117,6 +129,22 @@ public sealed class MainWindowViewModel : ActivatableViewModel
         _errorDialog = errorDialog;
         _viewFactory = viewFactory;
         _logger = logger;
+
+        // OAPHs initialized here with their real observable sources so they are
+        // never null. They live for the lifetime of the ViewModel.
+        RefreshRecentProjects();
+
+        _hasDocument = _store
+            .WhenAnyValue(store => store.HasDocument)
+            .ToProperty(this, nameof(HasDocument));
+
+        _hasRecentProjects = Observable
+            .FromEventPattern<NotifyCollectionChangedEventHandler, NotifyCollectionChangedEventArgs>(
+                handler => RecentProjects.CollectionChanged += handler,
+                handler => RecentProjects.CollectionChanged -= handler)
+            .Select(_ => RecentProjects.Count > 0)
+            .StartWith(RecentProjects.Count > 0)
+            .ToProperty(this, nameof(HasRecentProjects));
 
         OpenSettingsCommand = ReactiveCommand.Create(() => { });
         OpenProjectCommand = ReactiveCommand.CreateFromTask(OpenProjectAsync);
@@ -148,17 +176,12 @@ public sealed class MainWindowViewModel : ActivatableViewModel
     {
         WireDocumentStateTracking(disposables);
         WireSaveCommandLogging(disposables);
-        WireValidationTracking(disposables);
         WireNavigation(disposables);
         WireRecentProjects(disposables);
     }
 
     private void WireDocumentStateTracking(CompositeDisposable disposables)
     {
-        _store.WhenAnyValue(store => store.HasDocument)
-            .ToPropertyEx(this, vm => vm.HasDocument)
-            .DisposeWith(disposables);
-
         _store
             .WhenAnyValue(store => store.HasDocument)
             .Subscribe(hasDocument =>
@@ -209,18 +232,6 @@ public sealed class MainWindowViewModel : ActivatableViewModel
     {
         SaveCommand.CanExecute
             .Subscribe(enabled => _logger.LogInformation("Project can be saved: {Enabled}", enabled))
-            .DisposeWith(disposables);
-    }
-
-    private void WireValidationTracking(CompositeDisposable disposables)
-    {
-        Observable
-            .FromEventPattern<NotifyCollectionChangedEventHandler, NotifyCollectionChangedEventArgs>(
-                handler => CurrentValidationSummary.CollectionChanged += handler,
-                handler => CurrentValidationSummary.CollectionChanged -= handler)
-            .Select(_ => CurrentValidationSummary.Count > 0)
-            .StartWith(CurrentValidationSummary.Count > 0)
-            .ToProperty(this, vm => vm.HasValidationSummaryItems, out _hasValidationSummaryItems)
             .DisposeWith(disposables);
     }
 
@@ -486,15 +497,6 @@ public sealed class MainWindowViewModel : ActivatableViewModel
     private void WireRecentProjects(CompositeDisposable disposables)
     {
         RefreshRecentProjects();
-
-        Observable
-            .FromEventPattern<NotifyCollectionChangedEventHandler, NotifyCollectionChangedEventArgs>(
-                handler => RecentProjects.CollectionChanged += handler,
-                handler => RecentProjects.CollectionChanged -= handler)
-            .Select(_ => RecentProjects.Count > 0)
-            .StartWith(RecentProjects.Count > 0)
-            .ToPropertyEx(this, vm => vm.HasRecentProjects)
-            .DisposeWith(disposables);
     }
 
     internal void RefreshRecentProjects()

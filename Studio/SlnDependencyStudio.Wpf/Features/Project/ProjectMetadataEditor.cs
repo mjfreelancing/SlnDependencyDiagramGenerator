@@ -1,5 +1,4 @@
 using ReactiveUI;
-using ReactiveUI.Fody.Helpers;
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Wpf.Controls;
 using System.Reactive.Disposables;
@@ -14,6 +13,7 @@ namespace SlnDependencyStudio.Wpf.Features.Project;
 internal sealed class ProjectMetadataEditor : ReactiveObject, IProjectMetadataEditor, IDisposable
 {
     private readonly CompositeDisposable _disposables = [];
+    private readonly ObservableAsPropertyHelper<bool> _isDirty;
 
     /// <inheritdoc />
     public TrackableValue<string> ProjectName { get; } = new();
@@ -22,8 +22,7 @@ internal sealed class ProjectMetadataEditor : ReactiveObject, IProjectMetadataEd
     public TrackableValue<string> Description { get; } = new();
 
     /// <inheritdoc />
-    [ObservableAsProperty]
-    public bool IsDirty { get; }
+    public bool IsDirty => _isDirty.Value;
 
     /// <summary>
     /// Initializes a new instance with all TrackableValues seeded to empty defaults.
@@ -34,11 +33,11 @@ internal sealed class ProjectMetadataEditor : ReactiveObject, IProjectMetadataEd
         InitializeTrackable(ProjectName, string.Empty);
         InitializeTrackable(Description, string.Empty);
 
-        this.WhenAnyValue(
+        _isDirty = this.WhenAnyValue(
                 editor => editor.ProjectName.IsDirty,
                 editor => editor.Description.IsDirty,
                 (nameDirty, descDirty) => nameDirty || descDirty)
-            .ToPropertyEx(this, vm => vm.IsDirty);
+            .ToProperty(this, nameof(IsDirty));
     }
 
     /// <summary>Populates all TrackableValues from the given metadata and establishes a clean baseline.</summary>

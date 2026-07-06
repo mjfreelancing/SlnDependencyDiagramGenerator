@@ -1,6 +1,5 @@
 using AllOverIt.Extensions;
 using ReactiveUI;
-using ReactiveUI.Fody.Helpers;
 using SlnDependencyStudio.Wpf.Features.Application;
 using SlnDependencyStudio.Wpf.Features.Application.Models;
 using SlnDependencyStudio.Wpf.Features.Theming;
@@ -15,25 +14,46 @@ public sealed class SettingsEditorViewModel : ReactiveObject
 {
     private readonly StudioTheme _originalTheme;
 
+    private string _defaultProjectFolder = string.Empty;
+    private string _d2ToolPath = string.Empty;
+    private string _mmdcToolPath = string.Empty;
+    private int _logRetentionDays = ApplicationSettings.DefaultLogRetentionDays;
+    private bool _isDarkTheme;
+
     /// <summary>The default folder for Open/Save file dialogs.</summary>
-    [Reactive]
-    public string DefaultProjectFolder { get; set; } = string.Empty;
+    public string DefaultProjectFolder
+    {
+        get => _defaultProjectFolder;
+        set => this.RaiseAndSetIfChanged(ref _defaultProjectFolder, value);
+    }
 
     /// <summary>Explicit path override for the d2 CLI tool.</summary>
-    [Reactive]
-    public string D2ToolPath { get; set; } = string.Empty;
+    public string D2ToolPath
+    {
+        get => _d2ToolPath;
+        set => this.RaiseAndSetIfChanged(ref _d2ToolPath, value);
+    }
 
     /// <summary>Explicit path override for the mmdc CLI tool.</summary>
-    [Reactive]
-    public string MmdcToolPath { get; set; } = string.Empty;
+    public string MmdcToolPath
+    {
+        get => _mmdcToolPath;
+        set => this.RaiseAndSetIfChanged(ref _mmdcToolPath, value);
+    }
 
     /// <summary>Number of days to retain log files.</summary>
-    [Reactive]
-    public int LogRetentionDays { get; set; } = ApplicationSettings.DefaultLogRetentionDays;
+    public int LogRetentionDays
+    {
+        get => _logRetentionDays;
+        set => this.RaiseAndSetIfChanged(ref _logRetentionDays, value);
+    }
 
     /// <summary><see langword="true"/> when the dark theme is selected; <see langword="false"/> for light.</summary>
-    [Reactive]
-    public bool IsDarkTheme { get; set; }
+    public bool IsDarkTheme
+    {
+        get => _isDarkTheme;
+        set => this.RaiseAndSetIfChanged(ref _isDarkTheme, value);
+    }
 
     /// <summary>Interaction that asks the View to browse for a folder and return the selected path.
     /// Input is the initial folder path; output is the selected path, or <see langword="null"/> if cancelled.</summary>

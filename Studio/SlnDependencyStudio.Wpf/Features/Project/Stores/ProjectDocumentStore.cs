@@ -1,6 +1,5 @@
 using AllOverIt.Assertion;
 using ReactiveUI;
-using ReactiveUI.Fody.Helpers;
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Wpf.Features.RecentProjects;
 
@@ -15,22 +14,30 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
     private readonly IDependencyProjectService _projectService;
     private readonly IRecentProjectsService _recentProjects;
     private readonly ProjectMetadataEditor _metadataEditor;
+    private readonly ObservableAsPropertyHelper<bool> _isDirty;
     private DependencyProjectDocument? _document;
+    private string? _currentFilePath;
+    private bool _hasDocument;
 
     /// <inheritdoc />
-    [Reactive]
-    public string? CurrentFilePath { get; set; }
+    public string? CurrentFilePath
+    {
+        get => _currentFilePath;
+        set => this.RaiseAndSetIfChanged(ref _currentFilePath, value);
+    }
 
     /// <inheritdoc />
     public IProjectMetadataEditor MetadataEditor => _metadataEditor;
 
     /// <inheritdoc />
-    [ObservableAsProperty]
-    public bool IsDirty { get; }
+    public bool IsDirty => _isDirty.Value;
 
     /// <inheritdoc />
-    [Reactive]
-    public bool HasDocument { get; set; }
+    public bool HasDocument
+    {
+        get => _hasDocument;
+        set => this.RaiseAndSetIfChanged(ref _hasDocument, value);
+    }
 
     /// <summary>Initializes a new instance of the store.</summary>
     /// <param name="projectService">The project serialization service.</param>
@@ -44,9 +51,9 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
 
         // Global dirty state is derived from all editor wrappers. When future wrappers are added,
         // combine their IsDirty values here (e.g., using CombineLatest or additional WhenAnyValue parameters).
-        _metadataEditor
+        _isDirty = _metadataEditor
             .WhenAnyValue(editor => editor.IsDirty)
-            .ToPropertyEx(this, vm => vm.IsDirty);
+            .ToProperty(this, nameof(IsDirty));
     }
 
     /// <inheritdoc />

@@ -1,6 +1,5 @@
 using AllOverIt.Assertion;
 using ReactiveUI;
-using ReactiveUI.Fody.Helpers;
 using SlnDependencyStudio.Wpf.Features.Application;
 using SlnDependencyStudio.Wpf.Features.Theming;
 using System.Reactive;
@@ -26,16 +25,25 @@ public sealed class SettingsWindowViewModel : ReactiveObject
     // is assigned, a new subscription is created and the previous one is disposed.
     private readonly SerialDisposable _restartSubscription = new();
 
+    private SettingsEditorViewModel? _settingsEditorViewModel;
+    private bool _isRestartRequired;
+
     /// <summary>The editing view model that holds current unsaved values.
     /// Set by <see cref="SettingsWindow"/> code-behind after construction. Starts <see langword="null"/>
     /// — <see cref="BeginRestartTracking"/> is triggered automatically when a value is assigned.</summary>
-    [Reactive]
-    public SettingsEditorViewModel? SettingsEditorViewModel { get; set; }
+    public SettingsEditorViewModel? SettingsEditorViewModel
+    {
+        get => _settingsEditorViewModel;
+        set => this.RaiseAndSetIfChanged(ref _settingsEditorViewModel, value);
+    }
 
     /// <summary>Indicates that one or more settings have been changed that will only
     /// take effect after the application is restarted.</summary>
-    [Reactive]
-    public bool IsRestartRequired { get; set; }
+    public bool IsRestartRequired
+    {
+        get => _isRestartRequired;
+        set => this.RaiseAndSetIfChanged(ref _isRestartRequired, value);
+    }
 
     /// <summary>Saves the current settings to disk and requests the window to close.</summary>
     public ReactiveCommand<Unit, Unit> SaveCommand { get; }

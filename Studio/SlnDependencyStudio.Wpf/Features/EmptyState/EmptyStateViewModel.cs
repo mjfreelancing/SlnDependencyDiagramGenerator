@@ -1,5 +1,4 @@
 using ReactiveUI;
-using ReactiveUI.Fody.Helpers;
 using SlnDependencyStudio.Wpf.Features.RecentProjects;
 using SlnDependencyStudio.Wpf.Features.RecentProjects.Models;
 using System.Collections.ObjectModel;
@@ -11,12 +10,17 @@ namespace SlnDependencyStudio.Wpf.Features.EmptyState;
 /// <summary>View model for the empty-state landing page shown when no project is loaded.</summary>
 public sealed class EmptyStateViewModel : ReactiveObject
 {
+    private bool _hasRecentProjects;
+
     /// <summary>Recently opened project files, most recent first.</summary>
     public ObservableCollection<RecentProjectEntry> RecentProjects { get; } = [];
 
     /// <summary><see langword="true"/> when at least one recent project exists.</summary>
-    [Reactive]
-    public bool HasRecentProjects { get; set; }
+    public bool HasRecentProjects
+    {
+        get => _hasRecentProjects;
+        set => this.RaiseAndSetIfChanged(ref _hasRecentProjects, value);
+    }
 
     /// <summary>Command bound to the "New Project" card.</summary>
     public ReactiveCommand<Unit, Unit> NewProjectCommand { get; }

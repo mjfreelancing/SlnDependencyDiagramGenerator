@@ -1,9 +1,3 @@
-// ReactiveUI.Fody attributes ([Reactive], [ObservableAsProperty]) are NOT used in this file.
-// Fody's IL weaver cannot process generic type parameters — the backing field for `Value` (a `T`)
-// and the property-change notification for `IsDirty` would never be generated, causing
-// MissingFieldException at runtime. Both are implemented manually with explicit backing fields
-// and RaiseAndSetIfChanged / ObservableAsPropertyHelper<T>.
-
 using ReactiveUI;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;

@@ -22,7 +22,6 @@
 
 	<ItemGroup>
 		<PackageReference Include="ReactiveUI" />
-		<PackageReference Include="ReactiveUI.Fody" />
 		<PackageReference Include="ReactiveUI.WPF" />
 		<PackageReference Include="MaterialDesignThemes" />
 		<PackageReference Include="AllOverIt.ReactiveUI" />
