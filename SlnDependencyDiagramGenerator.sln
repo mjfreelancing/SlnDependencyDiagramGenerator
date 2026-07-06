@@ -15,8 +15,14 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{D3D3
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{0AB3BF05-4346-4AA6-1389-037BE0695223}"
+	ProjectSection(SolutionItems) = preProject
+		Tests\Directory.Packages.props = Tests\Directory.Packages.props
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Studio", "Studio", "{E7FC634A-46D6-8D60-CF2F-7736DEAAEBAC}"
+	ProjectSection(SolutionItems) = preProject
+		Studio\Directory.Packages.props = Studio\Directory.Packages.props
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SlnDependencyStudio.Shared", "Studio\SlnDependencyStudio.Shared\SlnDependencyStudio.Shared.csproj", "{B488BE01-3AFE-4657-B82D-CC0C3F982169}"
 EndProject
@@ -33,6 +39,9 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SlnDependencyStudio.Wpf", "Studio\SlnDependencyStudio.Wpf\SlnDependencyStudio.Wpf.csproj", "{68A47102-F9DD-44BB-A31D-4125C2C36D4B}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Source", "Source", "{B8EFCA5F-814F-285C-A8CB-F00F14650265}"
+	ProjectSection(SolutionItems) = preProject
+		Source\Directory.Packages.props = Source\Directory.Packages.props
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SlnDependencyDiagramGenerator.Tests.Unit", "Tests\Source\SlnDependencyDiagramGenerator.Tests.Unit\SlnDependencyDiagramGenerator.Tests.Unit.csproj", "{1759BE74-67BF-56E6-578C-1BFCFC4339BD}"
 EndProject
