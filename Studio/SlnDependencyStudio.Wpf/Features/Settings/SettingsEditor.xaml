@@ -15,203 +15,214 @@
     <Grid Margin="16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto" />
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="Auto" />
-        </Grid.ColumnDefinitions>
-
-        <!--  Header  -->
+        <!--  Header — fixed, does not scroll  -->
         <materialDesign:PackIcon
             Grid.Row="0"
-            Grid.Column="0"
             Width="24"
             Height="24"
             Margin="0,0,12,0"
+            HorizontalAlignment="Left"
             VerticalAlignment="Center"
             Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
             Kind="Cog" />
 
         <TextBlock
             Grid.Row="0"
-            Grid.Column="1"
-            Grid.ColumnSpan="2"
-            Margin="0,0,0,16"
+            Margin="36,0,0,0"
+            VerticalAlignment="Center"
             FontSize="18"
             FontWeight="SemiBold"
             Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
             Text="Application Settings" />
 
-        <!--  Default Project Folder  -->
-        <TextBlock
-            Grid.Row="1"
-            Grid.Column="0"
-            Margin="0,0,12,8"
-            VerticalAlignment="Center"
-            FontSize="13"
-            Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
-            Text="Default project folder" />
+        <!--  Settings fields — scrollable  -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <ScrollViewer.Resources>
+                <Style BasedOn="{StaticResource MaterialDesignScrollBarMinimal}" TargetType="ScrollBar" />
+            </ScrollViewer.Resources>
 
-        <TextBox
-            Grid.Row="1"
-            Grid.Column="1"
-            Margin="0,0,8,8"
-            VerticalAlignment="Center"
-            materialDesign:HintAssist.Hint="Leave empty for no default"
-            Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
-            Text="{Binding DefaultProjectFolder, UpdateSourceTrigger=PropertyChanged}" />
+            <Grid Margin="0,16,0,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
 
-        <Button
-            x:Name="BrowseDefaultProjectFolderButton"
-            Grid.Row="1"
-            Grid.Column="2"
-            Margin="0,0,0,8"
-            VerticalAlignment="Center"
-            Content="{materialDesign:PackIcon FolderOpenOutline}"
-            Style="{StaticResource MaterialDesignIconButton}"
-            ToolTip="Browse for folder" />
+                <!--  Default Project Folder  -->
+                <TextBlock
+                    Grid.Row="0"
+                    Grid.Column="0"
+                    Margin="0,0,12,8"
+                    VerticalAlignment="Center"
+                    FontSize="13"
+                    Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+                    Text="Default project folder" />
 
-        <!--  d2 Tool Path  -->
-        <TextBlock
-            Grid.Row="2"
-            Grid.Column="0"
-            Margin="0,0,12,8"
-            VerticalAlignment="Center"
-            FontSize="13"
-            Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
-            Text="d2 executable" />
+                <TextBox
+                    Grid.Row="0"
+                    Grid.Column="1"
+                    Margin="0,0,8,8"
+                    VerticalAlignment="Center"
+                    materialDesign:HintAssist.Hint="Leave empty for no default"
+                    Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+                    Text="{Binding DefaultProjectFolder, UpdateSourceTrigger=PropertyChanged}" />
 
-        <TextBox
-            Grid.Row="2"
-            Grid.Column="1"
-            Margin="0,0,8,8"
-            VerticalAlignment="Center"
-            materialDesign:HintAssist.Hint="Auto-detected if empty"
-            Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
-            Text="{Binding D2ToolPath, UpdateSourceTrigger=PropertyChanged}" />
+                <Button
+                    x:Name="BrowseDefaultProjectFolderButton"
+                    Grid.Row="0"
+                    Grid.Column="2"
+                    Margin="0,0,0,8"
+                    VerticalAlignment="Center"
+                    Content="{materialDesign:PackIcon FolderOpenOutline}"
+                    Style="{StaticResource MaterialDesignIconButton}"
+                    ToolTip="Browse for folder" />
 
-        <Button
-            x:Name="BrowseD2ToolPathButton"
-            Grid.Row="2"
-            Grid.Column="2"
-            Margin="0,0,0,8"
-            VerticalAlignment="Center"
-            Content="{materialDesign:PackIcon FileSearchOutline}"
-            Style="{StaticResource MaterialDesignIconButton}"
-            ToolTip="Browse for d2 executable" />
+                <!--  d2 Tool Path  -->
+                <TextBlock
+                    Grid.Row="1"
+                    Grid.Column="0"
+                    Margin="0,0,12,8"
+                    VerticalAlignment="Center"
+                    FontSize="13"
+                    Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+                    Text="d2 executable" />
 
-        <!--  mmdc Tool Path  -->
-        <TextBlock
-            Grid.Row="3"
-            Grid.Column="0"
-            Margin="0,0,12,8"
-            VerticalAlignment="Center"
-            FontSize="13"
-            Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
-            Text="mmdc executable" />
+                <TextBox
+                    Grid.Row="1"
+                    Grid.Column="1"
+                    Margin="0,0,8,8"
+                    VerticalAlignment="Center"
+                    materialDesign:HintAssist.Hint="Auto-detected if empty"
+                    Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+                    Text="{Binding D2ToolPath, UpdateSourceTrigger=PropertyChanged}" />
 
-        <TextBox
-            Grid.Row="3"
-            Grid.Column="1"
-            Margin="0,0,8,8"
-            VerticalAlignment="Center"
-            materialDesign:HintAssist.Hint="Auto-detected if empty"
-            Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
-            Text="{Binding MmdcToolPath, UpdateSourceTrigger=PropertyChanged}" />
+                <Button
+                    x:Name="BrowseD2ToolPathButton"
+                    Grid.Row="1"
+                    Grid.Column="2"
+                    Margin="0,0,0,8"
+                    VerticalAlignment="Center"
+                    Content="{materialDesign:PackIcon FileSearchOutline}"
+                    Style="{StaticResource MaterialDesignIconButton}"
+                    ToolTip="Browse for d2 executable" />
 
-        <Button
-            x:Name="BrowseMmdcToolPathButton"
-            Grid.Row="3"
-            Grid.Column="2"
-            Margin="0,0,0,8"
-            VerticalAlignment="Center"
-            Content="{materialDesign:PackIcon FileSearchOutline}"
-            Style="{StaticResource MaterialDesignIconButton}"
-            ToolTip="Browse for mmdc executable" />
+                <!--  mmdc Tool Path  -->
+                <TextBlock
+                    Grid.Row="2"
+                    Grid.Column="0"
+                    Margin="0,0,12,8"
+                    VerticalAlignment="Center"
+                    FontSize="13"
+                    Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+                    Text="mmdc executable" />
 
-        <!--  Log Retention Days  -->
-        <TextBlock
-            Grid.Row="4"
-            Grid.Column="0"
-            Margin="0,0,12,8"
-            VerticalAlignment="Center"
-            FontSize="13"
-            Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
-            Text="Log retention (days)" />
+                <TextBox
+                    Grid.Row="2"
+                    Grid.Column="1"
+                    Margin="0,0,8,8"
+                    VerticalAlignment="Center"
+                    materialDesign:HintAssist.Hint="Auto-detected if empty"
+                    Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+                    Text="{Binding MmdcToolPath, UpdateSourceTrigger=PropertyChanged}" />
 
-        <Slider
-            x:Name="LogRetentionDaysSlider"
-            Grid.Row="4"
-            Grid.Column="1"
-            Margin="0,0,8,8"
-            VerticalAlignment="Center"
-            IsSnapToTickEnabled="True"
-            Maximum="90"
-            Minimum="1"
-            TickFrequency="1"
-            Value="{Binding LogRetentionDays}" />
+                <Button
+                    x:Name="BrowseMmdcToolPathButton"
+                    Grid.Row="2"
+                    Grid.Column="2"
+                    Margin="0,0,0,8"
+                    VerticalAlignment="Center"
+                    Content="{materialDesign:PackIcon FileSearchOutline}"
+                    Style="{StaticResource MaterialDesignIconButton}"
+                    ToolTip="Browse for mmdc executable" />
 
-        <TextBlock
-            Grid.Row="4"
-            Grid.Column="2"
-            Margin="0,0,0,8"
-            VerticalAlignment="Center"
-            FontSize="12"
-            Foreground="{DynamicResource MaterialDesign.Brush.ForegroundLight}"
-            Text="{Binding LogRetentionDays, StringFormat={}{0} days}" />
+                <!--  Log Retention Days  -->
+                <TextBlock
+                    Grid.Row="3"
+                    Grid.Column="0"
+                    Margin="0,0,12,8"
+                    VerticalAlignment="Center"
+                    FontSize="13"
+                    Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+                    Text="Log retention (days)" />
 
-        <!--  Theme  -->
-        <TextBlock
-            Grid.Row="5"
-            Grid.Column="0"
-            Margin="0,0,12,8"
-            VerticalAlignment="Center"
-            FontSize="13"
-            Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
-            Text="Theme" />
+                <Slider
+                    x:Name="LogRetentionDaysSlider"
+                    Grid.Row="3"
+                    Grid.Column="1"
+                    Margin="0,0,8,8"
+                    VerticalAlignment="Center"
+                    IsSnapToTickEnabled="True"
+                    Maximum="90"
+                    Minimum="1"
+                    TickFrequency="1"
+                    Value="{Binding LogRetentionDays}" />
 
-        <StackPanel
-            Grid.Row="5"
-            Grid.Column="1"
-            Grid.ColumnSpan="2"
-            Margin="0,0,0,8"
-            Orientation="Horizontal">
+                <TextBlock
+                    Grid.Row="3"
+                    Grid.Column="2"
+                    Margin="0,0,0,8"
+                    VerticalAlignment="Center"
+                    FontSize="12"
+                    Foreground="{DynamicResource MaterialDesign.Brush.ForegroundLight}"
+                    Text="{Binding LogRetentionDays, StringFormat={}{0} days}" />
 
-            <TextBlock
-                VerticalAlignment="Center"
-                FontSize="13"
-                Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
-                Text="Light" />
+                <!--  Theme  -->
+                <TextBlock
+                    Grid.Row="4"
+                    Grid.Column="0"
+                    Margin="0,0,12,8"
+                    VerticalAlignment="Center"
+                    FontSize="13"
+                    Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+                    Text="Theme" />
 
-            <ToggleButton
-                x:Name="ThemeToggle"
-                Margin="10,0"
-                VerticalAlignment="Center"
-                IsChecked="{Binding IsDarkTheme, UpdateSourceTrigger=PropertyChanged}"
-                Style="{StaticResource MaterialDesignSwitchToggleButton}"
-                ToolTip="Toggle between light and dark theme" />
+                <StackPanel
+                    Grid.Row="4"
+                    Grid.Column="1"
+                    Grid.ColumnSpan="2"
+                    Margin="0,0,0,8"
+                    Orientation="Horizontal">
 
-            <TextBlock
-                VerticalAlignment="Center"
-                FontSize="13"
-                Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
-                Text="Dark" />
-        </StackPanel>
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+                        Text="Light" />
 
-        <!--  Spacer  -->
-        <Border
-            Grid.Row="6"
-            Grid.Column="0"
-            Grid.ColumnSpan="3"
-            Height="16" />
+                    <ToggleButton
+                        x:Name="ThemeToggle"
+                        Margin="10,0"
+                        VerticalAlignment="Center"
+                        IsChecked="{Binding IsDarkTheme, UpdateSourceTrigger=PropertyChanged}"
+                        Style="{StaticResource MaterialDesignSwitchToggleButton}"
+                        ToolTip="Toggle between light and dark theme" />
+
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+                        Text="Dark" />
+                </StackPanel>
+
+                <!--  Spacer  -->
+                <Border
+                    Grid.Row="5"
+                    Grid.Column="0"
+                    Grid.ColumnSpan="3"
+                    Height="16" />
+            </Grid>
+        </ScrollViewer>
     </Grid>
 
 </reactiveui:ReactiveUserControl>

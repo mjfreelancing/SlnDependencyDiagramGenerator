@@ -13,14 +13,14 @@
     MinWidth="450"
     MinHeight="400"
     x:TypeArguments="settings:SettingsWindowViewModel"
-    Style="{StaticResource MaterialDesignWindow}"
     ResizeMode="CanResizeWithGrip"
+    Style="{StaticResource MaterialDesignWindow}"
     WindowStartupLocation="CenterOwner"
     WindowStyle="ToolWindow"
     mc:Ignorable="d">
 
     <Window.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
     </Window.Resources>
 
     <Grid>
@@ -30,12 +30,11 @@
         </Grid.RowDefinitions>
 
         <!--  Settings content area — populated in code-behind via ContentControl  -->
-        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Hidden">
-            <ContentControl
-                x:Name="SettingsContent"
-                HorizontalAlignment="Stretch"
-                HorizontalContentAlignment="Stretch" />
-        </ScrollViewer>
+        <ContentControl
+            x:Name="SettingsContent"
+            Grid.Row="0"
+            HorizontalAlignment="Stretch"
+            HorizontalContentAlignment="Stretch" />
 
         <!--  Separator  -->
         <Separator
@@ -43,7 +42,6 @@
             Margin="12,0"
             VerticalAlignment="Bottom" />
 
-        <!--  Action Buttons  -->
         <Grid Grid.Row="1" Margin="12,8,12,12">
 
             <Grid.ColumnDefinitions>
@@ -57,7 +55,7 @@
                 Grid.Column="0"
                 VerticalAlignment="Center"
                 Orientation="Horizontal"
-                Visibility="{Binding IsRestartRequired, Converter={StaticResource BoolToVis}}">
+                Visibility="{Binding IsRestartRequired, Converter={StaticResource BoolToVisibility}}">
 
                 <materialDesign:PackIcon
                     Width="16"

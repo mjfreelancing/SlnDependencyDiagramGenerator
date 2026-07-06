@@ -21,7 +21,7 @@
     mc:Ignorable="d">
 
     <Window.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
         <converters:NullToBoolConverter x:Key="NullToBool" />
     </Window.Resources>
 
@@ -200,7 +200,7 @@
                                             Margin="6,0,0,0"
                                             Fill="{DynamicResource MaterialDesign.Brush.ValidationError}"
                                             ToolTip="This section has validation errors"
-                                            Visibility="{Binding HasValidationError, Converter={StaticResource BoolToVis}}" />
+                                            Visibility="{Binding HasValidationError, Converter={StaticResource BoolToVisibility}}" />
 
                                         <materialDesign:Chip
                                             Grid.Column="3"
@@ -211,7 +211,7 @@
                                             Content="opt"
                                             FontSize="9"
                                             IsHitTestVisible="False"
-                                            Visibility="{Binding IsAdvanced, Converter={StaticResource BoolToVis}}" />
+                                            Visibility="{Binding IsAdvanced, Converter={StaticResource BoolToVisibility}}" />
                                     </Grid>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>

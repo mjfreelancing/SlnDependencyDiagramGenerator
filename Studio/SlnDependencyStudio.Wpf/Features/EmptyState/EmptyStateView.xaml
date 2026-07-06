@@ -16,7 +16,7 @@
     mc:Ignorable="d">
 
     <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
 
         <Style x:Key="CardButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent" />
@@ -61,194 +61,205 @@
         </Style>
     </UserControl.Resources>
 
-    <ScrollViewer Background="{DynamicResource MaterialDesign.Brush.Card.Background}" VerticalScrollBarVisibility="Hidden">
-        <Grid
-            MaxWidth="640"
-            Margin="48,0,48,0"
-            HorizontalAlignment="Center"
-            VerticalAlignment="Center">
+    <Grid
+        MaxWidth="640"
+        Margin="48,0,48,0"
+        HorizontalAlignment="Center"
+        VerticalAlignment="Center">
 
-            <StackPanel>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
 
-                <!--  Header  -->
-                <StackPanel HorizontalAlignment="Center">
-                    <Image
-                        Width="72"
-                        Height="72"
-                        HorizontalAlignment="Center"
-                        Source="pack://application:,,,/app.ico" />
+        <!--  Header  -->
+        <StackPanel Grid.Row="0" HorizontalAlignment="Center">
+            <Image
+                Width="72"
+                Height="72"
+                HorizontalAlignment="Center"
+                Source="pack://application:,,,/app.ico" />
 
-                    <TextBlock
-                        Margin="0,20,0,0"
-                        HorizontalAlignment="Center"
-                        FontSize="28"
-                        FontWeight="SemiBold"
-                        Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
-                        Text="SlnDependencyStudio" />
+            <TextBlock
+                Margin="0,20,0,0"
+                HorizontalAlignment="Center"
+                FontSize="28"
+                FontWeight="SemiBold"
+                Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+                Text="SlnDependencyStudio" />
 
-                    <TextBlock
-                        Margin="0,6,0,0"
-                        HorizontalAlignment="Center"
-                        FontSize="14"
-                        Foreground="{DynamicResource MaterialDesign.Brush.ForegroundLight}"
-                        Text="Dependency diagram generator for .NET solutions"
-                        TextWrapping="Wrap" />
-                </StackPanel>
+            <TextBlock
+                Margin="0,6,0,0"
+                HorizontalAlignment="Center"
+                FontSize="14"
+                Foreground="{DynamicResource MaterialDesign.Brush.ForegroundLight}"
+                Text="Dependency diagram generator for .NET solutions"
+                TextWrapping="Wrap" />
+        </StackPanel>
 
-                <!--  Primary CTA cards  -->
-                <Grid Margin="0,36,0,0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="8" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
+        <!--  Primary CTA cards  -->
+        <Grid Grid.Row="1" Margin="0,36,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="8" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
 
-                    <!--  New Project  -->
-                    <Button
-                        Grid.Column="0"
-                        Padding="0"
-                        Command="{Binding NewProjectCommand}"
-                        Style="{StaticResource CardButtonStyle}"
-                        ToolTip="Create a new project from default settings (Ctrl+N)">
-                        <materialDesign:Card Padding="0" Background="{DynamicResource MaterialDesign.Brush.Background}">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
-                                <Border
-                                    Grid.Row="0"
-                                    Height="4"
-                                    Background="{DynamicResource MaterialDesign.Brush.Primary}"
-                                    CornerRadius="4,4,0,0" />
-                                <StackPanel Grid.Row="1" Margin="20,20,20,24">
-                                    <materialDesign:PackIcon
-                                        Width="32"
-                                        Height="32"
-                                        Foreground="{DynamicResource MaterialDesign.Brush.Primary}"
-                                        Kind="FileDocumentPlus" />
-                                    <TextBlock
-                                        Margin="0,10,0,0"
-                                        FontSize="15"
-                                        FontWeight="SemiBold"
-                                        Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
-                                        Text="New Project" />
-                                    <TextBlock
-                                        Margin="0,4,0,0"
-                                        FontSize="12"
-                                        Foreground="{DynamicResource MaterialDesign.Brush.ForegroundLight}"
-                                        Text="Start from defaults"
-                                        TextWrapping="Wrap" />
-                                </StackPanel>
-                            </Grid>
-                        </materialDesign:Card>
-                    </Button>
+            <!--  New Project  -->
+            <Button
+                Grid.Column="0"
+                Padding="0"
+                Command="{Binding NewProjectCommand}"
+                Style="{StaticResource CardButtonStyle}"
+                ToolTip="Create a new project from default settings (Ctrl+N)">
+                <materialDesign:Card Padding="0" Background="{DynamicResource MaterialDesign.Brush.Background}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Border
+                            Grid.Row="0"
+                            Height="4"
+                            Background="{DynamicResource MaterialDesign.Brush.Primary}"
+                            CornerRadius="4,4,0,0" />
+                        <StackPanel Grid.Row="1" Margin="20,20,20,24">
+                            <materialDesign:PackIcon
+                                Width="32"
+                                Height="32"
+                                Foreground="{DynamicResource MaterialDesign.Brush.Primary}"
+                                Kind="FileDocumentPlus" />
+                            <TextBlock
+                                Margin="0,10,0,0"
+                                FontSize="15"
+                                FontWeight="SemiBold"
+                                Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+                                Text="New Project" />
+                            <TextBlock
+                                Margin="0,4,0,0"
+                                FontSize="12"
+                                Foreground="{DynamicResource MaterialDesign.Brush.ForegroundLight}"
+                                Text="Start from defaults"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Grid>
+                </materialDesign:Card>
+            </Button>
 
-                    <!--  Open Project  -->
-                    <Button
-                        Grid.Column="2"
-                        Padding="0"
-                        Command="{Binding OpenProjectCommand}"
-                        Style="{StaticResource CardButtonStyle}"
-                        ToolTip="Browse for an existing .sds project file (Ctrl+O)">
-                        <materialDesign:Card Padding="0" Background="{DynamicResource MaterialDesign.Brush.Background}">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
-                                <Border
-                                    Grid.Row="0"
-                                    Height="4"
-                                    Background="{DynamicResource MaterialDesign.Brush.Primary}"
-                                    CornerRadius="4,4,0,0" />
-                                <StackPanel Grid.Row="1" Margin="20,20,20,24">
-                                    <materialDesign:PackIcon
-                                        Width="32"
-                                        Height="32"
-                                        Foreground="{DynamicResource MaterialDesign.Brush.Primary}"
-                                        Kind="FolderOpen" />
-                                    <TextBlock
-                                        Margin="0,10,0,0"
-                                        FontSize="15"
-                                        FontWeight="SemiBold"
-                                        Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
-                                        Text="Open Project" />
-                                    <TextBlock
-                                        Margin="0,4,0,0"
-                                        FontSize="12"
-                                        Foreground="{DynamicResource MaterialDesign.Brush.ForegroundLight}"
-                                        Text="Browse for an .sds file"
-                                        TextWrapping="Wrap" />
-                                </StackPanel>
-                            </Grid>
-                        </materialDesign:Card>
-                    </Button>
+            <!--  Open Project  -->
+            <Button
+                Grid.Column="2"
+                Padding="0"
+                Command="{Binding OpenProjectCommand}"
+                Style="{StaticResource CardButtonStyle}"
+                ToolTip="Browse for an existing .sds project file (Ctrl+O)">
+                <materialDesign:Card Padding="0" Background="{DynamicResource MaterialDesign.Brush.Background}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Border
+                            Grid.Row="0"
+                            Height="4"
+                            Background="{DynamicResource MaterialDesign.Brush.Primary}"
+                            CornerRadius="4,4,0,0" />
+                        <StackPanel Grid.Row="1" Margin="20,20,20,24">
+                            <materialDesign:PackIcon
+                                Width="32"
+                                Height="32"
+                                Foreground="{DynamicResource MaterialDesign.Brush.Primary}"
+                                Kind="FolderOpen" />
+                            <TextBlock
+                                Margin="0,10,0,0"
+                                FontSize="15"
+                                FontWeight="SemiBold"
+                                Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+                                Text="Open Project" />
+                            <TextBlock
+                                Margin="0,4,0,0"
+                                FontSize="12"
+                                Foreground="{DynamicResource MaterialDesign.Brush.ForegroundLight}"
+                                Text="Browse for an .sds file"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Grid>
+                </materialDesign:Card>
+            </Button>
 
-                </Grid>
-
-                <!--  Recent projects title  -->
-                <TextBlock
-                    Margin="0,32,0,8"
-                    FontSize="11"
-                    FontWeight="SemiBold"
-                    Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
-                    Text="RECENT PROJECTS"
-                    Visibility="{Binding HasRecentProjects, Converter={StaticResource BoolToVis}}" />
-
-                <!--  Recent projects list  -->
-                <ItemsControl ItemsSource="{Binding RecentProjects}" Visibility="{Binding HasRecentProjects, Converter={StaticResource BoolToVis}}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate DataType="{x:Type models:RecentProjectEntry}">
-                            <Button
-                                Margin="0,1,0,1"
-                                Command="{Binding DataContext.OpenRecentProjectCommand, ElementName=Root}"
-                                CommandParameter="{Binding FilePath}"
-                                Style="{StaticResource RecentRowButtonStyle}">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                    </Grid.RowDefinitions>
-
-                                    <materialDesign:PackIcon
-                                        Grid.RowSpan="2"
-                                        Width="20"
-                                        Height="20"
-                                        Margin="0,0,12,0"
-                                        VerticalAlignment="Center"
-                                        Foreground="{DynamicResource MaterialDesign.Brush.ForegroundLight}"
-                                        Kind="FolderOpen" />
-
-                                    <TextBlock
-                                        Grid.Row="0"
-                                        Grid.Column="1"
-                                        FontSize="13"
-                                        FontWeight="Medium"
-                                        Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
-                                        Text="{Binding DisplayName}" />
-
-                                    <TextBlock
-                                        Grid.Row="1"
-                                        Grid.Column="1"
-                                        Margin="0,2,0,0"
-                                        FontSize="11"
-                                        Foreground="{DynamicResource MaterialDesign.Brush.ForegroundLight}"
-                                        Text="{Binding FilePath}"
-                                        TextTrimming="CharacterEllipsis"
-                                        ToolTip="{Binding FilePath}" />
-                                </Grid>
-                            </Button>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-
-            </StackPanel>
         </Grid>
-    </ScrollViewer>
+
+        <!--  Recent projects title  -->
+        <TextBlock
+            Grid.Row="2"
+            Margin="0,32,0,8"
+            FontSize="11"
+            FontWeight="SemiBold"
+            Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+            Text="RECENT PROJECTS"
+            Visibility="{Binding HasRecentProjects, Converter={StaticResource BoolToVisibility}}" />
+
+        <!--  Recent projects list — scrollable  -->
+        <ScrollViewer
+            Grid.Row="3"
+            VerticalScrollBarVisibility="Auto"
+            Visibility="{Binding HasRecentProjects, Converter={StaticResource BoolToVisibility}}">
+            <ScrollViewer.Resources>
+                <Style BasedOn="{StaticResource MaterialDesignScrollBarMinimal}" TargetType="ScrollBar" />
+            </ScrollViewer.Resources>
+            <ItemsControl ItemsSource="{Binding RecentProjects}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type models:RecentProjectEntry}">
+                        <Button
+                            Margin="0,1,0,1"
+                            Command="{Binding DataContext.OpenRecentProjectCommand, ElementName=Root}"
+                            CommandParameter="{Binding FilePath}"
+                            Style="{StaticResource RecentRowButtonStyle}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <materialDesign:PackIcon
+                                    Grid.RowSpan="2"
+                                    Width="20"
+                                    Height="20"
+                                    Margin="0,0,12,0"
+                                    VerticalAlignment="Center"
+                                    Foreground="{DynamicResource MaterialDesign.Brush.ForegroundLight}"
+                                    Kind="FolderOpen" />
+
+                                <TextBlock
+                                    Grid.Row="0"
+                                    Grid.Column="1"
+                                    FontSize="13"
+                                    FontWeight="Medium"
+                                    Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+                                    Text="{Binding DisplayName}" />
+
+                                <TextBlock
+                                    Grid.Row="1"
+                                    Grid.Column="1"
+                                    Margin="0,2,0,0"
+                                    FontSize="11"
+                                    Foreground="{DynamicResource MaterialDesign.Brush.ForegroundLight}"
+                                    Text="{Binding FilePath}"
+                                    TextTrimming="CharacterEllipsis"
+                                    ToolTip="{Binding FilePath}" />
+                            </Grid>
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+
+    </Grid>
 
 </reactiveui:ReactiveUserControl>
