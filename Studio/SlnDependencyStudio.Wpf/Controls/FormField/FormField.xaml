@@ -12,6 +12,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="3" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto" SharedSizeGroup="LabelColumn" />
@@ -45,5 +46,15 @@
             Height="1"
             Margin="0,8,0,8"
             Fill="{DynamicResource MaterialDesign.Brush.Separator.Background}" />
+
+        <!--  Validation Error  -->
+        <TextBlock
+            Grid.Row="2"
+            Grid.Column="1"
+            Margin="0,0,0,8"
+            FontSize="12"
+            Foreground="{DynamicResource MaterialDesign.Brush.ValidationError}"
+            Text="{Binding ValidationError, ElementName=FormFieldRoot, TargetNullValue=''}"
+            TextWrapping="Wrap" />
     </Grid>
 </UserControl>

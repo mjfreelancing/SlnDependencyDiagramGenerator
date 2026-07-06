@@ -383,7 +383,40 @@ The selected nav item gets a left-accent border (4px `MaterialDesignPrimary`) an
 
 - [x] 4.1.1 ~~Create `ProjectMetadataView.xaml` and `ProjectMetadataViewModel`.~~ — Already done as `ProjectView` + `ProjectViewModel` in Phase 3.1.5. `ProjectViewModel` is a plain class that pass-throughs to `IProjectDocumentStore.MetadataEditor`.
 - [x] 4.1.2 ~~Bind `ProjectName` and `Description` to `DependencyProjectMetadata`~~ — Already done in 3.1.5 via `TrackableValue<T>` pass-through from the store's `MetadataEditor`. Bindings use `{Binding ProjectName.Value}` and `{Binding Description.Value}`. No `LoadFrom` / `ApplyToDocument` — the store owns editing state and flushes on save.
-- [ ] 4.1.3 Add a `ReactiveUI.Validation` rule: `ProjectName` must not be empty. Show inline validation error below the TextBox.
+- [x] 4.1.3 Add a `ReactiveUI.Validation` rule: `ProjectName` must not be empty. Show inline validation error below the TextBox.
+
+  **Implementation notes (2026-07-06):**
+  - `ReactiveValidationObject` (ReactiveUI.Validation ≤4.x) is incompatible with Splat ≥19.3.1 — `Splat.IEnableLogger` was removed. Do not use it.
+  - Use **ReactiveUI.Validation ≥7.1.0** with `ReactiveObject` + `IValidatableViewModel` + manual `ValidationContext`:
+
+    ```csharp
+    public sealed class ProjectViewModel : ReactiveObject, IValidatableViewModel
+    {
+        public IValidationContext ValidationContext { get; } = new ValidationContext();
+
+        public ProjectViewModel(IProjectDocumentStore store)
+        {
+            this.ValidationRule(
+                vm => vm.ProjectName.Value,
+                name => !string.IsNullOrWhiteSpace(name),
+                "Project name must not be empty");
+        }
+    }
+    ```
+
+  - In the view code-behind, use `WhenActivated` + `BindValidation`:
+    ```csharp
+    this.WhenActivated(disposables =>
+    {
+        this.BindValidation(
+                ViewModel,
+                vm => vm.ProjectName.Value,
+                view => view.ProjectNameError.Text)
+            .DisposeWith(disposables);
+    });
+    ```
+  - The error `TextBlock` must be a **named element outside `FormField`** — `FormField`'s `[ContentProperty]` prevents `x:Name` on child elements. I would like to enhance this so the error can be positioned under the value and not the label. We should discuss first.
+  - Requires ReactiveUI ≥23.2.28 (satisfies Validation 7.1.0's dependency).
 
 ### 4.2 Solution & Export Paths
 

@@ -34,6 +34,13 @@ public partial class FormField : UserControl
             typeof(FormField),
             new FrameworkPropertyMetadata(null));
 
+    public static readonly DependencyProperty ValidationErrorProperty =
+        DependencyProperty.Register(
+            nameof(ValidationError),
+            typeof(string),
+            typeof(FormField),
+            new FrameworkPropertyMetadata(null));
+
     /// <summary>The label text displayed on the left side of the field.</summary>
     public string Label
     {
@@ -61,6 +68,16 @@ public partial class FormField : UserControl
     {
         get => GetValue(InputContentProperty);
         set => SetValue(InputContentProperty, value);
+    }
+
+    /// <summary>
+    /// Optional validation error message displayed below the input, aligned with
+    /// the input column. <see langword="null"/> or empty hides the error row.
+    /// </summary>
+    public string? ValidationError
+    {
+        get => (string?)GetValue(ValidationErrorProperty);
+        set => SetValue(ValidationErrorProperty, value);
     }
 
     public FormField()

@@ -1,4 +1,6 @@
 using ReactiveUI;
+using ReactiveUI.Validation.Extensions;
+using System.Reactive.Disposables.Fluent;
 
 namespace SlnDependencyStudio.Wpf.Features.Project;
 
@@ -12,5 +14,14 @@ public partial class ProjectView : ReactiveUserControl<ProjectViewModel>
         ViewModel = viewModel;
         DataContext = viewModel;
         InitializeComponent();
+
+        this.WhenActivated(disposables =>
+        {
+            this.BindValidation(
+                    ViewModel,
+                    vm => vm.ProjectName.Value,
+                    view => view.ProjectNameFormField.ValidationError)
+                .DisposeWith(disposables);
+        });
     }
 }
