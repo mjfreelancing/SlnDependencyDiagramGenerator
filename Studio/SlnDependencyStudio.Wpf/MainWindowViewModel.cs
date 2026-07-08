@@ -9,6 +9,7 @@ using SlnDependencyStudio.Wpf.Features.Project;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
 using SlnDependencyStudio.Wpf.Features.RecentProjects;
 using SlnDependencyStudio.Wpf.Features.RecentProjects.Models;
+using SlnDependencyStudio.Wpf.Features.Solution;
 using SlnDependencyStudio.Wpf.Models;
 using SlnDependencyStudio.Wpf.ViewModels;
 using System.Collections.ObjectModel;
@@ -163,6 +164,11 @@ public sealed class MainWindowViewModel : ActivatableViewModel
             {
                 DisplayName = "Project",
                 IconKind = MaterialDesignThemes.Wpf.PackIconKind.FileDocumentOutline
+            },
+            new NavigationItemViewModel<SolutionViewModel>
+            {
+                DisplayName = "Solution",
+                IconKind = MaterialDesignThemes.Wpf.PackIconKind.FolderOpenOutline
             }
         ];
 
@@ -198,7 +204,7 @@ public sealed class MainWindowViewModel : ActivatableViewModel
             .DisposeWith(disposables);
 
         _store
-            .WhenAnyValue(store => store.CurrentFilePath)
+            .WhenAnyValue(store => store.DocumentFilePath)
             .Subscribe(filePath =>
             {
                 if (filePath is null)

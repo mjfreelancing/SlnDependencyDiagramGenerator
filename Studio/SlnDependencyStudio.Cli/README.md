@@ -96,15 +96,15 @@ This is the main configuration section. It has three sub-sections.
 
 #### `solution` — What to analyse
 
-| Field                 | Description                                                             |
-| --------------------- | ----------------------------------------------------------------------- |
-| `solutionPath`        | Path to your `.sln` or `.slnx` file (relative to the `.sds` file).      |
-| `regexToInclude`      | One or more regex patterns matching the projects you want to process.   |
-| `regexToExclude`      | Optional regex patterns to exclude certain projects.                    |
-| `packagesToExclude`   | Optional NuGet package IDs to leave out of diagrams (case-insensitive). |
-| `frameworksToExclude` | Optional framework reference IDs to leave out (case-insensitive).       |
-| `individual`          | Settings for generating per-project diagrams.                           |
-| `all`                 | Settings for generating a single combined solution diagram.             |
+| Field                 | Description                                                                                                                                                                                                                            |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `solutionPath`        | Path to your `.sln` or `.slnx` file. Relative paths are resolved against the `.sds` file's directory. Absolute paths are used as-is. The WPF UI stores paths relative when the file is under the `.sds` directory, absolute otherwise. |
+| `regexToInclude`      | One or more regex patterns matching the projects you want to process.                                                                                                                                                                  |
+| `regexToExclude`      | Optional regex patterns to exclude certain projects.                                                                                                                                                                                   |
+| `packagesToExclude`   | Optional NuGet package IDs to leave out of diagrams (case-insensitive).                                                                                                                                                                |
+| `frameworksToExclude` | Optional framework reference IDs to leave out (case-insensitive).                                                                                                                                                                      |
+| `individual`          | Settings for generating per-project diagrams.                                                                                                                                                                                          |
+| `all`                 | Settings for generating a single combined solution diagram.                                                                                                                                                                            |
 
 Both `individual` and `all` support:
 
@@ -129,11 +129,11 @@ Both `individual` and `all` support:
 
 #### `export` — Where and how to save results
 
-| Field           | Description                                                                                                                               |
-| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `clearContents` | Clears the output folder before writing new files.                                                                                        |
-| `rootPath`      | Root directory for generated files (resolved relative to the `.sds` file). A sub-folder is created per target framework and per renderer. |
-| `imageFormats`  | Image types to render: `"Png"`, `"Svg"`, and/or `"Pdf"`. Leave empty for text-only output (`.d2` / `.mmd` files plus a summary).          |
+| Field           | Description                                                                                                                                                                                        |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `clearContents` | Clears the output folder before writing new files.                                                                                                                                                 |
+| `rootPath`      | Root directory for generated files. Relative paths are resolved against the `.sds` file's directory. Absolute paths are used as-is. A sub-folder is created per target framework and per renderer. |
+| `imageFormats`  | Image types to render: `"Png"`, `"Svg"`, and/or `"Pdf"`. Leave empty for text-only output (`.d2` / `.mmd` files plus a summary).                                                                   |
 
 Image rendering requires the corresponding CLI tool on your PATH (see [Prerequisites](#prerequisites)).
 

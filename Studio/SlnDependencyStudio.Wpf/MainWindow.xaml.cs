@@ -164,7 +164,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                 .DisposeWith(disposables);
 
             _store
-                .WhenAnyValue(store => store.CurrentFilePath)
+                .WhenAnyValue(store => store.DocumentFilePath)
                 .Subscribe(_ => UpdateTitle())
                 .DisposeWith(disposables);
 
@@ -242,13 +242,13 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 
     private void UpdateTitle()
     {
-        if (_store.CurrentFilePath is null)
+        if (_store.DocumentFilePath is null)
         {
             Title = "SlnDependencyStudio";
         }
         else
         {
-            var name = Path.GetFileNameWithoutExtension(_store.CurrentFilePath);
+            var name = Path.GetFileNameWithoutExtension(_store.DocumentFilePath);
 
             Title = _store.IsDirty
                 ? $"SlnDependencyStudio — {name} *"

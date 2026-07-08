@@ -1,5 +1,6 @@
 using NSubstitute;
 using Shouldly;
+using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Wpf.Features.Project;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
@@ -30,13 +31,25 @@ public class ProjectDocumentStoreFixture
         [Fact]
         public void Should_Have_CurrentFilePath_Null()
         {
-            _store.CurrentFilePath.ShouldBeNull();
+            _store.DocumentFilePath.ShouldBeNull();
         }
 
         [Fact]
         public void Should_Have_IsDirty_False()
         {
             _store.IsDirty.ShouldBeFalse();
+        }
+
+        [Fact]
+        public void Should_Have_SolutionOptionsEditor_Not_Null()
+        {
+            _store.SolutionOptionsEditor.ShouldNotBeNull();
+        }
+
+        [Fact]
+        public void Should_Have_DocumentDirectory_Empty()
+        {
+            _store.DocumentDirectory.ShouldBe(string.Empty);
         }
     }
 
@@ -52,7 +65,34 @@ public class ProjectDocumentStoreFixture
             await _store.OpenAsync("test.sds");
 
             _store.HasDocument.ShouldBeTrue();
-            _store.CurrentFilePath.ShouldBe("test.sds");
+            _store.DocumentFilePath.ShouldBe("test.sds");
+        }
+
+        [Fact]
+        public async Task Should_Compute_DocumentDirectory()
+        {
+            _projectService
+                .OpenAsync(@"C:\Projects\test.sds", Arg.Any<CancellationToken>())
+                .Returns(CreateDocument("Test", "Desc"));
+
+            await _store.OpenAsync(@"C:\Projects\test.sds");
+
+            _store.DocumentDirectory.ShouldBe(@"C:\Projects");
+        }
+
+        [Fact]
+        public async Task Should_Populate_SolutionOptionsEditor()
+        {
+            var document = CreateDocument("Test", "Desc");
+            document.DiagramGenerator.Solution.SolutionPath = @"..\MySolution.sln";
+
+            _projectService
+                .OpenAsync(@"C:\Projects\test.sds", Arg.Any<CancellationToken>())
+                .Returns(document);
+
+            await _store.OpenAsync(@"C:\Projects\test.sds");
+
+            _store.SolutionOptionsEditor.SolutionPath.Value.ShouldBe(@"..\MySolution.sln");
         }
 
         [Fact]
@@ -94,7 +134,7 @@ public class ProjectDocumentStoreFixture
             await _store.OpenAsync("first.sds");
             await _store.OpenAsync("second.sds");
 
-            _store.CurrentFilePath.ShouldBe("second.sds");
+            _store.DocumentFilePath.ShouldBe("second.sds");
             _store.MetadataEditor.ProjectName.Value.ShouldBe("Second");
             _store.MetadataEditor.Description.Value.ShouldBe("SecondDesc");
         }
@@ -131,6 +171,20 @@ public class ProjectDocumentStoreFixture
             await _store.OpenAsync("second.sds");
 
             _store.IsDirty.ShouldBeFalse();
+        }
+
+        [Fact]
+        public async Task Should_Track_IsDirty_When_SolutionPath_Changes()
+        {
+            _projectService
+                .OpenAsync("test.sds", Arg.Any<CancellationToken>())
+                .Returns(CreateDocument("Name", "Desc"));
+
+            await _store.OpenAsync("test.sds");
+
+            _store.SolutionOptionsEditor.SolutionPath.Value = @"C:\New\path.sln";
+
+            _store.IsDirty.ShouldBeTrue();
         }
     }
 
@@ -187,7 +241,7 @@ public class ProjectDocumentStoreFixture
 
             await _store.SaveAsAsync("new.sds");
 
-            _store.CurrentFilePath.ShouldBe("new.sds");
+            _store.DocumentFilePath.ShouldBe("new.sds");
             _store.IsDirty.ShouldBeFalse();
         }
 
@@ -213,7 +267,7 @@ public class ProjectDocumentStoreFixture
             _store.Close();
 
             _store.HasDocument.ShouldBeFalse();
-            _store.CurrentFilePath.ShouldBeNull();
+            _store.DocumentFilePath.ShouldBeNull();
             _store.IsDirty.ShouldBeFalse();
         }
 
@@ -231,7 +285,7 @@ public class ProjectDocumentStoreFixture
             _store.Close();
 
             _store.HasDocument.ShouldBeFalse();
-            _store.CurrentFilePath.ShouldBeNull();
+            _store.DocumentFilePath.ShouldBeNull();
             _store.IsDirty.ShouldBeFalse();
         }
 
@@ -252,8 +306,43 @@ public class ProjectDocumentStoreFixture
             await _store.OpenAsync("second.sds");
 
             _store.HasDocument.ShouldBeTrue();
-            _store.CurrentFilePath.ShouldBe("second.sds");
+            _store.DocumentFilePath.ShouldBe("second.sds");
             _store.MetadataEditor.ProjectName.Value.ShouldBe("Second");
+        }
+
+        [Fact]
+        public async Task Should_Reset_SolutionOptionsEditor()
+        {
+            var document = CreateDocument("Name", "Desc");
+            document.DiagramGenerator.Solution.SolutionPath = @"C:\MySolution.sln";
+
+            _projectService
+                .OpenAsync("test.sds", Arg.Any<CancellationToken>())
+                .Returns(document);
+
+            await _store.OpenAsync("test.sds");
+
+            _store.SolutionOptionsEditor.SolutionPath.Value.ShouldBe(@"C:\MySolution.sln");
+
+            _store.Close();
+
+            _store.SolutionOptionsEditor.SolutionPath.Value.ShouldBe(string.Empty);
+        }
+
+        [Fact]
+        public async Task Should_Reset_DocumentDirectory_To_Empty()
+        {
+            _projectService
+                .OpenAsync(@"C:\Projects\test.sds", Arg.Any<CancellationToken>())
+                .Returns(CreateDocument("Name", "Desc"));
+
+            await _store.OpenAsync(@"C:\Projects\test.sds");
+
+            _store.DocumentDirectory.ShouldBe(@"C:\Projects");
+
+            _store.Close();
+
+            _store.DocumentDirectory.ShouldBe(string.Empty);
         }
     }
 

@@ -106,7 +106,7 @@ Proposed shape:
     "description": "Tracks the default diagram settings for the main repo"
   },
   "diagramGenerator": {
-    "projects": {},
+    "solution": {},
     "diagram": {},
     "export": {}
   },

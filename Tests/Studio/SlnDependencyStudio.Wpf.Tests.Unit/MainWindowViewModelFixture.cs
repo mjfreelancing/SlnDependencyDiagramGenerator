@@ -11,6 +11,7 @@ using SlnDependencyStudio.Wpf.Features.ErrorDialog;
 using SlnDependencyStudio.Wpf.Features.Project;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
 using SlnDependencyStudio.Wpf.Features.RecentProjects;
+using SlnDependencyStudio.Wpf.Features.Solution;
 using SlnDependencyStudio.Wpf.Models;
 using System.Reactive.Linq;
 
@@ -491,6 +492,27 @@ public class MainWindowViewModelFixture
             capturedError.ShouldNotBeNull();
             capturedError!.Title.ShouldBe("Open Failed");
             capturedError.Message.ShouldContain("Access denied");
+        }
+    }
+
+    public class Navigation : MainWindowViewModelFixture
+    {
+        [Fact]
+        public void Should_Contain_Project_Nav_Item()
+        {
+            _viewModel.NavigationItems
+                .ShouldContain(item =>
+                    item.DisplayName == "Project" &&
+                    item.ViewModelType == typeof(ProjectViewModel));
+        }
+
+        [Fact]
+        public void Should_Contain_Solution_Nav_Item()
+        {
+            _viewModel.NavigationItems
+                .ShouldContain(item =>
+                    item.DisplayName == "Solution" &&
+                    item.ViewModelType == typeof(SolutionViewModel));
         }
     }
 

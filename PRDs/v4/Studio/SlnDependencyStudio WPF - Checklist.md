@@ -428,7 +428,7 @@ The selected nav item gets a left-accent border (4px `MaterialDesignPrimary`) an
 
 - [x] **Prerequisite:** Rename `Source/Config/GeneratorProjectOptions.cs` → `GeneratorSolutionOptions.cs`; update the `.sds` JSON key `"projects"` → `"solution"` in `DependencyProjectDocument`. Update all references in generator, CLI, serializers, and tests.
 
-- [ ] 4.2.1.1 Create `ISolutionOptionsEditor` interface under `Features/Solution/`:
+- [x] 4.2.1.1 Create `ISolutionOptionsEditor` interface under `Features/Solution/`:
 
   ```csharp
   public interface ISolutionOptionsEditor
@@ -440,7 +440,7 @@ The selected nav item gets a left-accent border (4px `MaterialDesignPrimary`) an
 
   The `SolutionPath` TrackableValue is the only field exposed in this phase. Future phases (5.1, 5.2) add regex patterns, exclusions, and scope toggles to this same interface.
 
-- [ ] 4.2.1.2 Create `GeneratorSolutionOptionsEditor` under `Features/Solution/`:
+- [x] 4.2.1.2 Create `GeneratorSolutionOptionsEditor` under `Features/Solution/`:
       `internal sealed class GeneratorSolutionOptionsEditor : ReactiveObject, ISolutionOptionsEditor, IDisposable`
   - Initializes `SolutionPath` TrackableValue to `string.Empty` in constructor.
   - Derives `IsDirty` from `SolutionPath.IsDirty` (placeholder for future fields via `CombineLatest`).
@@ -501,13 +501,18 @@ The selected nav item gets a left-accent border (4px `MaterialDesignPrimary`) an
   - Card-based layout (header icon `FolderOpenOutline` + title "Solution").
   - Single `FormField` with `x:Name="SolutionPathFormField"`, label "Solution path", containing:
     ```xml
-    <StackPanel Orientation="Horizontal">
-      <TextBox Width="300"
+    <Grid>
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="Auto" />
+      </Grid.ColumnDefinitions>
+      <TextBox Grid.Column="0"
                materialDesign:HintAssist.Hint="Path to .sln or .slnx file"
                Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
                Text="{Binding SolutionPath.Value, UpdateSourceTrigger=PropertyChanged}" />
-      <Button Margin="8,0,0,0" Content="Browse" Command="{Binding BrowseSolutionPathCommand}" />
-    </StackPanel>
+      <Button Grid.Column="1" Margin="8,0,0,0" Content="Browse"
+              Command="{Binding BrowseSolutionPathCommand}" />
+    </Grid>
     ```
   - `WhenActivated` → `BindValidation(view => view.SolutionPathFormField.ValidationError)`.
   - Code-behind registers the `BrowseSolutionPathInteraction` handler to open `OpenFileDialog` filtered to `.sln`/`.slnx`.

@@ -7,6 +7,7 @@ using SlnDependencyStudio.Wpf.DependencyInjection;
 using SlnDependencyStudio.Wpf.Features.EmptyState;
 using SlnDependencyStudio.Wpf.Features.Project;
 using SlnDependencyStudio.Wpf.Features.Settings;
+using SlnDependencyStudio.Wpf.Features.Solution;
 
 namespace SlnDependencyStudio.Wpf.Extensions;
 
@@ -41,6 +42,7 @@ public static class ServiceCollectionExtensions
             services.RegisterWindowTransient<SettingsWindowViewModel, SettingsWindow>();
             services.RegisterUserControlTransient<SettingsEditorViewModel, SettingsEditor>();
             services.RegisterUserControlTransient<ProjectViewModel, ProjectView>();
+            services.RegisterUserControlTransient<SolutionViewModel, SolutionView>();
             services.RegisterUserControlTransient<EmptyStateViewModel, EmptyStateView>();
 
             return services;

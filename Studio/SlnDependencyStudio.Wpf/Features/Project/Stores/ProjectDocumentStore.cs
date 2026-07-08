@@ -1,7 +1,11 @@
 using AllOverIt.Assertion;
 using ReactiveUI;
+using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Wpf.Features.RecentProjects;
+using SlnDependencyStudio.Wpf.Features.Solution;
+using System.IO;
+using System.Reactive.Linq;
 
 namespace SlnDependencyStudio.Wpf.Features.Project.Stores;
 
@@ -14,20 +18,27 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
     private readonly IDependencyProjectService _projectService;
     private readonly IRecentProjectsService _recentProjects;
     private readonly ProjectMetadataEditor _metadataEditor;
+    private readonly GeneratorSolutionOptionsEditor _solutionOptionsEditor;
     private readonly ObservableAsPropertyHelper<bool> _isDirty;
     private DependencyProjectDocument? _document;
     private string? _currentFilePath;
     private bool _hasDocument;
 
     /// <inheritdoc />
-    public string? CurrentFilePath
+    public string? DocumentFilePath
     {
         get => _currentFilePath;
         set => this.RaiseAndSetIfChanged(ref _currentFilePath, value);
     }
 
     /// <inheritdoc />
+    public string DocumentDirectory => Path.GetDirectoryName(DocumentFilePath) ?? string.Empty;
+
+    /// <inheritdoc />
     public IProjectMetadataEditor MetadataEditor => _metadataEditor;
+
+    /// <inheritdoc />
+    public ISolutionOptionsEditor SolutionOptionsEditor => _solutionOptionsEditor;
 
     /// <inheritdoc />
     public bool IsDirty => _isDirty.Value;
@@ -48,11 +59,14 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
         _recentProjects = recentProjects.WhenNotNull();
 
         _metadataEditor = new ProjectMetadataEditor();
+        _solutionOptionsEditor = new GeneratorSolutionOptionsEditor();
 
-        // Global dirty state is derived from all editor wrappers. When future wrappers are added,
-        // combine their IsDirty values here (e.g., using CombineLatest or additional WhenAnyValue parameters).
-        _isDirty = _metadataEditor
-            .WhenAnyValue(editor => editor.IsDirty)
+        // Global dirty state is derived from all editor wrappers.
+        _isDirty = Observable
+            .CombineLatest(
+                _metadataEditor.WhenAnyValue(editor => editor.IsDirty),
+                _solutionOptionsEditor.WhenAnyValue(editor => editor.IsDirty),
+                (metadata, solution) => metadata || solution)
             .ToProperty(this, nameof(IsDirty));
     }
 
@@ -64,9 +78,10 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
         _document = await _projectService.OpenAsync(filePath, cancellationToken);
 
         HasDocument = true;
-        CurrentFilePath = filePath;
+        DocumentFilePath = filePath;
 
         _metadataEditor.SetOriginalValues(_document.Metadata);
+        _solutionOptionsEditor.SetOriginalValues(_document.DiagramGenerator.Solution);
 
         _recentProjects.Add(filePath);
     }
@@ -75,11 +90,11 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
     public async Task SaveAsync(CancellationToken cancellationToken = default)
     {
         Throw<InvalidOperationException>.WhenNull(_document, "No project is loaded");
-        Throw<InvalidOperationException>.WhenNull(CurrentFilePath, "No current file path");
+        Throw<InvalidOperationException>.WhenNull(DocumentFilePath, "No document file path");
 
         FlushAllEditors();
 
-        await _projectService.SaveAsync(_document, CurrentFilePath, cancellationToken);
+        await _projectService.SaveAsync(_document, DocumentFilePath, cancellationToken);
 
         MarkAllEditorsClean();
     }
@@ -94,7 +109,7 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
 
         await _projectService.SaveAsync(_document, filePath, cancellationToken);
 
-        CurrentFilePath = filePath;
+        DocumentFilePath = filePath;
 
         _recentProjects.Add(filePath);
 
@@ -106,21 +121,24 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
     {
         _document = null;
         HasDocument = false;
-        CurrentFilePath = null;
+        DocumentFilePath = null;
 
         // Reset editors to empty defaults so IsDirty returns to false.
         _metadataEditor.SetOriginalValues(new DependencyProjectMetadata());
+        _solutionOptionsEditor.SetOriginalValues(new GeneratorSolutionOptions());
     }
 
     /// <summary>Flushes all editor wrappers to the underlying document.</summary>
     private void FlushAllEditors()
     {
         _metadataEditor.FlushTo(_document!.Metadata);
+        _solutionOptionsEditor.FlushTo(_document!.DiagramGenerator.Solution);
     }
 
     /// <summary>Marks all editor wrappers as clean after a successful save.</summary>
     private void MarkAllEditorsClean()
     {
         _metadataEditor.SetOriginalValues(_document!.Metadata);
+        _solutionOptionsEditor.SetOriginalValues(_document!.DiagramGenerator.Solution);
     }
 }
