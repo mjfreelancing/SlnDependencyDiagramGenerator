@@ -67,7 +67,7 @@ A `.sds` file is a JSON document that tells the CLI what to do. The `.sds` exten
     "description": "Dependency diagrams for My Solution"
   },
   "diagramGenerator": {
-    "projects": { ... },
+    "solution": { ... },
     "diagram": { ... },
     "export": { ... }
   },
@@ -94,7 +94,7 @@ Identifies the configuration file. Not used during generation.
 
 This is the main configuration section. It has three sub-sections.
 
-#### `projects` — What to analyse
+#### `solution` — What to analyse
 
 | Field                 | Description                                                             |
 | --------------------- | ----------------------------------------------------------------------- |
@@ -173,7 +173,7 @@ Sometimes you need a step to run before the generator can read your solution —
     "description": "Generates dependency diagrams for the SlnDependencyDiagramGenerator solution"
   },
   "diagramGenerator": {
-    "projects": {
+    "solution": {
       "solutionPath": "..\\..\\SlnDependencyDiagramGenerator.sln",
       "regexToInclude": ["\\.*\\.csproj"],
       "regexToExclude": ["\\(Tests|Studio)\\"],

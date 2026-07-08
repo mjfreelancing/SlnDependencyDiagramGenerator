@@ -27,11 +27,11 @@ internal class Program
         try
         {
             var options = GetGeneratorConfig(configurationSelection);
-            var generator = serviceProvider.GetRequiredService<DependencyGenerator>();
+            var generator = serviceProvider.GetRequiredService<IDependencyGenerator>();
 
             await generator.CreateDiagramsAsync(options, CancellationToken.None);
 
-            logger.LogInformation("The solution '{SolutionName}' has been processed.", Path.GetFileName(options.Projects.SolutionPath));
+            logger.LogInformation("The solution '{SolutionName}' has been processed.", Path.GetFileName(options.Solution.SolutionPath));
         }
         catch (Exception exception) when (exception is DependencyGeneratorException or ValidationException)
         {
@@ -133,11 +133,11 @@ internal class Program
 
     private static void ResolveRelativePaths(DependencyGeneratorConfig config, string configDirectory)
     {
-        if (!string.IsNullOrWhiteSpace(config.Projects.SolutionPath) &&
-            !Path.IsPathRooted(config.Projects.SolutionPath))
+        if (!string.IsNullOrWhiteSpace(config.Solution.SolutionPath) &&
+            !Path.IsPathRooted(config.Solution.SolutionPath))
         {
-            config.Projects.SolutionPath = Path.GetFullPath(
-                Path.Combine(configDirectory, config.Projects.SolutionPath));
+            config.Solution.SolutionPath = Path.GetFullPath(
+                Path.Combine(configDirectory, config.Solution.SolutionPath));
         }
 
         if (!string.IsNullOrWhiteSpace(config.Export.RootPath) &&

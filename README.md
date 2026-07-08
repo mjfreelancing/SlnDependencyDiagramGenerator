@@ -33,8 +33,8 @@ This [example](./Samples/Output/net9.0/d2/slndependencydiagramgenerator.png) has
 - Auto-discovers target frameworks from restored assets files (no `targetFrameworks` configuration required).
 - Separates explicit and transitive package dependencies with configurable transitive depth per scope.
 - Supports per-scope generation for individual projects and the full solution graph.
-- Supports package-level exclusions via `projects.packagesToExclude`.
-- Supports framework-level exclusions via `projects.frameworksToExclude`.
+- Supports package-level exclusions via `solution.packagesToExclude`.
+- Supports framework-level exclusions via `solution.frameworksToExclude`.
 - Generates diagrams in D2 (`.d2`) and/or Mermaid (`.mmd`) formats.
 - Exports diagram images as `png`, `svg`, and `pdf`.
 - Writes renderer-specific output under each target framework folder (for example `d2` and `mmd`) to avoid name collisions.
@@ -53,7 +53,7 @@ package, binding the configuration from its `appsettings.json` file.
 ```json
 {
   "options": {
-    "projects": {
+    "solution": {
       "solutionPath": "..\\..\\..\\..\\SlnDependencyDiagramGenerator.sln",
 
       "regexToInclude": ["\\\\.*\\.csproj"],

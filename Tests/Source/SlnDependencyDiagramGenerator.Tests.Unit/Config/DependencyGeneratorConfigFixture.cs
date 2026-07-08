@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
 using SlnDependencyDiagramGenerator.Config;
@@ -28,7 +28,7 @@ public class DependencyGeneratorConfigFixture
 
             var config = new DependencyGeneratorConfig
             {
-                Projects = new GeneratorProjectOptions
+                Solution = new GeneratorSolutionOptions
                 {
                     SolutionPath = tempSlnPath,
                     RegexToInclude = [".*\\.csproj"]
@@ -65,7 +65,7 @@ public class DependencyGeneratorConfigFixture
     {
         var config = new DependencyGeneratorConfig
         {
-            Projects = new GeneratorProjectOptions
+            Solution = new GeneratorSolutionOptions
             {
                 SolutionPath = string.Empty,
                 RegexToInclude = [".*\\.csproj"]
@@ -82,7 +82,7 @@ public class DependencyGeneratorConfigFixture
     {
         var config = new DependencyGeneratorConfig
         {
-            Projects = new GeneratorProjectOptions
+            Solution = new GeneratorSolutionOptions
             {
                 SolutionPath = "test.txt",
                 RegexToInclude = [".*\\.csproj"]
@@ -106,7 +106,7 @@ public class DependencyGeneratorConfigFixture
 
             var config = new DependencyGeneratorConfig
             {
-                Projects = new GeneratorProjectOptions
+                Solution = new GeneratorSolutionOptions
                 {
                     SolutionPath = tempSlnPath,
                     RegexToInclude = [".*\\.csproj"]
@@ -153,3 +153,4 @@ public class DependencyGeneratorConfigFixture
         return provider.GetRequiredService<IDependencyGenerator>();
     }
 }
+

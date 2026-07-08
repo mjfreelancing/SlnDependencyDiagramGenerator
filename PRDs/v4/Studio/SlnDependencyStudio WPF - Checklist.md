@@ -39,6 +39,8 @@ Features/
 | `Features/Settings/`       | `SlnDependencyStudio.Wpf.Features.Settings`       | `SettingsEditorViewModel`, `SettingsEditor`, `SettingsWindowViewModel`, `SettingsWindow`                                                                                                       |
 | `Features/Theming/`        | `SlnDependencyStudio.Wpf.Features.Theming`        | `IThemeService`, `ThemeService`                                                                                                                                                                |
 
+> **Note:** `Features/Project/Stores/` is the only feature subfolder beyond `Models/`. The store (`IProjectDocumentStore` / `ProjectDocumentStore`) is a cross-cutting singleton consumed by all page view models and owns the editor instances. Editors live in their respective feature folders (`Solution`, `Export`, `Diagrams`, `Pipeline`), not in `Project/`.
+
 **Rules:**
 
 - Each feature folder is a self-contained vertical slice. Do not scatter a feature's interface, implementation, or models across top-level folders.
@@ -128,19 +130,19 @@ The layout pattern is **left nav + tabbed workspace pages** (VS Code Settings st
 
 The six original sections are consolidated into five, reordered by task flow:
 
-| #   | Nav Item     | Icon (Material Design) | Contents                                                                                                     |
-| --- | ------------ | ---------------------- | ------------------------------------------------------------------------------------------------------------ |
-| 1   | **Project**  | `FileDocumentOutline`  | Project name, description, file path, dirty state                                                            |
-| 2   | **Sources**  | `FolderOpenOutline`    | Solution path, regex include/exclude, package/framework exclusions, per-project + all-projects scope toggles |
-| 3   | **Diagrams** | `GraphOutline`         | Format checkboxes (D2/Mermaid), direction, grouping toggle, fill styles                                      |
-| 4   | **Export**   | `ExportVariant`        | Output root path, clear-contents toggle, image format checkboxes                                             |
-| 5   | **Pipeline** | `Pipe`                 | Pre-generation command config + d2/mmdc tool status (merged)                                                 |
+| #   | Nav Item     | Icon (Material Design) | `.sds` node mapped            | Contents                                                                                                     |
+| --- | ------------ | ---------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| 1   | **Project**  | `FileDocumentOutline`  | `metadata`                    | Project name, description, file path, dirty state                                                            |
+| 2   | **Solution** | `FolderOpenOutline`    | `diagramGenerator.solution`   | Solution path, regex include/exclude, package/framework exclusions, per-project + all-projects scope toggles |
+| 3   | **Diagrams** | `GraphOutline`         | `diagramGenerator.diagram`    | Format checkboxes (D2/Mermaid), direction, grouping toggle, fill styles                                      |
+| 4   | **Export**   | `ExportVariant`        | `diagramGenerator.export`     | Output root path, clear-contents toggle, image format checkboxes                                             |
+| 5   | **Pipeline** | `Pipe`                 | `preGeneration` + tool config | Pre-generation command config + d2/mmdc tool status (merged)                                                 |
 
 **Key changes from the original suggestion:**
 
-- "Solution" renamed to **Sources** — more precise: it's about where input comes from, not just the `.sln` path.
+- **Solution** is the nav name, matching the `.sds` `diagramGenerator.solution` node (renamed from `projects` in v4.0).
 - "Diagram" → **Diagrams** (plural — you're generating multiple files).
-- "Pre-Generation" and "Tools" merged into **Pipeline** — both are about the generation pipeline, not configuration per se. This is where the user configures _what happens before and during_ generation, separated from _what gets generated_.
+- "Pre-Generation" and "Tools" merged into **Pipeline** — both are about the generation pipeline, not configuration per se.
 - **Project** moves to the top — it's the document identity. The user always sees the project name first.
 
 #### Layout Pattern: Card-Based Sections Within Each Page
@@ -179,7 +181,7 @@ Cards are independently collapsible via their header click. The collapsed/expand
 
 | Tier          | What's in it                                                                | Where it lives                              | Default state                                                            |
 | ------------- | --------------------------------------------------------------------------- | ------------------------------------------- | ------------------------------------------------------------------------ |
-| **Essential** | Solution path, diagram formats, export root path                            | Top of Sources, Diagrams, Export pages      | Expanded, cards open                                                     |
+| **Essential** | Solution path, diagram formats, export root path                            | Top of Solution, Diagrams, Export pages     | Expanded, cards open                                                     |
 | **Common**    | Regex patterns, scope toggles, image formats, clear-contents                | Middle of each page                         | Expanded, cards open                                                     |
 | **Advanced**  | Fill styles, opacity, grouping, pre-generation command, tool path overrides | Bottom cards on Diagrams and Pipeline pages | **Collapsed by default** with a "Show advanced" label on the card header |
 
@@ -266,7 +268,7 @@ The selected nav item gets a left-accent border (4px `MaterialDesignPrimary`) an
 
 #### Actionable Checklist Items
 
-- [x] 1.4.1 Present the five-section navigation design (Project, Sources, Diagrams, Export, Pipeline) to the human for review and iterate until signed off. Confirm the "Pipeline" merge of Pre-Generation + Tools and the "Sources" rename.
+- [x] 1.4.1 Present the five-section navigation design (Project, Solution, Diagrams, Export, Pipeline) to the human for review and iterate until signed off. Confirm the "Pipeline" merge of Pre-Generation + Tools and the "Solution" rename (from the original "Sources" proposal).
 - [x] 1.4.2 Agree the progressive disclosure split: Essential (solution path, formats, export root — always expanded), Common (regex patterns, scope toggles, image formats — always expanded), Advanced (fill styles, opacity, grouping, pre-gen, tool paths — collapsed by default with an "Advanced" label). Confirm which fields fall into each tier.
 - [x] 1.4.3 Agree the card-based page layout pattern: each navigation section renders a scrollable workspace page with collapsible `Card` controls grouping related settings. Cards show validation error counts on their headers. Confirm this pattern for all five sections.
 - [x] 1.4.4 Agree the validation visibility approach: inline field errors via ReactiveUI.Validation, nav-item warning dots, and a disabled Generate button with tooltip. Confirm the error-count badge on card headers. _(Revised 2026-06-24: floating validation summary bar dropped — WPF GridSplitter limitation made it architecturally problematic; nav badges + inline errors provide equivalent coverage.)_
@@ -404,107 +406,352 @@ The selected nav item gets a left-accent border (4px `MaterialDesignPrimary`) an
     }
     ```
 
-  - In the view code-behind, use `WhenActivated` + `BindValidation`:
+  - In the view code-behind, use `WhenActivated` + `BindValidation` (targeting `FormField.ValidationError`):
     ```csharp
     this.WhenActivated(disposables =>
     {
         this.BindValidation(
                 ViewModel,
                 vm => vm.ProjectName.Value,
-                view => view.ProjectNameError.Text)
+                view => view.ProjectNameFormField.ValidationError)
             .DisposeWith(disposables);
     });
     ```
-  - The error `TextBlock` must be a **named element outside `FormField`** — `FormField`'s `[ContentProperty]` prevents `x:Name` on child elements. I would like to enhance this so the error can be positioned under the value and not the label. We should discuss first.
+  - The error is displayed via `FormField.ValidationError` DP (added to `FormField` in 4.1.3). Name the `FormField` instance in XAML (`x:Name="ProjectNameFormField"`) and use: `this.BindValidation(ViewModel, vm => vm.ProjectName.Value, view => view.ProjectNameFormField.ValidationError)`. The error renders inside `FormField` below the separator, aligned with the input column.
   - Requires ReactiveUI ≥23.2.28 (satisfies Validation 7.1.0's dependency).
 
 ### 4.2 Solution & Export Paths
 
-- [ ] 4.2.1 Under the "Sources" navigation section, create the solution-path card: a `TextBox` for solution path and a `Browse` button that opens `OpenFileDialog` filtered to `.sln` and `.slnx` files, per the card-based layout pattern in 1.4.
-- [ ] 4.2.2 Under the "Export" navigation section, create the export-root card: a `TextBox` for export root and a `Browse` button that opens `OpenFolderDialog`.
-- [ ] 4.2.3 Bind both paths to `DependencyProjectDocument.DiagramGenerator.Projects.SolutionPath` and `.Export.RootPath` respectively.
+**Architecture note:** This phase introduces two new editor wrappers following the `ProjectMetadataEditor` pattern — one per document sub-object — each living in its own feature folder (`Features/Solution/`, `Features/Export/`). The store references editors via their interfaces and coordinates `IsDirty`, `FlushAllEditors`, and `MarkAllEditorsClean` across all editors. Two new navigation items ("Solution", "Export") are added alongside "Project".
+
+#### 4.2.1 GeneratorSolutionOptions Editor
+
+- [x] **Prerequisite:** Rename `Source/Config/GeneratorProjectOptions.cs` → `GeneratorSolutionOptions.cs`; update the `.sds` JSON key `"projects"` → `"solution"` in `DependencyProjectDocument`. Update all references in generator, CLI, serializers, and tests.
+
+- [ ] 4.2.1.1 Create `ISolutionOptionsEditor` interface under `Features/Solution/`:
+
+  ```csharp
+  public interface ISolutionOptionsEditor
+  {
+      bool IsDirty { get; }
+      TrackableValue<string> SolutionPath { get; }
+  }
+  ```
+
+  The `SolutionPath` TrackableValue is the only field exposed in this phase. Future phases (5.1, 5.2) add regex patterns, exclusions, and scope toggles to this same interface.
+
+- [ ] 4.2.1.2 Create `GeneratorSolutionOptionsEditor` under `Features/Solution/`:
+      `internal sealed class GeneratorSolutionOptionsEditor : ReactiveObject, ISolutionOptionsEditor, IDisposable`
+  - Initializes `SolutionPath` TrackableValue to `string.Empty` in constructor.
+  - Derives `IsDirty` from `SolutionPath.IsDirty` (placeholder for future fields via `CombineLatest`).
+  - `SetOriginalValues(GeneratorSolutionOptions source)` — loads `SolutionPath` from source and calls `SetOriginalValue`.
+  - `FlushTo(GeneratorSolutionOptions target)` — writes `SolutionPath.Value` to `target.SolutionPath`.
+
+#### 4.2.2 GeneratorExportOptions Editor
+
+- [ ] 4.2.2.1 Create `IExportOptionsEditor` interface under `Features/Export/`:
+
+  ```csharp
+  public interface IExportOptionsEditor
+  {
+      bool IsDirty { get; }
+      TrackableValue<string> RootPath { get; }
+  }
+  ```
+
+- [ ] 4.2.2.2 Create `GeneratorExportOptionsEditor` under `Features/Export/`:
+      `internal sealed class GeneratorExportOptionsEditor : ReactiveObject, IExportOptionsEditor, IDisposable`
+  - Same pattern as 4.2.1.2 but wraps `GeneratorExportOptions.RootPath`.
+
+#### 4.2.3 Store Integration
+
+- [ ] 4.2.3.1 Add to `IProjectDocumentStore`:
+
+  ```csharp
+  ISolutionOptionsEditor SolutionOptionsEditor { get; }
+  IExportOptionsEditor ExportOptionsEditor { get; }
+  ```
+
+- [ ] 4.2.3.2 In `ProjectDocumentStore`:
+  - Add `_solutionOptionsEditor` and `_exportOptionsEditor` fields, initialized in constructor.
+  - Extend `IsDirty` derivation to combine all three editors:
+    ```csharp
+    _metadataEditor.WhenAnyValue(e => e.IsDirty)
+        .CombineLatest(
+            _solutionOptionsEditor.WhenAnyValue(e => e.IsDirty),
+            _exportOptionsEditor.WhenAnyValue(e => e.IsDirty),
+            (meta, solution, export) => meta || solution || export)
+    ```
+  - Extend `OpenAsync`: after loading `_metadataEditor`, also load the new editors from `_document.DiagramGenerator.Solution` and `_document.DiagramGenerator.Export`.
+  - Extend `FlushAllEditors`: add `_solutionOptionsEditor.FlushTo(_document.DiagramGenerator.Solution)` and `_exportOptionsEditor.FlushTo(_document.DiagramGenerator.Export)`.
+  - Extend `MarkAllEditorsClean`: reset the new editors via `SetOriginalValues`.
+  - Extend `Close`: reset the new editors to defaults.
+
+#### 4.2.4 Solution Page
+
+- [ ] 4.2.4.1 Create `Features/Solution/SolutionViewModel.cs`:
+  - Receives `IProjectDocumentStore` via DI (scoped).
+  - Inherits from `ReactiveObject`, implements `IValidatableViewModel`.
+  - Exposes `SolutionPath` pass-through: `public TrackableValue<string> SolutionPath => _store.SolutionOptionsEditor.SolutionPath;`
+  - `ValidationRule`: `SolutionPath.Value` not empty → "Solution path must not be empty."
+  - `Interaction<string, string?>` for browse dialog.
+  - `ReactiveCommand` that calls `BrowseSolutionPathInteraction.Handle(...)` and assigns result to `SolutionPath.Value`.
+
+- [ ] 4.2.4.2 Create `Features/Solution/SolutionView.xaml` + `.xaml.cs`:
+  - Card-based layout (header icon `FolderOpenOutline` + title "Solution").
+  - Single `FormField` with `x:Name="SolutionPathFormField"`, label "Solution path", containing:
+    ```xml
+    <StackPanel Orientation="Horizontal">
+      <TextBox Width="300"
+               materialDesign:HintAssist.Hint="Path to .sln or .slnx file"
+               Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+               Text="{Binding SolutionPath.Value, UpdateSourceTrigger=PropertyChanged}" />
+      <Button Margin="8,0,0,0" Content="Browse" Command="{Binding BrowseSolutionPathCommand}" />
+    </StackPanel>
+    ```
+  - `WhenActivated` → `BindValidation(view => view.SolutionPathFormField.ValidationError)`.
+  - Code-behind registers the `BrowseSolutionPathInteraction` handler to open `OpenFileDialog` filtered to `.sln`/`.slnx`.
+
+- [ ] 4.2.4.3 Register `SolutionViewModel`/`SolutionView` via DI in `ServiceCollectionExtensions.AddWpfDependencies()`.
+
+#### 4.2.5 Export Page (Root Path)
+
+- [ ] 4.2.5.1 Create `Features/Export/ExportViewModel.cs`:
+  - Same pattern as `SolutionViewModel` but binds to `_store.ExportOptionsEditor.RootPath`.
+  - `ValidationRule`: `RootPath.Value` not empty → "Export root path must not be empty."
+  - `Interaction<string, string?>` for folder browse dialog.
+
+- [ ] 4.2.5.2 Create `Features/Export/ExportView.xaml` + `.xaml.cs`:
+  - Card-based layout (header icon `ExportVariant` + title "Export").
+  - Single `FormField` with `x:Name="ExportRootFormField"`, label "Export root", containing TextBox + folder Browse button.
+  - Same `BindValidation` pattern.
+  - Code-behind registers the interaction handler to open `OpenFolderDialog`.
+
+- [ ] 4.2.5.3 Register `ExportViewModel`/`ExportView` via DI.
+
+#### 4.2.6 Navigation Wiring
+
+- [ ] 4.2.6.1 In `MainWindowViewModel` constructor, add navigation items:
+  ```csharp
+  new NavigationItemViewModel<SolutionViewModel> { DisplayName = "Solution", IconKind = FolderOpenOutline },
+  new NavigationItemViewModel<ExportViewModel> { DisplayName = "Export", IconKind = ExportVariant }
+  ```
+
+**Phase 4.2 completion:** The user can edit the solution path and export root path through dedicated pages with browse buttons. Both fields support inline validation. Changes are dirty-tracked through the centralized store and flushed on save.
 
 ### 4.3 Format Toggles & Basic Export
 
-- [ ] 4.3.1 In the "Diagrams" navigation section, add large, labelled `ToggleButton` controls (with format icons) for each `DiagramFormat` value (D2, Mermaid), per the visual hierarchy in 1.4. Bind to a collection derived from `DiagramGenerator.Diagram.Formats`. Changes should add/remove from the `Formats` array.
-- [ ] 4.3.2 In the "Export" section, add `CheckBox` controls for each `DiagramImageFormat` value (Png, Svg, Pdf). Bind to `DiagramGenerator.Export.ImageFormats`.
-- [ ] 4.3.3 Add a `ToggleSwitch` (Material Design styled) for `DiagramGenerator.Export.ClearContents`.
-- [ ] 4.3.4 Add validation: at least one diagram format must be selected. The "Generate" button should be disabled until this holds.
+**Architecture note:** This phase adds a "Diagrams" navigation page and a `GeneratorDiagramOptionsEditor` under `Features/Diagrams/`. The `GeneratorExportOptionsEditor` (in `Features/Export/`) is extended with `ClearContents` and `ImageFormats` TrackableValues.
+
+#### 4.3.1 Diagram Options Editor
+
+- [ ] 4.3.1.1 Create `IDiagramOptionsEditor` interface under `Features/Diagrams/`:
+
+  ```csharp
+  public interface IDiagramOptionsEditor
+  {
+      bool IsDirty { get; }
+      TrackableValue<ObservableCollection<DiagramFormat>> Formats { get; }
+  }
+  ```
+
+  The `Formats` collection is an `ObservableCollection<DiagramFormat>` so add/remove operations trigger change detection. In phase 5.3, `Direction`, styles, and grouping are added to this same interface.
+
+- [ ] 4.3.1.2 Create `GeneratorDiagramOptionsEditor` under `Features/Diagrams/`:
+      `internal sealed class GeneratorDiagramOptionsEditor : ReactiveObject, IDiagramOptionsEditor, IDisposable`
+  - Initializes `Formats` TrackableValue with an empty `ObservableCollection<DiagramFormat>` in constructor.
+  - Derives `IsDirty` from `Formats.IsDirty` (placeholder for future fields via `CombineLatest`).
+  - `SetOriginalValues(GeneratorDiagramOptions source)` — populates `Formats` collection from `source.Formats` array, then calls `SetOriginalValue`.
+  - `FlushTo(GeneratorDiagramOptions target)` — writes `Formats` collection to `target.Formats` array.
+  - **Dirty tracking for collections:** subscribe to `Formats.Value.CollectionChanged` and call `this.RaisePropertyChanged(nameof(IsDirty))` so mutations to the collection (add/remove) propagate to the editor's `IsDirty` OAPH.
+
+- [ ] 4.3.1.3 Add `IDiagramOptionsEditor DiagramOptionsEditor { get; }` to `IProjectDocumentStore`. Integrate into `ProjectDocumentStore` (constructor field, `IsDirty` combine, `OpenAsync`, `FlushAllEditors`, `MarkAllEditorsClean`, `Close`).
+
+#### 4.3.2 Extend Export Editor
+
+- [ ] 4.3.2.1 Add `ClearContents` and `ImageFormats` TrackableValues to `IExportOptionsEditor` and `GeneratorExportOptionsEditor`:
+
+  ```csharp
+  TrackableValue<bool> ClearContents { get; }
+  TrackableValue<ObservableCollection<DiagramImageFormat>> ImageFormats { get; }
+  ```
+
+- [ ] 4.3.2.2 Update `IsDirty` derivation in `GeneratorExportOptionsEditor` to combine `RootPath.IsDirty`, `ClearContents.IsDirty`, and `ImageFormats.IsDirty`.
+
+- [ ] 4.3.2.3 Update `SetOriginalValues` / `FlushTo` for the new fields in `GeneratorExportOptionsEditor`.
+
+#### 4.3.3 Diagrams Page
+
+- [ ] 4.3.3.1 Create `Features/Diagrams/DiagramsViewModel.cs`:
+  - Receives `IProjectDocumentStore` via DI.
+  - Inherits from `ReactiveObject`, implements `IValidatableViewModel`.
+  - Exposes `Formats` pass-through: `public TrackableValue<ObservableCollection<DiagramFormat>> Formats => _store.DiagramOptionsEditor.Formats;`
+  - `ValidationRule`: at least one format must be selected (`Formats.Value.Count > 0`).
+
+- [ ] 4.3.3.2 Create `Features/Diagrams/DiagramsView.xaml` + `.xaml.cs`:
+  - Card-based layout (header icon `GraphOutline` + title "Diagrams").
+  - Card containing two large labelled `ToggleButton` controls for D2 and Mermaid, bound to `Formats.Value` via two-way converters (checked ↔ item in collection).
+  - No `FormField` needed — use plain `StackPanel` with `ToggleButton` controls.
+  - Named error `TextBlock` (`x:Name="FormatsError"`) below the toggle group for validation.
+  - `WhenActivated` → `BindValidation(ViewModel, vm => vm.Formats.Value.Count, view => view.FormatsError.Text)`.
+
+- [ ] 4.3.3.3 Register `DiagramsViewModel`/`DiagramsView` via DI.
+
+#### 4.3.4 Extend Export Page
+
+- [ ] 4.3.4.1 In `ExportViewModel`, add pass-through properties for `ClearContents` and `ImageFormats` from `_store.ExportOptionsEditor`.
+
+- [ ] 4.3.4.2 In `ExportView.xaml`, add below the root-path card:
+  - Card with `ToggleSwitch` for `ClearContents` (bound to `ClearContents.Value`).
+  - Card with `CheckBox` controls for Png, Svg, Pdf (bound to `ImageFormats.Value` via converters).
+
+#### 4.3.5 Navigation Wiring
+
+- [ ] 4.3.5.1 In `MainWindowViewModel.NavigationItems`, add:
+  ```csharp
+  new NavigationItemViewModel<DiagramsViewModel> { DisplayName = "Diagrams", IconKind = GraphOutline }
+  ```
+
+**Phase 4.3 completion:** All five nav items are present. Diagrams and Export pages show their complete core settings.
 
 ### 4.4 Validation Wiring
 
-- [ ] 4.4.1 Wire `ReactiveUI.Validation`'s `BindValidation` helper in each view to display inline error messages with Material Design's `MaterialDesignValidationErrorTemplate`, per the validation integration section in 1.4.
-- [x] 4.4.2 ~~Implement the floating validation summary bar~~ — Dropped (2026-06-24). WPF `GridSplitter` limitation: both adjacent rows must use `GridUnitType.Star` for `MinHeight` to be respected, which conflicts with `Auto`-sized validation content. Inline validation + nav badges provide equivalent UX without architectural complexity.
-- [ ] 4.4.3 Ensure each card header shows a validation-error count badge (e.g., "⚠ 2") and each left-nav item shows a dot indicator (orange/red) when its page has validation errors, per 1.4.
+- [ ] 4.4.1 Wire `ReactiveUI.Validation`'s `BindValidation` helper in each view (Project, Solution, Export, Diagrams) to display inline error messages. For pages using `FormField`, target `view => view.NamedFormField.ValidationError`. For pages without FormField (Diagrams), target a named error `TextBlock`. Reuse the pattern established in 4.1.3: `WhenActivated` → `this.BindValidation(ViewModel, vm => vm.Property, view => view.Element)`.
 
-**Phase 4 completion:** The user can edit metadata, select solution/export paths, toggle formats, and clear contents. Validation errors appear inline and are surfaced in the navigation.
+- [x] 4.4.2 ~~Implement the floating validation summary bar~~ — Dropped (2026-06-24).
+
+- [ ] 4.4.3 Each `NavigationItemViewModel` shall expose `HasValidationError` (already declared). In Phase 9.2, this is wired to observe the page VM's `ValidationContext.IsValid` (inverted) to drive nav-item dot indicators. For now, the property exists and defaults to `false`.
+
+**Phase 4 completion:** The user can edit metadata, solution path, export root, diagram formats, image formats, and clear-contents. Validation errors appear inline. All `.sds` core fields are editable.
 
 ---
 
 ## Phase 5 — Advanced Configuration Editing
 
-**Intent:** Build the remaining configuration editors for advanced settings: include/exclude regex patterns, package and framework exclusions, per-scope enablement (individual/all), transitive depth, diagram styling (direction, colors, opacity), grouping, and pre-generation command configuration.
+**Intent:** Extend all five editor wrappers with their remaining `.sds` fields. Each editor is extended in-place (no new editor classes) — fields are added to the existing `I*Editor` interfaces and their implementations. This phase completes the full `.sds` configuration surface.
 
-### 5.1 Regex Filters & Exclusions
+> **Note:** Phase 5 items reference the nav item "Solution" (formerly "Sources") — see Phase 4.2 rename.
 
-- [ ] 5.1.1 Under "Sources", add editable list editors for `RegexToInclude` patterns using the tag-input pattern from 1.4: a `TextBox` with an `Add` button, items displayed as removable `Chip` controls below. Bind to an `ObservableCollection<string>`.
-- [ ] 5.1.2 Mirror the tag-input pattern for `RegexToExclude`, `PackagesToExclude`, and `FrameworksToExclude`.
-- [ ] 5.1.3 Add a **specialised regex agent** review: the UI should provide a tooltip or help text with examples of common regex patterns for project filtering (e.g., `.*Tests.*\.csproj`).
+### 5.1 Solution Filters & Exclusions (extends `ISolutionOptionsEditor`)
 
-### 5.2 Project Scope Toggles & Transitive Depth
+**`.sds` fields covered:** `solution.regexToInclude`, `solution.regexToExclude`, `solution.packagesToExclude`, `solution.frameworksToExclude`
 
-- [ ] 5.2.1 Under "Sources", add `ToggleSwitch` controls for `Individual.Enabled` and `All.Enabled`. When disabled, grey out the associated `IncludeDependencies` checkbox and `TransitiveDepth` slider.
-- [ ] 5.2.2 Bind `IncludeDependencies` for each scope to its `CheckBox`.
-- [ ] 5.2.3 Bind `TransitiveDepth` to a `Slider` (0–10) with a numeric readout, per the visual hierarchy in 1.4.
-- [ ] 5.2.4 Validation: at least one scope (individual or all) must be enabled.
+- [ ] 5.1.1 Add four `TrackableValue<ObservableCollection<string>>` properties to `ISolutionOptionsEditor`: `RegexToInclude`, `RegexToExclude`, `PackagesToExclude`, `FrameworksToExclude`.
 
-### 5.3 Diagram Styling
+- [ ] 5.1.2 Update `GeneratorSolutionOptionsEditor`:
+  - Initialize each collection as empty `ObservableCollection<string>` in constructor.
+  - Update `IsDirty` derivation to combine all TrackableValues (including `SolutionPath` from 4.2).
+  - Update `SetOriginalValues` / `FlushTo` for all four array properties.
+  - **Collection dirty tracking:** subscribe to each collection's `CollectionChanged` event in the editor constructor and call `this.RaisePropertyChanged(nameof(IsDirty))` so mutations propagate to the editor's `IsDirty` OAPH. `TrackableValue<T>` itself does not need modification.
 
-- [ ] 5.3.1 Under "Diagrams", add a `ComboBox` for `Direction` with values LR, RL, TB, BT. Display friendly names (Left-to-Right, Right-to-Left, Top-to-Bottom, Bottom-to-Top).
-- [ ] 5.3.2 Add style editors for `FrameworkStyle.Fill`, `PackageStyle.Fill`, and `TransitiveStyle.Fill` using the pattern from 1.4: a `TextBox` showing the hex value alongside a small `Rectangle` preview swatch, and a `Slider` for opacity (0.0–1.0).
-- [ ] 5.3.3 Add a `ToggleSwitch` for `Grouping.Enabled`. When enabled, show `GroupName`, `GroupNameAlias`, and `Grouping.BackgroundStyle` editors (fill colour swatch + opacity slider).
-- [ ] 5.3.4 Bind `GroupName` and `GroupNameAlias` to `TextBox` controls.
+- [ ] 5.1.3 In `SolutionView.xaml`, add four `Card` controls (one per list), each with the tag-input pattern from 1.4: a `TextBox` + `Add` button, items displayed as removable Material Design `Chip` controls below. Cards are collapsible via `ICardSessionState`.
 
-### 5.4 Pre-Generation Command
+- [ ] 5.1.4 Add help tooltips to each list editor with example regex patterns (e.g., `.*Tests.*\.csproj`, `Studio`). Use a specialised regex agent for the example text.
 
-- [ ] 5.4.1 On the "Pipeline" page, add a `ToggleSwitch` for pre-generation `Enabled`. When enabled, show the remaining pre-generation fields within a card. Per the progressive disclosure strategy in 1.4, this card is **collapsed by default** with an "Advanced" label.
-- [ ] 5.4.2 Add a `TextBox` for `Command` with a `Browse` button that opens `OpenFileDialog` filtered to `.exe`, `.bat`, `.ps1`, `.cmd`.
-- [ ] 5.4.3 Add a `TextBox` for `Arguments`.
-- [ ] 5.4.4 Add a `TextBox` for `WorkingDirectory` with a `Browse` button (`OpenFolderDialog`).
-- [ ] 5.4.5 Add a `CheckBox` for `ContinueOnFailure` with a tooltip explaining that when checked, generation proceeds even if the pre-generation command fails.
-- [ ] 5.4.6 Validation: when `Enabled` is true, `Command` must not be empty.
+### 5.2 Solution Scope Toggles & Transitive Depth (extends `ISolutionOptionsEditor`)
 
-**Phase 5 completion:** All configuration properties from `DependencyGeneratorConfig` are editable through the UI with inline validation. The configuration surface mirrors the full `.sds` file schema.
+**`.sds` fields covered:** `solution.individual.{enabled, includeDependencies, transitiveDepth}`, `solution.all.{enabled, includeDependencies, transitiveDepth}`
+
+- [ ] 5.2.1 Add two `TrackableValue<SolutionScopeState>` properties to `ISolutionOptionsEditor`: `IndividualScope` and `AllScope`. Create `Features/Solution/Models/SolutionScopeState.cs` as a POCO with `Enabled` (bool), `IncludeDependencies` (bool), `TransitiveDepth` (int).
+
+- [ ] 5.2.2 Update `GeneratorSolutionOptionsEditor`: map `SolutionScopeState` ↔ `GeneratorSolutionOptions.ProjectScope` in `SetOriginalValues` / `FlushTo`.
+
+- [ ] 5.2.3 In `SolutionView.xaml`, add a "Scope" card with:
+  - Two `ToggleSwitch` controls for `IndividualScope.Enabled` and `AllScope.Enabled`.
+  - When enabled, show `CheckBox` for `IncludeDependencies` and `Slider` (0–10) for `TransitiveDepth` with numeric readout.
+  - When disabled, grey out the dependent controls via `IsEnabled` binding.
+
+- [ ] 5.2.4 Validation: at least one scope must be enabled. Add to `SolutionViewModel.ValidationRule`.
+
+### 5.3 Diagram Styling (extends `IDiagramOptionsEditor`)
+
+**`.sds` fields covered:** `diagram.direction`, `diagram.frameworkStyle`, `diagram.packageStyle`, `diagram.transitiveStyle`, `diagram.groupName`, `diagram.groupNameAlias`, `diagram.grouping.{enabled, backgroundStyle}`
+
+- [ ] 5.3.1 Add TrackableValues to `IDiagramOptionsEditor`: `Direction` (string, one of LR/RL/TB/BT), `FrameworkFill` (string, hex), `FrameworkOpacity` (double), `PackageFill` (string), `PackageOpacity` (double), `TransitiveFill` (string), `TransitiveOpacity` (double), `GroupingEnabled` (bool), `GroupName` (string), `GroupNameAlias` (string), `GroupingFill` (string), `GroupingOpacity` (double).
+
+- [ ] 5.3.2 Update `GeneratorDiagramOptionsEditor`: map TrackableValues ↔ `GeneratorDiagramOptions` sub-objects in `SetOriginalValues` / `FlushTo`. Update `IsDirty` combine.
+
+- [ ] 5.3.3 In `DiagramsView.xaml`, add cards:
+  - **Direction** card: `ComboBox` with friendly names (Left-to-Right → LR, etc.).
+  - **Styles** card: three rows (Framework, Package, Transitive), each with a `TextBox` showing hex + `Rectangle` preview swatch + `Slider` for opacity (0.0–1.0).
+  - **Grouping** card: `ToggleSwitch` for `GroupingEnabled`; when enabled, show `GroupName`/`GroupNameAlias` `TextBox` controls and fill/opacity editors.
+
+### 5.4 Pre-Generation Command (new page section on Pipeline page)
+
+**`.sds` fields covered:** `preGeneration.{enabled, command, arguments, workingDirectory, continueOnFailure}`
+
+- [ ] 5.4.1 Create `Features/Pipeline/PipelineViewModel.cs`:
+  - Inherits from `ReactiveObject`, implements `IValidatableViewModel`.
+  - Exposes TrackableValue pass-throughs for `Enabled`, `Command`, `Arguments`, `WorkingDirectory`, `ContinueOnFailure` from a `PreGenerationConfigEditor` (see below).
+
+- [ ] 5.4.2 Create `IPreGenerationConfigEditor` interface and `PreGenerationConfigEditor` class under `Features/Pipeline/`:
+  - Wraps `PreGenerationConfig` with TrackableValues for all five fields.
+  - Add `IPreGenerationConfigEditor PreGenerationEditor { get; }` to `IProjectDocumentStore`.
+  - Integrate into `ProjectDocumentStore` (constructor, `IsDirty` combine, open/save/flush/clean/close).
+
+- [ ] 5.4.3 Create `Features/Pipeline/PipelineView.xaml` + `.xaml.cs`:
+  - Card-based layout (header icon `Pipe` + title "Pipeline" with an "optional" Chip badge per 1.4).
+  - Pre-generation card (collapsed by default via `ICardSessionState`, "Advanced" label):
+    - `ToggleSwitch` for `Enabled`; when enabled, show the remaining fields.
+    - `TextBox` for `Command` with Browse button (`OpenFileDialog` filtered to `.exe`, `.bat`, `.ps1`, `.cmd`).
+    - `TextBox` for `Arguments` and `WorkingDirectory` (with Browse button for folder).
+    - `CheckBox` for `ContinueOnFailure` with tooltip.
+  - Tool-status card placeholder (filled in Phase 6).
+
+- [ ] 5.4.4 Validation: when `Enabled` is true, `Command` must not be empty.
+
+- [ ] 5.4.5 Register `PipelineViewModel`/`PipelineView` via DI. Add `NavigationItemViewModel<PipelineViewModel>` to `MainWindowViewModel.NavigationItems` with `IsAdvanced = true` (renders the "optional" chip).
+
+**Phase 5 completion:** All `.sds` fields from `metadata`, `solution`, `diagram`, `export`, and `preGeneration` are editable through the UI. Every field has inline validation where appropriate. The configuration surface fully mirrors the `.sds` schema.
 
 ---
 
 ## Phase 6 — Tool Detection & Status
 
-**Intent:** Integrate with the existing `IToolDetectionService` (in `SlnDependencyDiagramGenerator`) to detect d2 and mmdc availability. Build the tool-status card on the **Pipeline** page (per the 1.4 navigation merge of Pre-Generation + Tools). Show which tools are available, their resolved paths, and allow re-scanning and explicit path overrides. Gate UI options (image formats that depend on missing tools) with explanatory disabled states.
+**Intent:** Integrate with the existing `IToolDetectionService` (in `SlnDependencyDiagramGenerator`) to detect d2 and mmdc availability. Build the tool-status card on the **Pipeline** page. Show which tools are available, their resolved paths, and allow re-scanning and explicit path overrides. Gate UI options that depend on missing tools with explanatory disabled states.
 
 ### 6.1 Tool Status Service (WPF Wrapper)
 
-- [ ] 6.1.1 Create a WPF-specific `IToolStatusService` that wraps `IToolDetectionService` and exposes `IObservable<ToolStatus[]>` for d2 and mmdc. The observable should push updates when the user re-scans.
-- [ ] 6.1.2 On application startup, call `CheckConfiguredToolsAsync` with no image formats (just to get raw availability). On settings change (tool path overrides updated), re-check with the overrides.
+- [ ] 6.1.1 Create `Features/Pipeline/IToolStatusService` under `Features/Pipeline/` (co-located with Pipeline, not a separate feature — tool status is a Pipeline concern):
+
+  ```csharp
+  public interface IToolStatusService : IStudioSingletonDependency
+  {
+      IObservable<IReadOnlyList<ToolStatusEntry>> ToolStatuses { get; }
+      Task RescanAsync(CancellationToken ct);
+  }
+  ```
+
+  `ToolStatusEntry` has `ToolName`, `IsAvailable`, `ResolvedPath`, `LastChecked`.
+
+- [ ] 6.1.2 Implement `ToolStatusService` wrapping `IToolDetectionService.CheckConfiguredToolsAsync()`. On construction, run an initial scan. On `RescanAsync`, update the observable.
+
+- [ ] 6.1.3 Register `IToolStatusService` as a singleton. On app startup, the service initializes itself. On settings change (tool path overrides updated via Phase 5.4), call `RescanAsync`.
 
 ### 6.2 Tool Status View (Pipeline Page Card)
 
-- [ ] 6.2.1 On the "Pipeline" page, create a tool-status card (below the pre-generation card) with `ToolStatusView.xaml` and `ToolStatusViewModel`. Per the 1.4 progressive disclosure, this card is **collapsed by default** with an "Advanced" label.
-- [ ] 6.2.2 For each tool (d2, mmdc), display: tool name, icon (green check / red x), availability text ("Found at C:\...\d2.exe" or "Not found"), and a `ReScan` button.
-- [ ] 6.2.3 Add a `ReScan All` button that calls `IToolDetectionService.CheckConfiguredToolsAsync` and updates the observable.
-- [ ] 6.2.4 Add an explicit path override per tool: a `TextBox` bound to `ApplicationSettings.ToolPathOverrides[toolName]` with a `Browse` button. On change, re-check that tool's availability with the explicit path.
-- [ ] 6.2.5 Wire the tool-status dots at the bottom of the left nav (per 1.4 left-nav visual design) to reflect current d2/mmdc availability as coloured dots (green/orange/red).
+- [ ] 6.2.1 In `Features/Pipeline/PipelineView.xaml`, add a tool-status `Card` below the pre-generation card. Per 1.4 progressive disclosure, this card is **collapsed by default** with an "Advanced" label.
+
+- [ ] 6.2.2 For each tool (d2, mmdc), display: tool name, icon (green `CheckCircle` / red `CloseCircle`), availability text ("Found at C:\...\d2.exe" or "Not found — install d2 or set path override"), and a `ReScan` button.
+
+- [ ] 6.2.3 Add a `ReScan All` button that calls `IToolStatusService.RescanAsync()`.
+
+- [ ] 6.2.4 Add an explicit path override per tool: a `TextBox` bound to `ApplicationSettings.ToolPathOverrides[toolName]` with a `Browse` button. On change, call `RescanAsync`.
+
+- [ ] 6.2.5 Wire the tool-status dots at the bottom of the left nav (per 1.4 visual design) to observe `IToolStatusService.ToolStatuses` and render green/orange/red dots.
 
 ### 6.3 UI Gating Based on Tool Availability
 
-- [ ] 6.3.1 In the "Export" section, disable and grey out image format checkboxes that require unavailable tools:
-  - D2 Png/Svg/Pdf → disabled if d2 is not found.
-  - Mermaid Png/Svg → disabled if mmdc is not found.
-  - Mermaid Pdf → always disabled (unsupported by mmdc).
-- [ ] 6.3.2 Add a tooltip or inline text next to each disabled option explaining why: "d2 CLI not found — install d2 or set an explicit path in Pipeline → Tools".
-- [ ] 6.3.3 Tool unavailability must NOT prevent the user from editing or saving a project (FR-7.8). Only generation-time checks should block execution.
+- [ ] 6.3.1 In `ExportView`, observe `IToolStatusService.ToolStatuses` and disable/grey out image format checkboxes that depend on unavailable tools:
+  - D2-dependent formats (Png, Svg, Pdf) → disabled if d2 not found.
+  - Mermaid-dependent formats (Png, Svg) → disabled if mmdc not found.
+  - Mermaid Pdf → always disabled (not supported by mmdc).
 
-**Phase 6 completion:** The tool-status panel shows real-time availability of d2 and mmdc. UI options are gated with clear explanations. Users can override tool paths and re-scan.
+- [ ] 6.3.2 Add tooltip or inline text next to each disabled option explaining why (e.g., "d2 CLI not found — install d2 or set path in Pipeline → Tools").
+
+- [ ] 6.3.3 Per FR-7.8, tool unavailability must NOT prevent editing or saving a project. Gating is UI-only, not enforced at the model/serialization level.
+
+**Phase 6 completion:** Tool status is visible on the Pipeline page and left-nav dots. Export options are gated with explanations. Users can override tool paths and re-scan.
 
 ---
 

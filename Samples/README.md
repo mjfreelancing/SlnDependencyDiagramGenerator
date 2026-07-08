@@ -53,12 +53,12 @@ File: `DiagramGeneratorSample/appsettings.json`
 
 Key defaults:
 
-- `projects.solutionPath`: points to `SlnDependencyDiagramGenerator.sln`.
-- `projects.regexToInclude`: includes `.csproj` files.
-- `projects.packagesToExclude`: excludes `Microsoft.Build` and `Microsoft.SourceLink.GitHub` from diagrams/summary.
-- `projects.frameworksToExclude`: excludes `Microsoft.NETCore.App`.
-- `projects.individual.transitiveDepth`: `2`.
-- `projects.all.transitiveDepth`: `1`.
+- `solution.solutionPath`: points to `SlnDependencyDiagramGenerator.sln`.
+- `solution.regexToInclude`: includes `.csproj` files.
+- `solution.packagesToExclude`: excludes `Microsoft.Build` and `Microsoft.SourceLink.GitHub` from diagrams/summary.
+- `solution.frameworksToExclude`: excludes `Microsoft.NETCore.App`.
+- `solution.individual.transitiveDepth`: `2`.
+- `solution.all.transitiveDepth`: `1`.
 - `diagram.formats`: empty array.
 - `export.rootPath`: `..\\..\\..\\..\\Output` (resolves to `Samples/Output`).
 - `export.imageFormats`: `png`, `svg`, `pdf`.

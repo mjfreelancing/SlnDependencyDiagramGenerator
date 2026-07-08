@@ -1,4 +1,4 @@
-﻿using AllOverIt.Assertion;
+using AllOverIt.Assertion;
 using AllOverIt.Extensions;
 using AllOverIt.IO;
 using AllOverIt.Patterns.Specification.Extensions;
@@ -74,21 +74,21 @@ public sealed class DependencyGenerator : IDependencyGenerator
 
         ValidateConfiguration(configuration);
 
-        var individualTransitiveDepth = configuration.Projects.Individual.Enabled
-            ? configuration.Projects.Individual.TransitiveDepth
+        var individualTransitiveDepth = configuration.Solution.Individual.Enabled
+            ? configuration.Solution.Individual.TransitiveDepth
             : 0;
 
-        var allTransitiveDepth = configuration.Projects.All.Enabled
-            ? configuration.Projects.All.TransitiveDepth
+        var allTransitiveDepth = configuration.Solution.All.Enabled
+            ? configuration.Solution.All.TransitiveDepth
             : 0;
 
         var maxTransitiveDepth = Math.Max(individualTransitiveDepth, allTransitiveDepth);
 
-        var regexToInclude = configuration.Projects.RegexToInclude;
-        var regexToExclude = configuration.Projects.RegexToExclude;
-        var excludePackages = configuration.Projects.PackagesToExclude;
-        var excludeFrameworks = configuration.Projects.FrameworksToExclude;
-        var solutionPath = configuration.Projects.SolutionPath;
+        var regexToInclude = configuration.Solution.RegexToInclude;
+        var regexToExclude = configuration.Solution.RegexToExclude;
+        var excludePackages = configuration.Solution.PackagesToExclude;
+        var excludeFrameworks = configuration.Solution.FrameworksToExclude;
+        var solutionPath = configuration.Solution.SolutionPath;
 
         // Target frameworks are auto-discovered from each project's project.assets.json
         var targetFrameworks = await _projectDiscovery
@@ -132,10 +132,10 @@ public sealed class DependencyGenerator : IDependencyGenerator
 
             if (allProjects.Length == 0)
             {
-                var includeRegexList = string.Join(", ", configuration.Projects.RegexToInclude);
+                var includeRegexList = string.Join(", ", configuration.Solution.RegexToInclude);
 
-                var excludeRegexList = configuration.Projects.RegexToExclude.Length > 0
-                    ? string.Join(", ", configuration.Projects.RegexToExclude)
+                var excludeRegexList = configuration.Solution.RegexToExclude.Length > 0
+                    ? string.Join(", ", configuration.Solution.RegexToExclude)
                     : "<none>";
 
                 _logger.LogError(
@@ -169,12 +169,12 @@ public sealed class DependencyGenerator : IDependencyGenerator
 
             await ExportAsSummaryAsync(exportPath, solutionProjects, cancellationToken).ConfigureAwait(false);
 
-            if (configuration.Projects.Individual.Enabled)
+            if (configuration.Solution.Individual.Enabled)
             {
                 await ExportAsIndividualAsync(configuration, targetFramework, exportPath, solutionProjects, renderers, cancellationToken).ConfigureAwait(false);
             }
 
-            if (configuration.Projects.All.Enabled)
+            if (configuration.Solution.All.Enabled)
             {
                 await ExportAsAllAsync(configuration, targetFramework, exportPath, solutionProjects, renderers, cancellationToken).ConfigureAwait(false);
             }
@@ -197,8 +197,8 @@ public sealed class DependencyGenerator : IDependencyGenerator
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var includeDependencies = configuration.Projects.Individual.IncludeDependencies;
-        var transitiveDepth = configuration.Projects.Individual.TransitiveDepth;
+        var includeDependencies = configuration.Solution.Individual.IncludeDependencies;
+        var transitiveDepth = configuration.Solution.Individual.TransitiveDepth;
 
         foreach (var renderer in renderers)
         {
@@ -235,8 +235,8 @@ public sealed class DependencyGenerator : IDependencyGenerator
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var includeDependencies = configuration.Projects.All.IncludeDependencies;
-        var transitiveDepth = configuration.Projects.All.TransitiveDepth;
+        var includeDependencies = configuration.Solution.All.IncludeDependencies;
+        var transitiveDepth = configuration.Solution.All.TransitiveDepth;
 
         // Calculated from assets-resolved package graphs across the selected project scope.
         // This flags cross-project version divergence (same package id, different resolved versions).

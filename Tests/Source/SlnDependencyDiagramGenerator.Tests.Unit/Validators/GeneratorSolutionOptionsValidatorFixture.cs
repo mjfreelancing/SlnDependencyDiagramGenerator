@@ -6,9 +6,9 @@ using System.IO;
 
 namespace SlnDependencyDiagramGenerator.Tests.Unit.Validators;
 
-public class GeneratorProjectOptionsValidatorFixture
+public class GeneratorSolutionOptionsValidatorFixture
 {
-    public class Validate : GeneratorProjectOptionsValidatorFixture
+    public class Validate : GeneratorSolutionOptionsValidatorFixture
     {
         [Fact]
         public void Should_Return_No_Errors_For_A_Valid_Solution_Path()
@@ -19,7 +19,7 @@ public class GeneratorProjectOptionsValidatorFixture
             {
                 var model = CreateValidModel(solutionPath);
 
-                var validator = new GeneratorProjectOptionsValidator();
+                var validator = new GeneratorSolutionOptionsValidator();
                 var result = validator.Validate(model);
 
                 result.IsValid.ShouldBeTrue();
@@ -40,7 +40,7 @@ public class GeneratorProjectOptionsValidatorFixture
             {
                 var model = CreateValidModel(solutionPath);
 
-                var validator = new GeneratorProjectOptionsValidator();
+                var validator = new GeneratorSolutionOptionsValidator();
                 var result = validator.Validate(model);
 
                 result.IsValid.ShouldBeTrue();
@@ -61,7 +61,7 @@ public class GeneratorProjectOptionsValidatorFixture
             {
                 var model = CreateValidModel(solutionPath);
 
-                var validator = new GeneratorProjectOptionsValidator();
+                var validator = new GeneratorSolutionOptionsValidator();
                 var result = validator.Validate(model);
 
                 result.IsValid.ShouldBeFalse();
@@ -78,7 +78,7 @@ public class GeneratorProjectOptionsValidatorFixture
         {
             var model = CreateValidModel(null!);
 
-            var validator = new GeneratorProjectOptionsValidator();
+            var validator = new GeneratorSolutionOptionsValidator();
             var result = validator.Validate(model);
 
             result.IsValid.ShouldBeFalse();
@@ -90,7 +90,7 @@ public class GeneratorProjectOptionsValidatorFixture
         {
             var model = CreateValidModel(string.Empty);
 
-            var validator = new GeneratorProjectOptionsValidator();
+            var validator = new GeneratorSolutionOptionsValidator();
             var result = validator.Validate(model);
 
             result.IsValid.ShouldBeFalse();
@@ -103,7 +103,7 @@ public class GeneratorProjectOptionsValidatorFixture
             var missingPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.sln");
             var model = CreateValidModel(missingPath);
 
-            var validator = new GeneratorProjectOptionsValidator();
+            var validator = new GeneratorSolutionOptionsValidator();
             var result = validator.Validate(model);
 
             result.IsValid.ShouldBeFalse();
@@ -117,20 +117,20 @@ public class GeneratorProjectOptionsValidatorFixture
 
             try
             {
-                var model = new GeneratorProjectOptions
+                var model = new GeneratorSolutionOptions
                 {
                     SolutionPath = solutionPath,
                     RegexToInclude = null!,
                     RegexToExclude = [],
                     PackagesToExclude = [],
                     FrameworksToExclude = [],
-                    Individual = new GeneratorProjectOptions.ProjectScope
+                    Individual = new GeneratorSolutionOptions.ProjectScope
                     {
                         Enabled = true,
                         IncludeDependencies = true,
                         TransitiveDepth = 0
                     },
-                    All = new GeneratorProjectOptions.ProjectScope
+                    All = new GeneratorSolutionOptions.ProjectScope
                     {
                         Enabled = true,
                         IncludeDependencies = true,
@@ -138,7 +138,7 @@ public class GeneratorProjectOptionsValidatorFixture
                     }
                 };
 
-                var validator = new GeneratorProjectOptionsValidator();
+                var validator = new GeneratorSolutionOptionsValidator();
                 var result = validator.Validate(model);
 
                 result.IsValid.ShouldBeFalse();
@@ -159,7 +159,7 @@ public class GeneratorProjectOptionsValidatorFixture
             {
                 var model = CreateValidModel(solutionPath, regexToInclude: []);
 
-                var validator = new GeneratorProjectOptionsValidator();
+                var validator = new GeneratorSolutionOptionsValidator();
                 var result = validator.Validate(model);
 
                 result.IsValid.ShouldBeFalse();
@@ -180,7 +180,7 @@ public class GeneratorProjectOptionsValidatorFixture
             {
                 var model = CreateValidModel(solutionPath, regexToInclude: [".*\\.csproj", "^Test\\..*$"]);
 
-                var validator = new GeneratorProjectOptionsValidator();
+                var validator = new GeneratorSolutionOptionsValidator();
                 var result = validator.Validate(model);
 
                 result.IsValid.ShouldBeTrue();
@@ -201,7 +201,7 @@ public class GeneratorProjectOptionsValidatorFixture
             {
                 var model = CreateValidModel(solutionPath, regexToInclude: [invalidPattern]);
 
-                var validator = new GeneratorProjectOptionsValidator();
+                var validator = new GeneratorSolutionOptionsValidator();
                 var result = validator.Validate(model);
 
                 result.IsValid.ShouldBeFalse();
@@ -223,7 +223,7 @@ public class GeneratorProjectOptionsValidatorFixture
             {
                 var model = CreateValidModel(solutionPath, regexToInclude: [".*\\.csproj", invalidPattern]);
 
-                var validator = new GeneratorProjectOptionsValidator();
+                var validator = new GeneratorSolutionOptionsValidator();
                 var result = validator.Validate(model);
 
                 result.IsValid.ShouldBeFalse();
@@ -242,20 +242,20 @@ public class GeneratorProjectOptionsValidatorFixture
 
             try
             {
-                var model = new GeneratorProjectOptions
+                var model = new GeneratorSolutionOptions
                 {
                     SolutionPath = solutionPath,
                     RegexToInclude = [".*\\.csproj"],
                     RegexToExclude = null!,
                     PackagesToExclude = [],
                     FrameworksToExclude = [],
-                    Individual = new GeneratorProjectOptions.ProjectScope
+                    Individual = new GeneratorSolutionOptions.ProjectScope
                     {
                         Enabled = true,
                         IncludeDependencies = true,
                         TransitiveDepth = 0
                     },
-                    All = new GeneratorProjectOptions.ProjectScope
+                    All = new GeneratorSolutionOptions.ProjectScope
                     {
                         Enabled = true,
                         IncludeDependencies = true,
@@ -263,7 +263,7 @@ public class GeneratorProjectOptionsValidatorFixture
                     }
                 };
 
-                var validator = new GeneratorProjectOptionsValidator();
+                var validator = new GeneratorSolutionOptionsValidator();
                 var result = validator.Validate(model);
 
                 result.IsValid.ShouldBeFalse();
@@ -284,7 +284,7 @@ public class GeneratorProjectOptionsValidatorFixture
             {
                 var model = CreateValidModel(solutionPath, regexToExclude: []);
 
-                var validator = new GeneratorProjectOptionsValidator();
+                var validator = new GeneratorSolutionOptionsValidator();
                 var result = validator.Validate(model);
 
                 result.IsValid.ShouldBeTrue();
@@ -304,7 +304,7 @@ public class GeneratorProjectOptionsValidatorFixture
             {
                 var model = CreateValidModel(solutionPath, regexToExclude: [".*\\.Tests\\.*", "^Obsolete\\..*$"]);
 
-                var validator = new GeneratorProjectOptionsValidator();
+                var validator = new GeneratorSolutionOptionsValidator();
                 var result = validator.Validate(model);
 
                 result.IsValid.ShouldBeTrue();
@@ -325,7 +325,7 @@ public class GeneratorProjectOptionsValidatorFixture
             {
                 var model = CreateValidModel(solutionPath, regexToExclude: [invalidPattern]);
 
-                var validator = new GeneratorProjectOptionsValidator();
+                var validator = new GeneratorSolutionOptionsValidator();
                 var result = validator.Validate(model);
 
                 result.IsValid.ShouldBeFalse();
@@ -344,20 +344,20 @@ public class GeneratorProjectOptionsValidatorFixture
 
             try
             {
-                var model = new GeneratorProjectOptions
+                var model = new GeneratorSolutionOptions
                 {
                     SolutionPath = solutionPath,
                     RegexToInclude = [".*\\.csproj"],
                     RegexToExclude = [],
                     PackagesToExclude = null!,
                     FrameworksToExclude = [],
-                    Individual = new GeneratorProjectOptions.ProjectScope
+                    Individual = new GeneratorSolutionOptions.ProjectScope
                     {
                         Enabled = true,
                         IncludeDependencies = true,
                         TransitiveDepth = 0
                     },
-                    All = new GeneratorProjectOptions.ProjectScope
+                    All = new GeneratorSolutionOptions.ProjectScope
                     {
                         Enabled = true,
                         IncludeDependencies = true,
@@ -365,7 +365,7 @@ public class GeneratorProjectOptionsValidatorFixture
                     }
                 };
 
-                var validator = new GeneratorProjectOptionsValidator();
+                var validator = new GeneratorSolutionOptionsValidator();
                 var result = validator.Validate(model);
 
                 result.IsValid.ShouldBeFalse();
@@ -384,20 +384,20 @@ public class GeneratorProjectOptionsValidatorFixture
 
             try
             {
-                var model = new GeneratorProjectOptions
+                var model = new GeneratorSolutionOptions
                 {
                     SolutionPath = solutionPath,
                     RegexToInclude = [".*\\.csproj"],
                     RegexToExclude = [],
                     PackagesToExclude = [],
                     FrameworksToExclude = null!,
-                    Individual = new GeneratorProjectOptions.ProjectScope
+                    Individual = new GeneratorSolutionOptions.ProjectScope
                     {
                         Enabled = true,
                         IncludeDependencies = true,
                         TransitiveDepth = 0
                     },
-                    All = new GeneratorProjectOptions.ProjectScope
+                    All = new GeneratorSolutionOptions.ProjectScope
                     {
                         Enabled = true,
                         IncludeDependencies = true,
@@ -405,7 +405,7 @@ public class GeneratorProjectOptionsValidatorFixture
                     }
                 };
 
-                var validator = new GeneratorProjectOptionsValidator();
+                var validator = new GeneratorSolutionOptionsValidator();
                 var result = validator.Validate(model);
 
                 result.IsValid.ShouldBeFalse();
@@ -427,7 +427,7 @@ public class GeneratorProjectOptionsValidatorFixture
                 var model = CreateValidModel(solutionPath);
                 model.Individual = null!;
 
-                var validator = new GeneratorProjectOptionsValidator();
+                var validator = new GeneratorSolutionOptionsValidator();
                 var result = validator.Validate(model);
 
                 result.IsValid.ShouldBeFalse();
@@ -449,7 +449,7 @@ public class GeneratorProjectOptionsValidatorFixture
                 var model = CreateValidModel(solutionPath);
                 model.All = null!;
 
-                var validator = new GeneratorProjectOptionsValidator();
+                var validator = new GeneratorSolutionOptionsValidator();
                 var result = validator.Validate(model);
 
                 result.IsValid.ShouldBeFalse();
@@ -469,14 +469,14 @@ public class GeneratorProjectOptionsValidatorFixture
             try
             {
                 var model = CreateValidModel(solutionPath);
-                model.Individual = new GeneratorProjectOptions.ProjectScope
+                model.Individual = new GeneratorSolutionOptions.ProjectScope
                 {
                     Enabled = true,
                     IncludeDependencies = true,
                     TransitiveDepth = -1
                 };
 
-                var validator = new GeneratorProjectOptionsValidator();
+                var validator = new GeneratorSolutionOptionsValidator();
                 var result = validator.Validate(model);
 
                 result.IsValid.ShouldBeFalse();
@@ -496,14 +496,14 @@ public class GeneratorProjectOptionsValidatorFixture
             try
             {
                 var model = CreateValidModel(solutionPath);
-                model.All = new GeneratorProjectOptions.ProjectScope
+                model.All = new GeneratorSolutionOptions.ProjectScope
                 {
                     Enabled = true,
                     IncludeDependencies = true,
                     TransitiveDepth = -1
                 };
 
-                var validator = new GeneratorProjectOptionsValidator();
+                var validator = new GeneratorSolutionOptionsValidator();
                 var result = validator.Validate(model);
 
                 result.IsValid.ShouldBeFalse();
@@ -523,14 +523,14 @@ public class GeneratorProjectOptionsValidatorFixture
             try
             {
                 var model = CreateValidModel(solutionPath);
-                model.Individual = new GeneratorProjectOptions.ProjectScope
+                model.Individual = new GeneratorSolutionOptions.ProjectScope
                 {
                     Enabled = true,
                     IncludeDependencies = true,
                     TransitiveDepth = 0
                 };
 
-                var validator = new GeneratorProjectOptionsValidator();
+                var validator = new GeneratorSolutionOptionsValidator();
                 var result = validator.Validate(model);
 
                 result.IsValid.ShouldBeTrue();
@@ -542,27 +542,27 @@ public class GeneratorProjectOptionsValidatorFixture
         }
     }
 
-    private static GeneratorProjectOptions CreateValidModel(
+    private static GeneratorSolutionOptions CreateValidModel(
         string solutionPath,
         string[]? regexToInclude = null,
         string[]? regexToExclude = null,
         string[]? packagesToExclude = null,
         string[]? frameworksToExclude = null)
     {
-        return new GeneratorProjectOptions
+        return new GeneratorSolutionOptions
         {
             SolutionPath = solutionPath,
             RegexToInclude = regexToInclude ?? [".*\\.csproj"],
             RegexToExclude = regexToExclude ?? [],
             PackagesToExclude = packagesToExclude ?? [],
             FrameworksToExclude = frameworksToExclude ?? [],
-            Individual = new GeneratorProjectOptions.ProjectScope
+            Individual = new GeneratorSolutionOptions.ProjectScope
             {
                 Enabled = true,
                 IncludeDependencies = true,
                 TransitiveDepth = 0
             },
-            All = new GeneratorProjectOptions.ProjectScope
+            All = new GeneratorSolutionOptions.ProjectScope
             {
                 Enabled = true,
                 IncludeDependencies = true,

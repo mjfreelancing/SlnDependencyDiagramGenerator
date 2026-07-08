@@ -4,9 +4,8 @@
 /// how dependency depth and diagram styling are applied, and where diagram/source outputs are exported.</summary>
 public sealed class DependencyGeneratorConfig
 {
-    /// <summary>Specifies project related options that determine which projects for a given solution
-    /// are resolved and the depth of their package dependency graph.</summary>
-    public GeneratorProjectOptions Projects { get; init; } = new GeneratorProjectOptions();
+    /// <summary>Specifies solution-related options: solution path, filters, exclusions, and scope configuration.</summary>
+    public GeneratorSolutionOptions Solution { get; init; } = new GeneratorSolutionOptions();
 
     /// <summary>Specifies diagram options that determine how the diagram will be styled.</summary>
     public GeneratorDiagramOptions Diagram { get; init; } = new GeneratorDiagramOptions();

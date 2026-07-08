@@ -16,8 +16,8 @@ internal sealed class DependencyGeneratorConfigValidator : ValidatorBase<Depende
     /// <summary>Initializes validation rules.</summary>
     public DependencyGeneratorConfigValidator()
     {
-        RuleFor(model => model.Projects).NotNull();
-        RuleFor(model => model.Projects).SetValidator(new GeneratorProjectOptionsValidator());
+        RuleFor(model => model.Solution).NotNull();
+        RuleFor(model => model.Solution).SetValidator(new GeneratorSolutionOptionsValidator());
 
         RuleFor(model => model.Diagram).NotNull();
         RuleFor(model => model.Diagram).SetValidator(new GeneratorDiagramOptionsValidator());

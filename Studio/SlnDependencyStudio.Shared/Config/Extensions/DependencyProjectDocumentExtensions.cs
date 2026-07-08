@@ -30,7 +30,7 @@ public static class DependencyProjectDocumentExtensions
     {
         _logger.LogInformation("Diagram Generation configuration:");
         _logger.LogInformation("  Resolved paths and options:");
-        _logger.LogInformation("    Solution path    : {SolutionPath}", config.Projects.SolutionPath);
+        _logger.LogInformation("    Solution path    : {SolutionPath}", config.Solution.SolutionPath);
         _logger.LogInformation("    Export root      : {ExportRoot}", config.Export.RootPath);
         _logger.LogInformation("    Clear contents   : {ClearContents}", config.Export.ClearContents);
         _logger.LogInformation("    Diagram formats  : {Formats}", string.Join(", ", config.Diagram.Formats));
@@ -40,21 +40,21 @@ public static class DependencyProjectDocumentExtensions
         _logger.LogInformation("    Grouping enabled : {GroupingEnabled}", config.Diagram.Grouping.Enabled);
         _logger.LogInformation("    Image formats    : {ImageFormats}", string.Join(", ", config.Export.ImageFormats));
 
-        _logger.LogInformation("    Project scopes:");
+        _logger.LogInformation("    Solution scopes:");
 
         _logger.LogInformation("      Individual — Enabled: {IndividualEnabled}, IncludeDeps: {IndividualIncludeDeps}, TransitiveDepth: {IndividualTransitiveDepth}",
-            config.Projects.Individual.Enabled,
-            config.Projects.Individual.IncludeDependencies,
-            config.Projects.Individual.TransitiveDepth);
+            config.Solution.Individual.Enabled,
+            config.Solution.Individual.IncludeDependencies,
+            config.Solution.Individual.TransitiveDepth);
 
         _logger.LogInformation("      All        — Enabled: {AllEnabled}, IncludeDeps: {AllIncludeDeps}, TransitiveDepth: {AllTransitiveDepth}",
-            config.Projects.All.Enabled,
-            config.Projects.All.IncludeDependencies,
-            config.Projects.All.TransitiveDepth);
+            config.Solution.All.Enabled,
+            config.Solution.All.IncludeDependencies,
+            config.Solution.All.TransitiveDepth);
 
-        _logger.LogInformation("    Regex include        : {RegexInclude}", string.Join(", ", config.Projects.RegexToInclude));
-        _logger.LogInformation("    Regex exclude        : {RegexExclude}", string.Join(", ", config.Projects.RegexToExclude));
-        _logger.LogInformation("    Packages to exclude  : {PackagesExclude}", string.Join(", ", config.Projects.PackagesToExclude));
-        _logger.LogInformation("    Frameworks to exclude: {FrameworksExclude}", string.Join(", ", config.Projects.FrameworksToExclude));
+        _logger.LogInformation("    Regex include        : {RegexInclude}", string.Join(", ", config.Solution.RegexToInclude));
+        _logger.LogInformation("    Regex exclude        : {RegexExclude}", string.Join(", ", config.Solution.RegexToExclude));
+        _logger.LogInformation("    Packages to exclude  : {PackagesExclude}", string.Join(", ", config.Solution.PackagesToExclude));
+        _logger.LogInformation("    Frameworks to exclude: {FrameworksExclude}", string.Join(", ", config.Solution.FrameworksToExclude));
     }
 }

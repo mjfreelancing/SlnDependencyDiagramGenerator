@@ -39,7 +39,7 @@ public class DependencyGeneratorConfigValidatorFixture
         {
             var model = new DependencyGeneratorConfig
             {
-                Projects = null!,
+                Solution = null!,
                 Diagram = CreateValidDiagramOptions(),
                 Export = CreateValidExportOptions()
             };
@@ -48,7 +48,7 @@ public class DependencyGeneratorConfigValidatorFixture
             var result = validator.Validate(model);
 
             result.IsValid.ShouldBeFalse();
-            result.Errors.ShouldContain(item => item.PropertyName == "Projects");
+            result.Errors.ShouldContain(item => item.PropertyName == "Solution");
         }
 
         [Fact]
@@ -56,7 +56,7 @@ public class DependencyGeneratorConfigValidatorFixture
         {
             var model = new DependencyGeneratorConfig
             {
-                Projects = CreateValidProjectOptions(),
+                Solution = CreateValidProjectOptions(),
                 Diagram = null!,
                 Export = CreateValidExportOptions()
             };
@@ -73,7 +73,7 @@ public class DependencyGeneratorConfigValidatorFixture
         {
             var model = new DependencyGeneratorConfig
             {
-                Projects = CreateValidProjectOptions(),
+                Solution = CreateValidProjectOptions(),
                 Diagram = CreateValidDiagramOptions(),
                 Export = null!
             };
@@ -86,22 +86,22 @@ public class DependencyGeneratorConfigValidatorFixture
         }
     }
 
-    private static GeneratorProjectOptions CreateValidProjectOptions()
+    private static GeneratorSolutionOptions CreateValidProjectOptions()
     {
-        return new GeneratorProjectOptions
+        return new GeneratorSolutionOptions
         {
             SolutionPath = "test.sln",
             RegexToInclude = [".*\\.csproj"],
             RegexToExclude = [],
             PackagesToExclude = [],
             FrameworksToExclude = [],
-            Individual = new GeneratorProjectOptions.ProjectScope
+            Individual = new GeneratorSolutionOptions.ProjectScope
             {
                 Enabled = true,
                 IncludeDependencies = true,
                 TransitiveDepth = 0
             },
-            All = new GeneratorProjectOptions.ProjectScope
+            All = new GeneratorSolutionOptions.ProjectScope
             {
                 Enabled = true,
                 IncludeDependencies = true,
@@ -161,3 +161,4 @@ public class DependencyGeneratorConfigValidatorFixture
         return filePath;
     }
 }
+

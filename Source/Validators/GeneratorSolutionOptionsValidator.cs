@@ -9,17 +9,17 @@ using System.Text.RegularExpressions;
 
 namespace SlnDependencyDiagramGenerator.Validators;
 
-/// <summary>Validates <see cref="GeneratorProjectOptions"/>.</summary>
-internal sealed class GeneratorProjectOptionsValidator : ValidatorBase<GeneratorProjectOptions>
+/// <summary>Validates <see cref="GeneratorSolutionOptions"/>.</summary>
+internal sealed class GeneratorSolutionOptionsValidator : ValidatorBase<GeneratorSolutionOptions>
 {
     /// <summary>Initializes static validator configuration.</summary>
-    static GeneratorProjectOptionsValidator()
+    static GeneratorSolutionOptionsValidator()
     {
         DisablePropertyNameSplitting();
     }
 
     /// <summary>Initializes validation rules.</summary>
-    public GeneratorProjectOptionsValidator()
+    public GeneratorSolutionOptionsValidator()
     {
         RuleFor(model => model.SolutionPath).IsNotEmpty();
 

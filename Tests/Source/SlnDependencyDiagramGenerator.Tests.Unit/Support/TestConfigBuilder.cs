@@ -1,4 +1,4 @@
-﻿using SlnDependencyDiagramGenerator.Config;
+using SlnDependencyDiagramGenerator.Config;
 
 namespace SlnDependencyDiagramGenerator.Tests.Unit.Support;
 
@@ -105,20 +105,20 @@ internal sealed class TestConfigBuilder
     {
         return new DependencyGeneratorConfig
         {
-            Projects = new GeneratorProjectOptions
+            Solution = new GeneratorSolutionOptions
             {
                 SolutionPath = _solutionPath,
                 RegexToInclude = _regexToInclude,
                 RegexToExclude = _regexToExclude,
                 PackagesToExclude = _packagesToExclude,
                 FrameworksToExclude = _frameworksToExclude,
-                Individual = new GeneratorProjectOptions.ProjectScope
+                Individual = new GeneratorSolutionOptions.ProjectScope
                 {
                     Enabled = _individualEnabled,
                     IncludeDependencies = _individualIncludeDependencies,
                     TransitiveDepth = _individualTransitiveDepth
                 },
-                All = new GeneratorProjectOptions.ProjectScope
+                All = new GeneratorSolutionOptions.ProjectScope
                 {
                     Enabled = _allEnabled,
                     IncludeDependencies = _allIncludeDependencies,
@@ -165,3 +165,5 @@ internal sealed class TestConfigBuilder
         };
     }
 }
+
+

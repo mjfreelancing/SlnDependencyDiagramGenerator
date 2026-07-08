@@ -42,7 +42,7 @@ internal abstract class CommandLineHandlerBase
 
         document.PreGeneration.WorkingDirectory = PathUtils.ResolveAsAbsolutePath(document.PreGeneration.WorkingDirectory, configDirectory);
 
-        document.DiagramGenerator.Projects.SolutionPath = PathUtils.ResolveAsAbsolutePath(document.DiagramGenerator.Projects.SolutionPath, configDirectory);
+        document.DiagramGenerator.Solution.SolutionPath = PathUtils.ResolveAsAbsolutePath(document.DiagramGenerator.Solution.SolutionPath, configDirectory);
         document.DiagramGenerator.Export.RootPath = PathUtils.ResolveAsAbsolutePath(document.DiagramGenerator.Export.RootPath, configDirectory);
 
         return document;

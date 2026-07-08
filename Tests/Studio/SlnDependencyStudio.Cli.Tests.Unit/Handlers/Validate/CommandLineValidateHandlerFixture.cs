@@ -111,7 +111,7 @@ public class CommandLineValidateHandlerFixture
             Metadata = new DependencyProjectMetadata { ProjectName = "Test", Description = "" },
             DiagramGenerator = new DependencyGeneratorConfig
             {
-                Projects = new GeneratorProjectOptions
+                Solution = new GeneratorSolutionOptions
                 {
                     SolutionPath = Path.GetTempPath(),
                     RegexToInclude = [".*\\.csproj"]
@@ -159,3 +159,5 @@ public class CommandLineValidateHandlerFixture
         return new DisposableTempFile(content);
     }
 }
+
+

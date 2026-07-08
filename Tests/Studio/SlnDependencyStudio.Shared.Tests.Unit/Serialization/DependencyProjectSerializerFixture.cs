@@ -38,7 +38,7 @@ public class DependencyProjectSerializerFixture
             {
                 DiagramGenerator = new DependencyGeneratorConfig
                 {
-                    Projects = new GeneratorProjectOptions
+                    Solution = new GeneratorSolutionOptions
                     {
                         SolutionPath = "test.sln",
                         RegexToInclude = [".*\\.csproj"]
@@ -94,7 +94,7 @@ public class DependencyProjectSerializerFixture
                 },
                 DiagramGenerator = new DependencyGeneratorConfig
                 {
-                    Projects = new GeneratorProjectOptions
+                    Solution = new GeneratorSolutionOptions
                     {
                         SolutionPath = "solution.sln",
                         RegexToInclude = [".*\\.csproj"]
@@ -113,7 +113,7 @@ public class DependencyProjectSerializerFixture
             deserialized.SchemaVersion.ShouldBe(original.SchemaVersion);
             deserialized.Metadata.ProjectName.ShouldBe(original.Metadata.ProjectName);
             deserialized.Metadata.Description.ShouldBe(original.Metadata.Description);
-            deserialized.DiagramGenerator.Projects.SolutionPath.ShouldBe(original.DiagramGenerator.Projects.SolutionPath);
+            deserialized.DiagramGenerator.Solution.SolutionPath.ShouldBe(original.DiagramGenerator.Solution.SolutionPath);
             deserialized.PreGeneration.Enabled.ShouldBe(original.PreGeneration.Enabled);
             deserialized.PreGeneration.Command.ShouldBe(original.PreGeneration.Command);
         }
@@ -164,3 +164,5 @@ public class DependencyProjectSerializerFixture
         return new DependencyProjectSerializer(new StudioJsonSerializer());
     }
 }
+
+

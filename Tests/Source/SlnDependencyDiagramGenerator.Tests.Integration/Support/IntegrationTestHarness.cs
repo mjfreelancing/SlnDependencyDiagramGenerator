@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Extensions;
 using SlnDependencyDiagramGenerator.Generator;
@@ -100,20 +100,20 @@ internal static class IntegrationTestHarness
     {
         return new DependencyGeneratorConfig
         {
-            Projects = new GeneratorProjectOptions
+            Solution = new GeneratorSolutionOptions
             {
                 SolutionPath = solutionPath,
                 RegexToInclude = options.RegexToInclude,
                 RegexToExclude = options.RegexToExclude,
                 PackagesToExclude = options.PackagesToExclude,
                 FrameworksToExclude = options.FrameworksToExclude,
-                Individual = new GeneratorProjectOptions.ProjectScope
+                Individual = new GeneratorSolutionOptions.ProjectScope
                 {
                     Enabled = options.IncludeIndividual,
                     IncludeDependencies = options.IncludeDependencies,
                     TransitiveDepth = options.IndividualTransitiveDepth
                 },
-                All = new GeneratorProjectOptions.ProjectScope
+                All = new GeneratorSolutionOptions.ProjectScope
                 {
                     Enabled = options.IncludeAll,
                     IncludeDependencies = options.IncludeDependencies,
@@ -292,3 +292,4 @@ internal sealed class DisposableTempDirectory : IDisposable
         }
     }
 }
+

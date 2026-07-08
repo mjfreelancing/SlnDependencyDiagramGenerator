@@ -5,7 +5,7 @@
     "description": "Generates dependency diagrams for the SlnDependencyDiagramGenerator solution"
   },
   "diagramGenerator": {
-    "projects": {
+    "solution": {
       "solutionPath": "..\\..\\SlnDependencyDiagramGenerator.sln",
       "regexToInclude": [
         "\\.*\\.csproj"

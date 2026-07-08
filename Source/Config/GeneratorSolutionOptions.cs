@@ -1,8 +1,8 @@
 ﻿namespace SlnDependencyDiagramGenerator.Config;
 
-/// <summary>Specifies project related options that determine which projects for a given solution
-/// are resolved and the depth of their package dependency graph.</summary>
-public sealed class GeneratorProjectOptions
+/// <summary>Specifies solution-related options: which solution file to parse, regex filters,
+/// exclusions, and per-scope depth configuration.</summary>
+public sealed class GeneratorSolutionOptions
 {
     /// <summary>Contains options relevant to several project scope options.</summary>
     public sealed class ProjectScope
