@@ -5,20 +5,26 @@ using SlnDependencyStudio.Wpf.Features.Export;
 namespace SlnDependencyStudio.Wpf.Tests.Unit.Features.Export;
 
 [Collection(nameof(ReactiveUIInitializer))]
-public class GeneratorExportOptionsEditorFixture : IDisposable
+public class ExportOptionsEditorFixture : IDisposable
 {
-    private readonly GeneratorExportOptionsEditor _editor = new();
+    private readonly ExportOptionsEditor _editor = new();
 
-    public class Construction : GeneratorExportOptionsEditorFixture
+    public class Construction : ExportOptionsEditorFixture
     {
         [Fact]
         public void Should_Seed_RootPath_With_Empty_String()
         {
             _editor.RootPath.Value.ShouldBe(string.Empty);
         }
+
+        [Fact]
+        public void Should_Seed_UseRelativePath_With_True()
+        {
+            _editor.UseRelativePath.Value.ShouldBeTrue();
+        }
     }
 
-    public class IsDirty : GeneratorExportOptionsEditorFixture
+    public class IsDirty : ExportOptionsEditorFixture
     {
         [Fact]
         public void Should_Be_False_After_Construction()
@@ -43,7 +49,7 @@ public class GeneratorExportOptionsEditorFixture : IDisposable
         }
     }
 
-    public class SetOriginalValues : GeneratorExportOptionsEditorFixture
+    public class SetOriginalValues : ExportOptionsEditorFixture
     {
         [Fact]
         public void Should_Reset_Dirty_After_Edit()
@@ -60,7 +66,7 @@ public class GeneratorExportOptionsEditorFixture : IDisposable
         }
     }
 
-    public class FlushTo : GeneratorExportOptionsEditorFixture
+    public class FlushTo : ExportOptionsEditorFixture
     {
         [Fact]
         public void Should_Write_Current_Values_To_Target()

@@ -54,6 +54,13 @@ public class ProjectDocumentStoreFixture
         }
 
         [Fact]
+        public void Should_Have_UseRelativePath_True_By_Default()
+        {
+            _store.SolutionOptionsEditor.UseRelativePath.Value.ShouldBeTrue();
+            _store.ExportOptionsEditor.UseRelativePath.Value.ShouldBeTrue();
+        }
+
+        [Fact]
         public void Should_Have_DocumentDirectory_Empty()
         {
             _store.DocumentDirectory.ShouldBe(string.Empty);

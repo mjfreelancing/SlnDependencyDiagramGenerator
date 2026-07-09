@@ -13,12 +13,14 @@ public class SolutionViewModelFixture
 {
     private readonly IProjectDocumentStore _store = Substitute.For<IProjectDocumentStore>();
     private readonly TrackableValue<string> _solutionPath = new();
+    private readonly TrackableValue<bool> _useRelativePath = new();
     private readonly ISolutionOptionsEditor _solutionOptionsEditor = Substitute.For<ISolutionOptionsEditor>();
     private readonly SolutionViewModel _viewModel;
 
     public SolutionViewModelFixture()
     {
         _solutionOptionsEditor.SolutionPath.Returns(_solutionPath);
+        _solutionOptionsEditor.UseRelativePath.Returns(_useRelativePath);
         _store.SolutionOptionsEditor.Returns(_solutionOptionsEditor);
 
         _viewModel = new SolutionViewModel(_store);
@@ -30,6 +32,12 @@ public class SolutionViewModelFixture
         public void Should_Expose_SolutionPath_From_Store_Editor()
         {
             _viewModel.SolutionPath.ShouldBeSameAs(_solutionPath);
+        }
+
+        [Fact]
+        public void Should_Expose_UseRelativePath_From_Store_Editor()
+        {
+            _viewModel.UseRelativePath.ShouldBeSameAs(_useRelativePath);
         }
 
         [Fact]
@@ -48,8 +56,10 @@ public class SolutionViewModelFixture
     public class BrowseSolutionPathCommand : SolutionViewModelFixture
     {
         [Fact]
-        public void Should_Update_Path_When_Dialog_Returns_Value()
+        public void Should_Store_Relative_Path_When_UseRelativePath_Is_True()
         {
+            _useRelativePath.SetOriginalValue(true);
+            _useRelativePath.Value = true;
             _store.DocumentDirectory.Returns(@"C:\Projects");
 
             _viewModel.BrowseSolutionPathInteraction.RegisterHandler(ctx =>
@@ -60,6 +70,23 @@ public class SolutionViewModelFixture
             _viewModel.BrowseSolutionPathCommand.Execute().Subscribe();
 
             _solutionPath.Value.ShouldBe(@"selected.sln");
+        }
+
+        [Fact]
+        public void Should_Store_Absolute_Path_When_UseRelativePath_Is_False()
+        {
+            _useRelativePath.SetOriginalValue(false);
+            _useRelativePath.Value = false;
+            _store.DocumentDirectory.Returns(@"C:\Projects");
+
+            _viewModel.BrowseSolutionPathInteraction.RegisterHandler(ctx =>
+            {
+                ctx.SetOutput(@"C:\Projects\selected.sln");
+            });
+
+            _viewModel.BrowseSolutionPathCommand.Execute().Subscribe();
+
+            _solutionPath.Value.ShouldBe(@"C:\Projects\selected.sln");
         }
 
         [Fact]
@@ -113,6 +140,51 @@ public class SolutionViewModelFixture
             _solutionPath.Value = Path.GetFileName(existingFile);
 
             _viewModel.ValidationContext.IsValid.ShouldBeTrue();
+        }
+    }
+
+    public class UseRelativePathToggle : SolutionViewModelFixture
+    {
+        [Fact]
+        public void Should_Convert_To_Absolute_When_Unchecked()
+        {
+            _useRelativePath.SetOriginalValue(true);
+            _useRelativePath.Value = true;
+            _solutionPath.SetOriginalValue(@"..\test.sln");
+            _solutionPath.Value = @"..\test.sln";
+            _store.DocumentDirectory.Returns(@"C:\Projects");
+
+            _useRelativePath.Value = false;
+
+            _solutionPath.Value.ShouldBe(Path.GetFullPath(@"C:\Projects\..\test.sln"));
+        }
+
+        [Fact]
+        public void Should_Convert_To_Relative_When_Checked()
+        {
+            _useRelativePath.SetOriginalValue(false);
+            _useRelativePath.Value = false;
+            _solutionPath.SetOriginalValue(@"C:\Projects\test.sln");
+            _solutionPath.Value = @"C:\Projects\test.sln";
+            _store.DocumentDirectory.Returns(@"C:\Projects");
+
+            _useRelativePath.Value = true;
+
+            _solutionPath.Value.ShouldBe(@"test.sln");
+        }
+
+        [Fact]
+        public void Should_Not_Change_Empty_Path()
+        {
+            _useRelativePath.SetOriginalValue(true);
+            _useRelativePath.Value = true;
+            _solutionPath.SetOriginalValue(string.Empty);
+            _solutionPath.Value = string.Empty;
+            _store.DocumentDirectory.Returns(@"C:\Projects");
+
+            _useRelativePath.Value = false;
+
+            _solutionPath.Value.ShouldBe(string.Empty);
         }
     }
 }

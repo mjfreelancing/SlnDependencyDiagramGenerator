@@ -19,8 +19,8 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
     private readonly IDependencyProjectService _projectService;
     private readonly IRecentProjectsService _recentProjects;
     private readonly ProjectMetadataEditor _metadataEditor;
-    private readonly GeneratorSolutionOptionsEditor _solutionOptionsEditor;
-    private readonly GeneratorExportOptionsEditor _exportOptionsEditor;
+    private readonly SolutionOptionsEditor _solutionOptionsEditor;
+    private readonly ExportOptionsEditor _exportOptionsEditor;
     private readonly ObservableAsPropertyHelper<bool> _isDirty;
     private DependencyProjectDocument? _document;
     private string? _currentFilePath;
@@ -64,8 +64,8 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
         _recentProjects = recentProjects.WhenNotNull();
 
         _metadataEditor = new ProjectMetadataEditor();
-        _solutionOptionsEditor = new GeneratorSolutionOptionsEditor();
-        _exportOptionsEditor = new GeneratorExportOptionsEditor();
+        _solutionOptionsEditor = new SolutionOptionsEditor();
+        _exportOptionsEditor = new ExportOptionsEditor();
 
         // Global dirty state is derived from all editor wrappers.
         _isDirty = Observable

@@ -22,6 +22,10 @@ public sealed class SolutionViewModel : ReactiveObject, IValidatableViewModel
     /// <summary>The solution path. Bound via <c>SolutionPath.Value</c> in XAML.</summary>
     public TrackableValue<string> SolutionPath => _store.SolutionOptionsEditor.SolutionPath;
 
+    /// <summary>Whether the Browse command stores the path relative to the project file.
+    /// Bound via <c>UseRelativePath.Value</c> in XAML.</summary>
+    public TrackableValue<bool> UseRelativePath => _store.SolutionOptionsEditor.UseRelativePath;
+
     /// <inheritdoc />
     public IValidationContext ValidationContext { get; } = new ValidationContext();
 
@@ -38,7 +42,29 @@ public sealed class SolutionViewModel : ReactiveObject, IValidatableViewModel
         _store = store;
 
         WireValidation();
+        WireRelativePathToggle();
         BrowseSolutionPathCommand = CreateBrowseCommand();
+    }
+
+    private void WireRelativePathToggle()
+    {
+        this.WhenAnyValue(vm => vm.UseRelativePath.Value)
+            .Skip(1)        // Skip the initial seeded value after loading
+            .Subscribe(useRelative =>
+            {
+                var currentPath = SolutionPath.Value;
+
+                if (currentPath.IsNullOrEmpty())
+                {
+                    return;
+                }
+
+                var absolutePath = PathUtils.ResolveAsAbsolutePath(currentPath, _store.DocumentDirectory);
+
+                SolutionPath.Value = useRelative
+                    ? PathUtils.MakeRelativeIfPossible(absolutePath, _store.DocumentDirectory)
+                    : absolutePath;
+            });
     }
 
     private void WireValidation()
@@ -72,11 +98,13 @@ public sealed class SolutionViewModel : ReactiveObject, IValidatableViewModel
 
             return BrowseSolutionPathInteraction
                 .Handle(resolvedPath)
-                .Do(result =>
+                .Do(path =>
                 {
-                    if (result is not null)
+                    if (path is not null)
                     {
-                        SolutionPath.Value = PathUtils.MakeRelativeIfPossible(result, _store.DocumentDirectory);
+                        SolutionPath.Value = UseRelativePath.Value
+                            ? PathUtils.MakeRelativeIfPossible(path, _store.DocumentDirectory)
+                            : path;
                     }
                 })
                 .Select(_ => Unit.Default);

@@ -6,7 +6,6 @@ using ReactiveUI.Validation.Extensions;
 using SlnDependencyStudio.Shared.Utils;
 using SlnDependencyStudio.Wpf.Controls;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
-using System.IO;
 using System.Reactive;
 using System.Reactive.Linq;
 
@@ -21,6 +20,10 @@ public sealed class ExportViewModel : ReactiveObject, IValidatableViewModel
 
     /// <summary>The export root path. Bound via <c>RootPath.Value</c> in XAML.</summary>
     public TrackableValue<string> RootPath => _store.ExportOptionsEditor.RootPath;
+
+    /// <summary>Whether the Browse command stores the path relative to the project file.
+    /// Bound via <c>UseRelativePath.Value</c> in XAML.</summary>
+    public TrackableValue<bool> UseRelativePath => _store.ExportOptionsEditor.UseRelativePath;
 
     /// <inheritdoc />
     public IValidationContext ValidationContext { get; } = new ValidationContext();
@@ -38,7 +41,29 @@ public sealed class ExportViewModel : ReactiveObject, IValidatableViewModel
         _store = store;
 
         WireValidation();
+        WireRelativePathToggle();
         BrowseExportPathCommand = CreateBrowseCommand();
+    }
+
+    private void WireRelativePathToggle()
+    {
+        this.WhenAnyValue(vm => vm.UseRelativePath.Value)
+            .Skip(1)        // Skip the initial seeded value after loading
+            .Subscribe(useRelative =>
+            {
+                var currentPath = RootPath.Value;
+
+                if (currentPath.IsNullOrEmpty())
+                {
+                    return;
+                }
+
+                var absolutePath = PathUtils.ResolveAsAbsolutePath(currentPath, _store.DocumentDirectory);
+
+                RootPath.Value = useRelative
+                    ? PathUtils.MakeRelativeIfPossible(absolutePath, _store.DocumentDirectory)
+                    : absolutePath;
+            });
     }
 
     private void WireValidation()
@@ -57,11 +82,13 @@ public sealed class ExportViewModel : ReactiveObject, IValidatableViewModel
 
             return BrowseExportPathInteraction
                 .Handle(resolvedPath)
-                .Do(result =>
+                .Do(path =>
                 {
-                    if (result is not null)
+                    if (path is not null)
                     {
-                        RootPath.Value = PathUtils.MakeRelativeIfPossible(result, sdsDirectory);
+                        RootPath.Value = UseRelativePath.Value
+                            ? PathUtils.MakeRelativeIfPossible(path, sdsDirectory)
+                            : path;
                     }
                 })
                 .Select(_ => Unit.Default);

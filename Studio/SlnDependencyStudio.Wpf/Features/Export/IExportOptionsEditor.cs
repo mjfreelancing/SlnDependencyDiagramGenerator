@@ -14,4 +14,9 @@ public interface IExportOptionsEditor
 
     /// <summary>Trackable form of the export root path.</summary>
     TrackableValue<string> RootPath { get; }
+
+    /// <summary>When <see langword="true"/>, the Browse command stores the path relative to the project
+    /// file directory. When <see langword="false"/>, the absolute path is stored.
+    /// Defaults to <see langword="true"/>. This is a UI preference, not persisted to the .sds file.</summary>
+    TrackableValue<bool> UseRelativePath { get; }
 }

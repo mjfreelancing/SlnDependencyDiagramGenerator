@@ -46,20 +46,33 @@
                 VerticalAlignment="Top"
                 Label="Solution path">
                 <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <TextBox
+                        Grid.Row="0"
                         Grid.Column="0"
                         materialDesign:HintAssist.Hint="Path to .sln or .slnx file"
                         Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
                         Text="{Binding SolutionPath.Value, UpdateSourceTrigger=PropertyChanged}" />
                     <Button
+                        Grid.Row="0"
                         Grid.Column="1"
                         Margin="8,0,0,0"
                         Content="Browse"
                         Command="{Binding BrowseSolutionPathCommand}" />
+                    <CheckBox
+                        Grid.Row="1"
+                        Grid.ColumnSpan="2"
+                        Margin="0,4,0,0"
+                        VerticalAlignment="Center"
+                        Content="Use relative path"
+                        IsChecked="{Binding UseRelativePath.Value}" />
                 </Grid>
             </studioControls:FormField>
 

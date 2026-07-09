@@ -5,20 +5,26 @@ using SlnDependencyStudio.Wpf.Features.Solution;
 namespace SlnDependencyStudio.Wpf.Tests.Unit.Features.Solution;
 
 [Collection(nameof(ReactiveUIInitializer))]
-public class GeneratorSolutionOptionsEditorFixture : IDisposable
+public class SolutionOptionsEditorFixture : IDisposable
 {
-    private readonly GeneratorSolutionOptionsEditor _editor = new();
+    private readonly SolutionOptionsEditor _editor = new();
 
-    public class Construction : GeneratorSolutionOptionsEditorFixture
+    public class Construction : SolutionOptionsEditorFixture
     {
         [Fact]
         public void Should_Seed_SolutionPath_With_Empty_String()
         {
             _editor.SolutionPath.Value.ShouldBe(string.Empty);
         }
+
+        [Fact]
+        public void Should_Seed_UseRelativePath_With_True()
+        {
+            _editor.UseRelativePath.Value.ShouldBeTrue();
+        }
     }
 
-    public class IsDirty : GeneratorSolutionOptionsEditorFixture
+    public class IsDirty : SolutionOptionsEditorFixture
     {
         [Fact]
         public void Should_Be_False_After_Construction()
@@ -43,7 +49,7 @@ public class GeneratorSolutionOptionsEditorFixture : IDisposable
         }
     }
 
-    public class SetOriginalValues : GeneratorSolutionOptionsEditorFixture
+    public class SetOriginalValues : SolutionOptionsEditorFixture
     {
         [Fact]
         public void Should_Reset_Dirty_After_Edit()
@@ -60,7 +66,7 @@ public class GeneratorSolutionOptionsEditorFixture : IDisposable
         }
     }
 
-    public class FlushTo : GeneratorSolutionOptionsEditorFixture
+    public class FlushTo : SolutionOptionsEditorFixture
     {
         [Fact]
         public void Should_Write_Current_Values_To_Target()
