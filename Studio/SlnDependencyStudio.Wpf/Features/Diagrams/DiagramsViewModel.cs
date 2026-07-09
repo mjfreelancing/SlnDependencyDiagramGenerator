@@ -17,6 +17,12 @@ namespace SlnDependencyStudio.Wpf.Features.Diagrams;
 public sealed class DiagramsViewModel : ReactiveObject, IValidatableViewModel
 {
     private readonly IProjectDocumentStore _store;
+
+    // Guards against infinite recursion between toggle changes and collection sync.
+    // Toggling a checkbox modifies the Formats collection, which fires CollectionChanged,
+    // which syncs toggle states — without this flag, each sync would re-trigger the
+    // toggle-change handler. The two-way sync is inherently circular; a guard flag is
+    // the standard pattern when neither side can be made a pure projection of the other.
     private bool _isSyncing;
 
     /// <summary>The diagram formats collection. Items are added/removed as toggles change.</summary>

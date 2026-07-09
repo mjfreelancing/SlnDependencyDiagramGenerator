@@ -546,11 +546,11 @@ The selected nav item gets a left-accent border (4px `MaterialDesignPrimary`) an
 
 ### 4.3 Format Toggles & Basic Export
 
-**Architecture note:** This phase adds a "Diagrams" navigation page and a `GeneratorDiagramOptionsEditor` under `Features/Diagrams/`. The `GeneratorExportOptionsEditor` (in `Features/Export/`) is extended with `ClearContents` and `ImageFormats` TrackableValues.
+**Architecture note:** This phase adds a "Diagrams" navigation page and a `DiagramOptionsEditor` under `Features/Diagrams/`. The `ExportOptionsEditor` (in `Features/Export/`) is extended with `ClearContents` and `ImageFormats` TrackableValues.
 
 #### 4.3.1 Diagram Options Editor
 
-- [ ] 4.3.1.1 Create `IDiagramOptionsEditor` interface under `Features/Diagrams/`:
+- [x] 4.3.1.1 Create `IDiagramOptionsEditor` interface under `Features/Diagrams/`:
 
   ```csharp
   public interface IDiagramOptionsEditor
@@ -562,45 +562,45 @@ The selected nav item gets a left-accent border (4px `MaterialDesignPrimary`) an
 
   The `Formats` collection is an `ObservableCollection<DiagramFormat>` so add/remove operations trigger change detection. In phase 5.3, `Direction`, styles, and grouping are added to this same interface.
 
-- [ ] 4.3.1.2 Create `GeneratorDiagramOptionsEditor` under `Features/Diagrams/`:
-      `internal sealed class GeneratorDiagramOptionsEditor : ReactiveObject, IDiagramOptionsEditor, IDisposable`
+- [x] 4.3.1.2 Create `DiagramOptionsEditor` under `Features/Diagrams/`:
+      `internal sealed class DiagramOptionsEditor : ReactiveObject, IDiagramOptionsEditor, IDisposable`
   - Initializes `Formats` TrackableValue with an empty `ObservableCollection<DiagramFormat>` in constructor.
   - Derives `IsDirty` from `Formats.IsDirty` (placeholder for future fields via `CombineLatest`).
   - `SetOriginalValues(GeneratorDiagramOptions source)` — populates `Formats` collection from `source.Formats` array, then calls `SetOriginalValue`.
   - `FlushTo(GeneratorDiagramOptions target)` — writes `Formats` collection to `target.Formats` array.
   - **Dirty tracking for collections:** subscribe to `Formats.Value.CollectionChanged` and call `this.RaisePropertyChanged(nameof(IsDirty))` so mutations to the collection (add/remove) propagate to the editor's `IsDirty` OAPH.
 
-- [ ] 4.3.1.3 Add `IDiagramOptionsEditor DiagramOptionsEditor { get; }` to `IProjectDocumentStore`. Integrate into `ProjectDocumentStore` (constructor field, `IsDirty` combine, `OpenAsync`, `FlushAllEditors`, `MarkAllEditorsClean`, `Close`).
+- [x] 4.3.1.3 Add `IDiagramOptionsEditor DiagramOptionsEditor { get; }` to `IProjectDocumentStore`. Integrate into `ProjectDocumentStore` (constructor field, `IsDirty` combine, `OpenAsync`, `FlushAllEditors`, `MarkAllEditorsClean`, `Close`).
 
 #### 4.3.2 Extend Export Editor
 
-- [ ] 4.3.2.1 Add `ClearContents` and `ImageFormats` TrackableValues to `IExportOptionsEditor` and `GeneratorExportOptionsEditor`:
+- [ ] 4.3.2.1 Add `ClearContents` and `ImageFormats` TrackableValues to `IExportOptionsEditor` and `ExportOptionsEditor`:
 
   ```csharp
   TrackableValue<bool> ClearContents { get; }
   TrackableValue<ObservableCollection<DiagramImageFormat>> ImageFormats { get; }
   ```
 
-- [ ] 4.3.2.2 Update `IsDirty` derivation in `GeneratorExportOptionsEditor` to combine `RootPath.IsDirty`, `ClearContents.IsDirty`, and `ImageFormats.IsDirty`.
+- [ ] 4.3.2.2 Update `IsDirty` derivation in `ExportOptionsEditor` to combine `RootPath.IsDirty`, `ClearContents.IsDirty`, and `ImageFormats.IsDirty`.
 
-- [ ] 4.3.2.3 Update `SetOriginalValues` / `FlushTo` for the new fields in `GeneratorExportOptionsEditor`.
+- [ ] 4.3.2.3 Update `SetOriginalValues` / `FlushTo` for the new fields in `ExportOptionsEditor`.
 
 #### 4.3.3 Diagrams Page
 
-- [ ] 4.3.3.1 Create `Features/Diagrams/DiagramsViewModel.cs`:
+- [x] 4.3.3.1 Create `Features/Diagrams/DiagramsViewModel.cs`:
   - Receives `IProjectDocumentStore` via DI.
   - Inherits from `ReactiveObject`, implements `IValidatableViewModel`.
   - Exposes `Formats` pass-through: `public TrackableValue<ObservableCollection<DiagramFormat>> Formats => _store.DiagramOptionsEditor.Formats;`
   - `ValidationRule`: at least one format must be selected (`Formats.Value.Count > 0`).
 
-- [ ] 4.3.3.2 Create `Features/Diagrams/DiagramsView.xaml` + `.xaml.cs`:
+- [x] 4.3.3.2 Create `Features/Diagrams/DiagramsView.xaml` + `.xaml.cs`:
   - Card-based layout (header icon `GraphOutline` + title "Diagrams").
   - Card containing two large labelled `ToggleButton` controls for D2 and Mermaid, bound to `Formats.Value` via two-way converters (checked ↔ item in collection).
   - No `FormField` needed — use plain `StackPanel` with `ToggleButton` controls.
   - Named error `TextBlock` (`x:Name="FormatsError"`) below the toggle group for validation.
   - `WhenActivated` → `BindValidation(ViewModel, vm => vm.Formats.Value.Count, view => view.FormatsError.Text)`.
 
-- [ ] 4.3.3.3 Register `DiagramsViewModel`/`DiagramsView` via DI.
+- [x] 4.3.3.3 Register `DiagramsViewModel`/`DiagramsView` via DI.
 
 #### 4.3.4 Extend Export Page
 
@@ -612,7 +612,7 @@ The selected nav item gets a left-accent border (4px `MaterialDesignPrimary`) an
 
 #### 4.3.5 Navigation Wiring
 
-- [ ] 4.3.5.1 In `MainWindowViewModel.NavigationItems`, add:
+- [x] 4.3.5.1 In `MainWindowViewModel.NavigationItems`, add:
   ```csharp
   new NavigationItemViewModel<DiagramsViewModel> { DisplayName = "Diagrams", IconKind = GraphOutline }
   ```
@@ -621,7 +621,7 @@ The selected nav item gets a left-accent border (4px `MaterialDesignPrimary`) an
 
 ### 4.4 Validation Wiring
 
-- [ ] 4.4.1 Wire `ReactiveUI.Validation`'s `BindValidation` helper in each view (Project, Solution, Export, Diagrams) to display inline error messages. For pages using `FormField`, target `view => view.NamedFormField.ValidationError`. For pages without FormField (Diagrams), target a named error `TextBlock`. Reuse the pattern established in 4.1.3: `WhenActivated` → `this.BindValidation(ViewModel, vm => vm.Property, view => view.Element)`.
+- [x] 4.4.1 Wire `ReactiveUI.Validation`'s `BindValidation` helper in each view (Project, Solution, Export, Diagrams) to display inline error messages. For pages using `FormField`, target `view => view.NamedFormField.ValidationError`. For pages without FormField (Diagrams), target a named error `TextBlock`. Reuse the pattern established in 4.1.3: `WhenActivated` → `this.BindValidation(ViewModel, vm => vm.Property, view => view.Element)`.
 
 - [x] 4.4.2 ~~Implement the floating validation summary bar~~ — Dropped (2026-06-24).
 
@@ -643,7 +643,7 @@ The selected nav item gets a left-accent border (4px `MaterialDesignPrimary`) an
 
 - [ ] 5.1.1 Add four `TrackableValue<ObservableCollection<string>>` properties to `ISolutionOptionsEditor`: `RegexToInclude`, `RegexToExclude`, `PackagesToExclude`, `FrameworksToExclude`.
 
-- [ ] 5.1.2 Update `GeneratorSolutionOptionsEditor`:
+- [ ] 5.1.2 Update `SolutionOptionsEditor`:
   - Initialize each collection as empty `ObservableCollection<string>` in constructor.
   - Update `IsDirty` derivation to combine all TrackableValues (including `SolutionPath` from 4.2).
   - Update `SetOriginalValues` / `FlushTo` for all four array properties.
