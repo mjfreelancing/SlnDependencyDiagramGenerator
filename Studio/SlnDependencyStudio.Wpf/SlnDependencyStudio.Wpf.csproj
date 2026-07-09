@@ -21,6 +21,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<PackageReference Include="DynamicData" />
 		<PackageReference Include="ReactiveUI" />
 		<PackageReference Include="ReactiveUI.Validation" />
 		<PackageReference Include="ReactiveUI.WPF" />

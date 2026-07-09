@@ -7,8 +7,6 @@ namespace SlnDependencyStudio.Wpf.Features.Solution;
 
 /// <summary>
 /// Reactive editing wrapper for <see cref="GeneratorSolutionOptions"/>.
-/// Mirrors each editable field with a <see cref="TrackableValue{T}"/>
-/// and derives its own <see cref="IsDirty"/> state from them.
 /// </summary>
 internal sealed class SolutionOptionsEditor : ReactiveObject, ISolutionOptionsEditor, IDisposable
 {
@@ -24,17 +22,14 @@ internal sealed class SolutionOptionsEditor : ReactiveObject, ISolutionOptionsEd
     /// <inheritdoc />
     public bool IsDirty => _isDirty.Value;
 
-    /// <summary>
-    /// Initializes a new instance with all TrackableValues seeded to empty defaults.
-    /// This ensures <see cref="IsDirty"/> is valid from construction, before any document is loaded.
-    /// </summary>
+    /// <summary>Initializes a new instance of <see cref="SolutionOptionsEditor"/>.</summary>
     public SolutionOptionsEditor()
     {
         InitializeTrackable(SolutionPath, string.Empty);
         InitializeTrackable(UseRelativePath, true);
 
         _isDirty = SolutionPath
-            .WhenAnyValue(p => p.IsDirty)
+            .WhenAnyValue(path => path.IsDirty)
             .ToProperty(this, nameof(IsDirty));
     }
 

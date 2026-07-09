@@ -2,6 +2,7 @@ using NSubstitute;
 using Shouldly;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyStudio.Shared.Config;
+using SlnDependencyStudio.Wpf.Features.Diagrams;
 using SlnDependencyStudio.Wpf.Features.Export;
 using SlnDependencyStudio.Wpf.Features.Project;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
@@ -51,6 +52,12 @@ public class ProjectDocumentStoreFixture
         public void Should_Have_ExportOptionsEditor_Not_Null()
         {
             _store.ExportOptionsEditor.ShouldNotBeNull();
+        }
+
+        [Fact]
+        public void Should_Have_DiagramOptionsEditor_Not_Null()
+        {
+            _store.DiagramOptionsEditor.ShouldNotBeNull();
         }
 
         [Fact]
@@ -122,6 +129,22 @@ public class ProjectDocumentStoreFixture
             await _store.OpenAsync(@"C:\Projects\test.sds");
 
             _store.ExportOptionsEditor.RootPath.Value.ShouldBe(@"..\Output");
+        }
+
+        [Fact]
+        public async Task Should_Populate_DiagramOptionsEditor()
+        {
+            var document = CreateDocument("Test", "Desc");
+            document.DiagramGenerator.Diagram.Formats = [DiagramFormat.Mermaid];
+
+            _projectService
+                .OpenAsync(@"C:\Projects\test.sds", Arg.Any<CancellationToken>())
+                .Returns(document);
+
+            await _store.OpenAsync(@"C:\Projects\test.sds");
+
+            _store.DiagramOptionsEditor.Formats.Value.ShouldContain(DiagramFormat.Mermaid);
+            _store.DiagramOptionsEditor.Formats.Value.Count.ShouldBe(1);
         }
 
         [Fact]
@@ -226,6 +249,20 @@ public class ProjectDocumentStoreFixture
             await _store.OpenAsync("test.sds");
 
             _store.ExportOptionsEditor.RootPath.Value = @"C:\New\Output";
+
+            _store.IsDirty.ShouldBeTrue();
+        }
+
+        [Fact]
+        public async Task Should_Track_IsDirty_When_Diagram_Formats_Change()
+        {
+            _projectService
+                .OpenAsync("test.sds", Arg.Any<CancellationToken>())
+                .Returns(CreateDocument("Name", "Desc"));
+
+            await _store.OpenAsync("test.sds");
+
+            _store.DiagramOptionsEditor.Formats.Value.Add(DiagramFormat.D2);
 
             _store.IsDirty.ShouldBeTrue();
         }
@@ -389,6 +426,25 @@ public class ProjectDocumentStoreFixture
             _store.Close();
 
             _store.ExportOptionsEditor.RootPath.Value.ShouldBe(string.Empty);
+        }
+
+        [Fact]
+        public async Task Should_Reset_DiagramOptionsEditor()
+        {
+            var document = CreateDocument("Name", "Desc");
+            document.DiagramGenerator.Diagram.Formats = [DiagramFormat.D2];
+
+            _projectService
+                .OpenAsync("test.sds", Arg.Any<CancellationToken>())
+                .Returns(document);
+
+            await _store.OpenAsync("test.sds");
+
+            _store.DiagramOptionsEditor.Formats.Value.ShouldContain(DiagramFormat.D2);
+
+            _store.Close();
+
+            _store.DiagramOptionsEditor.Formats.Value.ShouldBeEmpty();
         }
 
         [Fact]

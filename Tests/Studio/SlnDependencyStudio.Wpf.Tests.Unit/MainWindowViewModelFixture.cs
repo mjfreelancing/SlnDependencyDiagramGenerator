@@ -8,6 +8,7 @@ using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Wpf.Controls;
 using SlnDependencyStudio.Wpf.Features.EmptyState;
 using SlnDependencyStudio.Wpf.Features.ErrorDialog;
+using SlnDependencyStudio.Wpf.Features.Diagrams;
 using SlnDependencyStudio.Wpf.Features.Export;
 using SlnDependencyStudio.Wpf.Features.Project;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
@@ -523,6 +524,15 @@ public class MainWindowViewModelFixture
                 .ShouldContain(item =>
                     item.DisplayName == "Export" &&
                     item.ViewModelType == typeof(ExportViewModel));
+        }
+
+        [Fact]
+        public void Should_Contain_Diagrams_Nav_Item()
+        {
+            _viewModel.NavigationItems
+                .ShouldContain(item =>
+                    item.DisplayName == "Diagrams" &&
+                    item.ViewModelType == typeof(DiagramsViewModel));
         }
     }
 

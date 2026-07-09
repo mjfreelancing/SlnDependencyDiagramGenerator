@@ -7,8 +7,6 @@ namespace SlnDependencyStudio.Wpf.Features.Project;
 
 /// <summary>
 /// Reactive editing wrapper for <see cref="DependencyProjectMetadata"/>.
-/// Mirrors each editable metadata field with a <see cref="TrackableValue{T}"/>
-/// and derives its own <see cref="IsDirty"/> state from them.
 /// </summary>
 internal sealed class ProjectMetadataEditor : ReactiveObject, IProjectMetadataEditor, IDisposable
 {
@@ -24,10 +22,7 @@ internal sealed class ProjectMetadataEditor : ReactiveObject, IProjectMetadataEd
     /// <inheritdoc />
     public bool IsDirty => _isDirty.Value;
 
-    /// <summary>
-    /// Initializes a new instance with all TrackableValues seeded to empty defaults.
-    /// This ensures <see cref="IsDirty"/> is valid from construction, before any document is loaded.
-    /// </summary>
+    /// <summary>Initializes a new instance of <see cref="ProjectMetadataEditor"/>.</summary>
     public ProjectMetadataEditor()
     {
         InitializeTrackable(ProjectName, string.Empty);

@@ -4,6 +4,7 @@ using AllOverIt.ReactiveUI.Wpf.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using SlnDependencyStudio.Shared.DependencyInjection;
 using SlnDependencyStudio.Wpf.DependencyInjection;
+using SlnDependencyStudio.Wpf.Features.Diagrams;
 using SlnDependencyStudio.Wpf.Features.EmptyState;
 using SlnDependencyStudio.Wpf.Features.Export;
 using SlnDependencyStudio.Wpf.Features.Project;
@@ -45,6 +46,7 @@ public static class ServiceCollectionExtensions
             services.RegisterUserControlTransient<ProjectViewModel, ProjectView>();
             services.RegisterUserControlTransient<SolutionViewModel, SolutionView>();
             services.RegisterUserControlTransient<ExportViewModel, ExportView>();
+            services.RegisterUserControlTransient<DiagramsViewModel, DiagramsView>();
             services.RegisterUserControlTransient<EmptyStateViewModel, EmptyStateView>();
 
             return services;

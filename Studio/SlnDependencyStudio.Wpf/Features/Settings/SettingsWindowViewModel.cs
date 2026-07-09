@@ -75,7 +75,7 @@ public sealed class SettingsWindowViewModel : ReactiveObject
         });
 
         // When the window code-behind assigns SettingsEditorViewModel, wire up restart tracking.
-        this.WhenAnyValue(x => x.SettingsEditorViewModel)
+        this.WhenAnyValue(vm => vm.SettingsEditorViewModel)
             .Where(x => x is not null)
             .Subscribe(_ => BeginRestartTracking());
     }

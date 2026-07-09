@@ -1,5 +1,6 @@
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Shared.DependencyInjection;
+using SlnDependencyStudio.Wpf.Features.Diagrams;
 using SlnDependencyStudio.Wpf.Features.Export;
 using SlnDependencyStudio.Wpf.Features.Solution;
 
@@ -32,6 +33,10 @@ public interface IProjectDocumentStore : IStudioSingletonDependency
     /// <summary>The editing wrapper for <see cref="GeneratorExportOptions"/>.
     /// Contains <see cref="TrackableValue{T}"/> instances for export options.</summary>
     IExportOptionsEditor ExportOptionsEditor { get; }
+
+    /// <summary>The editing wrapper for <see cref="GeneratorDiagramOptions"/>.
+    /// Contains <see cref="TrackableValue{T}"/> instances for diagram options.</summary>
+    IDiagramOptionsEditor DiagramOptionsEditor { get; }
 
     /// <summary><see langword="true"/> when any editor wrapper has unsaved changes.</summary>
     /// <remarks>This property is Observable.</remarks>
