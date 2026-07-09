@@ -1,0 +1,68 @@
+<reactiveui:ReactiveUserControl
+    x:Class="SlnDependencyStudio.Wpf.Features.Export.ExportView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:export="clr-namespace:SlnDependencyStudio.Wpf.Features.Export"
+    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:reactiveui="http://reactiveui.net"
+    xmlns:studioControls="clr-namespace:SlnDependencyStudio.Wpf.Controls"
+    d:DesignHeight="400"
+    d:DesignWidth="600"
+    x:TypeArguments="export:ExportViewModel"
+    mc:Ignorable="d">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="24" Grid.IsSharedSizeScope="True">
+
+            <!--  Header  -->
+            <StackPanel Margin="0,0,0,24" Orientation="Horizontal">
+                <materialDesign:PackIcon
+                    Width="28"
+                    Height="28"
+                    Margin="0,0,12,0"
+                    VerticalAlignment="Center"
+                    Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+                    Kind="ExportVariant" />
+                <StackPanel>
+                    <TextBlock
+                        FontSize="22"
+                        FontWeight="SemiBold"
+                        Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+                        Text="Export" />
+                    <TextBlock
+                        Margin="0,2,0,0"
+                        FontSize="12"
+                        Foreground="{DynamicResource MaterialDesign.Brush.ForegroundLight}"
+                        Text="Export path and file format settings" />
+                </StackPanel>
+            </StackPanel>
+
+            <!--  Export Root Path  -->
+            <studioControls:FormField
+                x:Name="ExportRootFormField"
+                Margin="0,0,0,16"
+                VerticalAlignment="Top"
+                Label="Export root">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBox
+                        Grid.Column="0"
+                        materialDesign:HintAssist.Hint="Path to export directory"
+                        Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+                        Text="{Binding RootPath.Value, UpdateSourceTrigger=PropertyChanged}" />
+                    <Button
+                        Grid.Column="1"
+                        Margin="8,0,0,0"
+                        Content="Browse"
+                        Command="{Binding BrowseExportPathCommand}" />
+                </Grid>
+            </studioControls:FormField>
+
+        </StackPanel>
+    </ScrollViewer>
+</reactiveui:ReactiveUserControl>

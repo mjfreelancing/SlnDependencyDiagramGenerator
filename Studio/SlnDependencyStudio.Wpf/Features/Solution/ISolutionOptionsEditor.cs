@@ -4,8 +4,7 @@ namespace SlnDependencyStudio.Wpf.Features.Solution;
 
 /// <summary>
 /// Read-only observable surface of the <see cref="GeneratorSolutionOptions"/> editor wrapper.
-/// Exposes TrackableValue properties for XAML binding without revealing internal
-/// lifecycle methods (<c>SetOriginalValues</c>, <c>FlushTo</c>).
+/// Exposes TrackableValue properties for XAML binding.
 /// </summary>
 public interface ISolutionOptionsEditor
 {

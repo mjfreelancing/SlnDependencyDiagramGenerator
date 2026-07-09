@@ -2,6 +2,7 @@ using AllOverIt.Assertion;
 using ReactiveUI;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyStudio.Shared.Config;
+using SlnDependencyStudio.Wpf.Features.Export;
 using SlnDependencyStudio.Wpf.Features.RecentProjects;
 using SlnDependencyStudio.Wpf.Features.Solution;
 using System.IO;
@@ -19,6 +20,7 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
     private readonly IRecentProjectsService _recentProjects;
     private readonly ProjectMetadataEditor _metadataEditor;
     private readonly GeneratorSolutionOptionsEditor _solutionOptionsEditor;
+    private readonly GeneratorExportOptionsEditor _exportOptionsEditor;
     private readonly ObservableAsPropertyHelper<bool> _isDirty;
     private DependencyProjectDocument? _document;
     private string? _currentFilePath;
@@ -41,6 +43,9 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
     public ISolutionOptionsEditor SolutionOptionsEditor => _solutionOptionsEditor;
 
     /// <inheritdoc />
+    public IExportOptionsEditor ExportOptionsEditor => _exportOptionsEditor;
+
+    /// <inheritdoc />
     public bool IsDirty => _isDirty.Value;
 
     /// <inheritdoc />
@@ -60,13 +65,15 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
 
         _metadataEditor = new ProjectMetadataEditor();
         _solutionOptionsEditor = new GeneratorSolutionOptionsEditor();
+        _exportOptionsEditor = new GeneratorExportOptionsEditor();
 
         // Global dirty state is derived from all editor wrappers.
         _isDirty = Observable
             .CombineLatest(
                 _metadataEditor.WhenAnyValue(editor => editor.IsDirty),
                 _solutionOptionsEditor.WhenAnyValue(editor => editor.IsDirty),
-                (metadata, solution) => metadata || solution)
+                _exportOptionsEditor.WhenAnyValue(editor => editor.IsDirty),
+                (metadata, solution, export) => metadata || solution || export)
             .ToProperty(this, nameof(IsDirty));
     }
 
@@ -82,6 +89,7 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
 
         _metadataEditor.SetOriginalValues(_document.Metadata);
         _solutionOptionsEditor.SetOriginalValues(_document.DiagramGenerator.Solution);
+        _exportOptionsEditor.SetOriginalValues(_document.DiagramGenerator.Export);
 
         _recentProjects.Add(filePath);
     }
@@ -126,6 +134,7 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
         // Reset editors to empty defaults so IsDirty returns to false.
         _metadataEditor.SetOriginalValues(new DependencyProjectMetadata());
         _solutionOptionsEditor.SetOriginalValues(new GeneratorSolutionOptions());
+        _exportOptionsEditor.SetOriginalValues(new GeneratorExportOptions());
     }
 
     /// <summary>Flushes all editor wrappers to the underlying document.</summary>
@@ -133,6 +142,7 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
     {
         _metadataEditor.FlushTo(_document!.Metadata);
         _solutionOptionsEditor.FlushTo(_document!.DiagramGenerator.Solution);
+        _exportOptionsEditor.FlushTo(_document!.DiagramGenerator.Export);
     }
 
     /// <summary>Marks all editor wrappers as clean after a successful save.</summary>
@@ -140,5 +150,6 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
     {
         _metadataEditor.SetOriginalValues(_document!.Metadata);
         _solutionOptionsEditor.SetOriginalValues(_document!.DiagramGenerator.Solution);
+        _exportOptionsEditor.SetOriginalValues(_document!.DiagramGenerator.Export);
     }
 }

@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using ReactiveUI;
 using SlnDependencyStudio.Wpf.Features.EmptyState;
 using SlnDependencyStudio.Wpf.Features.ErrorDialog;
+using SlnDependencyStudio.Wpf.Features.Export;
 using SlnDependencyStudio.Wpf.Features.Project;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
 using SlnDependencyStudio.Wpf.Features.RecentProjects;
@@ -169,6 +170,11 @@ public sealed class MainWindowViewModel : ActivatableViewModel
             {
                 DisplayName = "Solution",
                 IconKind = MaterialDesignThemes.Wpf.PackIconKind.FolderOpenOutline
+            },
+            new NavigationItemViewModel<ExportViewModel>
+            {
+                DisplayName = "Export",
+                IconKind = MaterialDesignThemes.Wpf.PackIconKind.ExportVariant
             }
         ];
 

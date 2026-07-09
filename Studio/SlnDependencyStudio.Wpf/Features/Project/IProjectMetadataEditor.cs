@@ -4,8 +4,7 @@ namespace SlnDependencyStudio.Wpf.Features.Project;
 
 /// <summary>
 /// Read-only observable surface of the <see cref="DependencyProjectMetadata"/> editor wrapper.
-/// Exposes TrackableValue properties for XAML binding without revealing internal
-/// lifecycle methods (<c>SetOriginalValues</c>, <c>FlushTo</c>).
+/// Exposes TrackableValue properties for XAML binding.
 /// </summary>
 public interface IProjectMetadataEditor
 {

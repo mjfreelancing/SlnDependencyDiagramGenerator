@@ -2,6 +2,7 @@ using NSubstitute;
 using Shouldly;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyStudio.Shared.Config;
+using SlnDependencyStudio.Wpf.Features.Export;
 using SlnDependencyStudio.Wpf.Features.Project;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
 using SlnDependencyStudio.Wpf.Features.RecentProjects;
@@ -44,6 +45,12 @@ public class ProjectDocumentStoreFixture
         public void Should_Have_SolutionOptionsEditor_Not_Null()
         {
             _store.SolutionOptionsEditor.ShouldNotBeNull();
+        }
+
+        [Fact]
+        public void Should_Have_ExportOptionsEditor_Not_Null()
+        {
+            _store.ExportOptionsEditor.ShouldNotBeNull();
         }
 
         [Fact]
@@ -93,6 +100,21 @@ public class ProjectDocumentStoreFixture
             await _store.OpenAsync(@"C:\Projects\test.sds");
 
             _store.SolutionOptionsEditor.SolutionPath.Value.ShouldBe(@"..\MySolution.sln");
+        }
+
+        [Fact]
+        public async Task Should_Populate_ExportOptionsEditor()
+        {
+            var document = CreateDocument("Test", "Desc");
+            document.DiagramGenerator.Export.RootPath = @"..\Output";
+
+            _projectService
+                .OpenAsync(@"C:\Projects\test.sds", Arg.Any<CancellationToken>())
+                .Returns(document);
+
+            await _store.OpenAsync(@"C:\Projects\test.sds");
+
+            _store.ExportOptionsEditor.RootPath.Value.ShouldBe(@"..\Output");
         }
 
         [Fact]
@@ -183,6 +205,20 @@ public class ProjectDocumentStoreFixture
             await _store.OpenAsync("test.sds");
 
             _store.SolutionOptionsEditor.SolutionPath.Value = @"C:\New\path.sln";
+
+            _store.IsDirty.ShouldBeTrue();
+        }
+
+        [Fact]
+        public async Task Should_Track_IsDirty_When_RootPath_Changes()
+        {
+            _projectService
+                .OpenAsync("test.sds", Arg.Any<CancellationToken>())
+                .Returns(CreateDocument("Name", "Desc"));
+
+            await _store.OpenAsync("test.sds");
+
+            _store.ExportOptionsEditor.RootPath.Value = @"C:\New\Output";
 
             _store.IsDirty.ShouldBeTrue();
         }
@@ -327,6 +363,25 @@ public class ProjectDocumentStoreFixture
             _store.Close();
 
             _store.SolutionOptionsEditor.SolutionPath.Value.ShouldBe(string.Empty);
+        }
+
+        [Fact]
+        public async Task Should_Reset_ExportOptionsEditor()
+        {
+            var document = CreateDocument("Name", "Desc");
+            document.DiagramGenerator.Export.RootPath = @"C:\Output";
+
+            _projectService
+                .OpenAsync("test.sds", Arg.Any<CancellationToken>())
+                .Returns(document);
+
+            await _store.OpenAsync("test.sds");
+
+            _store.ExportOptionsEditor.RootPath.Value.ShouldBe(@"C:\Output");
+
+            _store.Close();
+
+            _store.ExportOptionsEditor.RootPath.Value.ShouldBe(string.Empty);
         }
 
         [Fact]

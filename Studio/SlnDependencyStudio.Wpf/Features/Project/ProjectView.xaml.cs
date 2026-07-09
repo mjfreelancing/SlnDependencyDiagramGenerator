@@ -13,6 +13,7 @@ public partial class ProjectView : ReactiveUserControl<ProjectViewModel>
     {
         ViewModel = viewModel;
         DataContext = viewModel;
+        
         InitializeComponent();
 
         this.WhenActivated(disposables =>

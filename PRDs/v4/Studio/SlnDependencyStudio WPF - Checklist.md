@@ -449,7 +449,7 @@ The selected nav item gets a left-accent border (4px `MaterialDesignPrimary`) an
 
 #### 4.2.2 GeneratorExportOptions Editor
 
-- [ ] 4.2.2.1 Create `IExportOptionsEditor` interface under `Features/Export/`:
+- [x] 4.2.2.1 Create `IExportOptionsEditor` interface under `Features/Export/`:
 
   ```csharp
   public interface IExportOptionsEditor
@@ -459,20 +459,20 @@ The selected nav item gets a left-accent border (4px `MaterialDesignPrimary`) an
   }
   ```
 
-- [ ] 4.2.2.2 Create `GeneratorExportOptionsEditor` under `Features/Export/`:
+- [x] 4.2.2.2 Create `GeneratorExportOptionsEditor` under `Features/Export/`:
       `internal sealed class GeneratorExportOptionsEditor : ReactiveObject, IExportOptionsEditor, IDisposable`
   - Same pattern as 4.2.1.2 but wraps `GeneratorExportOptions.RootPath`.
 
 #### 4.2.3 Store Integration
 
-- [ ] 4.2.3.1 Add to `IProjectDocumentStore`:
+- [x] 4.2.3.1 Add to `IProjectDocumentStore`:
 
   ```csharp
   ISolutionOptionsEditor SolutionOptionsEditor { get; }
   IExportOptionsEditor ExportOptionsEditor { get; }
   ```
 
-- [ ] 4.2.3.2 In `ProjectDocumentStore`:
+- [x] 4.2.3.2 In `ProjectDocumentStore`:
   - Add `_solutionOptionsEditor` and `_exportOptionsEditor` fields, initialized in constructor.
   - Extend `IsDirty` derivation to combine all three editors:
     ```csharp
@@ -489,7 +489,7 @@ The selected nav item gets a left-accent border (4px `MaterialDesignPrimary`) an
 
 #### 4.2.4 Solution Page
 
-- [ ] 4.2.4.1 Create `Features/Solution/SolutionViewModel.cs`:
+- [x] 4.2.4.1 Create `Features/Solution/SolutionViewModel.cs`:
   - Receives `IProjectDocumentStore` via DI (scoped).
   - Inherits from `ReactiveObject`, implements `IValidatableViewModel`.
   - Exposes `SolutionPath` pass-through: `public TrackableValue<string> SolutionPath => _store.SolutionOptionsEditor.SolutionPath;`
@@ -497,7 +497,7 @@ The selected nav item gets a left-accent border (4px `MaterialDesignPrimary`) an
   - `Interaction<string, string?>` for browse dialog.
   - `ReactiveCommand` that calls `BrowseSolutionPathInteraction.Handle(...)` and assigns result to `SolutionPath.Value`.
 
-- [ ] 4.2.4.2 Create `Features/Solution/SolutionView.xaml` + `.xaml.cs`:
+- [x] 4.2.4.2 Create `Features/Solution/SolutionView.xaml` + `.xaml.cs`:
   - Card-based layout (header icon `FolderOpenOutline` + title "Solution").
   - Single `FormField` with `x:Name="SolutionPathFormField"`, label "Solution path", containing:
     ```xml
@@ -517,26 +517,26 @@ The selected nav item gets a left-accent border (4px `MaterialDesignPrimary`) an
   - `WhenActivated` → `BindValidation(view => view.SolutionPathFormField.ValidationError)`.
   - Code-behind registers the `BrowseSolutionPathInteraction` handler to open `OpenFileDialog` filtered to `.sln`/`.slnx`.
 
-- [ ] 4.2.4.3 Register `SolutionViewModel`/`SolutionView` via DI in `ServiceCollectionExtensions.AddWpfDependencies()`.
+- [x] 4.2.4.3 Register `SolutionViewModel`/`SolutionView` via DI in `ServiceCollectionExtensions.AddWpfDependencies()`.
 
 #### 4.2.5 Export Page (Root Path)
 
-- [ ] 4.2.5.1 Create `Features/Export/ExportViewModel.cs`:
+- [x] 4.2.5.1 Create `Features/Export/ExportViewModel.cs`:
   - Same pattern as `SolutionViewModel` but binds to `_store.ExportOptionsEditor.RootPath`.
   - `ValidationRule`: `RootPath.Value` not empty → "Export root path must not be empty."
   - `Interaction<string, string?>` for folder browse dialog.
 
-- [ ] 4.2.5.2 Create `Features/Export/ExportView.xaml` + `.xaml.cs`:
+- [x] 4.2.5.2 Create `Features/Export/ExportView.xaml` + `.xaml.cs`:
   - Card-based layout (header icon `ExportVariant` + title "Export").
   - Single `FormField` with `x:Name="ExportRootFormField"`, label "Export root", containing TextBox + folder Browse button.
   - Same `BindValidation` pattern.
   - Code-behind registers the interaction handler to open `OpenFolderDialog`.
 
-- [ ] 4.2.5.3 Register `ExportViewModel`/`ExportView` via DI.
+- [x] 4.2.5.3 Register `ExportViewModel`/`ExportView` via DI.
 
 #### 4.2.6 Navigation Wiring
 
-- [ ] 4.2.6.1 In `MainWindowViewModel` constructor, add navigation items:
+- [x] 4.2.6.1 In `MainWindowViewModel` constructor, add navigation items:
   ```csharp
   new NavigationItemViewModel<SolutionViewModel> { DisplayName = "Solution", IconKind = FolderOpenOutline },
   new NavigationItemViewModel<ExportViewModel> { DisplayName = "Export", IconKind = ExportVariant }
