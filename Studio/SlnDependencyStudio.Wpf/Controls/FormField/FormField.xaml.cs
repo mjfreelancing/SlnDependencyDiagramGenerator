@@ -5,27 +5,31 @@ using System.Windows.Markup;
 namespace SlnDependencyStudio.Wpf.Controls;
 
 /// <summary>
-/// A reusable form field component that renders a label on the left and arbitrary content
-/// (typically an input control) on the right, separated by a horizontal divider line.
-/// Uses <c>[ContentProperty("InputContent")]</c> to avoid the inherited <c>Content</c> property
-/// conflict that occurs with <c>ContentControl</c>-based approaches.
+/// A reusable form field component providing a consistent visual pattern for all settings
+/// fields. Renders a bold title, an optional description, the input content, and an
+/// optional validation error — stacked vertically in a single column.
+///
+/// <para><b>Convention:</b> Use FormField for every labeled field on settings pages.
+/// The <c>Title</c> is the field name. <c>Description</c> provides context (optional).
+/// The child element is the input control (TextBox, ToggleButton, ItemsControl, etc.).
+/// Validation errors are wired via <c>BindValidation</c> in the view code-behind.</para>
 /// </summary>
 [ContentProperty(nameof(InputContent))]
 public partial class FormField : UserControl
 {
-    public static readonly DependencyProperty LabelProperty =
+    public static readonly DependencyProperty TitleProperty =
         DependencyProperty.Register(
-            nameof(Label),
+            nameof(Title),
             typeof(string),
             typeof(FormField),
             new FrameworkPropertyMetadata(string.Empty));
 
-    public static readonly DependencyProperty LabelVerticalAlignmentProperty =
+    public static readonly DependencyProperty DescriptionProperty =
         DependencyProperty.Register(
-            nameof(LabelVerticalAlignment),
-            typeof(VerticalAlignment),
+            nameof(Description),
+            typeof(string),
             typeof(FormField),
-            new FrameworkPropertyMetadata(VerticalAlignment.Center));
+            new FrameworkPropertyMetadata(null));
 
     public static readonly DependencyProperty InputContentProperty =
         DependencyProperty.Register(
@@ -41,26 +45,22 @@ public partial class FormField : UserControl
             typeof(FormField),
             new FrameworkPropertyMetadata(null));
 
-    /// <summary>The label text displayed on the left side of the field.</summary>
-    public string Label
+    /// <summary>The bold title displayed above the input.</summary>
+    public string Title
     {
-        get => (string)GetValue(LabelProperty);
-        set => SetValue(LabelProperty, value);
+        get => (string)GetValue(TitleProperty);
+        set => SetValue(TitleProperty, value);
+    }
+
+    /// <summary>Optional lighter description text displayed between the title and the input.</summary>
+    public string? Description
+    {
+        get => (string?)GetValue(DescriptionProperty);
+        set => SetValue(DescriptionProperty, value);
     }
 
     /// <summary>
-    /// How the label is vertically aligned relative to the content.
-    /// Use <see cref="VerticalAlignment.Center"/> (default) for single-line inputs,
-    /// and <see cref="VerticalAlignment.Top"/> for multi-line inputs.
-    /// </summary>
-    public VerticalAlignment LabelVerticalAlignment
-    {
-        get => (VerticalAlignment)GetValue(LabelVerticalAlignmentProperty);
-        set => SetValue(LabelVerticalAlignmentProperty, value);
-    }
-
-    /// <summary>
-    /// The input control displayed on the right side of the field.
+    /// The input control displayed below the title and description.
     /// This is set automatically by the XAML parser when a child element
     /// is placed inside the <c>FormField</c> tag.
     /// </summary>
@@ -71,8 +71,8 @@ public partial class FormField : UserControl
     }
 
     /// <summary>
-    /// Optional validation error message displayed below the input, aligned with
-    /// the input column. <see langword="null"/> or empty hides the error row.
+    /// Optional validation error message displayed below the input.
+    /// <see langword="null"/> or empty hides the error row.
     /// </summary>
     public string? ValidationError
     {

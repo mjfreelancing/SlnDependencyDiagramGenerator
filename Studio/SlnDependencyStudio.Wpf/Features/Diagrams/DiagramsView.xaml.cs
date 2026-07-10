@@ -13,7 +13,7 @@ public partial class DiagramsView : ReactiveUserControl<DiagramsViewModel>
     {
         ViewModel = viewModel;
         DataContext = viewModel;
-        
+
         InitializeComponent();
 
         this.WhenActivated(disposables =>
@@ -21,7 +21,7 @@ public partial class DiagramsView : ReactiveUserControl<DiagramsViewModel>
             this.BindValidation(
                     ViewModel,
                     vm => vm.Formats.Value.Count,
-                    view => view.FormatsError.Text)
+                    view => view.FormatsFormField.ValidationError)
                 .DisposeWith(disposables);
         });
     }

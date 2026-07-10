@@ -14,7 +14,7 @@
     mc:Ignorable="d">
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="24" Grid.IsSharedSizeScope="True">
+        <StackPanel Margin="24">
 
             <!--  Header  -->
             <StackPanel Margin="0,0,0,24" Orientation="Horizontal">
@@ -42,9 +42,9 @@
             <!--  Project Name  -->
             <studioControls:FormField
                 x:Name="ProjectNameFormField"
-                Margin="0,0,0,16"
-                VerticalAlignment="Top"
-                Label="Project name">
+                Margin="0,0,0,24"
+                Title="Project name"
+                Description="A unique name for this dependency project.">
                 <TextBox
                     materialDesign:HintAssist.Hint="Enter a name for this project"
                     Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
@@ -53,9 +53,9 @@
 
             <!--  Description  -->
             <studioControls:FormField
-                Margin="0,0,0,16"
-                VerticalAlignment="Top"
-                Label="Description">
+                Margin="0,0,0,24"
+                Title="Description"
+                Description="An optional description of the project.">
                 <TextBox
                     materialDesign:HintAssist.Hint="Optional description"
                     Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"

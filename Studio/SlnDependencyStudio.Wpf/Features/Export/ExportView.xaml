@@ -14,7 +14,7 @@
     mc:Ignorable="d">
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="24" Grid.IsSharedSizeScope="True">
+        <StackPanel Margin="24">
 
             <!--  Header  -->
             <StackPanel Margin="0,0,0,24" Orientation="Horizontal">
@@ -42,9 +42,9 @@
             <!--  Export Root Path  -->
             <studioControls:FormField
                 x:Name="ExportRootFormField"
-                Margin="0,0,0,16"
-                VerticalAlignment="Top"
-                Label="Export root">
+                Title="Export root"
+                Margin="0,0,0,24"
+                Description="The root directory for generated diagram and image files.">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -64,8 +64,8 @@
                         Grid.Row="0"
                         Grid.Column="1"
                         Margin="8,0,0,0"
-                        Content="Browse"
-                        Command="{Binding BrowseExportPathCommand}" />
+                        Command="{Binding BrowseExportPathCommand}"
+                        Content="Browse" />
                     <CheckBox
                         Grid.Row="1"
                         Grid.ColumnSpan="2"
@@ -77,55 +77,50 @@
             </studioControls:FormField>
 
             <!--  Clear Output Folder  -->
-            <StackPanel Margin="0,0,0,16" Orientation="Horizontal">
-                <TextBlock
-                    VerticalAlignment="Center"
-                    FontSize="14"
-                    FontWeight="Bold"
-                    Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
-                    Text="Clear output folder" />
+            <studioControls:FormField
+                Title="Clear output folder"
+                Margin="0,0,0,24"
+                Description="When enabled, existing output sub-folders are cleared before generating new files.">
                 <ToggleButton
-                    Margin="12,0,0,0"
+                    HorizontalAlignment="Left"
                     VerticalAlignment="Center"
                     IsChecked="{Binding ClearContents.Value}"
                     Style="{StaticResource MaterialDesignSwitchToggleButton}" />
-            </StackPanel>
+            </studioControls:FormField>
 
-            <!--  Image Format Toggles  -->
-            <TextBlock
-                Margin="0,0,0,8"
-                FontSize="14"
-                FontWeight="Bold"
-                Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
-                Text="Image formats" />
-
-            <ItemsControl ItemsSource="{Binding ImageFormatToggles}">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <WrapPanel Orientation="Horizontal" />
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <CheckBox
-                            MinWidth="140"
-                            Margin="0,0,20,8"
-                            VerticalAlignment="Center"
-                            IsChecked="{Binding IsChecked}">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon
-                                    Kind="{Binding IconKind}"
-                                    Margin="0,0,10,0"
-                                    VerticalAlignment="Center" />
-                                <TextBlock
-                                    VerticalAlignment="Center"
-                                    FontSize="14"
-                                    Text="{Binding DisplayName}" />
-                            </StackPanel>
-                        </CheckBox>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
+            <!--  Image Formats  -->
+            <studioControls:FormField
+                Title="Image formats"
+                Margin="0,0,0,24"
+                Description="The image formats to generate from diagram files.">
+                <ItemsControl ItemsSource="{Binding ImageFormatToggles}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <CheckBox
+                                MinWidth="140"
+                                Margin="0,0,20,8"
+                                VerticalAlignment="Center"
+                                IsChecked="{Binding IsChecked}">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon
+                                        Margin="0,0,10,0"
+                                        VerticalAlignment="Center"
+                                        Kind="{Binding IconKind}" />
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        FontSize="14"
+                                        Text="{Binding DisplayName}" />
+                                </StackPanel>
+                            </CheckBox>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </studioControls:FormField>
 
         </StackPanel>
     </ScrollViewer>

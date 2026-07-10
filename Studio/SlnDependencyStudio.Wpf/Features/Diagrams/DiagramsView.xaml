@@ -7,13 +7,14 @@
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:reactiveui="http://reactiveui.net"
+    xmlns:studioControls="clr-namespace:SlnDependencyStudio.Wpf.Controls"
     d:DesignHeight="400"
     d:DesignWidth="600"
     x:TypeArguments="diagrams:DiagramsViewModel"
     mc:Ignorable="d">
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="24" Grid.IsSharedSizeScope="True">
+        <StackPanel Margin="24">
 
             <!--  Header  -->
             <StackPanel Margin="0,0,0,24" Orientation="Horizontal">
@@ -39,41 +40,38 @@
             </StackPanel>
 
             <!--  Format Toggles  -->
-            <ItemsControl ItemsSource="{Binding FormatToggles}">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <WrapPanel Orientation="Horizontal" />
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <CheckBox
-                            MinWidth="120"
-                            Margin="0,0,16,8"
-                            VerticalAlignment="Center"
-                            IsChecked="{Binding IsChecked}">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon
-                                    Kind="{Binding IconKind}"
-                                    Margin="0,0,10,0"
-                                    VerticalAlignment="Center" />
-                                <TextBlock
-                                    VerticalAlignment="Center"
-                                    FontSize="14"
-                                    Text="{Binding DisplayName}" />
-                            </StackPanel>
-                        </CheckBox>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-
-            <!--  Validation Error  -->
-            <TextBlock
-                x:Name="FormatsError"
-                Margin="0,4,0,0"
-                FontSize="12"
-                Foreground="{DynamicResource MaterialDesign.Brush.ValidationError}"
-                TextWrapping="Wrap" />
+            <studioControls:FormField
+                x:Name="FormatsFormField"
+                Title="Diagram formats"
+                Description="Select one or more diagram output formats.">
+                <ItemsControl ItemsSource="{Binding FormatToggles}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <CheckBox
+                                MinWidth="120"
+                                Margin="0,0,16,8"
+                                VerticalAlignment="Center"
+                                IsChecked="{Binding IsChecked}">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon
+                                        Kind="{Binding IconKind}"
+                                        Margin="0,0,10,0"
+                                        VerticalAlignment="Center" />
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        FontSize="14"
+                                        Text="{Binding DisplayName}" />
+                                </StackPanel>
+                            </CheckBox>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </studioControls:FormField>
 
         </StackPanel>
     </ScrollViewer>

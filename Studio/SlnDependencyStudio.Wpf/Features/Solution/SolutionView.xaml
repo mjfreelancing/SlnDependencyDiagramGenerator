@@ -14,7 +14,7 @@
     mc:Ignorable="d">
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="24" Grid.IsSharedSizeScope="True">
+        <StackPanel Margin="24">
 
             <!--  Header  -->
             <StackPanel Margin="0,0,0,24" Orientation="Horizontal">
@@ -42,9 +42,9 @@
             <!--  Solution Path  -->
             <studioControls:FormField
                 x:Name="SolutionPathFormField"
-                Margin="0,0,0,16"
-                VerticalAlignment="Top"
-                Label="Solution path">
+                Margin="0,0,0,24"
+                Title="Solution path"
+                Description="The relative or absolute path to the .sln or .slnx file.">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
