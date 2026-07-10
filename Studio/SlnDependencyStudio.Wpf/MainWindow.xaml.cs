@@ -251,7 +251,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             var name = Path.GetFileNameWithoutExtension(_store.DocumentFilePath);
 
             Title = _store.IsDirty
-                ? $"SlnDependencyStudio — {name} *"
+                ? $"SlnDependencyStudio — {name} ●"
                 : $"SlnDependencyStudio — {name}";
         }
     }
