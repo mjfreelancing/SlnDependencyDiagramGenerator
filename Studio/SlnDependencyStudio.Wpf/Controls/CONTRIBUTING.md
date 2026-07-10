@@ -24,6 +24,20 @@ No separator lines. Fields are spaced with `Margin="0,0,0,24"` on each FormField
 | child element     | `object`  | Yes      | Any WPF control: TextBox, ToggleButton, ItemsControl, etc. |
 | `ValidationError` | `string?` | No       | Red error text below the input                             |
 
+## Button Guidelines
+
+**Action buttons** use the shared `ActionButtonStyle` defined in `App.xaml` so all pages have the same button width. To change the width for all pages, update the `Width` setter in App.xaml.
+
+```xml
+<!-- In App.xaml Application.Resources -->
+<Style x:Key="ActionButtonStyle" TargetType="Button">
+    <Setter Property="Width" Value="65" />
+</Style>
+
+<!-- Usage in any page -->
+<Button Style="{StaticResource ActionButtonStyle}" ... />
+```
+
 ## Field Type Patterns
 
 ### Text input

@@ -18,6 +18,11 @@
 
             </ResourceDictionary.MergedDictionaries>
 
+            <Style x:Key="ActionButtonStyle" TargetType="Button">
+                <Setter Property="Width" Value="80" />
+                <Setter Property="Margin" Value="8,0,0,0" />
+            </Style>
+
         </ResourceDictionary>
     </Application.Resources>
 </Application>

@@ -628,7 +628,7 @@ The selected nav item gets a left-accent border (4px `MaterialDesignPrimary`) an
 
 - [x] 4.4.3 Each `NavigationItemViewModel` shall expose `HasValidationError` (already declared). In Phase 9.2, this is wired to observe the page VM's `ValidationContext.IsValid` (inverted) to drive nav-item dot indicators.
 
-- [ ] 4.4.4 (Added: 2026-07-09) Add help tooltips/hints to all editable fields across all pages (Project, Solution, Export, Diagrams). Use Material Design `HintAssist.Hint` for TextBox fields and `ToolTip` for other controls. Provide descriptive guidance for each field (e.g., regex examples for Solution filters, format descriptions for Diagrams/Export toggles).
+- [x] ~~4.4.4~~ (Added: 2026-07-09, Reverted: 2026-07-11) Add help tooltips/hints to all editable fields across all pages. Dropped — each field already has a `FormField.Description` that provides sufficient guidance. Per-item tooltips were redundant.
 
 **Phase 4 completion:** The user can edit metadata, solution path, export root, diagram formats, image formats, and clear-contents. Validation errors appear inline. All `.sds` core fields are editable.
 
@@ -644,17 +644,17 @@ The selected nav item gets a left-accent border (4px `MaterialDesignPrimary`) an
 
 **`.sds` fields covered:** `solution.regexToInclude`, `solution.regexToExclude`, `solution.packagesToExclude`, `solution.frameworksToExclude`
 
-- [ ] 5.1.1 Add four `TrackableValue<ObservableCollection<string>>` properties to `ISolutionOptionsEditor`: `RegexToInclude`, `RegexToExclude`, `PackagesToExclude`, `FrameworksToExclude`.
+- [x] 5.1.1 Add four `TrackableValue<ObservableCollection<string>>` properties to `ISolutionOptionsEditor`: `RegexToInclude`, `RegexToExclude`, `PackagesToExclude`, `FrameworksToExclude`.
 
-- [ ] 5.1.2 Update `SolutionOptionsEditor`:
+- [x] 5.1.2 Update `SolutionOptionsEditor`:
   - Initialize each collection as empty `ObservableCollection<string>` in constructor.
   - Update `IsDirty` derivation to combine all TrackableValues (including `SolutionPath` from 4.2).
   - Update `SetOriginalValues` / `FlushTo` for all four array properties.
   - **Collection dirty tracking:** subscribe to each collection's `CollectionChanged` event in the editor constructor and call `this.RaisePropertyChanged(nameof(IsDirty))` so mutations propagate to the editor's `IsDirty` OAPH. `TrackableValue<T>` itself does not need modification.
 
-- [ ] 5.1.3 In `SolutionView.xaml`, add four `Card` controls (one per list), each with the tag-input pattern from 1.4: a `TextBox` + `Add` button, items displayed as removable Material Design `Chip` controls below. Cards are collapsible via `ICardSessionState`.
+- [x] 5.1.3 In `SolutionView.xaml`, add four `FormField` controls (one per list), each with the tag-input pattern: a `TextBox` + `Add` button, items displayed as removable Material Design `Chip` controls below.
 
-- [ ] 5.1.4 Add help tooltips to each list editor with example regex patterns (e.g., `.*Tests.*\.csproj`, `Studio`). Use a specialised regex agent for the example text.
+- [x] ~~5.1.4~~ (Dropped: 2026-07-11) Add help tooltips to each list editor.
 
 ### 5.2 Solution Scope Toggles & Transitive Depth (extends `ISolutionOptionsEditor`)
 

@@ -1,4 +1,5 @@
 using SlnDependencyStudio.Wpf.Controls;
+using System.Collections.ObjectModel;
 
 namespace SlnDependencyStudio.Wpf.Features.Solution;
 
@@ -19,4 +20,16 @@ public interface ISolutionOptionsEditor
     /// file directory. When <see langword="false"/>, the absolute path is stored.
     /// Defaults to <see langword="true"/>. This is a UI preference, not persisted to the .sds file.</summary>
     TrackableValue<bool> UseRelativePath { get; }
+
+    /// <summary>Trackable form of the regex-to-include patterns.</summary>
+    TrackableValue<ObservableCollection<string>> RegexToInclude { get; }
+
+    /// <summary>Trackable form of the regex-to-exclude patterns.</summary>
+    TrackableValue<ObservableCollection<string>> RegexToExclude { get; }
+
+    /// <summary>Trackable form of the packages-to-exclude list.</summary>
+    TrackableValue<ObservableCollection<string>> PackagesToExclude { get; }
+
+    /// <summary>Trackable form of the frameworks-to-exclude list.</summary>
+    TrackableValue<ObservableCollection<string>> FrameworksToExclude { get; }
 }

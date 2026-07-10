@@ -3,6 +3,7 @@ using Shouldly;
 using SlnDependencyStudio.Wpf.Controls;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
 using SlnDependencyStudio.Wpf.Features.Solution;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Reactive.Linq;
 
@@ -14,13 +15,26 @@ public class SolutionViewModelFixture
     private readonly IProjectDocumentStore _store = Substitute.For<IProjectDocumentStore>();
     private readonly TrackableValue<string> _solutionPath = new();
     private readonly TrackableValue<bool> _useRelativePath = new();
+    private readonly TrackableValue<ObservableCollection<string>> _regexToInclude = new();
+    private readonly TrackableValue<ObservableCollection<string>> _regexToExclude = new();
+    private readonly TrackableValue<ObservableCollection<string>> _packagesToExclude = new();
+    private readonly TrackableValue<ObservableCollection<string>> _frameworksToExclude = new();
     private readonly ISolutionOptionsEditor _solutionOptionsEditor = Substitute.For<ISolutionOptionsEditor>();
     private readonly SolutionViewModel _viewModel;
 
     public SolutionViewModelFixture()
     {
+        _regexToInclude.SetOriginalValue([]);
+        _regexToExclude.SetOriginalValue([]);
+        _packagesToExclude.SetOriginalValue([]);
+        _frameworksToExclude.SetOriginalValue([]);
+
         _solutionOptionsEditor.SolutionPath.Returns(_solutionPath);
         _solutionOptionsEditor.UseRelativePath.Returns(_useRelativePath);
+        _solutionOptionsEditor.RegexToInclude.Returns(_regexToInclude);
+        _solutionOptionsEditor.RegexToExclude.Returns(_regexToExclude);
+        _solutionOptionsEditor.PackagesToExclude.Returns(_packagesToExclude);
+        _solutionOptionsEditor.FrameworksToExclude.Returns(_frameworksToExclude);
         _store.SolutionOptionsEditor.Returns(_solutionOptionsEditor);
 
         _viewModel = new SolutionViewModel(_store);

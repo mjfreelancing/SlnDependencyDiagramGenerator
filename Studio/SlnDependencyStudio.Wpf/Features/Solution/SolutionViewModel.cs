@@ -6,6 +6,8 @@ using ReactiveUI.Validation.Extensions;
 using SlnDependencyStudio.Shared.Utils;
 using SlnDependencyStudio.Wpf.Controls;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
+using SlnDependencyStudio.Wpf.Features.Solution.Models;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Reactive;
 using System.Reactive.Linq;
@@ -35,11 +37,30 @@ public sealed class SolutionViewModel : ReactiveObject, IValidatableViewModel
     /// <summary>Command that opens a file browser for the solution path.</summary>
     public ReactiveCommand<Unit, Unit> BrowseSolutionPathCommand { get; }
 
+    // Tag-input helpers for the four list editors.
+
+    /// <summary>Tag-input state for the regex-to-include list.</summary>
+    public TagInputModel RegexToIncludeInput { get; }
+
+    /// <summary>Tag-input state for the regex-to-exclude list.</summary>
+    public TagInputModel RegexToExcludeInput { get; }
+
+    /// <summary>Tag-input state for the packages-to-exclude list.</summary>
+    public TagInputModel PackagesToExcludeInput { get; }
+
+    /// <summary>Tag-input state for the frameworks-to-exclude list.</summary>
+    public TagInputModel FrameworksToExcludeInput { get; }
+
     /// <summary>Initializes a new instance of <see cref="SolutionViewModel"/>.</summary>
     /// <param name="store">The project document store providing the editing surface.</param>
     public SolutionViewModel(IProjectDocumentStore store)
     {
         _store = store;
+
+        RegexToIncludeInput = new TagInputModel(_store.SolutionOptionsEditor.RegexToInclude.Value);
+        RegexToExcludeInput = new TagInputModel(_store.SolutionOptionsEditor.RegexToExclude.Value);
+        PackagesToExcludeInput = new TagInputModel(_store.SolutionOptionsEditor.PackagesToExclude.Value);
+        FrameworksToExcludeInput = new TagInputModel(_store.SolutionOptionsEditor.FrameworksToExclude.Value);
 
         WireValidation();
         WireRelativePathToggle();

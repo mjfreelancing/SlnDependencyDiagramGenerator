@@ -59,9 +59,9 @@
                                 IsChecked="{Binding IsChecked}">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon
-                                        Kind="{Binding IconKind}"
                                         Margin="0,0,10,0"
-                                        VerticalAlignment="Center" />
+                                        VerticalAlignment="Center"
+                                        Kind="{Binding IconKind}" />
                                     <TextBlock
                                         VerticalAlignment="Center"
                                         FontSize="14"

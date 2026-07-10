@@ -42,8 +42,8 @@
             <!--  Project Name  -->
             <studioControls:FormField
                 x:Name="ProjectNameFormField"
-                Margin="0,0,0,24"
                 Title="Project name"
+                Margin="0,0,0,24"
                 Description="A unique name for this dependency project.">
                 <TextBox
                     materialDesign:HintAssist.Hint="Enter a name for this project"
@@ -53,8 +53,8 @@
 
             <!--  Description  -->
             <studioControls:FormField
-                Margin="0,0,0,24"
                 Title="Description"
+                Margin="0,0,0,24"
                 Description="An optional description of the project.">
                 <TextBox
                     materialDesign:HintAssist.Hint="Optional description"

@@ -42,8 +42,8 @@
             <!--  Solution Path  -->
             <studioControls:FormField
                 x:Name="SolutionPathFormField"
-                Margin="0,0,0,24"
                 Title="Solution path"
+                Margin="0,0,0,24"
                 Description="The relative or absolute path to the .sln or .slnx file.">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -63,9 +63,9 @@
                     <Button
                         Grid.Row="0"
                         Grid.Column="1"
-                        Margin="8,0,0,0"
-                        Content="Browse"
-                        Command="{Binding BrowseSolutionPathCommand}" />
+                        Style="{StaticResource ActionButtonStyle}"
+                        Command="{Binding BrowseSolutionPathCommand}"
+                        Content="Browse" />
                     <CheckBox
                         Grid.Row="1"
                         Grid.ColumnSpan="2"
@@ -74,6 +74,178 @@
                         Content="Use relative path"
                         IsChecked="{Binding UseRelativePath.Value}" />
                 </Grid>
+            </studioControls:FormField>
+
+            <!--  Regex-to-Include  -->
+            <studioControls:FormField
+                Title="Include patterns"
+                Margin="0,0,0,24"
+                Description="Regex patterns matching solution projects to include.">
+                <StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox
+                            Grid.Column="0"
+                            materialDesign:HintAssist.Hint="Regex pattern, e.g. .*\.csproj"
+                            Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+                            Text="{Binding RegexToIncludeInput.NewItemText, UpdateSourceTrigger=PropertyChanged}" />
+                        <Button
+                            Grid.Column="1"
+                            Style="{StaticResource ActionButtonStyle}"
+                            Command="{Binding RegexToIncludeInput.AddCommand}"
+                            Content="Add" />
+                    </Grid>
+                    <ItemsControl Margin="0,4,0,0" ItemsSource="{Binding RegexToIncludeInput.Items}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <materialDesign:Chip
+                                    Margin="0,0,6,6"
+                                    Padding="8,2,12,2"
+                                    Content="{Binding}"
+                                    DeleteCommand="{Binding DataContext.RegexToIncludeInput.RemoveCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    DeleteCommandParameter="{Binding}"
+                                    IsDeletable="True" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </studioControls:FormField>
+
+            <!--  Regex-to-Exclude  -->
+            <studioControls:FormField
+                Title="Exclude patterns"
+                Margin="0,0,0,24"
+                Description="Regex patterns matching solution projects to exclude.">
+                <StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox
+                            Grid.Column="0"
+                            materialDesign:HintAssist.Hint="Regex pattern, e.g. .*Tests\.csproj"
+                            Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+                            Text="{Binding RegexToExcludeInput.NewItemText, UpdateSourceTrigger=PropertyChanged}" />
+                        <Button
+                            Grid.Column="1"
+                            Style="{StaticResource ActionButtonStyle}"
+                            Command="{Binding RegexToExcludeInput.AddCommand}"
+                            Content="Add" />
+                    </Grid>
+                    <ItemsControl Margin="0,6,0,0" ItemsSource="{Binding RegexToExcludeInput.Items}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <materialDesign:Chip
+                                    Margin="0,0,6,6"
+                                    Padding="8,2,12,2"
+                                    Content="{Binding}"
+                                    DeleteCommand="{Binding DataContext.RegexToExcludeInput.RemoveCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    DeleteCommandParameter="{Binding}"
+                                    IsDeletable="True" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </studioControls:FormField>
+
+            <!--  Packages to Exclude  -->
+            <studioControls:FormField
+                Title="Packages to exclude"
+                Margin="0,0,0,24"
+                Description="Package IDs to exclude from diagram and summary output (case-insensitive).">
+                <StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox
+                            Grid.Column="0"
+                            materialDesign:HintAssist.Hint="Package ID, e.g. Microsoft.SourceLink.GitHub"
+                            Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+                            Text="{Binding PackagesToExcludeInput.NewItemText, UpdateSourceTrigger=PropertyChanged}" />
+                        <Button
+                            Grid.Column="1"
+                            Style="{StaticResource ActionButtonStyle}"
+                            Command="{Binding PackagesToExcludeInput.AddCommand}"
+                            Content="Add" />
+                    </Grid>
+                    <ItemsControl Margin="0,6,0,0" ItemsSource="{Binding PackagesToExcludeInput.Items}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <materialDesign:Chip
+                                    Margin="0,0,6,6"
+                                    Padding="8,2,12,2"
+                                    Content="{Binding}"
+                                    DeleteCommand="{Binding DataContext.PackagesToExcludeInput.RemoveCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    DeleteCommandParameter="{Binding}"
+                                    IsDeletable="True" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </studioControls:FormField>
+
+            <!--  Frameworks to Exclude  -->
+            <studioControls:FormField
+                Title="Frameworks to exclude"
+                Margin="0,0,0,24"
+                Description="Framework reference IDs to exclude from diagram and summary output (case-insensitive).">
+                <StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox
+                            Grid.Column="0"
+                            materialDesign:HintAssist.Hint="Framework ID, e.g. Microsoft.NetCore.App"
+                            Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+                            Text="{Binding FrameworksToExcludeInput.NewItemText, UpdateSourceTrigger=PropertyChanged}" />
+                        <Button
+                            Grid.Column="1"
+                            Style="{StaticResource ActionButtonStyle}"
+                            Command="{Binding FrameworksToExcludeInput.AddCommand}"
+                            Content="Add" />
+                    </Grid>
+                    <ItemsControl Margin="0,6,0,0" ItemsSource="{Binding FrameworksToExcludeInput.Items}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <materialDesign:Chip
+                                    Margin="0,0,6,6"
+                                    Padding="8,2,12,2"
+                                    Content="{Binding}"
+                                    DeleteCommand="{Binding DataContext.FrameworksToExcludeInput.RemoveCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    DeleteCommandParameter="{Binding}"
+                                    IsDeletable="True" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
             </studioControls:FormField>
 
         </StackPanel>
