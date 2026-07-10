@@ -626,7 +626,7 @@ The selected nav item gets a left-accent border (4px `MaterialDesignPrimary`) an
 
 - [x] 4.4.2 ~~Implement the floating validation summary bar~~ — Dropped (2026-06-24).
 
-- [ ] 4.4.3 Each `NavigationItemViewModel` shall expose `HasValidationError` (already declared). In Phase 9.2, this is wired to observe the page VM's `ValidationContext.IsValid` (inverted) to drive nav-item dot indicators. For now, the property exists and defaults to `false`.
+- [x] 4.4.3 Each `NavigationItemViewModel` shall expose `HasValidationError` (already declared). In Phase 9.2, this is wired to observe the page VM's `ValidationContext.IsValid` (inverted) to drive nav-item dot indicators.
 
 - [ ] 4.4.4 (Added: 2026-07-09) Add help tooltips/hints to all editable fields across all pages (Project, Solution, Export, Diagrams). Use Material Design `HintAssist.Hint` for TextBox fields and `ToolTip` for other controls. Provide descriptive guidance for each field (e.g., regex examples for Solution filters, format descriptions for Diagrams/Export toggles).
 
