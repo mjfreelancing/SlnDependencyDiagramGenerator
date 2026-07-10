@@ -2,8 +2,7 @@ using AllOverIt.Extensions;   // IsNotNullOrEmpty
 using AllOverIt.ReactiveUI;
 using AllOverIt.ReactiveUI.Factories;
 using Microsoft.Extensions.Logging;
-using ReactiveUI;
-using SlnDependencyStudio.Wpf.Features.EmptyState;
+using ReactiveUI;using ReactiveUI.Validation.Abstractions;using SlnDependencyStudio.Wpf.Features.EmptyState;
 using SlnDependencyStudio.Wpf.Features.ErrorDialog;
 using SlnDependencyStudio.Wpf.Features.Diagrams;
 using SlnDependencyStudio.Wpf.Features.Export;
@@ -41,6 +40,10 @@ public sealed class MainWindowViewModel : ActivatableViewModel
     private object? _currentPage;
     private bool _canClose = true;
     private bool _isGenerating;
+
+    // Tracks per-page validation subscriptions so old subscriptions are cleaned
+    // up when the user navigates to a different page.
+    private readonly CompositeDisposable _pageValidationSubscriptions = [];
 
     /// <summary>The navigation items displayed in the left sidebar.</summary>
     public ObservableCollection<NavigationItemViewModel> NavigationItems { get; } = [];
@@ -471,7 +474,26 @@ public sealed class MainWindowViewModel : ActivatableViewModel
     {
         _logger.LogInformation("Navigating to page: {PageName}", viewModel.DisplayName);
 
-        CurrentPage = viewModel.CreateView(_viewFactory);
+        var view = viewModel.CreateView(_viewFactory);
+        CurrentPage = view;
+
+        WirePageValidation(viewModel, view);
+    }
+
+    /// <summary>Wires the nav item's <c>HasValidationError</c> to the page ViewModel's
+    /// <c>ValidationContext.IsValid</c> so the red dot indicator reflects real-time
+    /// validation state.</summary>
+    private void WirePageValidation(NavigationItemViewModel navItem, IViewFor view)
+    {
+        _pageValidationSubscriptions.Clear();
+
+        if (view.ViewModel is IValidatableViewModel validatable)
+        {
+            validatable.ValidationContext
+                .WhenAnyValue(context => context.IsValid)
+                .Subscribe(isValid => navItem.HasValidationError = !isValid)
+                .DisposeWith(_pageValidationSubscriptions);
+        }
     }
 
     /// <summary>Shows the empty-state landing page in the centre workspace, delegating
