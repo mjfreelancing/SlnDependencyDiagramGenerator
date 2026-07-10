@@ -76,6 +76,57 @@
                 </Grid>
             </studioControls:FormField>
 
+            <!--  Clear Output Folder  -->
+            <StackPanel Margin="0,0,0,16" Orientation="Horizontal">
+                <TextBlock
+                    VerticalAlignment="Center"
+                    FontSize="14"
+                    FontWeight="Bold"
+                    Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+                    Text="Clear output folder" />
+                <ToggleButton
+                    Margin="12,0,0,0"
+                    VerticalAlignment="Center"
+                    IsChecked="{Binding ClearContents.Value}"
+                    Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+            </StackPanel>
+
+            <!--  Image Format Toggles  -->
+            <TextBlock
+                Margin="0,0,0,8"
+                FontSize="14"
+                FontWeight="Bold"
+                Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+                Text="Image formats" />
+
+            <ItemsControl ItemsSource="{Binding ImageFormatToggles}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <CheckBox
+                            MinWidth="140"
+                            Margin="0,0,20,8"
+                            VerticalAlignment="Center"
+                            IsChecked="{Binding IsChecked}">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon
+                                    Kind="{Binding IconKind}"
+                                    Margin="0,0,10,0"
+                                    VerticalAlignment="Center" />
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontSize="14"
+                                    Text="{Binding DisplayName}" />
+                            </StackPanel>
+                        </CheckBox>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
         </StackPanel>
     </ScrollViewer>
 </reactiveui:ReactiveUserControl>

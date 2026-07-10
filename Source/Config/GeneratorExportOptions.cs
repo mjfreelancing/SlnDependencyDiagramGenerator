@@ -12,5 +12,5 @@ public sealed class GeneratorExportOptions
     public string RootPath { get; set; } = string.Empty;
 
     /// <summary>The diagram image formats to create. Can be empty, or one or more of "png", "svg", "pdf".</summary>
-    public DiagramImageFormat[] ImageFormats { get; init; } = [];
+    public DiagramImageFormat[] ImageFormats { get; set; } = [];
 }

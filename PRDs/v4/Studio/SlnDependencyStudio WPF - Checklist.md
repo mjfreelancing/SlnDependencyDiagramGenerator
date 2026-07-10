@@ -574,16 +574,16 @@ The selected nav item gets a left-accent border (4px `MaterialDesignPrimary`) an
 
 #### 4.3.2 Extend Export Editor
 
-- [ ] 4.3.2.1 Add `ClearContents` and `ImageFormats` TrackableValues to `IExportOptionsEditor` and `ExportOptionsEditor`:
+- [x] 4.3.2.1 Add `ClearContents` and `ImageFormats` TrackableValues to `IExportOptionsEditor` and `ExportOptionsEditor`:
 
   ```csharp
   TrackableValue<bool> ClearContents { get; }
   TrackableValue<ObservableCollection<DiagramImageFormat>> ImageFormats { get; }
   ```
 
-- [ ] 4.3.2.2 Update `IsDirty` derivation in `ExportOptionsEditor` to combine `RootPath.IsDirty`, `ClearContents.IsDirty`, and `ImageFormats.IsDirty`.
+- [x] 4.3.2.2 Update `IsDirty` derivation in `ExportOptionsEditor` to combine `RootPath.IsDirty`, `ClearContents.IsDirty`, and `ImageFormats.IsDirty`.
 
-- [ ] 4.3.2.3 Update `SetOriginalValues` / `FlushTo` for the new fields in `ExportOptionsEditor`.
+- [x] 4.3.2.3 Update `SetOriginalValues` / `FlushTo` for the new fields in `ExportOptionsEditor`.
 
 #### 4.3.3 Diagrams Page
 
@@ -604,11 +604,12 @@ The selected nav item gets a left-accent border (4px `MaterialDesignPrimary`) an
 
 #### 4.3.4 Extend Export Page
 
-- [ ] 4.3.4.1 In `ExportViewModel`, add pass-through properties for `ClearContents` and `ImageFormats` from `_store.ExportOptionsEditor`.
+- [x] 4.3.4.1 In `ExportViewModel`, add pass-through properties for `ClearContents` and `ImageFormats` from `_store.ExportOptionsEditor`.
 
-- [ ] 4.3.4.2 In `ExportView.xaml`, add below the root-path card:
+- [x] 4.3.4.2 In `ExportView.xaml`, add below the root-path card:
   - Card with `ToggleSwitch` for `ClearContents` (bound to `ClearContents.Value`).
-  - Card with `CheckBox` controls for Png, Svg, Pdf (bound to `ImageFormats.Value` via converters).
+  - `ItemsControl` with `CheckBox` controls in a `WrapPanel` for Png, Svg, Pdf, using the same
+    `FormatToggleItem`-style model and two-way sync pattern established in 4.3.3 (Diagrams page).
 
 #### 4.3.5 Navigation Wiring
 
@@ -626,6 +627,8 @@ The selected nav item gets a left-accent border (4px `MaterialDesignPrimary`) an
 - [x] 4.4.2 ~~Implement the floating validation summary bar~~ — Dropped (2026-06-24).
 
 - [ ] 4.4.3 Each `NavigationItemViewModel` shall expose `HasValidationError` (already declared). In Phase 9.2, this is wired to observe the page VM's `ValidationContext.IsValid` (inverted) to drive nav-item dot indicators. For now, the property exists and defaults to `false`.
+
+- [ ] 4.4.4 (Added: 2026-07-09) Add help tooltips/hints to all editable fields across all pages (Project, Solution, Export, Diagrams). Use Material Design `HintAssist.Hint` for TextBox fields and `ToolTip` for other controls. Provide descriptive guidance for each field (e.g., regex examples for Solution filters, format descriptions for Diagrams/Export toggles).
 
 **Phase 4 completion:** The user can edit metadata, solution path, export root, diagram formats, image formats, and clear-contents. Validation errors appear inline. All `.sds` core fields are editable.
 

@@ -1,4 +1,6 @@
+using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyStudio.Wpf.Controls;
+using System.Collections.ObjectModel;
 
 namespace SlnDependencyStudio.Wpf.Features.Export;
 
@@ -19,4 +21,11 @@ public interface IExportOptionsEditor
     /// file directory. When <see langword="false"/>, the absolute path is stored.
     /// Defaults to <see langword="true"/>. This is a UI preference, not persisted to the .sds file.</summary>
     TrackableValue<bool> UseRelativePath { get; }
+
+    /// <summary>When <see langword="true"/>, clears the output folder before generating new files.</summary>
+    TrackableValue<bool> ClearContents { get; }
+
+    /// <summary>Trackable form of the image format collection.
+    /// Items are added/removed to reflect the user's format selection.</summary>
+    TrackableValue<ObservableCollection<DiagramImageFormat>> ImageFormats { get; }
 }

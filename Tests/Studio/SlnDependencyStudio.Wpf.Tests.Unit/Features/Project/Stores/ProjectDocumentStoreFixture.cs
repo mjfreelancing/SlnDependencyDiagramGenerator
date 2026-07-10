@@ -132,6 +132,37 @@ public class ProjectDocumentStoreFixture
         }
 
         [Fact]
+        public async Task Should_Populate_ClearContents()
+        {
+            var document = CreateDocument("Test", "Desc");
+            document.DiagramGenerator.Export.ClearContents = true;
+
+            _projectService
+                .OpenAsync(@"C:\Projects\test.sds", Arg.Any<CancellationToken>())
+                .Returns(document);
+
+            await _store.OpenAsync(@"C:\Projects\test.sds");
+
+            _store.ExportOptionsEditor.ClearContents.Value.ShouldBeTrue();
+        }
+
+        [Fact]
+        public async Task Should_Populate_ImageFormats()
+        {
+            var document = CreateDocument("Test", "Desc");
+            document.DiagramGenerator.Export.ImageFormats = [DiagramImageFormat.Png, DiagramImageFormat.Svg];
+
+            _projectService
+                .OpenAsync(@"C:\Projects\test.sds", Arg.Any<CancellationToken>())
+                .Returns(document);
+
+            await _store.OpenAsync(@"C:\Projects\test.sds");
+
+            _store.ExportOptionsEditor.ImageFormats.Value.ShouldContain(DiagramImageFormat.Png);
+            _store.ExportOptionsEditor.ImageFormats.Value.ShouldContain(DiagramImageFormat.Svg);
+        }
+
+        [Fact]
         public async Task Should_Populate_DiagramOptionsEditor()
         {
             var document = CreateDocument("Test", "Desc");

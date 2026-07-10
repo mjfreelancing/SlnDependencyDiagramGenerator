@@ -1,8 +1,10 @@
 using NSubstitute;
 using Shouldly;
+using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyStudio.Wpf.Controls;
 using SlnDependencyStudio.Wpf.Features.Export;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Reactive.Linq;
 
@@ -14,13 +16,20 @@ public class ExportViewModelFixture
     private readonly IProjectDocumentStore _store = Substitute.For<IProjectDocumentStore>();
     private readonly TrackableValue<string> _rootPath = new();
     private readonly TrackableValue<bool> _useRelativePath = new();
+    private readonly TrackableValue<bool> _clearContents = new();
+    private readonly TrackableValue<ObservableCollection<DiagramImageFormat>> _imageFormats = new();
     private readonly IExportOptionsEditor _exportOptionsEditor = Substitute.For<IExportOptionsEditor>();
     private readonly ExportViewModel _viewModel;
 
     public ExportViewModelFixture()
     {
+        _clearContents.SetOriginalValue(false);
+        _imageFormats.SetOriginalValue([]);
+
         _exportOptionsEditor.RootPath.Returns(_rootPath);
         _exportOptionsEditor.UseRelativePath.Returns(_useRelativePath);
+        _exportOptionsEditor.ClearContents.Returns(_clearContents);
+        _exportOptionsEditor.ImageFormats.Returns(_imageFormats);
         _store.ExportOptionsEditor.Returns(_exportOptionsEditor);
 
         _viewModel = new ExportViewModel(_store);
@@ -38,6 +47,31 @@ public class ExportViewModelFixture
         public void Should_Expose_UseRelativePath_From_Store_Editor()
         {
             _viewModel.UseRelativePath.ShouldBeSameAs(_useRelativePath);
+        }
+
+        [Fact]
+        public void Should_Expose_ClearContents_From_Store_Editor()
+        {
+            _viewModel.ClearContents.ShouldBeSameAs(_clearContents);
+        }
+
+        [Fact]
+        public void Should_Expose_ImageFormats_From_Store_Editor()
+        {
+            _viewModel.ImageFormats.ShouldBeSameAs(_imageFormats);
+        }
+
+        [Fact]
+        public void Should_Have_ImageFormatToggles_For_All_Enum_Values()
+        {
+            var expectedFormats = Enum.GetValues<DiagramImageFormat>();
+
+            _viewModel.ImageFormatToggles.Count.ShouldBe(expectedFormats.Length);
+
+            foreach (var format in expectedFormats)
+            {
+                _viewModel.ImageFormatToggles.ShouldContain(t => t.Format == format);
+            }
         }
 
         [Fact]
@@ -170,6 +204,40 @@ public class ExportViewModelFixture
             _useRelativePath.Value = false;
 
             _rootPath.Value.ShouldBe(string.Empty);
+        }
+    }
+
+    public class ImageFormatToggleSync : ExportViewModelFixture
+    {
+        [Fact]
+        public void Should_Add_Format_When_Toggle_Checked()
+        {
+            var pngToggle = _viewModel.ImageFormatToggles.Single(t => t.Format == DiagramImageFormat.Png);
+
+            pngToggle.IsChecked = true;
+
+            _imageFormats.Value.ShouldContain(DiagramImageFormat.Png);
+        }
+
+        [Fact]
+        public void Should_Remove_Format_When_Toggle_Unchecked()
+        {
+            _imageFormats.Value.Add(DiagramImageFormat.Svg);
+
+            var svgToggle = _viewModel.ImageFormatToggles.Single(t => t.Format == DiagramImageFormat.Svg);
+            svgToggle.IsChecked = false;
+
+            _imageFormats.Value.ShouldNotContain(DiagramImageFormat.Svg);
+        }
+
+        [Fact]
+        public void Should_Sync_Toggle_When_Collection_Changes_Externally()
+        {
+            var pngToggle = _viewModel.ImageFormatToggles.Single(t => t.Format == DiagramImageFormat.Png);
+
+            _imageFormats.Value.Add(DiagramImageFormat.Png);
+
+            pngToggle.IsChecked.ShouldBeTrue();
         }
     }
 }

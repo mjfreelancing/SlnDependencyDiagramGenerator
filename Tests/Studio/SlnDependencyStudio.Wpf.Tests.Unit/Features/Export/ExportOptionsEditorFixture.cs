@@ -22,6 +22,18 @@ public class ExportOptionsEditorFixture : IDisposable
         {
             _editor.UseRelativePath.Value.ShouldBeTrue();
         }
+
+        [Fact]
+        public void Should_Seed_ClearContents_With_False()
+        {
+            _editor.ClearContents.Value.ShouldBeFalse();
+        }
+
+        [Fact]
+        public void Should_Seed_ImageFormats_With_Empty_Collection()
+        {
+            _editor.ImageFormats.Value.ShouldBeEmpty();
+        }
     }
 
     public class IsDirty : ExportOptionsEditorFixture
@@ -38,6 +50,32 @@ public class ExportOptionsEditorFixture : IDisposable
             _editor.RootPath.Value = @"C:\Output";
 
             _editor.IsDirty.ShouldBeTrue();
+        }
+
+        [Fact]
+        public void Should_Be_True_When_ClearContents_Changes()
+        {
+            _editor.SetOriginalValues(CreateOptions(rootPath: "", clearContents: false));
+
+            _editor.ClearContents.Value = true;
+
+            _editor.IsDirty.ShouldBeTrue();
+        }
+
+        [Fact]
+        public void Should_Be_True_When_ImageFormat_Added()
+        {
+            _editor.ImageFormats.Value.Add(DiagramImageFormat.Png);
+
+            _editor.IsDirty.ShouldBeTrue();
+        }
+
+        [Fact]
+        public void Should_Be_False_When_ImageFormat_Matches_Baseline()
+        {
+            _editor.SetOriginalValues(CreateOptions(imageFormats: [DiagramImageFormat.Png]));
+
+            _editor.IsDirty.ShouldBeFalse();
         }
 
         [Fact]
@@ -64,6 +102,24 @@ public class ExportOptionsEditorFixture : IDisposable
 
             _editor.IsDirty.ShouldBeFalse();
         }
+
+        [Fact]
+        public void Should_Load_ClearContents_From_Source()
+        {
+            _editor.SetOriginalValues(CreateOptions(clearContents: true));
+
+            _editor.ClearContents.Value.ShouldBeTrue();
+        }
+
+        [Fact]
+        public void Should_Load_ImageFormats_From_Source()
+        {
+            _editor.SetOriginalValues(CreateOptions(imageFormats: [DiagramImageFormat.Png, DiagramImageFormat.Svg]));
+
+            _editor.ImageFormats.Value.ShouldContain(DiagramImageFormat.Png);
+            _editor.ImageFormats.Value.ShouldContain(DiagramImageFormat.Svg);
+            _editor.ImageFormats.Value.Count.ShouldBe(2);
+        }
     }
 
     public class FlushTo : ExportOptionsEditorFixture
@@ -74,12 +130,16 @@ public class ExportOptionsEditorFixture : IDisposable
             _editor.SetOriginalValues(CreateOptions(@"C:\Old"));
 
             _editor.RootPath.Value = @"C:\New";
+            _editor.ClearContents.Value = true;
+            _editor.ImageFormats.Value.Add(DiagramImageFormat.Svg);
 
             var target = new GeneratorExportOptions();
 
             _editor.FlushTo(target);
 
             target.RootPath.ShouldBe(@"C:\New");
+            target.ClearContents.ShouldBeTrue();
+            target.ImageFormats.ShouldBe([DiagramImageFormat.Svg]);
         }
     }
 
@@ -89,11 +149,16 @@ public class ExportOptionsEditorFixture : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    private static GeneratorExportOptions CreateOptions(string rootPath)
+    private static GeneratorExportOptions CreateOptions(
+        string rootPath = "",
+        bool clearContents = false,
+        DiagramImageFormat[]? imageFormats = null)
     {
         return new GeneratorExportOptions
         {
-            RootPath = rootPath
+            RootPath = rootPath,
+            ClearContents = clearContents,
+            ImageFormats = imageFormats ?? []
         };
     }
 }
