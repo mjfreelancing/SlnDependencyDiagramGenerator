@@ -17,8 +17,13 @@ namespace SlnDependencyDiagramGenerator.Generator.ToolDetection;
 /// <summary>Detects and validates the availability of external CLI tools on PATH.</summary>
 internal sealed class ToolDetectionService : IToolDetectionService
 {
+    private static readonly string[] KnownTools = ["d2", "mmdc"];
+
     private readonly Dictionary<DiagramFormat, Func<CancellationToken, Task<ToolStatus>>> _toolsAvailability;
     private readonly ILogger<ToolDetectionService> _logger;
+
+    /// <inheritdoc />
+    public IReadOnlyList<string> KnownToolNames => KnownTools;
 
     public ToolDetectionService(ILogger<ToolDetectionService> logger)
     {

@@ -4,12 +4,8 @@ using Shouldly;
 using SlnDependencyDiagramGenerator.Generator.ToolDetection;
 using SlnDependencyStudio.Wpf.Features.Application;
 using SlnDependencyStudio.Wpf.Features.Application.Models;
-using SlnDependencyStudio.Wpf.Features.Pipeline.Models;
 using SlnDependencyStudio.Wpf.Features.Pipeline.Services;
-using System.Linq;
 using System.Reactive.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace SlnDependencyStudio.Wpf.Tests.Unit.Features.Pipeline;
 
@@ -30,6 +26,8 @@ public class ToolStatusServiceFixture
         _serviceProvider.GetService(typeof(IToolDetectionService)).Returns(_detectionService);
         _applicationSettings.CurrentSettings.Returns(_settings);
 
+        _detectionService.KnownToolNames.Returns(["d2", "mmdc"]);
+
         _detectionService
             .CheckToolAvailabilityAsync(Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
             .Returns(callInfo =>
@@ -42,11 +40,6 @@ public class ToolStatusServiceFixture
                     ErrorMessage = $"'{toolName}' was not found on PATH."
                 });
             });
-    }
-
-    private ToolStatusService CreateSut()
-    {
-        return new ToolStatusService(_scopeFactory, _applicationSettings);
     }
 
     public class Construction : ToolStatusServiceFixture
@@ -98,7 +91,7 @@ public class ToolStatusServiceFixture
 
             await sut.RescanAsync(CancellationToken.None);
 
-            var entries = sut.ToolStatuses.FirstAsync().Wait();
+            var entries = await sut.ToolStatuses.FirstAsync();
 
             var d2 = entries.Single(e => e.ToolName == "d2");
             d2.IsAvailable.ShouldBeTrue();
@@ -112,7 +105,7 @@ public class ToolStatusServiceFixture
 
             await sut.RescanAsync(CancellationToken.None);
 
-            var entries = sut.ToolStatuses.FirstAsync().Wait();
+            var entries = await sut.ToolStatuses.FirstAsync();
 
             var mmdc = entries.Single(e => e.ToolName == "mmdc");
             mmdc.IsAvailable.ShouldBeFalse();
@@ -145,12 +138,95 @@ public class ToolStatusServiceFixture
 
             await sut.RescanAsync(CancellationToken.None);
 
-            var entries = sut.ToolStatuses.FirstAsync().Wait();
+            var entries = await sut.ToolStatuses.FirstAsync();
 
             foreach (var entry in entries)
             {
                 entry.LastChecked.ShouldBeGreaterThanOrEqualTo(before);
             }
         }
+
+        [Fact]
+        public async Task Should_Seed_Entries_From_Detection_Service()
+        {
+            _detectionService.KnownToolNames.Returns(["d2", "mmdc"]);
+
+            using var sut = CreateSut();
+
+            // Wait for the fire-and-forget initial scan to complete.
+            await sut.RescanAsync(CancellationToken.None);
+
+            var entries = await sut.ToolStatuses.FirstAsync();
+
+            entries.Count.ShouldBe(2);
+            entries.Select(e => e.ToolName).ShouldBe(["d2", "mmdc"], ignoreOrder: true);
+        }
+
+        [Fact]
+        public async Task Should_Add_New_Tool_When_KnownToolNames_Grows()
+        {
+            _detectionService.KnownToolNames.Returns(["d2"]);
+
+            using var sut = CreateSut();
+            await sut.RescanAsync(CancellationToken.None);
+
+            // Now the detection service reports a new tool.
+            _detectionService.KnownToolNames.Returns(["d2", "mmdc"]);
+
+            await sut.RescanAsync(CancellationToken.None);
+
+            var entries = await sut.ToolStatuses.FirstAsync();
+            entries.Count.ShouldBe(2);
+            entries.ShouldContain(e => e.ToolName == "mmdc");
+        }
+
+        [Fact]
+        public async Task Should_Remove_Tool_When_KnownToolNames_Shrinks()
+        {
+            _detectionService.KnownToolNames.Returns(["d2", "mmdc"]);
+
+            using var sut = CreateSut();
+            await sut.RescanAsync(CancellationToken.None);
+
+            // Now only d2 is known.
+            _detectionService.KnownToolNames.Returns(["d2"]);
+            _detectionService.ClearReceivedCalls();
+
+            await sut.RescanAsync(CancellationToken.None);
+
+            var entries = await sut.ToolStatuses.FirstAsync();
+            entries.Count.ShouldBe(1);
+            entries[0].ToolName.ShouldBe("d2");
+        }
+
+        [Fact]
+        public async Task Should_Scan_Only_Tools_Reported_By_Detection_Service()
+        {
+            _detectionService.KnownToolNames.Returns(["dot"]);
+
+            using var sut = CreateSut();
+
+            // Clear calls from the fire-and-forget initial scan.
+            _detectionService.ClearReceivedCalls();
+
+            await sut.RescanAsync(CancellationToken.None);
+
+            await _detectionService
+                .Received(1)
+                .CheckToolAvailabilityAsync("dot", null, Arg.Any<CancellationToken>());
+
+            await _detectionService
+                .DidNotReceive()
+                .CheckToolAvailabilityAsync("d2", Arg.Any<string?>(), Arg.Any<CancellationToken>());
+
+            await _detectionService
+                .DidNotReceive()
+                .CheckToolAvailabilityAsync("mmdc", Arg.Any<string?>(), Arg.Any<CancellationToken>());
+        }
+    }
+
+    private ToolStatusService CreateSut()
+    {
+        return new ToolStatusService(_scopeFactory, _applicationSettings);
     }
 }

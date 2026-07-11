@@ -46,4 +46,31 @@ public class ToolDetectionServiceFixture
             result.ToolStatuses.ShouldContain(status => status.ToolName == "mmdc");
         }
     }
+
+    public class KnownToolNames : ToolDetectionServiceFixture
+    {
+        [Fact]
+        public void Should_Contain_D2()
+        {
+            var service = new ToolDetectionService(Substitute.For<ILogger<ToolDetectionService>>());
+
+            service.KnownToolNames.ShouldContain("d2");
+        }
+
+        [Fact]
+        public void Should_Contain_Mmdc()
+        {
+            var service = new ToolDetectionService(Substitute.For<ILogger<ToolDetectionService>>());
+
+            service.KnownToolNames.ShouldContain("mmdc");
+        }
+
+        [Fact]
+        public void Should_Have_Exactly_Two_Tools()
+        {
+            var service = new ToolDetectionService(Substitute.For<ILogger<ToolDetectionService>>());
+
+            service.KnownToolNames.Count.ShouldBe(2);
+        }
+    }
 }

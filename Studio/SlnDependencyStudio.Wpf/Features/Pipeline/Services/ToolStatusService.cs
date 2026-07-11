@@ -14,8 +14,6 @@ namespace SlnDependencyStudio.Wpf.Features.Pipeline.Services;
 /// </summary>
 internal sealed class ToolStatusService : IToolStatusService, IDisposable
 {
-    private static readonly string[] KnownTools = ["d2", "mmdc"];
-
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IApplicationSettingsService _applicationSettings;
 
@@ -32,16 +30,10 @@ internal sealed class ToolStatusService : IToolStatusService, IDisposable
         _scopeFactory = scopeFactory;
         _applicationSettings = applicationSettings;
 
-        // Seed with unknown entries so UI has something to bind to immediately.
-        foreach (var tool in KnownTools)
-        {
-            _entries.Add(new ToolStatusEntry { ToolName = tool });
-        }
-
         _statusSubject = new BehaviorSubject<IReadOnlyList<ToolStatusEntry>>(_entries.ToArray());
         ToolStatuses = _statusSubject.AsObservable();
 
-        // Fire-and-forget initial scan.
+        // Fire-and-forget initial scan — this will seed entries from the detection service.
         _ = RescanAsync(CancellationToken.None);
     }
 
@@ -56,6 +48,25 @@ internal sealed class ToolStatusService : IToolStatusService, IDisposable
 
         var now = DateTime.UtcNow;
 
+        // Seed or sync entries from the detection service's known tool list.
+        var knownToolNames = detectionService.KnownToolNames;
+
+        for (var i = _entries.Count - 1; i >= 0; i--)
+        {
+            if (!knownToolNames.Contains(_entries[i].ToolName))
+            {
+                _entries.RemoveAt(i);
+            }
+        }
+
+        foreach (var toolName in knownToolNames)
+        {
+            if (!_entries.Any(e => e.ToolName == toolName))
+            {
+                _entries.Add(new ToolStatusEntry { ToolName = toolName });
+            }
+        }
+
         foreach (var entry in _entries)
         {
             var settings = _applicationSettings.CurrentSettings;
@@ -65,7 +76,6 @@ internal sealed class ToolStatusService : IToolStatusService, IDisposable
                 .CheckToolAvailabilityAsync(entry.ToolName, overridePath, cancellationToken)
                 .ConfigureAwait(true);
 
-            entry.ToolName = status.ToolName;
             entry.IsAvailable = status.IsAvailable;
             entry.ResolvedPath = status.ResolvedPath;
             entry.ErrorMessage = status.ErrorMessage;
