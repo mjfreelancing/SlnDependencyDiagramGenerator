@@ -297,7 +297,7 @@
                         <StackPanel
                             Grid.Row="1"
                             Grid.Column="1"
-                            Margin="16,4,0,0"
+                            Margin="16,8,0,0"
                             IsEnabled="{Binding IndividualEnabled.Value}"
                             Orientation="Horizontal">
                             <TextBlock
@@ -360,7 +360,7 @@
                         <StackPanel
                             Grid.Row="1"
                             Grid.Column="1"
-                            Margin="16,4,0,0"
+                            Margin="16,8,0,0"
                             IsEnabled="{Binding AllEnabled.Value}"
                             Orientation="Horizontal">
                             <TextBlock

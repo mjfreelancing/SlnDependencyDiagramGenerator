@@ -660,42 +660,65 @@ The selected nav item gets a left-accent border (4px `MaterialDesignPrimary`) an
 
 **`.sds` fields covered:** `solution.individual.{enabled, includeDependencies, transitiveDepth}`, `solution.all.{enabled, includeDependencies, transitiveDepth}`
 
-Two visually grouped scope sections — "Individual scope" and "All scope" — each containing the same three controls. The editor uses two `TrackableValue<SolutionScopeState>` where `SolutionScopeState` is a `ReactiveObject` (not a plain POCO), so inner property changes are observable.
+Two visually grouped scope sections — "Individual scope" and "All scope" — each inside a rounded background card with a `ToggleSwitch` in the left column and dependent controls (`CheckBox` + `Slider`) in the right column. Six flat `TrackableValue<bool>/<int>` properties (not a `SolutionScopeState` wrapper) so that `TrackableValue.IsDirty` handles comparison natively.
 
-- [ ] 5.2.1 Create `Features/Solution/Models/SolutionScopeState.cs` as a `ReactiveObject` with three properties: `Enabled` (bool), `IncludeDependencies` (bool), `TransitiveDepth` (int). All three raise `PropertyChanged` via `RaiseAndSetIfChanged`.
+- [x] 5.2.1 ~~Create `Features/Solution/Models/SolutionScopeState.cs`~~ (Dropped: replaced with six flat `TrackableValue<bool>/<int>` — `IndividualEnabled`, `IndividualIncludeDependencies`, `IndividualTransitiveDepth`, `AllEnabled`, `AllIncludeDependencies`, `AllTransitiveDepth`).
 
-- [ ] 5.2.2 Add two `TrackableValue<SolutionScopeState>` properties to `ISolutionOptionsEditor`: `IndividualScope` and `AllScope`.
+- [x] 5.2.2 Add six `TrackableValue` properties to `ISolutionOptionsEditor` — `IndividualEnabled` (bool), `IndividualIncludeDependencies` (bool), `IndividualTransitiveDepth` (int), `AllEnabled` (bool), `AllIncludeDependencies` (bool), `AllTransitiveDepth` (int).
 
-- [ ] 5.2.3 Update `SolutionOptionsEditor`:
-  - Wire dirty tracking by subscribing to `WhenAnyValue` on each scope's three properties (via `scope.Value.WhenAnyValue(...)`) and calling `UpdateIsDirty()`. Re-subscribe whenever the TrackableValue is replaced.
-  - In `SetOriginalValues`, map `source.Individual` → `IndividualScope.Value.{Enabled,IncludeDependencies,TransitiveDepth}`, same for `All`.
-  - In `FlushTo`, write each scope's three fields back to `target.Individual` / `target.All`.
+- [x] 5.2.3 Update `SolutionOptionsEditor`:
+  - Initialize each `TrackableValue` with `SetOriginalValue(false/0)`.
+  - `SetOriginalValues` / `FlushTo` map directly between the six flat trackables and `GeneratorSolutionOptions.Individual` / `.All`.
+  - `UpdateIsDirty` reads `TrackableValue.IsDirty` — no manual comparison needed.
+  - `CombineLatest` on all `IsDirty` observables drives `UpdateIsDirty()`.
 
-- [ ] 5.2.4 Add pass-through properties to `SolutionViewModel` for `IndividualScope` and `AllScope`. Bind the view to `IndividualScope.Value.Enabled` etc.
+- [x] 5.2.4 Add six pass-through properties to `SolutionViewModel`.
 
-- [ ] 5.2.5 In `SolutionView.xaml`, add two `FormField` controls, one per scope:
+- [x] 5.2.5 In `SolutionView.xaml`, add two `FormField` controls, each with a rounded `Border` (`Chip.Background`) containing a two-column `Grid`:
+  - Column 0: `ToggleSwitch` (`RowSpan="2"`, vertically centered) bound to `*Enabled.Value`.
+  - Column 1 Row 0: `CheckBox` ("Include dependencies") bound to `*IncludeDependencies.Value`.
+  - Column 1 Row 1: `TextBlock` + `Slider` (0–10) bound to `*TransitiveDepth.Value`.
+  - Each control has its own `IsEnabled` binding to the toggle so they grey out independently.
 
-  **"Individual scope" FormField:**
-  - `ToggleSwitch` bound to `IndividualScope.Value.Enabled`
-  - When enabled, show a `CheckBox` ("Include dependencies") bound to `IndividualScope.Value.IncludeDependencies` and a `Slider` (0–10) bound to `IndividualScope.Value.TransitiveDepth` with a numeric readout `TextBlock`
-  - Dependent controls grey out via `IsEnabled="{Binding IndividualScope.Value.Enabled}"`
-
-  **"All scope" FormField** — same layout, bound to the `AllScope` counterparts.
-
-- [ ] 5.2.6 Validation: at least one scope must be enabled. Add `this.ValidationRule(…)` in `SolutionViewModel.WireValidation()` checking `IndividualScope.Value.Enabled || AllScope.Value.Enabled` with message "At least one scope must be enabled."
+- [x] 5.2.6 Validation: at least one scope must be enabled. Two `ValidationRule`s watching `IndividualEnabled.Value` and `AllEnabled.Value`, each checking both values.
 
 ### 5.3 Diagram Styling (extends `IDiagramOptionsEditor`)
 
 **`.sds` fields covered:** `diagram.direction`, `diagram.frameworkStyle`, `diagram.packageStyle`, `diagram.transitiveStyle`, `diagram.groupName`, `diagram.groupNameAlias`, `diagram.grouping.{enabled, backgroundStyle}`
 
-- [ ] 5.3.1 Add TrackableValues to `IDiagramOptionsEditor`: `Direction` (string, one of LR/RL/TB/BT), `FrameworkFill` (string, hex), `FrameworkOpacity` (double), `PackageFill` (string), `PackageOpacity` (double), `TransitiveFill` (string), `TransitiveOpacity` (double), `GroupingEnabled` (bool), `GroupName` (string), `GroupNameAlias` (string), `GroupingFill` (string), `GroupingOpacity` (double).
+All fields are scalars — `TrackableValue<T>` is the correct tracker for every new property. The existing `Formats` `TrackableCollection<DiagramFormat>` stays as-is.
 
-- [ ] 5.3.2 Update `GeneratorDiagramOptionsEditor`: map TrackableValues ↔ `GeneratorDiagramOptions` sub-objects in `SetOriginalValues` / `FlushTo`. Update `IsDirty` combine.
+- [ ] 5.3.1 Add `TrackableValue` properties to `IDiagramOptionsEditor`:
+  - `Direction` (`DiagramDirection` enum — LR/RL/TB/BT)
+  - `FrameworkFill` (string), `FrameworkOpacity` (double)
+  - `PackageFill` (string), `PackageOpacity` (double)
+  - `TransitiveFill` (string), `TransitiveOpacity` (double)
+  - `GroupingEnabled` (bool)
+  - `GroupName` (string), `GroupNameAlias` (string)
+  - `GroupingFill` (string), `GroupingOpacity` (double)
 
-- [ ] 5.3.3 In `DiagramsView.xaml`, add cards:
-  - **Direction** card: `ComboBox` with friendly names (Left-to-Right → LR, etc.).
-  - **Styles** card: three rows (Framework, Package, Transitive), each with a `TextBox` showing hex + `Rectangle` preview swatch + `Slider` for opacity (0.0–1.0).
-  - **Grouping** card: `ToggleSwitch` for `GroupingEnabled`; when enabled, show `GroupName`/`GroupNameAlias` `TextBox` controls and fill/opacity editors.
+- [ ] 5.3.2 Update `DiagramOptionsEditor`:
+  - Initialize each `TrackableValue` with defaults in the constructor via `SetOriginalValue`.
+  - In `SetOriginalValues`, map from `GeneratorDiagramOptions` sub-objects (`source.Direction`, `source.FrameworkStyle.Fill` / `.Opacity`, etc., `source.Grouping.Enabled`, `source.Grouping.BackgroundStyle.Fill` / `.Opacity`).
+  - In `FlushTo`, write each flat trackable back to the corresponding sub-object.
+  - Wire `IsDirty` via `CombineLatest` on all `TrackableValue.IsDirty` + `Formats.IsDirty` observables (same pattern as `SolutionOptionsEditor`).
+
+- [ ] 5.3.3 Add pass-through properties to `DiagramsViewModel` for all new fields.
+
+- [ ] 5.3.4 In `DiagramsView.xaml`, add four `FormField` controls:
+
+  **"Direction" FormField** — `ComboBox` with display names (Left-to-Right → LR, etc.) bound to `Direction.Value`.
+
+  **"Styles" FormField** — three rows (Framework, Package, Transitive), each:
+  - `TextBox` for hex fill color bound to `*Fill.Value`
+  - `Rectangle` preview swatch (fill bound to same hex value via converter)
+  - `Slider` (0.0–1.0) for opacity bound to `*Opacity.Value`
+
+  **"Grouping" FormField** — `ToggleSwitch` for `GroupingEnabled.Value`. When enabled, show:
+  - `TextBox` for `GroupName.Value` and `GroupNameAlias.Value`
+  - Fill/opacity editors (same hex+slider pattern) for `GroupingFill.Value` / `GroupingOpacity.Value`, greyed out via `IsEnabled="{Binding GroupingEnabled.Value}"`.
+
+  **"Group name" FormField** (only visible when grouping enabled — or always visible with a description noting it only applies when grouping is on).
 
 ### 5.4 Pre-Generation Command (new page section on Pipeline page)
 

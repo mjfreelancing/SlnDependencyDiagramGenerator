@@ -2,6 +2,8 @@
     x:Class="SlnDependencyStudio.Wpf.Features.Diagrams.DiagramsView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:config="clr-namespace:SlnDependencyDiagramGenerator.Config;assembly=SlnDependencyDiagramGenerator"
+    xmlns:converters="clr-namespace:SlnDependencyStudio.Wpf.Converters.Xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:diagrams="clr-namespace:SlnDependencyStudio.Wpf.Features.Diagrams"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
@@ -71,6 +73,295 @@
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
+            </studioControls:FormField>
+
+            <!--  Direction  -->
+            <studioControls:FormField
+                Title="Direction"
+                Margin="0,0,0,24"
+                Description="The direction the diagram flows.">
+                <ComboBox
+                    Width="200"
+                    HorizontalAlignment="Left"
+                    materialDesign:HintAssist.Hint="Select direction"
+                    SelectedValue="{Binding Direction.Value}"
+                    SelectedValuePath="Tag">
+                    <ComboBoxItem Content="Left-to-Right" Tag="{x:Static config:GeneratorDiagramOptions+DiagramDirection.LR}" />
+                    <ComboBoxItem Content="Right-to-Left" Tag="{x:Static config:GeneratorDiagramOptions+DiagramDirection.RL}" />
+                    <ComboBoxItem Content="Top-to-Bottom" Tag="{x:Static config:GeneratorDiagramOptions+DiagramDirection.TB}" />
+                    <ComboBoxItem Content="Bottom-to-Top" Tag="{x:Static config:GeneratorDiagramOptions+DiagramDirection.BT}" />
+                </ComboBox>
+            </studioControls:FormField>
+
+            <!--  Styles  -->
+            <studioControls:FormField
+                x:Name="StylesFormField"
+                Title="Styles"
+                Margin="0,0,0,24"
+                Description="Fill colors and opacity for framework, package, and transitive dependency nodes.">
+                <StackPanel Margin="0,4,0,0">
+                    <!--  Framework  -->
+                    <TextBlock
+                        Margin="0,0,0,4"
+                        FontWeight="SemiBold"
+                        Text="Framework" />
+                    <Grid Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="120" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox
+                            Grid.Column="0"
+                            materialDesign:HintAssist.Hint="#RRGGBB"
+                            Text="{Binding FrameworkFill.Value, UpdateSourceTrigger=PropertyChanged}" />
+                        <Rectangle
+                            Grid.Column="1"
+                            Width="24"
+                            Height="24"
+                            Margin="8,0,0,0"
+                            RadiusX="4"
+                            RadiusY="4">
+                            <Rectangle.Fill>
+                                <SolidColorBrush Color="{Binding FrameworkFill.Value, Converter={x:Static converters:HexToColorConverter.Instance}}" />
+                            </Rectangle.Fill>
+                        </Rectangle>
+                        <StackPanel
+                            Grid.Column="2"
+                            Margin="32,0,0,0"
+                            Orientation="Horizontal">
+                            <TextBlock VerticalAlignment="Center" Text="Opacity" />
+                            <Slider
+                                Width="160"
+                                Margin="12,0,0,0"
+                                VerticalAlignment="Center"
+                                IsSnapToTickEnabled="True"
+                                Maximum="1"
+                                Minimum="0"
+                                TickFrequency="0.1"
+                                Value="{Binding FrameworkOpacity.Value}" />
+                            <TextBlock
+                                MinWidth="32"
+                                Margin="8,0,0,0"
+                                VerticalAlignment="Center"
+                                Text="{Binding FrameworkOpacity.Value, StringFormat={}{0:F1}}" />
+                        </StackPanel>
+                    </Grid>
+
+                    <!--  Package  -->
+                    <TextBlock
+                        Margin="0,0,0,4"
+                        FontWeight="SemiBold"
+                        Text="Package" />
+                    <Grid Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="120" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox
+                            Grid.Column="0"
+                            materialDesign:HintAssist.Hint="#RRGGBB"
+                            Text="{Binding PackageFill.Value, UpdateSourceTrigger=PropertyChanged}" />
+                        <Rectangle
+                            Grid.Column="1"
+                            Width="24"
+                            Height="24"
+                            Margin="8,0,0,0"
+                            RadiusX="4"
+                            RadiusY="4">
+                            <Rectangle.Fill>
+                                <SolidColorBrush Color="{Binding PackageFill.Value, Converter={x:Static converters:HexToColorConverter.Instance}}" />
+                            </Rectangle.Fill>
+                        </Rectangle>
+                        <StackPanel
+                            Grid.Column="2"
+                            Margin="32,0,0,0"
+                            Orientation="Horizontal">
+                            <TextBlock VerticalAlignment="Center" Text="Opacity" />
+                            <Slider
+                                Width="160"
+                                Margin="12,0,0,0"
+                                VerticalAlignment="Center"
+                                IsSnapToTickEnabled="True"
+                                Maximum="1"
+                                Minimum="0"
+                                TickFrequency="0.1"
+                                Value="{Binding PackageOpacity.Value}" />
+                            <TextBlock
+                                MinWidth="32"
+                                Margin="8,0,0,0"
+                                VerticalAlignment="Center"
+                                Text="{Binding PackageOpacity.Value, StringFormat={}{0:F1}}" />
+                        </StackPanel>
+                    </Grid>
+
+                    <!--  Transitive  -->
+                    <TextBlock
+                        Margin="0,0,0,4"
+                        FontWeight="SemiBold"
+                        Text="Transitive" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="120" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox
+                            Grid.Column="0"
+                            materialDesign:HintAssist.Hint="#RRGGBB"
+                            Text="{Binding TransitiveFill.Value, UpdateSourceTrigger=PropertyChanged}" />
+                        <Rectangle
+                            Grid.Column="1"
+                            Width="24"
+                            Height="24"
+                            Margin="8,0,0,0"
+                            RadiusX="4"
+                            RadiusY="4">
+                            <Rectangle.Fill>
+                                <SolidColorBrush Color="{Binding TransitiveFill.Value, Converter={x:Static converters:HexToColorConverter.Instance}}" />
+                            </Rectangle.Fill>
+                        </Rectangle>
+                        <StackPanel
+                            Grid.Column="2"
+                            Margin="32,0,0,0"
+                            Orientation="Horizontal">
+                            <TextBlock VerticalAlignment="Center" Text="Opacity" />
+                            <Slider
+                                Width="160"
+                                Margin="12,0,0,0"
+                                VerticalAlignment="Center"
+                                IsSnapToTickEnabled="True"
+                                Maximum="1"
+                                Minimum="0"
+                                TickFrequency="0.1"
+                                Value="{Binding TransitiveOpacity.Value}" />
+                            <TextBlock
+                                MinWidth="32"
+                                Margin="8,0,0,0"
+                                VerticalAlignment="Center"
+                                Text="{Binding TransitiveOpacity.Value, StringFormat={}{0:F1}}" />
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </studioControls:FormField>
+
+            <!--  Grouping  -->
+            <studioControls:FormField
+                x:Name="GroupingFormField"
+                Title="Grouping"
+                Margin="0,0,0,24"
+                Description="Options for grouping containers around projects.">
+                <Border
+                    Padding="16,12"
+                    Background="{DynamicResource MaterialDesign.Brush.Chip.Background}"
+                    CornerRadius="8">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <ToggleButton
+                            Grid.Row="0"
+                            Grid.RowSpan="2"
+                            Grid.Column="0"
+                            VerticalAlignment="Top"
+                            IsChecked="{Binding GroupingEnabled.Value}"
+                            Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+
+                        <!--  Row 0: fill + opacity  -->
+                        <Grid
+                            Grid.Row="0"
+                            Grid.Column="1"
+                            Margin="16,0,0,0"
+                            IsEnabled="{Binding GroupingEnabled.Value}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="120" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox
+                                Grid.Column="0"
+                                materialDesign:HintAssist.Hint="#RRGGBB"
+                                Text="{Binding GroupingFill.Value, UpdateSourceTrigger=PropertyChanged}" />
+                            <Rectangle
+                                Grid.Column="1"
+                                Width="24"
+                                Height="24"
+                                Margin="8,0,0,0"
+                                RadiusX="4"
+                                RadiusY="4">
+                                <Rectangle.Fill>
+                                    <SolidColorBrush Color="{Binding GroupingFill.Value, Converter={x:Static converters:HexToColorConverter.Instance}}" />
+                                </Rectangle.Fill>
+                            </Rectangle>
+                            <StackPanel
+                                Grid.Column="2"
+                                Margin="32,0,0,0"
+                                Orientation="Horizontal">
+                                <TextBlock VerticalAlignment="Center" Text="Opacity" />
+                                <Slider
+                                    Width="160"
+                                    Margin="12,0,0,0"
+                                    VerticalAlignment="Center"
+                                    IsSnapToTickEnabled="True"
+                                    Maximum="1"
+                                    Minimum="0"
+                                    TickFrequency="0.1"
+                                    Value="{Binding GroupingOpacity.Value}" />
+                                <TextBlock
+                                    MinWidth="32"
+                                    Margin="8,0,0,0"
+                                    VerticalAlignment="Center"
+                                    Text="{Binding GroupingOpacity.Value, StringFormat={}{0:F1}}" />
+                            </StackPanel>
+                        </Grid>
+
+                        <!--  Row 1: name + alias  -->
+                        <Grid
+                            Grid.Row="1"
+                            Grid.Column="1"
+                            Margin="16,8,0,0"
+                            IsEnabled="{Binding GroupingEnabled.Value}">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock
+                                Grid.Row="0"
+                                Grid.Column="0"
+                                Margin="0,0,12,0"
+                                VerticalAlignment="Center"
+                                Text="Name" />
+                            <TextBox
+                                Grid.Row="0"
+                                Grid.Column="1"
+                                Margin="0,0,0,8"
+                                materialDesign:HintAssist.Hint="e.g. My Project"
+                                Text="{Binding GroupName.Value, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBlock
+                                Grid.Row="1"
+                                Grid.Column="0"
+                                Margin="0,0,12,0"
+                                VerticalAlignment="Center"
+                                Text="Alias" />
+                            <TextBox
+                                Grid.Row="1"
+                                Grid.Column="1"
+                                materialDesign:HintAssist.Hint="e.g. alias"
+                                Text="{Binding GroupNameAlias.Value, UpdateSourceTrigger=PropertyChanged}" />
+                        </Grid>
+                    </Grid>
+                </Border>
             </studioControls:FormField>
 
         </StackPanel>

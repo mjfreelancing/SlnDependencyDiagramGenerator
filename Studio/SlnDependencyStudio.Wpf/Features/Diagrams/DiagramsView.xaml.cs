@@ -23,6 +23,18 @@ public partial class DiagramsView : ReactiveUserControl<DiagramsViewModel>
                     vm => vm.Formats.Items.Count,
                     view => view.FormatsFormField.ValidationError)
                 .DisposeWith(disposables);
+
+            this.BindValidation(
+                    ViewModel,
+                    vm => vm.StylesHexError,
+                    view => view.StylesFormField.ValidationError)
+                .DisposeWith(disposables);
+
+            this.BindValidation(
+                    ViewModel,
+                    vm => vm.GroupingHexError,
+                    view => view.GroupingFormField.ValidationError)
+                .DisposeWith(disposables);
         });
     }
 }
