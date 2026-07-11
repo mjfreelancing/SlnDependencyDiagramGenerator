@@ -18,7 +18,10 @@
 
             </ResourceDictionary.MergedDictionaries>
 
-            <Style x:Key="ActionButtonStyle" TargetType="Button">
+            <Style
+                x:Key="ActionButtonStyle"
+                BasedOn="{StaticResource {x:Type Button}}"
+                TargetType="Button">
                 <Setter Property="Width" Value="80" />
                 <Setter Property="Margin" Value="8,0,0,0" />
             </Style>

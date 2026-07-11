@@ -63,9 +63,9 @@
                     <Button
                         Grid.Row="0"
                         Grid.Column="1"
-                        Style="{StaticResource ActionButtonStyle}"
                         Command="{Binding BrowseExportPathCommand}"
-                        Content="Browse" />
+                        Content="Browse"
+                        Style="{StaticResource ActionButtonStyle}" />
                     <CheckBox
                         Grid.Row="1"
                         Grid.ColumnSpan="2"

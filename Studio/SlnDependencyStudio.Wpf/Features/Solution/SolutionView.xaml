@@ -63,9 +63,9 @@
                     <Button
                         Grid.Row="0"
                         Grid.Column="1"
-                        Style="{StaticResource ActionButtonStyle}"
                         Command="{Binding BrowseSolutionPathCommand}"
-                        Content="Browse" />
+                        Content="Browse"
+                        Style="{StaticResource ActionButtonStyle}" />
                     <CheckBox
                         Grid.Row="1"
                         Grid.ColumnSpan="2"
@@ -94,9 +94,9 @@
                             Text="{Binding RegexToIncludeInput.NewItemText, UpdateSourceTrigger=PropertyChanged}" />
                         <Button
                             Grid.Column="1"
-                            Style="{StaticResource ActionButtonStyle}"
                             Command="{Binding RegexToIncludeInput.AddCommand}"
-                            Content="Add" />
+                            Content="Add"
+                            Style="{StaticResource ActionButtonStyle}" />
                     </Grid>
                     <ItemsControl Margin="0,4,0,0" ItemsSource="{Binding RegexToIncludeInput.Items}">
                         <ItemsControl.ItemsPanel>
@@ -137,9 +137,9 @@
                             Text="{Binding RegexToExcludeInput.NewItemText, UpdateSourceTrigger=PropertyChanged}" />
                         <Button
                             Grid.Column="1"
-                            Style="{StaticResource ActionButtonStyle}"
                             Command="{Binding RegexToExcludeInput.AddCommand}"
-                            Content="Add" />
+                            Content="Add"
+                            Style="{StaticResource ActionButtonStyle}" />
                     </Grid>
                     <ItemsControl Margin="0,6,0,0" ItemsSource="{Binding RegexToExcludeInput.Items}">
                         <ItemsControl.ItemsPanel>
@@ -180,9 +180,9 @@
                             Text="{Binding PackagesToExcludeInput.NewItemText, UpdateSourceTrigger=PropertyChanged}" />
                         <Button
                             Grid.Column="1"
-                            Style="{StaticResource ActionButtonStyle}"
                             Command="{Binding PackagesToExcludeInput.AddCommand}"
-                            Content="Add" />
+                            Content="Add"
+                            Style="{StaticResource ActionButtonStyle}" />
                     </Grid>
                     <ItemsControl Margin="0,6,0,0" ItemsSource="{Binding PackagesToExcludeInput.Items}">
                         <ItemsControl.ItemsPanel>
@@ -223,9 +223,9 @@
                             Text="{Binding FrameworksToExcludeInput.NewItemText, UpdateSourceTrigger=PropertyChanged}" />
                         <Button
                             Grid.Column="1"
-                            Style="{StaticResource ActionButtonStyle}"
                             Command="{Binding FrameworksToExcludeInput.AddCommand}"
-                            Content="Add" />
+                            Content="Add"
+                            Style="{StaticResource ActionButtonStyle}" />
                     </Grid>
                     <ItemsControl Margin="0,6,0,0" ItemsSource="{Binding FrameworksToExcludeInput.Items}">
                         <ItemsControl.ItemsPanel>
