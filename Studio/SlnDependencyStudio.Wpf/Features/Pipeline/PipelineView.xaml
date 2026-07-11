@@ -1,0 +1,204 @@
+<reactiveui:ReactiveUserControl
+    x:Class="SlnDependencyStudio.Wpf.Features.Pipeline.PipelineView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:pipeline="clr-namespace:SlnDependencyStudio.Wpf.Features.Pipeline"
+    xmlns:reactiveui="http://reactiveui.net"
+    xmlns:studioControls="clr-namespace:SlnDependencyStudio.Wpf.Controls"
+    d:DesignHeight="400"
+    d:DesignWidth="600"
+    x:TypeArguments="pipeline:PipelineViewModel"
+    mc:Ignorable="d">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="24">
+
+            <!--  Header  -->
+            <StackPanel Margin="0,0,0,24" Orientation="Horizontal">
+                <materialDesign:PackIcon
+                    Width="28"
+                    Height="28"
+                    Margin="0,0,12,0"
+                    VerticalAlignment="Center"
+                    Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+                    Kind="Pipe" />
+                <StackPanel>
+                    <TextBlock
+                        FontSize="22"
+                        FontWeight="SemiBold"
+                        Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+                        Text="Pipeline" />
+                    <TextBlock
+                        Margin="0,2,0,0"
+                        FontSize="12"
+                        Foreground="{DynamicResource MaterialDesign.Brush.ForegroundLight}"
+                        Text="Pre-generation command and tool status" />
+                </StackPanel>
+            </StackPanel>
+
+            <!--  Pre-Generation Command  -->
+            <studioControls:FormField
+                x:Name="PreGenerationFormField"
+                Title="Pre-generation command"
+                Margin="0,0,0,24"
+                Description="An optional command to run before diagram generation starts.">
+                <Border
+                    Padding="16,12"
+                    Background="{DynamicResource MaterialDesign.Brush.Chip.Background}"
+                    CornerRadius="8">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <ToggleButton
+                            Grid.Row="0"
+                            Grid.RowSpan="6"
+                            Grid.Column="0"
+                            VerticalAlignment="Top"
+                            IsChecked="{Binding Enabled.Value}"
+                            Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+
+                        <!--  Row 0: Command label  -->
+                        <TextBlock
+                            Grid.Row="0"
+                            Grid.Column="1"
+                            Margin="16,0,0,0"
+                            FontWeight="SemiBold"
+                            IsEnabled="{Binding Enabled.Value}"
+                            Text="Command" />
+
+                        <!--  Row 1: Command + Browse  -->
+                        <Grid
+                            Grid.Row="1"
+                            Grid.Column="1"
+                            Margin="16,6,0,0"
+                            IsEnabled="{Binding Enabled.Value}">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox
+                                Grid.Row="0"
+                                Grid.Column="0"
+                                materialDesign:HintAssist.Hint="Path to executable, .bat, .ps1, or .cmd"
+                                Text="{Binding Command.Value, UpdateSourceTrigger=PropertyChanged}" />
+                            <Button
+                                Grid.Row="0"
+                                Grid.Column="1"
+                                Command="{Binding BrowseCommandCommand}"
+                                Content="Browse"
+                                Style="{StaticResource ActionButtonStyle}" />
+                            <CheckBox
+                                Grid.Row="1"
+                                Grid.ColumnSpan="2"
+                                Margin="0,6,0,0"
+                                VerticalAlignment="Center"
+                                Content="Use relative path"
+                                IsChecked="{Binding UseRelativePathForCommand.Value}" />
+                        </Grid>
+
+                        <!--  Row 2: Arguments label  -->
+                        <TextBlock
+                            Grid.Row="2"
+                            Grid.Column="1"
+                            Margin="16,24,0,0"
+                            FontWeight="SemiBold"
+                            IsEnabled="{Binding Enabled.Value}"
+                            Text="Arguments" />
+
+                        <!--  Row 3: Arguments  -->
+                        <TextBox
+                            Grid.Row="3"
+                            Grid.Column="1"
+                            Margin="16,6,0,0"
+                            materialDesign:HintAssist.Hint="Command-line arguments"
+                            IsEnabled="{Binding Enabled.Value}"
+                            Text="{Binding Arguments.Value, UpdateSourceTrigger=PropertyChanged}" />
+
+                        <!--  Row 4: Working directory label  -->
+                        <TextBlock
+                            Grid.Row="4"
+                            Grid.Column="1"
+                            Margin="16,24,0,0"
+                            FontWeight="SemiBold"
+                            IsEnabled="{Binding Enabled.Value}"
+                            Text="Working directory" />
+
+                        <!--  Row 5: Working Directory + Browse  -->
+                        <Grid
+                            Grid.Row="5"
+                            Grid.Column="1"
+                            Margin="16,6,0,0"
+                            IsEnabled="{Binding Enabled.Value}">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox
+                                Grid.Row="0"
+                                Grid.Column="0"
+                                materialDesign:HintAssist.Hint="Working directory (empty = solution directory)"
+                                Text="{Binding WorkingDirectory.Value, UpdateSourceTrigger=PropertyChanged}" />
+                            <Button
+                                Grid.Row="0"
+                                Grid.Column="1"
+                                Command="{Binding BrowseWorkingDirectoryCommand}"
+                                Content="Browse"
+                                Style="{StaticResource ActionButtonStyle}" />
+                            <CheckBox
+                                Grid.Row="1"
+                                Grid.ColumnSpan="2"
+                                Margin="0,6,0,0"
+                                VerticalAlignment="Center"
+                                Content="Use relative path"
+                                IsChecked="{Binding UseRelativePathForWorkingDirectory.Value}" />
+                        </Grid>
+
+                        <!--  Row 6: Continue on Failure  -->
+                        <CheckBox
+                            Grid.Row="6"
+                            Grid.Column="1"
+                            Margin="16,24,0,0"
+                            Content="Continue on failure"
+                            IsChecked="{Binding ContinueOnFailure.Value}"
+                            IsEnabled="{Binding Enabled.Value}" />
+                    </Grid>
+                </Border>
+            </studioControls:FormField>
+
+            <!--  Tool Status (placeholder — Phase 6)  -->
+            <studioControls:FormField
+                Title="Tool status"
+                Margin="0,0,0,24"
+                Description="D2 and Mermaid tool detection status.">
+                <TextBlock
+                    FontStyle="Italic"
+                    Foreground="{DynamicResource MaterialDesign.Brush.ForegroundLight}"
+                    Text="Tool detection coming in a future update." />
+            </studioControls:FormField>
+
+        </StackPanel>
+    </ScrollViewer>
+</reactiveui:ReactiveUserControl>

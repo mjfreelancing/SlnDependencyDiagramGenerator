@@ -7,6 +7,7 @@ using SlnDependencyStudio.Wpf.DependencyInjection;
 using SlnDependencyStudio.Wpf.Features.Diagrams;
 using SlnDependencyStudio.Wpf.Features.EmptyState;
 using SlnDependencyStudio.Wpf.Features.Export;
+using SlnDependencyStudio.Wpf.Features.Pipeline;
 using SlnDependencyStudio.Wpf.Features.Project;
 using SlnDependencyStudio.Wpf.Features.Settings;
 using SlnDependencyStudio.Wpf.Features.Solution;
@@ -47,6 +48,7 @@ public static class ServiceCollectionExtensions
             services.RegisterUserControlTransient<SolutionViewModel, SolutionView>();
             services.RegisterUserControlTransient<ExportViewModel, ExportView>();
             services.RegisterUserControlTransient<DiagramsViewModel, DiagramsView>();
+            services.RegisterUserControlTransient<PipelineViewModel, PipelineView>();
             services.RegisterUserControlTransient<EmptyStateViewModel, EmptyStateView>();
 
             return services;

@@ -6,6 +6,7 @@ using ReactiveUI;using ReactiveUI.Validation.Abstractions;using SlnDependencyStu
 using SlnDependencyStudio.Wpf.Features.ErrorDialog;
 using SlnDependencyStudio.Wpf.Features.Diagrams;
 using SlnDependencyStudio.Wpf.Features.Export;
+using SlnDependencyStudio.Wpf.Features.Pipeline;
 using SlnDependencyStudio.Wpf.Features.Project;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
 using SlnDependencyStudio.Wpf.Features.RecentProjects;
@@ -184,6 +185,11 @@ public sealed class MainWindowViewModel : ActivatableViewModel
             {
                 DisplayName = "Diagrams",
                 IconKind = MaterialDesignThemes.Wpf.PackIconKind.GraphOutline
+            },
+            new NavigationItemViewModel<PipelineViewModel>
+            {
+                DisplayName = "Pipeline",
+                IconKind = MaterialDesignThemes.Wpf.PackIconKind.Pipe
             }
         ];
 
@@ -213,6 +219,7 @@ public sealed class MainWindowViewModel : ActivatableViewModel
                 }
                 else
                 {
+                    ClearNavigationValidationDots();
                     ShowEmptyState();
                 }
             })
@@ -493,6 +500,16 @@ public sealed class MainWindowViewModel : ActivatableViewModel
                 .WhenAnyValue(context => context.IsValid)
                 .Subscribe(isValid => navItem.HasValidationError = !isValid)
                 .DisposeWith(_pageValidationSubscriptions);
+        }
+    }
+
+    private void ClearNavigationValidationDots()
+    {
+        _pageValidationSubscriptions.Clear();
+
+        foreach (var navItem in NavigationItems)
+        {
+            navItem.HasValidationError = false;
         }
     }
 

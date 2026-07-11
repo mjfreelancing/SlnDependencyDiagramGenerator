@@ -276,41 +276,31 @@
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
                         <ToggleButton
                             Grid.Row="0"
-                            Grid.RowSpan="2"
                             Grid.Column="0"
                             VerticalAlignment="Top"
                             IsChecked="{Binding IndividualEnabled.Value}"
                             Style="{StaticResource MaterialDesignSwitchToggleButton}" />
 
-                        <CheckBox
+                        <StackPanel
                             Grid.Row="0"
                             Grid.Column="1"
                             Margin="16,0,0,0"
-                            Content="Include dependencies"
-                            IsChecked="{Binding IndividualIncludeDependencies.Value}"
-                            IsEnabled="{Binding IndividualEnabled.Value}" />
-                        <StackPanel
-                            Grid.Row="1"
-                            Grid.Column="1"
-                            Margin="16,8,0,0"
                             IsEnabled="{Binding IndividualEnabled.Value}"
                             Orientation="Horizontal">
-                            <TextBlock
-                                Margin="8,0,0,0"
+                            <CheckBox
                                 VerticalAlignment="Center"
-                                Text="Transitive depth" />
+                                Content="Include dependencies"
+                                IsChecked="{Binding IndividualIncludeDependencies.Value}" />
                             <TextBlock
-                                Width="28"
-                                Margin="12,0,0,0"
+                                Margin="24,0,0,0"
                                 VerticalAlignment="Center"
-                                Text="{Binding IndividualTransitiveDepth.Value}" />
+                                Text="Transitive Depth" />
                             <Slider
-                                Width="200"
+                                Width="120"
                                 Margin="12,0,0,0"
                                 VerticalAlignment="Center"
                                 IsSnapToTickEnabled="True"
@@ -318,6 +308,11 @@
                                 Minimum="0"
                                 TickFrequency="1"
                                 Value="{Binding IndividualTransitiveDepth.Value}" />
+                            <TextBlock
+                                MinWidth="28"
+                                Margin="8,0,0,0"
+                                VerticalAlignment="Center"
+                                Text="{Binding IndividualTransitiveDepth.Value}" />
                         </StackPanel>
                     </Grid>
                 </Border>
@@ -339,41 +334,31 @@
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
                         <ToggleButton
                             Grid.Row="0"
-                            Grid.RowSpan="2"
                             Grid.Column="0"
                             VerticalAlignment="Top"
                             IsChecked="{Binding AllEnabled.Value}"
                             Style="{StaticResource MaterialDesignSwitchToggleButton}" />
 
-                        <CheckBox
+                        <StackPanel
                             Grid.Row="0"
                             Grid.Column="1"
                             Margin="16,0,0,0"
-                            Content="Include dependencies"
-                            IsChecked="{Binding AllIncludeDependencies.Value}"
-                            IsEnabled="{Binding AllEnabled.Value}" />
-                        <StackPanel
-                            Grid.Row="1"
-                            Grid.Column="1"
-                            Margin="16,8,0,0"
                             IsEnabled="{Binding AllEnabled.Value}"
                             Orientation="Horizontal">
-                            <TextBlock
-                                Margin="8,0,0,0"
+                            <CheckBox
                                 VerticalAlignment="Center"
-                                Text="Transitive depth" />
+                                Content="Include dependencies"
+                                IsChecked="{Binding AllIncludeDependencies.Value}" />
                             <TextBlock
-                                Width="28"
-                                Margin="12,0,0,0"
+                                Margin="24,0,0,0"
                                 VerticalAlignment="Center"
-                                Text="{Binding AllTransitiveDepth.Value}" />
+                                Text="Transitive Depth" />
                             <Slider
-                                Width="200"
+                                Width="120"
                                 Margin="12,0,0,0"
                                 VerticalAlignment="Center"
                                 IsSnapToTickEnabled="True"
@@ -381,6 +366,11 @@
                                 Minimum="0"
                                 TickFrequency="1"
                                 Value="{Binding AllTransitiveDepth.Value}" />
+                            <TextBlock
+                                MinWidth="28"
+                                Margin="8,0,0,0"
+                                VerticalAlignment="Center"
+                                Text="{Binding AllTransitiveDepth.Value}" />
                         </StackPanel>
                     </Grid>
                 </Border>

@@ -4,6 +4,7 @@ using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Wpf.Features.Diagrams;
 using SlnDependencyStudio.Wpf.Features.Export;
+using SlnDependencyStudio.Wpf.Features.Pipeline;
 using SlnDependencyStudio.Wpf.Features.RecentProjects;
 using SlnDependencyStudio.Wpf.Features.Solution;
 using System.IO;
@@ -23,6 +24,7 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
     private readonly SolutionOptionsEditor _solutionOptionsEditor;
     private readonly ExportOptionsEditor _exportOptionsEditor;
     private readonly DiagramOptionsEditor _diagramOptionsEditor;
+    private readonly PreGenerationConfigEditor _preGenerationEditor;
     private readonly ObservableAsPropertyHelper<bool> _isDirty;
     private DependencyProjectDocument? _document;
     private string? _currentFilePath;
@@ -51,6 +53,9 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
     public IDiagramOptionsEditor DiagramOptionsEditor => _diagramOptionsEditor;
 
     /// <inheritdoc />
+    public IPreGenerationConfigEditor PreGenerationEditor => _preGenerationEditor;
+
+    /// <inheritdoc />
     public bool IsDirty => _isDirty.Value;
 
     /// <inheritdoc />
@@ -72,6 +77,7 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
         _solutionOptionsEditor = new SolutionOptionsEditor();
         _exportOptionsEditor = new ExportOptionsEditor();
         _diagramOptionsEditor = new DiagramOptionsEditor();
+        _preGenerationEditor = new PreGenerationConfigEditor();
 
         // Global dirty state is derived from all editor wrappers.
         _isDirty = Observable
@@ -80,7 +86,8 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
                 _solutionOptionsEditor.WhenAnyValue(editor => editor.IsDirty),
                 _exportOptionsEditor.WhenAnyValue(editor => editor.IsDirty),
                 _diagramOptionsEditor.WhenAnyValue(editor => editor.IsDirty),
-                (metadata, solution, export, diagrams) => metadata || solution || export || diagrams)
+                _preGenerationEditor.WhenAnyValue(editor => editor.IsDirty),
+                (metadata, solution, export, diagrams, preGen) => metadata || solution || export || diagrams || preGen)
             .ToProperty(this, nameof(IsDirty));
     }
 
@@ -98,6 +105,7 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
         _solutionOptionsEditor.SetOriginalValues(_document.DiagramGenerator.Solution);
         _exportOptionsEditor.SetOriginalValues(_document.DiagramGenerator.Export);
         _diagramOptionsEditor.SetOriginalValues(_document.DiagramGenerator.Diagram);
+        _preGenerationEditor.SetOriginalValues(_document.PreGeneration);
 
         _recentProjects.Add(filePath);
     }
@@ -144,6 +152,7 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
         _solutionOptionsEditor.SetOriginalValues(new GeneratorSolutionOptions());
         _exportOptionsEditor.SetOriginalValues(new GeneratorExportOptions());
         _diagramOptionsEditor.SetOriginalValues(new GeneratorDiagramOptions());
+        _preGenerationEditor.SetOriginalValues(new PreGenerationConfig());
     }
 
     /// <summary>Flushes all editor wrappers to the underlying document.</summary>
@@ -153,6 +162,7 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
         _solutionOptionsEditor.FlushTo(_document!.DiagramGenerator.Solution);
         _exportOptionsEditor.FlushTo(_document!.DiagramGenerator.Export);
         _diagramOptionsEditor.FlushTo(_document!.DiagramGenerator.Diagram);
+        _preGenerationEditor.FlushTo(_document!.PreGeneration);
     }
 
     /// <summary>Marks all editor wrappers as clean after a successful save.</summary>
@@ -162,5 +172,6 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
         _solutionOptionsEditor.SetOriginalValues(_document!.DiagramGenerator.Solution);
         _exportOptionsEditor.SetOriginalValues(_document!.DiagramGenerator.Export);
         _diagramOptionsEditor.SetOriginalValues(_document!.DiagramGenerator.Diagram);
+        _preGenerationEditor.SetOriginalValues(_document!.PreGeneration);
     }
 }

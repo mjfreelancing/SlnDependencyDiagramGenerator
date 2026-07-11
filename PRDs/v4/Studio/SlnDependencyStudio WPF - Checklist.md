@@ -58,8 +58,8 @@ Features/
 | 1     | Project Scaffold & Shell Foundation   | ✅     |
 | 2     | Application Settings Service          | ✅     |
 | 3     | Dependency Project Lifecycle          | ✅     |
-| 4     | Metadata & Core Configuration Editing | 🔶     |
-| 5     | Advanced Configuration Editing        | ⬜     |
+| 4     | Metadata & Core Configuration Editing | ✅     |
+| 5     | Advanced Configuration Editing        | ✅     |
 | 6     | Tool Detection & Status               | ⬜     |
 | 7     | Pre-Generation Analysis               | ⬜     |
 | 8     | Generation Orchestration & Output     | ⬜     |
@@ -688,7 +688,7 @@ Two visually grouped scope sections — "Individual scope" and "All scope" — e
 
 All fields are scalars — `TrackableValue<T>` is the correct tracker for every new property. The existing `Formats` `TrackableCollection<DiagramFormat>` stays as-is.
 
-- [ ] 5.3.1 Add `TrackableValue` properties to `IDiagramOptionsEditor`:
+- [x] 5.3.1 Add `TrackableValue` properties to `IDiagramOptionsEditor`:
   - `Direction` (`DiagramDirection` enum — LR/RL/TB/BT)
   - `FrameworkFill` (string), `FrameworkOpacity` (double)
   - `PackageFill` (string), `PackageOpacity` (double)
@@ -697,54 +697,50 @@ All fields are scalars — `TrackableValue<T>` is the correct tracker for every 
   - `GroupName` (string), `GroupNameAlias` (string)
   - `GroupingFill` (string), `GroupingOpacity` (double)
 
-- [ ] 5.3.2 Update `DiagramOptionsEditor`:
+- [x] 5.3.2 Update `DiagramOptionsEditor`:
   - Initialize each `TrackableValue` with defaults in the constructor via `SetOriginalValue`.
   - In `SetOriginalValues`, map from `GeneratorDiagramOptions` sub-objects (`source.Direction`, `source.FrameworkStyle.Fill` / `.Opacity`, etc., `source.Grouping.Enabled`, `source.Grouping.BackgroundStyle.Fill` / `.Opacity`).
   - In `FlushTo`, write each flat trackable back to the corresponding sub-object.
-  - Wire `IsDirty` via `CombineLatest` on all `TrackableValue.IsDirty` + `Formats.IsDirty` observables (same pattern as `SolutionOptionsEditor`).
+  - Wire `IsDirty` via `CombineLatest` on 13 observables (1 `TrackableCollection.IsDirty` + 12 `TrackableValue.IsDirty`).
 
-- [ ] 5.3.3 Add pass-through properties to `DiagramsViewModel` for all new fields.
+- [x] 5.3.3 Add 12 pass-through properties to `DiagramsViewModel`.
 
-- [ ] 5.3.4 In `DiagramsView.xaml`, add four `FormField` controls:
+- [x] 5.3.4 In `DiagramsView.xaml`, add four `FormField` controls:
+  - **"Direction" FormField** — `ComboBox` bound to `Direction.Value` with display-name items.
+  - **"Styles" FormField** — three labeled rows (Framework, Package, Transitive), each with hex `TextBox` + `Rectangle` swatch (`HexToColorConverter`) + opacity `Slider`.
+  - **"Grouping" FormField** — `Border` card (`Chip.Background`) with two-column `Grid`: column 0 `ToggleSwitch` (`RowSpan="2"`), column 1 row 0 fill/opacity, column 1 row 1 name/alias textboxes. All greyed out via `IsEnabled="{Binding GroupingEnabled.Value}"`.
+  - ~~\*\*"Group name" FormField"~~ — merged into the Grouping card; name and alias are part of the same grouping configuration.
 
-  **"Direction" FormField** — `ComboBox` with display names (Left-to-Right → LR, etc.) bound to `Direction.Value`.
-
-  **"Styles" FormField** — three rows (Framework, Package, Transitive), each:
-  - `TextBox` for hex fill color bound to `*Fill.Value`
-  - `Rectangle` preview swatch (fill bound to same hex value via converter)
-  - `Slider` (0.0–1.0) for opacity bound to `*Opacity.Value`
-
-  **"Grouping" FormField** — `ToggleSwitch` for `GroupingEnabled.Value`. When enabled, show:
-  - `TextBox` for `GroupName.Value` and `GroupNameAlias.Value`
-  - Fill/opacity editors (same hex+slider pattern) for `GroupingFill.Value` / `GroupingOpacity.Value`, greyed out via `IsEnabled="{Binding GroupingEnabled.Value}"`.
-
-  **"Group name" FormField** (only visible when grouping enabled — or always visible with a description noting it only applies when grouping is on).
+- [x] 5.3.5 Hex validation (Added: 2026-07-11):
+  - Four individual `ValidationRule`s per fill field (Framework/Package/Transitive/Grouping) drive `IsValid`.
+  - `StylesHexError` and `GroupingHexError` computed observables aggregate errors for display.
+  - Two display `ValidationRule`s route errors to `StylesFormField.ValidationError` / `GroupingFormField.ValidationError` via `BindValidation`.
 
 ### 5.4 Pre-Generation Command (new page section on Pipeline page)
 
 **`.sds` fields covered:** `preGeneration.{enabled, command, arguments, workingDirectory, continueOnFailure}`
 
-- [ ] 5.4.1 Create `Features/Pipeline/PipelineViewModel.cs`:
+- [x] 5.4.1 Create `Features/Pipeline/PipelineViewModel.cs`:
   - Inherits from `ReactiveObject`, implements `IValidatableViewModel`.
-  - Exposes TrackableValue pass-throughs for `Enabled`, `Command`, `Arguments`, `WorkingDirectory`, `ContinueOnFailure` from a `PreGenerationConfigEditor` (see below).
+  - Exposes TrackableValue pass-throughs for `Enabled`, `Command`, `Arguments`, `WorkingDirectory`, `ContinueOnFailure` from the `PreGenerationConfigEditor`.
+  - Adds `UseRelativePathForCommand` and `UseRelativePathForWorkingDirectory` (UI-only preferences, not persisted).
+  - Computes `PreGenError` observable (watches both `Enabled` + `Command`) for display via `BindValidation`.
 
-- [ ] 5.4.2 Create `IPreGenerationConfigEditor` interface and `PreGenerationConfigEditor` class under `Features/Pipeline/`:
-  - Wraps `PreGenerationConfig` with TrackableValues for all five fields.
+- [x] 5.4.2 Create `IPreGenerationConfigEditor` interface and `PreGenerationConfigEditor` class under `Features/Pipeline/`:
+  - Wraps `PreGenerationConfig` (from `SlnDependencyStudio.Shared.Config`) with `TrackableValue<T>` for all five fields.
+  - Wire `IsDirty` via `CombineLatest` on all `TrackableValue.IsDirty` observables.
   - Add `IPreGenerationConfigEditor PreGenerationEditor { get; }` to `IProjectDocumentStore`.
-  - Integrate into `ProjectDocumentStore` (constructor, `IsDirty` combine, open/save/flush/clean/close).
+  - Integrated into `ProjectDocumentStore` (constructor, `IsDirty` combine, open/save/flush/clean/close).
 
-- [ ] 5.4.3 Create `Features/Pipeline/PipelineView.xaml` + `.xaml.cs`:
-  - Card-based layout (header icon `Pipe` + title "Pipeline" with an "optional" Chip badge per 1.4).
-  - Pre-generation card (collapsed by default via `ICardSessionState`, "Advanced" label):
-    - `ToggleSwitch` for `Enabled`; when enabled, show the remaining fields.
-    - `TextBox` for `Command` with Browse button (`OpenFileDialog` filtered to `.exe`, `.bat`, `.ps1`, `.cmd`).
-    - `TextBox` for `Arguments` and `WorkingDirectory` (with Browse button for folder).
-    - `CheckBox` for `ContinueOnFailure` with tooltip.
-  - Tool-status card placeholder (filled in Phase 6).
+- [x] 5.4.3 Create `Features/Pipeline/PipelineView.xaml` + `.xaml.cs`:
+  - FormField-based layout (header icon `Pipe` + title "Pipeline").
+  - Pre-generation FormField with `Border` card pattern: column 0 `ToggleSwitch` (`RowSpan="7"`), column 1 labeled rows (Command, Arguments, Working directory) each with Browse button (`ActionButtonStyle`) and "Use relative path" checkbox.
+  - `ContinueOnFailure` checkbox.
+  - Tool-status FormField placeholder (filled in Phase 6).
 
-- [ ] 5.4.4 Validation: when `Enabled` is true, `Command` must not be empty.
+- [x] 5.4.4 Validation: `PreGenError` computed observable (null when toggle off or command non-empty, error message when toggle on + command empty). Single `ValidationRule` drives both `IsValid` and `BindValidation`.
 
-- [ ] 5.4.5 Register `PipelineViewModel`/`PipelineView` via DI. Add `NavigationItemViewModel<PipelineViewModel>` to `MainWindowViewModel.NavigationItems` with `IsAdvanced = true` (renders the "optional" chip).
+- [x] 5.4.5 Register `PipelineViewModel`/`PipelineView` via DI. Add `NavigationItemViewModel<PipelineViewModel>` to `MainWindowViewModel.NavigationItems`.
 
 **Phase 5 completion:** All `.sds` fields from `metadata`, `solution`, `diagram`, `export`, and `preGeneration` are editable through the UI. Every field has inline validation where appropriate. The configuration surface fully mirrors the `.sds` schema.
 
