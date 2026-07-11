@@ -87,32 +87,19 @@
                             Grid.Column="1"
                             Margin="16,6,0,0"
                             IsEnabled="{Binding Enabled.Value}">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <TextBox
-                                Grid.Row="0"
                                 Grid.Column="0"
-                                materialDesign:HintAssist.Hint="Path to executable, .bat, .ps1, or .cmd"
+                                materialDesign:HintAssist.Hint="Executable name, e.g. dotnet or build.cmd"
                                 Text="{Binding Command.Value, UpdateSourceTrigger=PropertyChanged}" />
                             <Button
-                                Grid.Row="0"
                                 Grid.Column="1"
                                 Command="{Binding BrowseCommandCommand}"
                                 Content="Browse"
                                 Style="{StaticResource ActionButtonStyle}" />
-                            <CheckBox
-                                Grid.Row="1"
-                                Grid.ColumnSpan="2"
-                                Margin="0,6,0,0"
-                                VerticalAlignment="Center"
-                                Content="Use relative path"
-                                IsChecked="{Binding UseRelativePathForCommand.Value}" />
                         </Grid>
 
                         <!--  Row 2: Arguments label  -->
@@ -188,15 +175,90 @@
                 </Border>
             </studioControls:FormField>
 
-            <!--  Tool Status (placeholder — Phase 6)  -->
+            <!--  Tool Status  -->
             <studioControls:FormField
                 Title="Tool status"
                 Margin="0,0,0,24"
-                Description="D2 and Mermaid tool detection status.">
-                <TextBlock
-                    FontStyle="Italic"
-                    Foreground="{DynamicResource MaterialDesign.Brush.ForegroundLight}"
-                    Text="Tool detection coming in a future update." />
+                Description="Diagram CLI tool detection status.">
+                <Border
+                    Padding="16,12"
+                    Background="{DynamicResource MaterialDesign.Brush.Chip.Background}"
+                    CornerRadius="8">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <!--  Tool entries  -->
+                        <ItemsControl
+                            Grid.Column="0"
+                            ItemsSource="{Binding ToolStatusEntries}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,0,0,12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+
+                                        <!--  Availability icon  -->
+                                        <materialDesign:PackIcon
+                                            Grid.Row="0"
+                                            Grid.RowSpan="2"
+                                            Grid.Column="0"
+                                            Width="22"
+                                            Height="22"
+                                            Margin="0,0,12,0"
+                                            VerticalAlignment="Center">
+                                            <materialDesign:PackIcon.Style>
+                                                <Style TargetType="materialDesign:PackIcon">
+                                                    <Setter Property="Foreground" Value="Green" />
+                                                    <Setter Property="Kind" Value="CheckCircle" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsAvailable}" Value="False">
+                                                            <Setter Property="Foreground" Value="Red" />
+                                                            <Setter Property="Kind" Value="CloseCircle" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </materialDesign:PackIcon.Style>
+                                        </materialDesign:PackIcon>
+
+                                        <!--  Tool name + status text  -->
+                                        <TextBlock
+                                            Grid.Row="0"
+                                            Grid.Column="1"
+                                            FontSize="14"
+                                            FontWeight="SemiBold"
+                                            Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+                                            Text="{Binding ToolName, StringFormat={}{0} tool}" />
+
+                                        <TextBlock
+                                            Grid.Row="1"
+                                            Grid.Column="1"
+                                            Margin="0,2,0,0"
+                                            FontSize="12"
+                                            Foreground="{DynamicResource MaterialDesign.Brush.ForegroundLight}"
+                                            Text="{Binding StatusText}"
+                                            TextTrimming="CharacterEllipsis" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!--  ReScan button (top-right)  -->
+                        <Button
+                            Grid.Column="1"
+                            VerticalAlignment="Top"
+                            Command="{Binding RescanToolsCommand}"
+                            Content="Re-scan" />
+                    </Grid>
+                </Border>
             </studioControls:FormField>
 
         </StackPanel>

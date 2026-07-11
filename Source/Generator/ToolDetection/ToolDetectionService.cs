@@ -78,14 +78,22 @@ internal sealed class ToolDetectionService : IToolDetectionService
     /// <exception cref="DependencyGeneratorException">Thrown when the tool is not available.</exception>
     internal static async Task EnsureToolAvailableAsync(string toolName, string missingToolMessage, CancellationToken cancellationToken)
     {
-        if (!await IsToolOnPathAsync(toolName, cancellationToken).ConfigureAwait(false))
+        var resolvedPath = await ResolveToolPathAsync(toolName, cancellationToken).ConfigureAwait(false);
+
+        if (resolvedPath is null)
         {
             throw new DependencyGeneratorException(missingToolMessage);
         }
     }
 
-    /// <summary>Checks if a tool is available on PATH using platform-appropriate lookup.</summary>
-    internal static async Task<bool> IsToolOnPathAsync(string toolName, CancellationToken cancellationToken)
+    /// <summary>
+    /// Resolves the full path of a tool executable on the system PATH using
+    /// platform-appropriate lookup (<c>where</c> on Windows, <c>which</c> otherwise).
+    /// </summary>
+    /// <param name="toolName">The tool name to locate.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The resolved full path, or <see langword="null"/> if not found.</returns>
+    internal static async Task<string?> ResolveToolPathAsync(string toolName, CancellationToken cancellationToken)
     {
         var locator = OperatingSystem.IsWindows() ? "where" : "which";
 
@@ -101,11 +109,27 @@ internal sealed class ToolDetectionService : IToolDetectionService
                 .ExecuteBufferedAsync(cancellationToken)
                 .ConfigureAwait(false);
 
-            return result.ExitCode == 0;
+            if (result.ExitCode != 0)
+            {
+                return null;
+            }
+
+            // Pick the first line — some tools may have multiple entries on PATH.
+            var output = result.StandardOutput?.Trim();
+
+            if (string.IsNullOrEmpty(output))
+            {
+                return null;
+            }
+
+            // Take the first line in case of multi-line output.
+            var firstLine = output.Split([Environment.NewLine, "\n"], StringSplitOptions.RemoveEmptyEntries)[0];
+
+            return firstLine.Trim();
         }
         catch
         {
-            return false;
+            return null;
         }
     }
 
@@ -140,13 +164,14 @@ internal sealed class ToolDetectionService : IToolDetectionService
 
     private static async Task<ToolStatus> CheckPathAsync(string toolName, CancellationToken cancellationToken)
     {
-        var available = await IsToolOnPathAsync(toolName, cancellationToken).ConfigureAwait(false);
+        var resolvedPath = await ResolveToolPathAsync(toolName, cancellationToken).ConfigureAwait(false);
 
-        return available
+        return resolvedPath is not null
             ? new ToolStatus
             {
                 ToolName = toolName,
-                IsAvailable = true
+                IsAvailable = true,
+                ResolvedPath = resolvedPath
             }
             : new ToolStatus
             {

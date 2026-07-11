@@ -748,11 +748,11 @@ All fields are scalars — `TrackableValue<T>` is the correct tracker for every 
 
 ## Phase 6 — Tool Detection & Status
 
-**Intent:** Integrate with the existing `IToolDetectionService` (in `SlnDependencyDiagramGenerator`) to detect d2 and mmdc availability. Build the tool-status card on the **Pipeline** page. Show which tools are available, their resolved paths, and allow re-scanning and explicit path overrides. Gate UI options that depend on missing tools with explanatory disabled states.
+**Intent:** Integrate with the existing `IToolDetectionService` (in `SlnDependencyDiagramGenerator`) to detect d2 and mmdc availability. Build the tool-status card on the **Pipeline** page, replacing the current placeholder. Show which tools are available, their resolved paths, and allow re-scanning and explicit path overrides. Tool unavailability is informational only — it does not gate or disable any UI.
 
 ### 6.1 Tool Status Service (WPF Wrapper)
 
-- [ ] 6.1.1 Create `Features/Pipeline/IToolStatusService` under `Features/Pipeline/` (co-located with Pipeline, not a separate feature — tool status is a Pipeline concern):
+- [x] 6.1.1 Create `Features/Pipeline/Services/IToolStatusService` (co-located with Pipeline in `Services/`):
 
   ```csharp
   public interface IToolStatusService : IStudioSingletonDependency
@@ -762,36 +762,35 @@ All fields are scalars — `TrackableValue<T>` is the correct tracker for every 
   }
   ```
 
-  `ToolStatusEntry` has `ToolName`, `IsAvailable`, `ResolvedPath`, `LastChecked`.
+  `ToolStatusEntry` (in `Models/`) has `ToolName`, `IsAvailable`, `ResolvedPath`, `StatusText`, `LastChecked`, `ErrorMessage`.
 
-- [ ] 6.1.2 Implement `ToolStatusService` wrapping `IToolDetectionService.CheckConfiguredToolsAsync()`. On construction, run an initial scan. On `RescanAsync`, update the observable.
+- [x] 6.1.2 Implement `ToolStatusService` wrapping `IToolDetectionService.CheckToolAvailabilityAsync()`. On construction, seeds two entries (d2, mmdc) and runs an initial fire-and-forget scan. On `RescanAsync`, creates a scope, resolves `IToolDetectionService`, checks each tool with path overrides from `ApplicationSettings`, and updates the observable.
 
-- [ ] 6.1.3 Register `IToolStatusService` as a singleton. On app startup, the service initializes itself. On settings change (tool path overrides updated via Phase 5.4), call `RescanAsync`.
+- [x] 6.1.3 Register `IToolStatusService` as a singleton via `IStudioSingletonDependency` auto-registration. The service initializes itself on construction.
 
-### 6.2 Tool Status View (Pipeline Page Card)
+- [x] 6.1.4 Fix `ToolDetectionService.ResolveToolPathAsync` — replaced the bool-only `IsToolOnPathAsync` with a method that captures the resolved path from `where`/`which` stdout, so `ToolStatus.ResolvedPath` is populated for PATH-resolved tools.
 
-- [ ] 6.2.1 In `Features/Pipeline/PipelineView.xaml`, add a tool-status `Card` below the pre-generation card. Per 1.4 progressive disclosure, this card is **collapsed by default** with an "Advanced" label.
+### 6.2 Tool Status View (Pipeline Page)
 
-- [ ] 6.2.2 For each tool (d2, mmdc), display: tool name, icon (green `CheckCircle` / red `CloseCircle`), availability text ("Found at C:\...\d2.exe" or "Not found — install d2 or set path override"), and a `ReScan` button.
+- [x] 6.2.1 Replace the existing "Tool status" placeholder in `Features/Pipeline/PipelineView.xaml` with the real tool-status card. No collapse/expand — it's always visible on the Pipeline page. Single-row 2-column Grid layout: entries in col 0, Re-scan button top-right in col 1.
 
-- [ ] 6.2.3 Add a `ReScan All` button that calls `IToolStatusService.RescanAsync()`.
+- [x] 6.2.2 For each tool (d2, mmdc), display:
+  - Tool name ("d2 tool" / "mmdc tool").
+  - Green `CheckCircle` / red `CloseCircle` icon via `DataTrigger` on `IsAvailable`.
+  - Status text via computed `StatusText` property ("Found at {path}" or "Not found — install the tool or set a path override").
+  - `LastChecked` property tracked on the model.
 
-- [ ] 6.2.4 Add an explicit path override per tool: a `TextBox` bound to `ApplicationSettings.ToolPathOverrides[toolName]` with a `Browse` button. On change, call `RescanAsync`.
+- [x] 6.2.3 Add a "Re-scan" button (top-right of card) that calls `IToolStatusService.RescanAsync()`.
 
-- [ ] 6.2.5 Wire the tool-status dots at the bottom of the left nav (per 1.4 visual design) to observe `IToolStatusService.ToolStatuses` and render green/orange/red dots.
+- [x] 6.2.4 Per-tool explicit path override on the Pipeline page. **Not needed** — path overrides are configured in Settings. The scan reads them from `ApplicationSettings.ToolPathOverrides`: if an override is set, the exact path is checked and the tool is reported as not found if it doesn't exist there (no PATH fallback).
 
-### 6.3 UI Gating Based on Tool Availability
+- [x] 6.2.5 Pre-generation command UX refinements:
+  - Removed "Use relative path" checkbox from Command row (doesn't apply to command names).
+  - Command Browse: opens `OpenFileDialog` filtered to executables, extracts filename as command, auto-populates working directory if empty.
+  - Working directory Browse: opens `OpenFolderDialog`, respects "Use relative path" toggle (converts to/from relative on browse and on toggle change).
+  - `WireRelativePathToggle`: converts working directory between relative/absolute when checkbox toggled, guards against re-resolving already-relative paths (uses `Path.IsPathFullyQualified`).
 
-- [ ] 6.3.1 In `ExportView`, observe `IToolStatusService.ToolStatuses` and disable/grey out image format checkboxes that depend on unavailable tools:
-  - D2-dependent formats (Png, Svg, Pdf) → disabled if d2 not found.
-  - Mermaid-dependent formats (Png, Svg) → disabled if mmdc not found.
-  - Mermaid Pdf → always disabled (not supported by mmdc).
-
-- [ ] 6.3.2 Add tooltip or inline text next to each disabled option explaining why (e.g., "d2 CLI not found — install d2 or set path in Pipeline → Tools").
-
-- [ ] 6.3.3 Per FR-7.8, tool unavailability must NOT prevent editing or saving a project. Gating is UI-only, not enforced at the model/serialization level.
-
-**Phase 6 completion:** Tool status is visible on the Pipeline page and left-nav dots. Export options are gated with explanations. Users can override tool paths and re-scan.
+**Phase 6 completion:** Tool status is visible on the Pipeline page. Users can see which tools are available, override tool paths, and re-scan. No UI gating — tool unavailability is purely informational.
 
 ---
 
