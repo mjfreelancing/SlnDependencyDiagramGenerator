@@ -265,20 +265,47 @@
                 Title="Individual scope"
                 Margin="0,0,0,24"
                 Description="Options for processing projects individually.">
-                <StackPanel>
-                    <ToggleButton
-                        HorizontalAlignment="Left"
-                        IsChecked="{Binding IndividualEnabled.Value}"
-                        Style="{StaticResource MaterialDesignSwitchToggleButton}" />
-                    <StackPanel Margin="0,8,0,0" IsEnabled="{Binding IndividualEnabled.Value}">
+                <Border
+                    Padding="16,12"
+                    Background="{DynamicResource MaterialDesign.Brush.Chip.Background}"
+                    CornerRadius="8">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <ToggleButton
+                            Grid.Row="0"
+                            Grid.RowSpan="2"
+                            Grid.Column="0"
+                            VerticalAlignment="Top"
+                            IsChecked="{Binding IndividualEnabled.Value}"
+                            Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+
                         <CheckBox
-                            Margin="0,0,0,8"
+                            Grid.Row="0"
+                            Grid.Column="1"
+                            Margin="16,0,0,0"
                             Content="Include dependencies"
-                            IsChecked="{Binding IndividualIncludeDependencies.Value}" />
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock VerticalAlignment="Center" Text="Transitive depth" />
+                            IsChecked="{Binding IndividualIncludeDependencies.Value}"
+                            IsEnabled="{Binding IndividualEnabled.Value}" />
+                        <StackPanel
+                            Grid.Row="1"
+                            Grid.Column="1"
+                            Margin="16,4,0,0"
+                            IsEnabled="{Binding IndividualEnabled.Value}"
+                            Orientation="Horizontal">
                             <TextBlock
-                                MinWidth="28"
+                                Margin="8,0,0,0"
+                                VerticalAlignment="Center"
+                                Text="Transitive depth" />
+                            <TextBlock
+                                Width="28"
                                 Margin="12,0,0,0"
                                 VerticalAlignment="Center"
                                 Text="{Binding IndividualTransitiveDepth.Value}" />
@@ -292,8 +319,8 @@
                                 TickFrequency="1"
                                 Value="{Binding IndividualTransitiveDepth.Value}" />
                         </StackPanel>
-                    </StackPanel>
-                </StackPanel>
+                    </Grid>
+                </Border>
             </studioControls:FormField>
 
             <!--  All Scope  -->
@@ -301,20 +328,47 @@
                 Title="All scope"
                 Margin="0,0,0,24"
                 Description="Options for processing all projects collectively.">
-                <StackPanel>
-                    <ToggleButton
-                        HorizontalAlignment="Left"
-                        IsChecked="{Binding AllEnabled.Value}"
-                        Style="{StaticResource MaterialDesignSwitchToggleButton}" />
-                    <StackPanel Margin="0,8,0,0" IsEnabled="{Binding AllEnabled.Value}">
+                <Border
+                    Padding="16,12"
+                    Background="{DynamicResource MaterialDesign.Brush.Chip.Background}"
+                    CornerRadius="8">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <ToggleButton
+                            Grid.Row="0"
+                            Grid.RowSpan="2"
+                            Grid.Column="0"
+                            VerticalAlignment="Top"
+                            IsChecked="{Binding AllEnabled.Value}"
+                            Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+
                         <CheckBox
-                            Margin="0,0,0,8"
+                            Grid.Row="0"
+                            Grid.Column="1"
+                            Margin="16,0,0,0"
                             Content="Include dependencies"
-                            IsChecked="{Binding AllIncludeDependencies.Value}" />
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock VerticalAlignment="Center" Text="Transitive depth" />
+                            IsChecked="{Binding AllIncludeDependencies.Value}"
+                            IsEnabled="{Binding AllEnabled.Value}" />
+                        <StackPanel
+                            Grid.Row="1"
+                            Grid.Column="1"
+                            Margin="16,4,0,0"
+                            IsEnabled="{Binding AllEnabled.Value}"
+                            Orientation="Horizontal">
                             <TextBlock
-                                MinWidth="28"
+                                Margin="8,0,0,0"
+                                VerticalAlignment="Center"
+                                Text="Transitive depth" />
+                            <TextBlock
+                                Width="28"
                                 Margin="12,0,0,0"
                                 VerticalAlignment="Center"
                                 Text="{Binding AllTransitiveDepth.Value}" />
@@ -328,8 +382,8 @@
                                 TickFrequency="1"
                                 Value="{Binding AllTransitiveDepth.Value}" />
                         </StackPanel>
-                    </StackPanel>
-                </StackPanel>
+                    </Grid>
+                </Border>
             </studioControls:FormField>
 
         </StackPanel>
