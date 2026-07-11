@@ -26,6 +26,14 @@
                 <Setter Property="Margin" Value="8,0,0,0" />
             </Style>
 
+            <Style x:Key="CollapseWhenEmptyTextBlockStyle" TargetType="TextBlock">
+                <Style.Triggers>
+                    <Trigger Property="Text" Value="">
+                        <Setter Property="Visibility" Value="Collapsed" />
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
         </ResourceDictionary>
     </Application.Resources>
 </Application>

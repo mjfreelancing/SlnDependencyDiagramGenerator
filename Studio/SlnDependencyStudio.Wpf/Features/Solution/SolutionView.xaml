@@ -102,6 +102,7 @@
                         Margin="0,4,0,0"
                         FontSize="12"
                         Foreground="{DynamicResource MaterialDesign.Brush.ValidationError}"
+                        Style="{StaticResource CollapseWhenEmptyTextBlockStyle}"
                         Text="{Binding RegexToIncludeInput.Error, TargetNullValue=''}"
                         TextWrapping="Wrap" />
                     <ItemsControl Margin="0,4,0,0" ItemsSource="{Binding RegexToIncludeInput.Items}">
@@ -151,6 +152,7 @@
                         Margin="0,4,0,0"
                         FontSize="12"
                         Foreground="{DynamicResource MaterialDesign.Brush.ValidationError}"
+                        Style="{StaticResource CollapseWhenEmptyTextBlockStyle}"
                         Text="{Binding RegexToExcludeInput.Error, TargetNullValue=''}"
                         TextWrapping="Wrap" />
                     <ItemsControl Margin="0,4,0,0" ItemsSource="{Binding RegexToExcludeInput.Items}">

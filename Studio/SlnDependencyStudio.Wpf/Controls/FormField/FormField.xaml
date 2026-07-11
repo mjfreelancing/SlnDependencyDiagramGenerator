@@ -16,25 +16,27 @@
             Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
             Text="{Binding Title, ElementName=FormFieldRoot}" />
 
-        <!--  Description (only rendered when set)  -->
+        <!--  Description (collapsed when empty)  -->
         <TextBlock
+            x:Name="DescriptionText"
             Margin="0,0,0,6"
             FontSize="12"
             Foreground="{DynamicResource MaterialDesign.Brush.ForegroundLight}"
+            Style="{StaticResource CollapseWhenEmptyTextBlockStyle}"
             Text="{Binding Description, ElementName=FormFieldRoot, TargetNullValue=''}"
             TextWrapping="Wrap" />
-
         <!--  Content (input control)  -->
         <ContentControl
             HorizontalContentAlignment="Left"
             Content="{Binding InputContent, ElementName=FormFieldRoot}"
             Focusable="False" />
 
-        <!--  Validation Error  -->
+        <!--  Validation Error (collapsed when empty)  -->
         <TextBlock
             Margin="0,4,0,0"
             FontSize="12"
             Foreground="{DynamicResource MaterialDesign.Brush.ValidationError}"
+            Style="{StaticResource CollapseWhenEmptyTextBlockStyle}"
             Text="{Binding ValidationError, ElementName=FormFieldRoot, TargetNullValue=''}"
             TextWrapping="Wrap" />
     </StackPanel>

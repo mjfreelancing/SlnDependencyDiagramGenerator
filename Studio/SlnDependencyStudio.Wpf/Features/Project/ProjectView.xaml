@@ -39,6 +39,21 @@
                 </StackPanel>
             </StackPanel>
 
+            <!--  File Location  -->
+            <studioControls:FormField Title="File location" Margin="0,0,0,24">
+                <Border
+                    Padding="12,8"
+                    Background="{DynamicResource MaterialDesign.Brush.Chip.Background}"
+                    CornerRadius="8">
+                    <TextBlock
+                        Foreground="{DynamicResource MaterialDesign.Brush.ForegroundLight}"
+                        Text="{Binding DocumentFilePath}"
+                        TextTrimming="CharacterEllipsis"
+                        TextWrapping="NoWrap" />
+
+                </Border>
+            </studioControls:FormField>
+
             <!--  Project Name  -->
             <studioControls:FormField
                 x:Name="ProjectNameFormField"
