@@ -4,13 +4,13 @@ using ReactiveUI.Validation.Abstractions;
 using ReactiveUI.Validation.Contexts;
 using ReactiveUI.Validation.Extensions;
 using SlnDependencyStudio.Shared.Utils;
+using SlnDependencyStudio.Wpf.Components;
 using SlnDependencyStudio.Wpf.Controls;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
-using SlnDependencyStudio.Wpf.Features.Solution.Models;
-using System.Collections.ObjectModel;
 using System.IO;
 using System.Reactive;
 using System.Reactive.Linq;
+using System.Text.RegularExpressions;
 
 namespace SlnDependencyStudio.Wpf.Features.Solution;
 
@@ -57,35 +57,14 @@ public sealed class SolutionViewModel : ReactiveObject, IValidatableViewModel
     {
         _store = store;
 
-        RegexToIncludeInput = new TagInputModel(_store.SolutionOptionsEditor.RegexToInclude.Value);
-        RegexToExcludeInput = new TagInputModel(_store.SolutionOptionsEditor.RegexToExclude.Value);
+        RegexToIncludeInput = new TagInputModel(_store.SolutionOptionsEditor.RegexToInclude.Value, TryValidateRegex);
+        RegexToExcludeInput = new TagInputModel(_store.SolutionOptionsEditor.RegexToExclude.Value, TryValidateRegex);
         PackagesToExcludeInput = new TagInputModel(_store.SolutionOptionsEditor.PackagesToExclude.Value);
         FrameworksToExcludeInput = new TagInputModel(_store.SolutionOptionsEditor.FrameworksToExclude.Value);
 
         WireValidation();
         WireRelativePathToggle();
         BrowseSolutionPathCommand = CreateBrowseCommand();
-    }
-
-    private void WireRelativePathToggle()
-    {
-        this.WhenAnyValue(vm => vm.UseRelativePath.Value)
-            .Skip(1)        // Skip the initial seeded value after loading
-            .Subscribe(useRelative =>
-            {
-                var currentPath = SolutionPath.Value;
-
-                if (currentPath.IsNullOrEmpty())
-                {
-                    return;
-                }
-
-                var absolutePath = PathUtils.ResolveAsAbsolutePath(currentPath, _store.DocumentDirectory);
-
-                SolutionPath.Value = useRelative
-                    ? PathUtils.MakeRelativeIfPossible(absolutePath, _store.DocumentDirectory)
-                    : absolutePath;
-            });
     }
 
     private void WireValidation()
@@ -109,6 +88,40 @@ public sealed class SolutionViewModel : ReactiveObject, IValidatableViewModel
                 return File.Exists(resolvedPath);
             },
             "Solution file not found at the specified path.");
+    }
+
+    private void WireRelativePathToggle()
+    {
+        this.WhenAnyValue(vm => vm.UseRelativePath.Value)
+            .Skip(1)        // Skip the initial seeded value after loading
+            .Subscribe(useRelative =>
+            {
+                var currentPath = SolutionPath.Value;
+
+                if (currentPath.IsNullOrEmpty())
+                {
+                    return;
+                }
+
+                var absolutePath = PathUtils.ResolveAsAbsolutePath(currentPath, _store.DocumentDirectory);
+
+                SolutionPath.Value = useRelative
+                    ? PathUtils.MakeRelativeIfPossible(absolutePath, _store.DocumentDirectory)
+                    : absolutePath;
+            });
+    }
+
+    private static string? TryValidateRegex(string pattern)
+    {
+        try
+        {
+            _ = new Regex(pattern, RegexOptions.None, TimeSpan.FromMilliseconds(200));
+            return null;
+        }
+        catch (ArgumentException ex)
+        {
+            return ex.Message;
+        }
     }
 
     private ReactiveCommand<Unit, Unit> CreateBrowseCommand()

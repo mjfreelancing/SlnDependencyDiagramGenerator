@@ -98,6 +98,12 @@
                             Content="Add"
                             Style="{StaticResource ActionButtonStyle}" />
                     </Grid>
+                    <TextBlock
+                        Margin="0,4,0,0"
+                        FontSize="12"
+                        Foreground="{DynamicResource MaterialDesign.Brush.ValidationError}"
+                        Text="{Binding RegexToIncludeInput.Error, TargetNullValue=''}"
+                        TextWrapping="Wrap" />
                     <ItemsControl Margin="0,4,0,0" ItemsSource="{Binding RegexToIncludeInput.Items}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
@@ -141,7 +147,13 @@
                             Content="Add"
                             Style="{StaticResource ActionButtonStyle}" />
                     </Grid>
-                    <ItemsControl Margin="0,6,0,0" ItemsSource="{Binding RegexToExcludeInput.Items}">
+                    <TextBlock
+                        Margin="0,4,0,0"
+                        FontSize="12"
+                        Foreground="{DynamicResource MaterialDesign.Brush.ValidationError}"
+                        Text="{Binding RegexToExcludeInput.Error, TargetNullValue=''}"
+                        TextWrapping="Wrap" />
+                    <ItemsControl Margin="0,4,0,0" ItemsSource="{Binding RegexToExcludeInput.Items}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <WrapPanel Orientation="Horizontal" />
