@@ -51,6 +51,24 @@ public sealed class SolutionViewModel : ReactiveObject, IValidatableViewModel
     /// <summary>Tag-input state for the frameworks-to-exclude list.</summary>
     public TagInputModel FrameworksToExcludeInput { get; }
 
+    /// <summary>Whether individual-project scope is enabled.</summary>
+    public TrackableValue<bool> IndividualEnabled => _store.SolutionOptionsEditor.IndividualEnabled;
+
+    /// <summary>Whether individual-project scope includes dependencies.</summary>
+    public TrackableValue<bool> IndividualIncludeDependencies => _store.SolutionOptionsEditor.IndividualIncludeDependencies;
+
+    /// <summary>Transitive depth for individual-project scope.</summary>
+    public TrackableValue<int> IndividualTransitiveDepth => _store.SolutionOptionsEditor.IndividualTransitiveDepth;
+
+    /// <summary>Whether all-projects scope is enabled.</summary>
+    public TrackableValue<bool> AllEnabled => _store.SolutionOptionsEditor.AllEnabled;
+
+    /// <summary>Whether all-projects scope includes dependencies.</summary>
+    public TrackableValue<bool> AllIncludeDependencies => _store.SolutionOptionsEditor.AllIncludeDependencies;
+
+    /// <summary>Transitive depth for all-projects scope.</summary>
+    public TrackableValue<int> AllTransitiveDepth => _store.SolutionOptionsEditor.AllTransitiveDepth;
+
     /// <summary>Initializes a new instance of <see cref="SolutionViewModel"/>.</summary>
     /// <param name="store">The project document store providing the editing surface.</param>
     public SolutionViewModel(IProjectDocumentStore store)
@@ -88,6 +106,16 @@ public sealed class SolutionViewModel : ReactiveObject, IValidatableViewModel
                 return File.Exists(resolvedPath);
             },
             "Solution file not found at the specified path.");
+
+        this.ValidationRule(
+            viewModel => viewModel.IndividualEnabled.Value,
+            individualEnabled => individualEnabled || AllEnabled.Value,
+            "At least one scope must be enabled.");
+
+        this.ValidationRule(
+            viewModel => viewModel.AllEnabled.Value,
+            allEnabled => IndividualEnabled.Value || allEnabled,
+            "At least one scope must be enabled.");
     }
 
     private void WireRelativePathToggle()

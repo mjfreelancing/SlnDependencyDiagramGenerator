@@ -260,6 +260,78 @@
                 </StackPanel>
             </studioControls:FormField>
 
+            <!--  Individual Scope  -->
+            <studioControls:FormField
+                Title="Individual scope"
+                Margin="0,0,0,24"
+                Description="Options for processing projects individually.">
+                <StackPanel>
+                    <ToggleButton
+                        HorizontalAlignment="Left"
+                        IsChecked="{Binding IndividualEnabled.Value}"
+                        Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+                    <StackPanel Margin="0,8,0,0" IsEnabled="{Binding IndividualEnabled.Value}">
+                        <CheckBox
+                            Margin="0,0,0,8"
+                            Content="Include dependencies"
+                            IsChecked="{Binding IndividualIncludeDependencies.Value}" />
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock VerticalAlignment="Center" Text="Transitive depth" />
+                            <TextBlock
+                                MinWidth="28"
+                                Margin="12,0,0,0"
+                                VerticalAlignment="Center"
+                                Text="{Binding IndividualTransitiveDepth.Value}" />
+                            <Slider
+                                Width="200"
+                                Margin="12,0,0,0"
+                                VerticalAlignment="Center"
+                                IsSnapToTickEnabled="True"
+                                Maximum="10"
+                                Minimum="0"
+                                TickFrequency="1"
+                                Value="{Binding IndividualTransitiveDepth.Value}" />
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+            </studioControls:FormField>
+
+            <!--  All Scope  -->
+            <studioControls:FormField
+                Title="All scope"
+                Margin="0,0,0,24"
+                Description="Options for processing all projects collectively.">
+                <StackPanel>
+                    <ToggleButton
+                        HorizontalAlignment="Left"
+                        IsChecked="{Binding AllEnabled.Value}"
+                        Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+                    <StackPanel Margin="0,8,0,0" IsEnabled="{Binding AllEnabled.Value}">
+                        <CheckBox
+                            Margin="0,0,0,8"
+                            Content="Include dependencies"
+                            IsChecked="{Binding AllIncludeDependencies.Value}" />
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock VerticalAlignment="Center" Text="Transitive depth" />
+                            <TextBlock
+                                MinWidth="28"
+                                Margin="12,0,0,0"
+                                VerticalAlignment="Center"
+                                Text="{Binding AllTransitiveDepth.Value}" />
+                            <Slider
+                                Width="200"
+                                Margin="12,0,0,0"
+                                VerticalAlignment="Center"
+                                IsSnapToTickEnabled="True"
+                                Maximum="10"
+                                Minimum="0"
+                                TickFrequency="1"
+                                Value="{Binding AllTransitiveDepth.Value}" />
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+            </studioControls:FormField>
+
         </StackPanel>
     </ScrollViewer>
 </reactiveui:ReactiveUserControl>

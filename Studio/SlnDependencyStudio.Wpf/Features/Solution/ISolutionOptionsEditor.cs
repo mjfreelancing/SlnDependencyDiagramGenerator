@@ -32,4 +32,22 @@ public interface ISolutionOptionsEditor
 
     /// <summary>Trackable form of the frameworks-to-exclude list.</summary>
     TrackableValue<ObservableCollection<string>> FrameworksToExclude { get; }
+
+    /// <summary>Whether individual-project scope is enabled.</summary>
+    TrackableValue<bool> IndividualEnabled { get; }
+
+    /// <summary>Whether individual-project scope includes dependencies.</summary>
+    TrackableValue<bool> IndividualIncludeDependencies { get; }
+
+    /// <summary>Transitive depth for individual-project scope (0 = none).</summary>
+    TrackableValue<int> IndividualTransitiveDepth { get; }
+
+    /// <summary>Whether all-projects scope is enabled.</summary>
+    TrackableValue<bool> AllEnabled { get; }
+
+    /// <summary>Whether all-projects scope includes dependencies.</summary>
+    TrackableValue<bool> AllIncludeDependencies { get; }
+
+    /// <summary>Transitive depth for all-projects scope (0 = none).</summary>
+    TrackableValue<int> AllTransitiveDepth { get; }
 }

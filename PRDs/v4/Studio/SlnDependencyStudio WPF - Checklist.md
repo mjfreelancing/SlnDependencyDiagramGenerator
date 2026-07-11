@@ -660,16 +660,29 @@ The selected nav item gets a left-accent border (4px `MaterialDesignPrimary`) an
 
 **`.sds` fields covered:** `solution.individual.{enabled, includeDependencies, transitiveDepth}`, `solution.all.{enabled, includeDependencies, transitiveDepth}`
 
-- [ ] 5.2.1 Add two `TrackableValue<SolutionScopeState>` properties to `ISolutionOptionsEditor`: `IndividualScope` and `AllScope`. Create `Features/Solution/Models/SolutionScopeState.cs` as a POCO with `Enabled` (bool), `IncludeDependencies` (bool), `TransitiveDepth` (int).
+Two visually grouped scope sections — "Individual scope" and "All scope" — each containing the same three controls. The editor uses two `TrackableValue<SolutionScopeState>` where `SolutionScopeState` is a `ReactiveObject` (not a plain POCO), so inner property changes are observable.
 
-- [ ] 5.2.2 Update `GeneratorSolutionOptionsEditor`: map `SolutionScopeState` ↔ `GeneratorSolutionOptions.ProjectScope` in `SetOriginalValues` / `FlushTo`.
+- [ ] 5.2.1 Create `Features/Solution/Models/SolutionScopeState.cs` as a `ReactiveObject` with three properties: `Enabled` (bool), `IncludeDependencies` (bool), `TransitiveDepth` (int). All three raise `PropertyChanged` via `RaiseAndSetIfChanged`.
 
-- [ ] 5.2.3 In `SolutionView.xaml`, add a "Scope" card with:
-  - Two `ToggleSwitch` controls for `IndividualScope.Enabled` and `AllScope.Enabled`.
-  - When enabled, show `CheckBox` for `IncludeDependencies` and `Slider` (0–10) for `TransitiveDepth` with numeric readout.
-  - When disabled, grey out the dependent controls via `IsEnabled` binding.
+- [ ] 5.2.2 Add two `TrackableValue<SolutionScopeState>` properties to `ISolutionOptionsEditor`: `IndividualScope` and `AllScope`.
 
-- [ ] 5.2.4 Validation: at least one scope must be enabled. Add to `SolutionViewModel.ValidationRule`.
+- [ ] 5.2.3 Update `SolutionOptionsEditor`:
+  - Wire dirty tracking by subscribing to `WhenAnyValue` on each scope's three properties (via `scope.Value.WhenAnyValue(...)`) and calling `UpdateIsDirty()`. Re-subscribe whenever the TrackableValue is replaced.
+  - In `SetOriginalValues`, map `source.Individual` → `IndividualScope.Value.{Enabled,IncludeDependencies,TransitiveDepth}`, same for `All`.
+  - In `FlushTo`, write each scope's three fields back to `target.Individual` / `target.All`.
+
+- [ ] 5.2.4 Add pass-through properties to `SolutionViewModel` for `IndividualScope` and `AllScope`. Bind the view to `IndividualScope.Value.Enabled` etc.
+
+- [ ] 5.2.5 In `SolutionView.xaml`, add two `FormField` controls, one per scope:
+
+  **"Individual scope" FormField:**
+  - `ToggleSwitch` bound to `IndividualScope.Value.Enabled`
+  - When enabled, show a `CheckBox` ("Include dependencies") bound to `IndividualScope.Value.IncludeDependencies` and a `Slider` (0–10) bound to `IndividualScope.Value.TransitiveDepth` with a numeric readout `TextBlock`
+  - Dependent controls grey out via `IsEnabled="{Binding IndividualScope.Value.Enabled}"`
+
+  **"All scope" FormField** — same layout, bound to the `AllScope` counterparts.
+
+- [ ] 5.2.6 Validation: at least one scope must be enabled. Add `this.ValidationRule(…)` in `SolutionViewModel.WireValidation()` checking `IndividualScope.Value.Enabled || AllScope.Value.Enabled` with message "At least one scope must be enabled."
 
 ### 5.3 Diagram Styling (extends `IDiagramOptionsEditor`)
 

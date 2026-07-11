@@ -81,6 +81,67 @@ public class SolutionOptionsEditorFixture : IDisposable
 
             target.SolutionPath.ShouldBe(@"C:\New\path.sln");
         }
+
+        [Fact]
+        public void Should_Write_Scope_Values_To_Target()
+        {
+            var options = CreateOptions(@"C:\test.sln",
+                individualEnabled: true, individualIncludeDeps: true, individualDepth: 3,
+                allEnabled: false, allIncludeDeps: false, allDepth: 0);
+
+            _editor.SetOriginalValues(options);
+
+            _editor.IndividualEnabled.Value = false;
+            _editor.IndividualIncludeDependencies.Value = false;
+            _editor.IndividualTransitiveDepth.Value = 5;
+            _editor.AllEnabled.Value = true;
+            _editor.AllIncludeDependencies.Value = true;
+            _editor.AllTransitiveDepth.Value = 7;
+
+            var target = new GeneratorSolutionOptions();
+
+            _editor.FlushTo(target);
+
+            target.Individual.Enabled.ShouldBeFalse();
+            target.Individual.IncludeDependencies.ShouldBeFalse();
+            target.Individual.TransitiveDepth.ShouldBe(5);
+            target.All.Enabled.ShouldBeTrue();
+            target.All.IncludeDependencies.ShouldBeTrue();
+            target.All.TransitiveDepth.ShouldBe(7);
+        }
+    }
+
+    public class ScopeDirtyTracking : SolutionOptionsEditorFixture
+    {
+        [Fact]
+        public void Should_Be_Dirty_When_IndividualEnabled_Changes()
+        {
+            _editor.SetOriginalValues(CreateOptions(@"C:\test.sln", individualEnabled: true));
+
+            _editor.IndividualEnabled.Value = false;
+
+            _editor.IsDirty.ShouldBeTrue();
+        }
+
+        [Fact]
+        public void Should_Be_Dirty_When_AllTransitiveDepth_Changes()
+        {
+            _editor.SetOriginalValues(CreateOptions(@"C:\test.sln", allDepth: 2));
+
+            _editor.AllTransitiveDepth.Value = 5;
+
+            _editor.IsDirty.ShouldBeTrue();
+        }
+
+        [Fact]
+        public void Should_Not_Be_Dirty_When_Scope_Values_Match()
+        {
+            _editor.SetOriginalValues(CreateOptions(@"C:\test.sln",
+                individualEnabled: true, individualDepth: 3,
+                allEnabled: false, allDepth: 0));
+
+            _editor.IsDirty.ShouldBeFalse();
+        }
     }
 
     public void Dispose()
@@ -89,11 +150,30 @@ public class SolutionOptionsEditorFixture : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    private static GeneratorSolutionOptions CreateOptions(string solutionPath)
+    private static GeneratorSolutionOptions CreateOptions(
+        string solutionPath,
+        bool individualEnabled = false,
+        bool individualIncludeDeps = false,
+        int individualDepth = 0,
+        bool allEnabled = false,
+        bool allIncludeDeps = false,
+        int allDepth = 0)
     {
         return new GeneratorSolutionOptions
         {
-            SolutionPath = solutionPath
+            SolutionPath = solutionPath,
+            Individual = new GeneratorSolutionOptions.ProjectScope
+            {
+                Enabled = individualEnabled,
+                IncludeDependencies = individualIncludeDeps,
+                TransitiveDepth = individualDepth
+            },
+            All = new GeneratorSolutionOptions.ProjectScope
+            {
+                Enabled = allEnabled,
+                IncludeDependencies = allIncludeDeps,
+                TransitiveDepth = allDepth
+            }
         };
     }
 }

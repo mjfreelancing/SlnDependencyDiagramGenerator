@@ -19,6 +19,12 @@ public class SolutionViewModelFixture
     private readonly TrackableValue<ObservableCollection<string>> _regexToExclude = new();
     private readonly TrackableValue<ObservableCollection<string>> _packagesToExclude = new();
     private readonly TrackableValue<ObservableCollection<string>> _frameworksToExclude = new();
+    private readonly TrackableValue<bool> _individualEnabled = new();
+    private readonly TrackableValue<bool> _individualIncludeDependencies = new();
+    private readonly TrackableValue<int> _individualTransitiveDepth = new();
+    private readonly TrackableValue<bool> _allEnabled = new();
+    private readonly TrackableValue<bool> _allIncludeDependencies = new();
+    private readonly TrackableValue<int> _allTransitiveDepth = new();
     private readonly ISolutionOptionsEditor _solutionOptionsEditor = Substitute.For<ISolutionOptionsEditor>();
     private readonly SolutionViewModel _viewModel;
 
@@ -29,12 +35,25 @@ public class SolutionViewModelFixture
         _packagesToExclude.SetOriginalValue([]);
         _frameworksToExclude.SetOriginalValue([]);
 
+        _individualEnabled.SetOriginalValue(true);
+        _individualIncludeDependencies.SetOriginalValue(false);
+        _individualTransitiveDepth.SetOriginalValue(0);
+        _allEnabled.SetOriginalValue(false);
+        _allIncludeDependencies.SetOriginalValue(false);
+        _allTransitiveDepth.SetOriginalValue(0);
+
         _solutionOptionsEditor.SolutionPath.Returns(_solutionPath);
         _solutionOptionsEditor.UseRelativePath.Returns(_useRelativePath);
         _solutionOptionsEditor.RegexToInclude.Returns(_regexToInclude);
         _solutionOptionsEditor.RegexToExclude.Returns(_regexToExclude);
         _solutionOptionsEditor.PackagesToExclude.Returns(_packagesToExclude);
         _solutionOptionsEditor.FrameworksToExclude.Returns(_frameworksToExclude);
+        _solutionOptionsEditor.IndividualEnabled.Returns(_individualEnabled);
+        _solutionOptionsEditor.IndividualIncludeDependencies.Returns(_individualIncludeDependencies);
+        _solutionOptionsEditor.IndividualTransitiveDepth.Returns(_individualTransitiveDepth);
+        _solutionOptionsEditor.AllEnabled.Returns(_allEnabled);
+        _solutionOptionsEditor.AllIncludeDependencies.Returns(_allIncludeDependencies);
+        _solutionOptionsEditor.AllTransitiveDepth.Returns(_allTransitiveDepth);
         _store.SolutionOptionsEditor.Returns(_solutionOptionsEditor);
 
         _viewModel = new SolutionViewModel(_store);
@@ -154,6 +173,17 @@ public class SolutionViewModelFixture
             _solutionPath.Value = Path.GetFileName(existingFile);
 
             _viewModel.ValidationContext.IsValid.ShouldBeTrue();
+        }
+
+        [Fact]
+        public void Should_Fail_When_No_Scope_Is_Enabled()
+        {
+            _solutionPath.SetOriginalValue(string.Empty);
+            _solutionPath.Value = string.Empty;
+            _individualEnabled.Value = false;
+            _allEnabled.Value = false;
+
+            _viewModel.ValidationContext.IsValid.ShouldBeFalse();
         }
     }
 
