@@ -5,7 +5,7 @@
     "description": "Generates dependency diagrams for the AllOverIt solution"
   },
   "diagramGenerator": {
-    "projects": {
+    "solution": {
       "solutionPath": "..\\..\\..\\AllOverIt\\AllOverIt.sln",
       "regexToInclude": [
         "\\\\.*\\.csproj"
