@@ -4,7 +4,6 @@ using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyStudio.Wpf.Controls;
 using SlnDependencyStudio.Wpf.Features.Diagrams;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
-using System.Collections.ObjectModel;
 
 namespace SlnDependencyStudio.Wpf.Tests.Unit.Features.Diagrams;
 
@@ -12,14 +11,12 @@ namespace SlnDependencyStudio.Wpf.Tests.Unit.Features.Diagrams;
 public class DiagramsViewModelFixture
 {
     private readonly IProjectDocumentStore _store = Substitute.For<IProjectDocumentStore>();
-    private readonly TrackableValue<ObservableCollection<DiagramFormat>> _formats = new();
+    private readonly TrackableCollection<DiagramFormat> _formats = new();
     private readonly IDiagramOptionsEditor _diagramOptionsEditor = Substitute.For<IDiagramOptionsEditor>();
     private readonly DiagramsViewModel _viewModel;
 
     public DiagramsViewModelFixture()
     {
-        _formats.SetOriginalValue(new ObservableCollection<DiagramFormat>());
-
         _diagramOptionsEditor.Formats.Returns(_formats);
         _store.DiagramOptionsEditor.Returns(_diagramOptionsEditor);
 
@@ -60,8 +57,8 @@ public class DiagramsViewModelFixture
         public void Should_Sync_Toggles_On_Construction_When_Formats_Already_Populated()
         {
             // Simulate document already loaded before ViewModel is created.
-            _formats.Value.Add(DiagramFormat.D2);
-            _formats.Value.Add(DiagramFormat.Mermaid);
+            _formats.Items.Add(DiagramFormat.D2);
+            _formats.Items.Add(DiagramFormat.Mermaid);
 
             var viewModel = new DiagramsViewModel(_store);
 
@@ -76,18 +73,18 @@ public class DiagramsViewModelFixture
 
             d2Toggle.IsChecked = true;
 
-            _formats.Value.ShouldContain(DiagramFormat.D2);
+            _formats.Items.ShouldContain(DiagramFormat.D2);
         }
 
         [Fact]
         public void Should_Remove_Format_When_Toggle_Unchecked()
         {
-            _formats.Value.Add(DiagramFormat.Mermaid);
+            _formats.Items.Add(DiagramFormat.Mermaid);
 
             var mermaidToggle = _viewModel.FormatToggles.Single(t => t.Format == DiagramFormat.Mermaid);
             mermaidToggle.IsChecked = false;
 
-            _formats.Value.ShouldNotContain(DiagramFormat.Mermaid);
+            _formats.Items.ShouldNotContain(DiagramFormat.Mermaid);
         }
 
         [Fact]
@@ -95,7 +92,7 @@ public class DiagramsViewModelFixture
         {
             var d2Toggle = _viewModel.FormatToggles.Single(t => t.Format == DiagramFormat.D2);
 
-            _formats.Value.Add(DiagramFormat.D2);
+            _formats.Items.Add(DiagramFormat.D2);
 
             d2Toggle.IsChecked.ShouldBeTrue();
         }
@@ -103,10 +100,10 @@ public class DiagramsViewModelFixture
         [Fact]
         public void Should_Sync_All_Toggles_When_Collection_Cleared()
         {
-            _formats.Value.Add(DiagramFormat.D2);
-            _formats.Value.Add(DiagramFormat.Mermaid);
+            _formats.Items.Add(DiagramFormat.D2);
+            _formats.Items.Add(DiagramFormat.Mermaid);
 
-            _formats.Value.Clear();
+            _formats.Items.Clear();
 
             foreach (var toggle in _viewModel.FormatToggles)
             {
@@ -120,7 +117,7 @@ public class DiagramsViewModelFixture
         [Fact]
         public void Should_Fail_When_No_Format_Selected()
         {
-            _formats.Value.Clear();
+            _formats.Items.Clear();
 
             _viewModel.ValidationContext.IsValid.ShouldBeFalse();
         }
@@ -128,7 +125,7 @@ public class DiagramsViewModelFixture
         [Fact]
         public void Should_Pass_When_At_Least_One_Format_Selected()
         {
-            _formats.Value.Add(DiagramFormat.D2);
+            _formats.Items.Add(DiagramFormat.D2);
 
             _viewModel.ValidationContext.IsValid.ShouldBeTrue();
         }

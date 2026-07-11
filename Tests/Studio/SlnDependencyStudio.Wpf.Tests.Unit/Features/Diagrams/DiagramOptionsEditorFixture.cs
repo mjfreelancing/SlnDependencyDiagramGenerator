@@ -14,8 +14,8 @@ public class DiagramOptionsEditorFixture : IDisposable
         [Fact]
         public void Should_Seed_Formats_With_Empty_Collection()
         {
-            _editor.Formats.Value.ShouldNotBeNull();
-            _editor.Formats.Value.ShouldBeEmpty();
+            _editor.Formats.Items.ShouldNotBeNull();
+            _editor.Formats.Items.ShouldBeEmpty();
         }
     }
 
@@ -30,7 +30,7 @@ public class DiagramOptionsEditorFixture : IDisposable
         [Fact]
         public void Should_Be_True_When_Format_Added()
         {
-            _editor.Formats.Value.Add(DiagramFormat.D2);
+            _editor.Formats.Items.Add(DiagramFormat.D2);
 
             _editor.IsDirty.ShouldBeTrue();
         }
@@ -42,7 +42,7 @@ public class DiagramOptionsEditorFixture : IDisposable
 
             _editor.IsDirty.ShouldBeFalse();
 
-            _editor.Formats.Value.Remove(DiagramFormat.D2);
+            _editor.Formats.Items.Remove(DiagramFormat.D2);
 
             _editor.IsDirty.ShouldBeTrue();
         }
@@ -60,11 +60,11 @@ public class DiagramOptionsEditorFixture : IDisposable
         {
             _editor.SetOriginalValues(CreateOptions([DiagramFormat.D2]));
 
-            _editor.Formats.Value.Add(DiagramFormat.Mermaid);
+            _editor.Formats.Items.Add(DiagramFormat.Mermaid);
 
             _editor.IsDirty.ShouldBeTrue();
 
-            _editor.Formats.Value.Remove(DiagramFormat.Mermaid);
+            _editor.Formats.Items.Remove(DiagramFormat.Mermaid);
 
             _editor.IsDirty.ShouldBeFalse();
         }
@@ -74,11 +74,11 @@ public class DiagramOptionsEditorFixture : IDisposable
         {
             _editor.SetOriginalValues(CreateOptions([DiagramFormat.Mermaid, DiagramFormat.D2]));
 
-            _editor.Formats.Value.Clear();
+            _editor.Formats.Items.Clear();
 
             // Simulate user toggling D2 first, then Mermaid — different order than baseline.
-            _editor.Formats.Value.Add(DiagramFormat.D2);
-            _editor.Formats.Value.Add(DiagramFormat.Mermaid);
+            _editor.Formats.Items.Add(DiagramFormat.D2);
+            _editor.Formats.Items.Add(DiagramFormat.Mermaid);
 
             _editor.IsDirty.ShouldBeFalse();
         }
@@ -91,8 +91,8 @@ public class DiagramOptionsEditorFixture : IDisposable
         {
             _editor.SetOriginalValues(CreateOptions([DiagramFormat.D2, DiagramFormat.Mermaid]));
 
-            _editor.Formats.Value.ShouldContain(DiagramFormat.D2);
-            _editor.Formats.Value.ShouldContain(DiagramFormat.Mermaid);
+            _editor.Formats.Items.ShouldContain(DiagramFormat.D2);
+            _editor.Formats.Items.ShouldContain(DiagramFormat.Mermaid);
         }
 
         [Fact]
@@ -100,7 +100,7 @@ public class DiagramOptionsEditorFixture : IDisposable
         {
             _editor.SetOriginalValues(CreateOptions([DiagramFormat.D2]));
 
-            _editor.Formats.Value.Add(DiagramFormat.Mermaid);
+            _editor.Formats.Items.Add(DiagramFormat.Mermaid);
 
             _editor.IsDirty.ShouldBeTrue();
 
@@ -116,7 +116,7 @@ public class DiagramOptionsEditorFixture : IDisposable
 
             _editor.SetOriginalValues(CreateOptions([]));
 
-            _editor.Formats.Value.ShouldBeEmpty();
+            _editor.Formats.Items.ShouldBeEmpty();
         }
     }
 
@@ -127,7 +127,7 @@ public class DiagramOptionsEditorFixture : IDisposable
         {
             _editor.SetOriginalValues(CreateOptions([DiagramFormat.D2]));
 
-            _editor.Formats.Value.Add(DiagramFormat.Mermaid);
+            _editor.Formats.Items.Add(DiagramFormat.Mermaid);
 
             var target = new GeneratorDiagramOptions();
 

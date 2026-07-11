@@ -158,8 +158,8 @@ public class ProjectDocumentStoreFixture
 
             await _store.OpenAsync(@"C:\Projects\test.sds");
 
-            _store.ExportOptionsEditor.ImageFormats.Value.ShouldContain(DiagramImageFormat.Png);
-            _store.ExportOptionsEditor.ImageFormats.Value.ShouldContain(DiagramImageFormat.Svg);
+            _store.ExportOptionsEditor.ImageFormats.Items.ShouldContain(DiagramImageFormat.Png);
+            _store.ExportOptionsEditor.ImageFormats.Items.ShouldContain(DiagramImageFormat.Svg);
         }
 
         [Fact]
@@ -174,8 +174,8 @@ public class ProjectDocumentStoreFixture
 
             await _store.OpenAsync(@"C:\Projects\test.sds");
 
-            _store.DiagramOptionsEditor.Formats.Value.ShouldContain(DiagramFormat.Mermaid);
-            _store.DiagramOptionsEditor.Formats.Value.Count.ShouldBe(1);
+            _store.DiagramOptionsEditor.Formats.Items.ShouldContain(DiagramFormat.Mermaid);
+            _store.DiagramOptionsEditor.Formats.Items.Count.ShouldBe(1);
         }
 
         [Fact]
@@ -293,7 +293,7 @@ public class ProjectDocumentStoreFixture
 
             await _store.OpenAsync("test.sds");
 
-            _store.DiagramOptionsEditor.Formats.Value.Add(DiagramFormat.D2);
+            _store.DiagramOptionsEditor.Formats.Items.Add(DiagramFormat.D2);
 
             _store.IsDirty.ShouldBeTrue();
         }
@@ -471,11 +471,11 @@ public class ProjectDocumentStoreFixture
 
             await _store.OpenAsync("test.sds");
 
-            _store.DiagramOptionsEditor.Formats.Value.ShouldContain(DiagramFormat.D2);
+            _store.DiagramOptionsEditor.Formats.Items.ShouldContain(DiagramFormat.D2);
 
             _store.Close();
 
-            _store.DiagramOptionsEditor.Formats.Value.ShouldBeEmpty();
+            _store.DiagramOptionsEditor.Formats.Items.ShouldBeEmpty();
         }
 
         [Fact]

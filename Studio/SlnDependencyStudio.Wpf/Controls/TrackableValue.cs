@@ -15,19 +15,31 @@ namespace SlnDependencyStudio.Wpf.Controls;
 /// to establish a baseline and begin observing changes. Calling
 /// <see cref="SetOriginalValue"/> again resets the baseline and restarts tracking.
 /// </remarks>
-public sealed class TrackableValue<T> : ReactiveObject, IDisposable
+public sealed class TrackableValue<TValue> : ReactiveObject, IDisposable
 {
-    private T _original = default!;
-    private T _value = default!;
+    private TValue _original = default!;
+    private TValue _value = default!;
     private readonly SerialDisposable _dirtySubscription = new();
     private ObservableAsPropertyHelper<bool> _isDirty = null!;
 
-    public T Value
+    /// <summary>
+    /// The current value. Setting this raises <see cref="ReactiveObject.PropertyChanged"/>
+    /// and drives the <see cref="IsDirty"/> computation.
+    /// </summary>
+    /// <remarks>This property is observable.</remarks>
+    public TValue Value
     {
         get => _value;
         set => this.RaiseAndSetIfChanged(ref _value, value);
     }
 
+    /// <summary>
+    /// <see langword="true"/> when the current <see cref="Value"/> differs from the
+    /// baseline established by the most recent call to <see cref="SetOriginalValue"/>.
+    /// </summary>
+    /// <remarks>
+    /// This property is observable.
+    /// </remarks>
     public bool IsDirty => _isDirty.Value;
 
     /// <summary>Initializes a new instance. Values are uninitialised until
@@ -38,15 +50,16 @@ public sealed class TrackableValue<T> : ReactiveObject, IDisposable
 
     /// <summary>Resets the baseline to the given value and marks the tracked value as clean.</summary>
     /// <param name="value">The value to use as both the baseline and the current <see cref="Value"/>.</param>
-    public void SetOriginalValue(T value)
+    public void SetOriginalValue(TValue value)
     {
         _dirtySubscription.Disposable = null;
 
         _original = value;
         Value = value;
 
-        _dirtySubscription.Disposable = this.WhenAnyValue(property => property.Value)
-            .Select(current => !EqualityComparer<T>.Default.Equals(current, _original))
+        _dirtySubscription.Disposable = this
+            .WhenAnyValue(property => property.Value)
+            .Select(current => !EqualityComparer<TValue>.Default.Equals(current, _original))
             .ToProperty(this, name => name.IsDirty, out _isDirty);
 
         // The new OAPH starts with default(false) but its source observable hasn't emitted

@@ -20,7 +20,7 @@ public partial class DiagramsView : ReactiveUserControl<DiagramsViewModel>
         {
             this.BindValidation(
                     ViewModel,
-                    vm => vm.Formats.Value.Count,
+                    vm => vm.Formats.Items.Count,
                     view => view.FormatsFormField.ValidationError)
                 .DisposeWith(disposables);
         });

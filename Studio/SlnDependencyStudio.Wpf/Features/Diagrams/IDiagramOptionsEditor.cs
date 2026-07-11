@@ -1,6 +1,5 @@
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyStudio.Wpf.Controls;
-using System.Collections.ObjectModel;
 
 namespace SlnDependencyStudio.Wpf.Features.Diagrams;
 
@@ -16,5 +15,5 @@ public interface IDiagramOptionsEditor
 
     /// <summary>Trackable form of the diagram formats collection.
     /// Items are added/removed to reflect the user's format selection.</summary>
-    TrackableValue<ObservableCollection<DiagramFormat>> Formats { get; }
+    TrackableCollection<DiagramFormat> Formats { get; }
 }

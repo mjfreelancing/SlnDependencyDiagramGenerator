@@ -26,7 +26,7 @@ public sealed class DiagramsViewModel : ReactiveObject, IValidatableViewModel
     private bool _isSyncing;
 
     /// <summary>The diagram formats collection. Items are added/removed as toggles change.</summary>
-    public TrackableValue<ObservableCollection<DiagramFormat>> Formats => _store.DiagramOptionsEditor.Formats;
+    public TrackableCollection<DiagramFormat> Formats => _store.DiagramOptionsEditor.Formats;
 
     /// <inheritdoc />
     public IValidationContext ValidationContext { get; } = new ValidationContext();
@@ -63,7 +63,7 @@ public sealed class DiagramsViewModel : ReactiveObject, IValidatableViewModel
     private void WireFormatToggleSync()
     {
         // When the Formats collection changes (e.g. document load), sync toggle states.
-        Formats.Value.CollectionChanged += OnFormatsCollectionChanged;
+        Formats.Items.CollectionChanged += OnFormatsCollectionChanged;
 
         // Initial sync: set toggle states from the current collection contents.
         // This covers the case where the ViewModel is created after a document is already loaded.
@@ -84,7 +84,7 @@ public sealed class DiagramsViewModel : ReactiveObject, IValidatableViewModel
 
         foreach (var toggle in FormatToggles)
         {
-            toggle.IsChecked = Formats.Value.Contains(toggle.Format);
+            toggle.IsChecked = Formats.Items.Contains(toggle.Format);
         }
 
         _isSyncing = false;
@@ -109,13 +109,13 @@ public sealed class DiagramsViewModel : ReactiveObject, IValidatableViewModel
 
         _isSyncing = true;
 
-        if (isChecked && !Formats.Value.Contains(toggle.Format))
+        if (isChecked && !Formats.Items.Contains(toggle.Format))
         {
-            Formats.Value.Add(toggle.Format);
+            Formats.Items.Add(toggle.Format);
         }
         else if (!isChecked)
         {
-            Formats.Value.Remove(toggle.Format);
+            Formats.Items.Remove(toggle.Format);
         }
 
         _isSyncing = false;
@@ -124,7 +124,7 @@ public sealed class DiagramsViewModel : ReactiveObject, IValidatableViewModel
     private void WireValidation()
     {
         this.ValidationRule(
-            viewModel => viewModel.Formats.Value.Count,
+            viewModel => viewModel.Formats.Items.Count,
             count => count > 0,
             "At least one diagram format must be selected.");
     }

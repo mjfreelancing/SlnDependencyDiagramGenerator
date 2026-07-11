@@ -32,7 +32,7 @@ public class ExportOptionsEditorFixture : IDisposable
         [Fact]
         public void Should_Seed_ImageFormats_With_Empty_Collection()
         {
-            _editor.ImageFormats.Value.ShouldBeEmpty();
+            _editor.ImageFormats.Items.ShouldBeEmpty();
         }
     }
 
@@ -65,7 +65,7 @@ public class ExportOptionsEditorFixture : IDisposable
         [Fact]
         public void Should_Be_True_When_ImageFormat_Added()
         {
-            _editor.ImageFormats.Value.Add(DiagramImageFormat.Png);
+            _editor.ImageFormats.Items.Add(DiagramImageFormat.Png);
 
             _editor.IsDirty.ShouldBeTrue();
         }
@@ -116,9 +116,9 @@ public class ExportOptionsEditorFixture : IDisposable
         {
             _editor.SetOriginalValues(CreateOptions(imageFormats: [DiagramImageFormat.Png, DiagramImageFormat.Svg]));
 
-            _editor.ImageFormats.Value.ShouldContain(DiagramImageFormat.Png);
-            _editor.ImageFormats.Value.ShouldContain(DiagramImageFormat.Svg);
-            _editor.ImageFormats.Value.Count.ShouldBe(2);
+            _editor.ImageFormats.Items.ShouldContain(DiagramImageFormat.Png);
+            _editor.ImageFormats.Items.ShouldContain(DiagramImageFormat.Svg);
+            _editor.ImageFormats.Items.Count.ShouldBe(2);
         }
     }
 
@@ -131,7 +131,7 @@ public class ExportOptionsEditorFixture : IDisposable
 
             _editor.RootPath.Value = @"C:\New";
             _editor.ClearContents.Value = true;
-            _editor.ImageFormats.Value.Add(DiagramImageFormat.Svg);
+            _editor.ImageFormats.Items.Add(DiagramImageFormat.Svg);
 
             var target = new GeneratorExportOptions();
 

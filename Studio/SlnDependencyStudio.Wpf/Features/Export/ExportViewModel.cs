@@ -35,7 +35,7 @@ public sealed class ExportViewModel : ReactiveObject, IValidatableViewModel
     public TrackableValue<bool> ClearContents => _store.ExportOptionsEditor.ClearContents;
 
     /// <summary>The image formats collection. Items are added/removed as toggles change.</summary>
-    public TrackableValue<ObservableCollection<DiagramImageFormat>> ImageFormats => _store.ExportOptionsEditor.ImageFormats;
+    public TrackableCollection<DiagramImageFormat> ImageFormats => _store.ExportOptionsEditor.ImageFormats;
 
     /// <inheritdoc />
     public IValidationContext ValidationContext { get; } = new ValidationContext();
@@ -80,7 +80,7 @@ public sealed class ExportViewModel : ReactiveObject, IValidatableViewModel
 
     private void WireImageFormatSync()
     {
-        ImageFormats.Value.CollectionChanged += OnImageFormatsCollectionChanged;
+        ImageFormats.Items.CollectionChanged += OnImageFormatsCollectionChanged;
 
         SyncImageFormatTogglesFromCollection();
 
@@ -98,7 +98,7 @@ public sealed class ExportViewModel : ReactiveObject, IValidatableViewModel
 
         foreach (var toggle in ImageFormatToggles)
         {
-            toggle.IsChecked = ImageFormats.Value.Contains(toggle.Format);
+            toggle.IsChecked = ImageFormats.Items.Contains(toggle.Format);
         }
 
         _isSyncing = false;
@@ -123,13 +123,13 @@ public sealed class ExportViewModel : ReactiveObject, IValidatableViewModel
 
         _isSyncing = true;
 
-        if (isChecked && !ImageFormats.Value.Contains(toggle.Format))
+        if (isChecked && !ImageFormats.Items.Contains(toggle.Format))
         {
-            ImageFormats.Value.Add(toggle.Format);
+            ImageFormats.Items.Add(toggle.Format);
         }
         else if (!isChecked)
         {
-            ImageFormats.Value.Remove(toggle.Format);
+            ImageFormats.Items.Remove(toggle.Format);
         }
 
         _isSyncing = false;

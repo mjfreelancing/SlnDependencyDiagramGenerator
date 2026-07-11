@@ -4,7 +4,6 @@ using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyStudio.Wpf.Controls;
 using SlnDependencyStudio.Wpf.Features.Export;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
-using System.Collections.ObjectModel;
 using System.IO;
 using System.Reactive.Linq;
 
@@ -17,14 +16,13 @@ public class ExportViewModelFixture
     private readonly TrackableValue<string> _rootPath = new();
     private readonly TrackableValue<bool> _useRelativePath = new();
     private readonly TrackableValue<bool> _clearContents = new();
-    private readonly TrackableValue<ObservableCollection<DiagramImageFormat>> _imageFormats = new();
+    private readonly TrackableCollection<DiagramImageFormat> _imageFormats = new();
     private readonly IExportOptionsEditor _exportOptionsEditor = Substitute.For<IExportOptionsEditor>();
     private readonly ExportViewModel _viewModel;
 
     public ExportViewModelFixture()
     {
         _clearContents.SetOriginalValue(false);
-        _imageFormats.SetOriginalValue([]);
 
         _exportOptionsEditor.RootPath.Returns(_rootPath);
         _exportOptionsEditor.UseRelativePath.Returns(_useRelativePath);
@@ -216,18 +214,18 @@ public class ExportViewModelFixture
 
             pngToggle.IsChecked = true;
 
-            _imageFormats.Value.ShouldContain(DiagramImageFormat.Png);
+            _imageFormats.Items.ShouldContain(DiagramImageFormat.Png);
         }
 
         [Fact]
         public void Should_Remove_Format_When_Toggle_Unchecked()
         {
-            _imageFormats.Value.Add(DiagramImageFormat.Svg);
+            _imageFormats.Items.Add(DiagramImageFormat.Svg);
 
             var svgToggle = _viewModel.ImageFormatToggles.Single(t => t.Format == DiagramImageFormat.Svg);
             svgToggle.IsChecked = false;
 
-            _imageFormats.Value.ShouldNotContain(DiagramImageFormat.Svg);
+            _imageFormats.Items.ShouldNotContain(DiagramImageFormat.Svg);
         }
 
         [Fact]
@@ -235,7 +233,7 @@ public class ExportViewModelFixture
         {
             var pngToggle = _viewModel.ImageFormatToggles.Single(t => t.Format == DiagramImageFormat.Png);
 
-            _imageFormats.Value.Add(DiagramImageFormat.Png);
+            _imageFormats.Items.Add(DiagramImageFormat.Png);
 
             pngToggle.IsChecked.ShouldBeTrue();
         }

@@ -1,6 +1,5 @@
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyStudio.Wpf.Controls;
-using System.Collections.ObjectModel;
 
 namespace SlnDependencyStudio.Wpf.Features.Export;
 
@@ -27,5 +26,5 @@ public interface IExportOptionsEditor
 
     /// <summary>Trackable form of the image format collection.
     /// Items are added/removed to reflect the user's format selection.</summary>
-    TrackableValue<ObservableCollection<DiagramImageFormat>> ImageFormats { get; }
+    TrackableCollection<DiagramImageFormat> ImageFormats { get; }
 }

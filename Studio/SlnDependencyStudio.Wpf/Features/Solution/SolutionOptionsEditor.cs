@@ -2,8 +2,6 @@ using DynamicData.Binding;
 using ReactiveUI;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyStudio.Wpf.Controls;
-using System.Collections.ObjectModel;
-using System.Collections.Specialized;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 
@@ -15,14 +13,6 @@ namespace SlnDependencyStudio.Wpf.Features.Solution;
 internal sealed class SolutionOptionsEditor : ReactiveObject, ISolutionOptionsEditor, IDisposable
 {
     private readonly CompositeDisposable _disposables = [];
-    private readonly ObservableCollectionExtended<string> _regexToIncludeCollection;
-    private readonly ObservableCollectionExtended<string> _regexToExcludeCollection;
-    private readonly ObservableCollectionExtended<string> _packagesToExcludeCollection;
-    private readonly ObservableCollectionExtended<string> _frameworksToExcludeCollection;
-    private string[] _originalRegexToInclude = [];
-    private string[] _originalRegexToExclude = [];
-    private string[] _originalPackagesToExclude = [];
-    private string[] _originalFrameworksToExclude = [];
     private bool _isDirty;
 
     /// <inheritdoc />
@@ -32,16 +22,16 @@ internal sealed class SolutionOptionsEditor : ReactiveObject, ISolutionOptionsEd
     public TrackableValue<bool> UseRelativePath { get; } = new();
 
     /// <inheritdoc />
-    public TrackableValue<ObservableCollection<string>> RegexToInclude { get; } = new();
+    public TrackableCollection<string> RegexToInclude { get; } = new();
 
     /// <inheritdoc />
-    public TrackableValue<ObservableCollection<string>> RegexToExclude { get; } = new();
+    public TrackableCollection<string> RegexToExclude { get; } = new();
 
     /// <inheritdoc />
-    public TrackableValue<ObservableCollection<string>> PackagesToExclude { get; } = new();
+    public TrackableCollection<string> PackagesToExclude { get; } = new();
 
     /// <inheritdoc />
-    public TrackableValue<ObservableCollection<string>> FrameworksToExclude { get; } = new();
+    public TrackableCollection<string> FrameworksToExclude { get; } = new();
 
     /// <inheritdoc />
     public TrackableValue<bool> IndividualEnabled { get; } = new();
@@ -76,33 +66,35 @@ internal sealed class SolutionOptionsEditor : ReactiveObject, ISolutionOptionsEd
         InitializeTrackable(AllIncludeDependencies, false);
         InitializeTrackable(AllTransitiveDepth, 0);
 
-        _regexToIncludeCollection = [];
-        _regexToExcludeCollection = [];
-        _packagesToExcludeCollection = [];
-        _frameworksToExcludeCollection = [];
+        _disposables.Add(RegexToInclude);
+        _disposables.Add(RegexToExclude);
+        _disposables.Add(PackagesToExclude);
+        _disposables.Add(FrameworksToExclude);
 
-        InitializeTrackable(RegexToInclude, _regexToIncludeCollection);
-        InitializeTrackable(RegexToExclude, _regexToExcludeCollection);
-        InitializeTrackable(PackagesToExclude, _packagesToExcludeCollection);
-        InitializeTrackable(FrameworksToExclude, _frameworksToExcludeCollection);
-
-        _regexToIncludeCollection.CollectionChanged += OnCollectionChanged;
-        _regexToExcludeCollection.CollectionChanged += OnCollectionChanged;
-        _packagesToExcludeCollection.CollectionChanged += OnCollectionChanged;
-        _frameworksToExcludeCollection.CollectionChanged += OnCollectionChanged;
+        var collectionDirtyFlags = new IObservable<bool>[]
+        {
+            RegexToInclude.WhenAnyValue(trackable => trackable.IsDirty),
+            RegexToExclude.WhenAnyValue(trackable => trackable.IsDirty),
+            PackagesToExclude.WhenAnyValue(trackable => trackable.IsDirty),
+            FrameworksToExclude.WhenAnyValue(trackable => trackable.IsDirty)
+        };
 
         var trackableDirtyFlags = new[]
         {
-            SolutionPath.WhenAnyValue(p => p.IsDirty),
-            IndividualEnabled.WhenAnyValue(e => e.IsDirty),
-            IndividualIncludeDependencies.WhenAnyValue(d => d.IsDirty),
-            IndividualTransitiveDepth.WhenAnyValue(t => t.IsDirty),
-            AllEnabled.WhenAnyValue(e => e.IsDirty),
-            AllIncludeDependencies.WhenAnyValue(d => d.IsDirty),
-            AllTransitiveDepth.WhenAnyValue(t => t.IsDirty)
+            SolutionPath.WhenAnyValue(trackable => trackable.IsDirty),
+            IndividualEnabled.WhenAnyValue(trackable => trackable.IsDirty),
+            IndividualIncludeDependencies.WhenAnyValue(trackable => trackable.IsDirty),
+            IndividualTransitiveDepth.WhenAnyValue(trackable => trackable.IsDirty),
+            AllEnabled.WhenAnyValue(trackable => trackable.IsDirty),
+            AllIncludeDependencies.WhenAnyValue(trackable => trackable.IsDirty),
+            AllTransitiveDepth.WhenAnyValue(trackable => trackable.IsDirty)
         };
 
-        Observable.CombineLatest(trackableDirtyFlags).Subscribe(_ => UpdateIsDirty());
+        var subscription = Observable
+            .CombineLatest([.. trackableDirtyFlags, .. collectionDirtyFlags])
+            .Subscribe(_ => UpdateIsDirty());
+
+        _disposables.Add(subscription);
     }
 
     /// <summary>Populates all TrackableValues from the given options and marks the editor clean.</summary>
@@ -111,20 +103,10 @@ internal sealed class SolutionOptionsEditor : ReactiveObject, ISolutionOptionsEd
     {
         SolutionPath.SetOriginalValue(source.SolutionPath);
 
-        _originalRegexToInclude = source.RegexToInclude;
-        _originalRegexToExclude = source.RegexToExclude;
-        _originalPackagesToExclude = source.PackagesToExclude;
-        _originalFrameworksToExclude = source.FrameworksToExclude;
-
-        RegexToInclude.SetOriginalValue(_regexToIncludeCollection);
-        RegexToExclude.SetOriginalValue(_regexToExcludeCollection);
-        PackagesToExclude.SetOriginalValue(_packagesToExcludeCollection);
-        FrameworksToExclude.SetOriginalValue(_frameworksToExcludeCollection);
-
-        _regexToIncludeCollection.Load(source.RegexToInclude);
-        _regexToExcludeCollection.Load(source.RegexToExclude);
-        _packagesToExcludeCollection.Load(source.PackagesToExclude);
-        _frameworksToExcludeCollection.Load(source.FrameworksToExclude);
+        RegexToInclude.SetOriginalItems(source.RegexToInclude);
+        RegexToExclude.SetOriginalItems(source.RegexToExclude);
+        PackagesToExclude.SetOriginalItems(source.PackagesToExclude);
+        FrameworksToExclude.SetOriginalItems(source.FrameworksToExclude);
 
         IndividualEnabled.SetOriginalValue(source.Individual.Enabled);
         IndividualIncludeDependencies.SetOriginalValue(source.Individual.IncludeDependencies);
@@ -139,10 +121,10 @@ internal sealed class SolutionOptionsEditor : ReactiveObject, ISolutionOptionsEd
     public void FlushTo(GeneratorSolutionOptions target)
     {
         target.SolutionPath = SolutionPath.Value;
-        target.RegexToInclude = [.. _regexToIncludeCollection];
-        target.RegexToExclude = [.. _regexToExcludeCollection];
-        target.PackagesToExclude = [.. _packagesToExcludeCollection];
-        target.FrameworksToExclude = [.. _frameworksToExcludeCollection];
+        target.RegexToInclude = RegexToInclude.ToArray();
+        target.RegexToExclude = RegexToExclude.ToArray();
+        target.PackagesToExclude = PackagesToExclude.ToArray();
+        target.FrameworksToExclude = FrameworksToExclude.ToArray();
 
         target.Individual.Enabled = IndividualEnabled.Value;
         target.Individual.IncludeDependencies = IndividualIncludeDependencies.Value;
@@ -158,18 +140,13 @@ internal sealed class SolutionOptionsEditor : ReactiveObject, ISolutionOptionsEd
         _disposables.Dispose();
     }
 
-    private void OnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
-    {
-        UpdateIsDirty();
-    }
-
     private void UpdateIsDirty()
     {
         _isDirty = SolutionPath.IsDirty ||
-                   !_regexToIncludeCollection.OrderBy(item => item).SequenceEqual(_originalRegexToInclude.OrderBy(item => item)) ||
-                   !_regexToExcludeCollection.OrderBy(item => item).SequenceEqual(_originalRegexToExclude.OrderBy(item => item)) ||
-                   !_packagesToExcludeCollection.OrderBy(item => item).SequenceEqual(_originalPackagesToExclude.OrderBy(item => item)) ||
-                   !_frameworksToExcludeCollection.OrderBy(item => item).SequenceEqual(_originalFrameworksToExclude.OrderBy(item => item)) ||
+                   RegexToInclude.IsDirty ||
+                   RegexToExclude.IsDirty ||
+                   PackagesToExclude.IsDirty ||
+                   FrameworksToExclude.IsDirty ||
                    IndividualEnabled.IsDirty ||
                    IndividualIncludeDependencies.IsDirty ||
                    IndividualTransitiveDepth.IsDirty ||

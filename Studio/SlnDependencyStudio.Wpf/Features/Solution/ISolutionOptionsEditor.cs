@@ -1,5 +1,4 @@
 using SlnDependencyStudio.Wpf.Controls;
-using System.Collections.ObjectModel;
 
 namespace SlnDependencyStudio.Wpf.Features.Solution;
 
@@ -22,16 +21,16 @@ public interface ISolutionOptionsEditor
     TrackableValue<bool> UseRelativePath { get; }
 
     /// <summary>Trackable form of the regex-to-include patterns.</summary>
-    TrackableValue<ObservableCollection<string>> RegexToInclude { get; }
+    TrackableCollection<string> RegexToInclude { get; }
 
     /// <summary>Trackable form of the regex-to-exclude patterns.</summary>
-    TrackableValue<ObservableCollection<string>> RegexToExclude { get; }
+    TrackableCollection<string> RegexToExclude { get; }
 
     /// <summary>Trackable form of the packages-to-exclude list.</summary>
-    TrackableValue<ObservableCollection<string>> PackagesToExclude { get; }
+    TrackableCollection<string> PackagesToExclude { get; }
 
     /// <summary>Trackable form of the frameworks-to-exclude list.</summary>
-    TrackableValue<ObservableCollection<string>> FrameworksToExclude { get; }
+    TrackableCollection<string> FrameworksToExclude { get; }
 
     /// <summary>Whether individual-project scope is enabled.</summary>
     TrackableValue<bool> IndividualEnabled { get; }

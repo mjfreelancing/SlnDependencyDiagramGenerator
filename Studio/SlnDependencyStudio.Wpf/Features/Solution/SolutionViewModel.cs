@@ -75,10 +75,10 @@ public sealed class SolutionViewModel : ReactiveObject, IValidatableViewModel
     {
         _store = store;
 
-        RegexToIncludeInput = new TagInputModel(_store.SolutionOptionsEditor.RegexToInclude.Value, TryValidateRegex);
-        RegexToExcludeInput = new TagInputModel(_store.SolutionOptionsEditor.RegexToExclude.Value, TryValidateRegex);
-        PackagesToExcludeInput = new TagInputModel(_store.SolutionOptionsEditor.PackagesToExclude.Value);
-        FrameworksToExcludeInput = new TagInputModel(_store.SolutionOptionsEditor.FrameworksToExclude.Value);
+        RegexToIncludeInput = new TagInputModel(_store.SolutionOptionsEditor.RegexToInclude.Items, TryValidateRegex);
+        RegexToExcludeInput = new TagInputModel(_store.SolutionOptionsEditor.RegexToExclude.Items, TryValidateRegex);
+        PackagesToExcludeInput = new TagInputModel(_store.SolutionOptionsEditor.PackagesToExclude.Items);
+        FrameworksToExcludeInput = new TagInputModel(_store.SolutionOptionsEditor.FrameworksToExclude.Items);
 
         WireValidation();
         WireRelativePathToggle();

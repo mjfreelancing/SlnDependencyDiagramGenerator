@@ -1,11 +1,8 @@
-using DynamicData.Binding;
 using ReactiveUI;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyStudio.Wpf.Controls;
-using System.Collections.ObjectModel;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
-using System.Reactive.Subjects;
 
 namespace SlnDependencyStudio.Wpf.Features.Export;
 
@@ -16,9 +13,6 @@ internal sealed class ExportOptionsEditor : ReactiveObject, IExportOptionsEditor
 {
     private readonly CompositeDisposable _disposables = [];
     private readonly ObservableAsPropertyHelper<bool> _isDirty;
-    private readonly Subject<bool> _imageFormatsDirtySubject = new();
-    private readonly ObservableCollectionExtended<DiagramImageFormat> _imageFormatsCollection;
-    private DiagramImageFormat[] _originalImageFormats = [];
 
     /// <inheritdoc />
     public TrackableValue<string> RootPath { get; } = new();
@@ -30,7 +24,7 @@ internal sealed class ExportOptionsEditor : ReactiveObject, IExportOptionsEditor
     public TrackableValue<bool> ClearContents { get; } = new();
 
     /// <inheritdoc />
-    public TrackableValue<ObservableCollection<DiagramImageFormat>> ImageFormats { get; } = new();
+    public TrackableCollection<DiagramImageFormat> ImageFormats { get; } = new();
 
     /// <inheritdoc />
     public bool IsDirty => _isDirty.Value;
@@ -42,16 +36,13 @@ internal sealed class ExportOptionsEditor : ReactiveObject, IExportOptionsEditor
         InitializeTrackable(UseRelativePath, true);
         InitializeTrackable(ClearContents, false);
 
-        _imageFormatsCollection = [];
-        InitializeTrackable(ImageFormats, _imageFormatsCollection);
-
-        _imageFormatsCollection.CollectionChanged += OnImageFormatsCollectionChanged;
+        _disposables.Add(ImageFormats);
 
         _isDirty = Observable
             .CombineLatest(
                 RootPath.WhenAnyValue(path => path.IsDirty),
                 ClearContents.WhenAnyValue(cc => cc.IsDirty),
-                _imageFormatsDirtySubject.StartWith(false),
+                ImageFormats.WhenAnyValue(f => f.IsDirty),
                 (root, clear, imageFormats) => root || clear || imageFormats)
             .ToProperty(this, nameof(IsDirty));
     }
@@ -62,11 +53,7 @@ internal sealed class ExportOptionsEditor : ReactiveObject, IExportOptionsEditor
     {
         RootPath.SetOriginalValue(source.RootPath);
         ClearContents.SetOriginalValue(source.ClearContents);
-
-        _originalImageFormats = source.ImageFormats;
-        ImageFormats.SetOriginalValue(_imageFormatsCollection);
-
-        _imageFormatsCollection.Load(source.ImageFormats);
+        ImageFormats.SetOriginalItems(source.ImageFormats);
     }
 
     /// <summary>Writes current TrackableValue contents back to the given options instance.</summary>
@@ -75,21 +62,13 @@ internal sealed class ExportOptionsEditor : ReactiveObject, IExportOptionsEditor
     {
         target.RootPath = RootPath.Value;
         target.ClearContents = ClearContents.Value;
-        target.ImageFormats = [.. _imageFormatsCollection];
+        target.ImageFormats = ImageFormats.ToArray();
     }
 
     /// <inheritdoc />
     public void Dispose()
     {
         _disposables.Dispose();
-    }
-
-    private void OnImageFormatsCollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
-    {
-        var isDirty = _imageFormatsCollection.Count != _originalImageFormats.Length ||
-                      !_imageFormatsCollection.OrderBy(format => format).SequenceEqual(_originalImageFormats.OrderBy(format => format));
-
-        _imageFormatsDirtySubject.OnNext(isDirty);
     }
 
     private void InitializeTrackable<TValue>(TrackableValue<TValue> trackable, TValue defaultValue = default!)
