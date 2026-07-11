@@ -41,7 +41,6 @@
 
             <!--  Pre-Generation Command  -->
             <studioControls:FormField
-                x:Name="PreGenerationFormField"
                 Title="Pre-generation command"
                 Margin="0,0,0,24"
                 Description="An optional command to run before diagram generation starts.">
@@ -61,7 +60,6 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
                         <ToggleButton
@@ -72,66 +70,60 @@
                             IsChecked="{Binding Enabled.Value}"
                             Style="{StaticResource MaterialDesignSwitchToggleButton}" />
 
-                        <!--  Row 0: Command label  -->
-                        <TextBlock
+                        <!--  Row 0: Command FormField  -->
+                        <studioControls:FormField
                             Grid.Row="0"
                             Grid.Column="1"
                             Margin="16,0,0,0"
-                            FontWeight="SemiBold"
-                            IsEnabled="{Binding Enabled.Value}"
-                            Text="Command" />
+                            Title="Command"
+                            ValidationError="{Binding PreGenError}">
+                            <Grid IsEnabled="{Binding Enabled.Value}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox
+                                    Grid.Column="0"
+                                    materialDesign:HintAssist.Hint="Executable name, e.g. dotnet or build.cmd"
+                                    Text="{Binding Command.Value, UpdateSourceTrigger=PropertyChanged}" />
+                                <Button
+                                    Grid.Column="1"
+                                    Command="{Binding BrowseCommandCommand}"
+                                    Content="Browse"
+                                    Style="{StaticResource ActionButtonStyle}" />
+                            </Grid>
+                        </studioControls:FormField>
 
-                        <!--  Row 1: Command + Browse  -->
-                        <Grid
-                            Grid.Row="1"
-                            Grid.Column="1"
-                            Margin="16,6,0,0"
-                            IsEnabled="{Binding Enabled.Value}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBox
-                                Grid.Column="0"
-                                materialDesign:HintAssist.Hint="Executable name, e.g. dotnet or build.cmd"
-                                Text="{Binding Command.Value, UpdateSourceTrigger=PropertyChanged}" />
-                            <Button
-                                Grid.Column="1"
-                                Command="{Binding BrowseCommandCommand}"
-                                Content="Browse"
-                                Style="{StaticResource ActionButtonStyle}" />
-                        </Grid>
-
-                        <!--  Row 2: Arguments label  -->
+                        <!--  Row 1: Arguments label  -->
                         <TextBlock
-                            Grid.Row="2"
+                            Grid.Row="1"
                             Grid.Column="1"
                             Margin="16,24,0,0"
                             FontWeight="SemiBold"
                             IsEnabled="{Binding Enabled.Value}"
                             Text="Arguments" />
 
-                        <!--  Row 3: Arguments  -->
+                        <!--  Row 2: Arguments  -->
                         <TextBox
-                            Grid.Row="3"
+                            Grid.Row="2"
                             Grid.Column="1"
                             Margin="16,6,0,0"
                             materialDesign:HintAssist.Hint="Command-line arguments"
                             IsEnabled="{Binding Enabled.Value}"
                             Text="{Binding Arguments.Value, UpdateSourceTrigger=PropertyChanged}" />
 
-                        <!--  Row 4: Working directory label  -->
+                        <!--  Row 3: Working directory label  -->
                         <TextBlock
-                            Grid.Row="4"
+                            Grid.Row="3"
                             Grid.Column="1"
                             Margin="16,24,0,0"
                             FontWeight="SemiBold"
                             IsEnabled="{Binding Enabled.Value}"
                             Text="Working directory" />
 
-                        <!--  Row 5: Working Directory + Browse  -->
+                        <!--  Row 4: Working Directory + Browse  -->
                         <Grid
-                            Grid.Row="5"
+                            Grid.Row="4"
                             Grid.Column="1"
                             Margin="16,6,0,0"
                             IsEnabled="{Binding Enabled.Value}">
@@ -163,9 +155,9 @@
                                 IsChecked="{Binding UseRelativePathForWorkingDirectory.Value}" />
                         </Grid>
 
-                        <!--  Row 6: Continue on Failure  -->
+                        <!--  Row 5: Continue on Failure  -->
                         <CheckBox
-                            Grid.Row="6"
+                            Grid.Row="5"
                             Grid.Column="1"
                             Margin="16,24,0,0"
                             Content="Continue on failure"

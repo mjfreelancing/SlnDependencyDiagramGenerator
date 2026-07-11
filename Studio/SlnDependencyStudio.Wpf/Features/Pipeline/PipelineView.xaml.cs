@@ -1,8 +1,5 @@
 using Microsoft.Win32;
 using ReactiveUI;
-using ReactiveUI.Validation.Extensions;
-using SlnDependencyStudio.Wpf.Features.Project.Stores;
-using System.IO;
 using System.Reactive.Disposables.Fluent;
 
 namespace SlnDependencyStudio.Wpf.Features.Pipeline;
@@ -11,24 +8,15 @@ namespace SlnDependencyStudio.Wpf.Features.Pipeline;
 /// and tool detection status.</summary>
 public partial class PipelineView : ReactiveUserControl<PipelineViewModel>
 {
-    private readonly IProjectDocumentStore _store;
-
-    public PipelineView(PipelineViewModel viewModel, IProjectDocumentStore store)
+    public PipelineView(PipelineViewModel viewModel)
     {
         ViewModel = viewModel;
         DataContext = viewModel;
-        _store = store;
 
         InitializeComponent();
 
         this.WhenActivated(disposables =>
         {
-            this.BindValidation(
-                    ViewModel,
-                    vm => vm.PreGenError,
-                    view => view.PreGenerationFormField.ValidationError)
-                .DisposeWith(disposables);
-
             ViewModel!
                 .BrowseCommandInteraction
                 .RegisterHandler(ctx =>
