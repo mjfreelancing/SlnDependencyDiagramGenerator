@@ -5,8 +5,11 @@ using Serilog.Events;
 using SlnDependencyStudio.Shared.DependencyInjection;
 using SlnDependencyStudio.Wpf.Features.Application;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+using System.IO;
 using System.Reactive;
 using System.Reactive.Linq;
+using System.Windows;
 
 namespace SlnDependencyStudio.Wpf.Features.Output;
 
@@ -36,6 +39,15 @@ public sealed class OutputPanelViewModel : ReactiveObject, IStudioScopedDependen
 
     /// <summary>Command that cancels the currently running operation (analysis or generation).</summary>
     public ReactiveCommand<Unit, Unit> CancelCommand { get; }
+
+    /// <summary>Command that copies all output panel text to the clipboard.</summary>
+    public ReactiveCommand<Unit, Unit> CopyAllCommand { get; }
+
+    /// <summary>Command that saves all output panel text to a file. Uses an interaction to prompt for the save path.</summary>
+    public ReactiveCommand<Unit, Unit> SaveAsCommand { get; }
+
+    /// <summary>Interaction that prompts the user to choose a save-file path. Returns the chosen path, or null if cancelled.</summary>
+    public Interaction<Unit, string?> SaveFileDialog { get; } = new();
 
     /// <summary>
     /// <see langword="true"/> while an analysis or generation operation is in progress.
@@ -107,8 +119,32 @@ public sealed class OutputPanelViewModel : ReactiveObject, IStudioScopedDependen
         _observableSink = observableSink;
         _applicationSettings = applicationSettings;
 
-        ClearCommand = ReactiveCommand.Create(Messages.Clear);
+        var hasContent = Observable
+            .FromEventPattern<NotifyCollectionChangedEventHandler, NotifyCollectionChangedEventArgs>(
+                handler => Messages.CollectionChanged += handler,
+                handler => Messages.CollectionChanged -= handler)
+            .Select(_ => Messages.Count > 0)
+            .StartWith(Messages.Count > 0);
+
+        ClearCommand = ReactiveCommand.Create(Messages.Clear, hasContent);
         CancelCommand = ReactiveCommand.Create(() => { });
+
+        CopyAllCommand = ReactiveCommand.Create(() =>
+        {
+            var text = string.Join(Environment.NewLine, Messages.Select(m => m.Text));
+            Clipboard.SetText(text);
+        }, hasContent);
+
+        SaveAsCommand = ReactiveCommand.CreateFromTask(async () =>
+        {
+            var filePath = await SaveFileDialog.Handle(Unit.Default);
+
+            if (filePath is not null)
+            {
+                var text = string.Join(Environment.NewLine, Messages.Select(m => m.Text));
+                await File.WriteAllTextAsync(filePath, text);
+            }
+        }, hasContent);
 
         RestorePreferences();
     }

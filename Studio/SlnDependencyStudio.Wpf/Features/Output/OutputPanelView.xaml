@@ -111,6 +111,16 @@
                 Background="Transparent"
                 BorderThickness="0"
                 ItemsSource="{Binding Messages}">
+                <ItemsControl.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="Copy All"
+                                  Command="{Binding CopyAllCommand}"
+                                  InputGestureText="Ctrl+Shift+C" />
+                        <MenuItem Header="Save As…"
+                                  Command="{Binding SaveAsCommand}"
+                                  InputGestureText="Ctrl+Shift+S" />
+                    </ContextMenu>
+                </ItemsControl.ContextMenu>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate DataType="{x:Type output:OutputMessage}">
                         <TextBlock

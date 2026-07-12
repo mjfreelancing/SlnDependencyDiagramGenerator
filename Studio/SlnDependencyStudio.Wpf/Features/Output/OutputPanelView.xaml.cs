@@ -1,3 +1,4 @@
+using Microsoft.Win32;
 using ReactiveUI;
 using System.Collections.Specialized;
 using System.Reactive.Disposables;
@@ -33,6 +34,19 @@ public partial class OutputPanelView : ReactiveUserControl<OutputPanelViewModel>
             Disposable
                 .Create(() => ViewModel.Messages.CollectionChanged -= OnMessagesCollectionChanged)
                 .DisposeWith(disposables);
+
+            // Register the save-file dialog interaction.
+            ViewModel.SaveFileDialog.RegisterHandler(async context =>
+            {
+                var dialog = new SaveFileDialog
+                {
+                    Filter = "Text files (*.txt)|*.txt|Log files (*.log)|*.log|All files (*.*)|*.*",
+                    DefaultExt = ".txt",
+                    FileName = "output.txt"
+                };
+
+                context.SetOutput(dialog.ShowDialog() == true ? dialog.FileName : null);
+            }).DisposeWith(disposables);
         });
     }
 

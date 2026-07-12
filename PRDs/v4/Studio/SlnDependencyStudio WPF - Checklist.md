@@ -868,10 +868,10 @@ All fields are scalars — `TrackableValue<T>` is the correct tracker for every 
 
 **Intent:** Let the user export the contents of the output panel — copy to clipboard or save to a text file.
 
-- [ ] 8.5.1 Add an **Output** menu to the menu bar (or an export button in the output panel header). The menu contains:
+- [x] 8.5.1 Add an **Output** menu to the menu bar (or an export button in the output panel header). The menu contains:
   - **Copy to Clipboard** — copies the full text of all `OutputMessage.Text` entries, one per line.
   - **Save to File…** — opens a save-file dialog, writes all message text to a `.txt` or `.log` file.
-- [ ] 8.5.2 Both options operate on the current contents of `OutputPanelViewModel.Messages`. No `CircularBufferSink` dependency needed.
+- [x] 8.5.2 Both options operate on the current contents of `OutputPanelViewModel.Messages`. No `CircularBufferSink` dependency needed.
 
 **Phase 8 completion:** Generation runs end-to-end from the menu bar with streaming output, cancellation, UI gating, post-run Explorer integration, and output export.
 
