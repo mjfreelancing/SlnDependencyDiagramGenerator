@@ -60,8 +60,8 @@ Features/
 | 3     | Dependency Project Lifecycle          | ✅     |
 | 4     | Metadata & Core Configuration Editing | ✅     |
 | 5     | Advanced Configuration Editing        | ✅     |
-| 6     | Tool Detection & Status               | ⬜     |
-| 7     | Pre-Generation Analysis               | ⬜     |
+| 6     | Tool Detection & Status               | ✅     |
+| 7     | Dry-Run Analysis                      | ✅     |
 | 8     | Generation Orchestration & Output     | ⬜     |
 | 9     | Productivity & Polish                 | ⬜     |
 | 10    | Testing                               | ⬜     |
@@ -829,39 +829,34 @@ All fields are scalars — `TrackableValue<T>` is the correct tracker for every 
 
 ## Phase 8 — Generation Orchestration & Output
 
-**Intent:** Build the WPF-specific generation pipeline. Activated via **Run → Generate** in the menu bar. Validates, saves if dirty, runs pre-generation command + `CreateDiagramsAsync`, streams output to the bottom panel. Disables editing during generation, supports cancellation.
+**Intent:** Build the generation pipeline. Activated via **Run → Generate** in the menu bar. Validates, saves if dirty, runs pre-generation command + `CreateDiagramsAsync`, streams output to the bottom panel. Disables editing during generation, supports cancellation.
 
-### 8.1 Generation Service (WPF-Specific)
+### 8.1 Generation Service
 
-- [ ] 8.1.1 Create `IWpfGenerationService` with `ExecuteAsync(DependencyProjectDocument document, CancellationToken ct)` returning an observable stream of `GenerationEvent` (log entries, progress, completion/failure).
-- [ ] 8.1.2 Implement `WpfGenerationService`. Calls `IPreGenerationCommandRunner.RunAsync()` if pre-gen enabled, then `IDependencyGenerator.CreateDiagramsAsync()`. Log output captured via Serilog `ObservableSink`.
-- [ ] 8.1.3 Support cancellation: `CancellationToken` passed through to both the pre-generation runner and the generator.
+- [ ] 8.1.1 Create `IGenerationService` under `Features/Run/` (co-located with `IPreGenerationAnalysisService`). Returns `IObservable<OutputMessage>` so generation output streams to the same output panel as dry-run analysis.
+- [ ] 8.1.2 Implement `GenerationService : IGenerationService, IStudioScopedDependency`. Reads the document from `IProjectDocumentStore`. Calls `IPreGenerationCommandRunner.RunAsync()` if pre-gen is enabled, then builds a `DependencyGeneratorConfig` from the document and calls `IDependencyGenerator.CreateDiagramsAsync()`. All log output is captured by the Serilog pipeline and surfaced through the `IObservableSink`.
+- [ ] 8.1.3 Support cancellation: `CancellationToken` passed through to the pre-generation runner, the generator, and all renderers.
 
 ### 8.2 Menu Bar Integration & Commands
 
-- [ ] 8.2.1 **Run → Generate** binds to `GenerateCommand` on `MainWindowViewModel`.
-- [ ] 8.2.2 `GenerateCommand`:
-  - Validates the document (FluentValidation + ReactiveUI).
-  - If validation fails, navigates to the first section with errors.
-  - If valid and dirty, prompts to save (or auto-saves based on preference).
-  - Calls `IWpfGenerationService.ExecuteAsync()`.
-- [ ] 8.2.3 During generation (same rules apply during analysis in Phase 7):
-  - Entire **Run** menu disabled (prevents concurrent operations).
-  - All configuration editing controls disabled via `IsGenerating` flag.
-  - Window close blocked — `Closing` event cancelled or `CanClose` observable returns false.
-  - Indeterminate progress bar shown.
-  - **Run → Cancel** becomes available to abort the operation.
+- [ ] 8.2.1 **Run → Generate** binds to `GenerateCommand` on `MainWindowViewModel` (placeholder already exists; replace the no-op delegate with the real implementation).
+- [ ] 8.2.2 `GenerateCommand` (canExecute already gated by `RunMenuEnabled` — no inline validation errors can exist when it's clickable):
+  - If dirty, prompts the user to Save / Discard / Cancel (reuses the existing `PromptDiscardAsync` pattern from CloseProject). Cancel stops generation.
+  - If the user saves, `IProjectDocumentStore.SaveAsync()` handles flush + persist + mark clean.
+  - Calls `IGenerationService.RunAsync()` and subscribes the output to `OutputPanelViewModel.Messages`.
+  - If the generator throws (FluentValidation failure or other error), the exception is caught and displayed in the output panel.
+- [ ] 8.2.3 During generation:
+  - Entire menu bar disabled (prevents concurrent operations and accidental navigation). `RunMenuEnabled` and `CanClose` gating already wired from Phase 7; no new properties needed.
+  - A **Cancel** button appears in the output panel header, aborting via `CancellationTokenSource.Cancel()`.
 - [ ] 8.2.4 On cancel: `CancellationTokenSource.Cancel()`, "Generation cancelled" in output panel.
-- [ ] 8.2.5 On completion: success/failure in output panel, elapsed time, "Open in Explorer" button via `IExplorerService`.
+- [ ] 8.2.5 On completion: success/failure in output panel, elapsed time.
 
-### 8.3 Output Panel
+### 8.3 Output Panel (Completed in Phase 7)
 
-- [ ] 8.3.1 Create `OutputPanelView.xaml` and `OutputPanelViewModel`. Subscribes to `ObservableSink`, exposes `ObservableCollection<LogEntry>`.
-- [ ] 8.3.2 `LogEntry`: `Timestamp`, `Level`, `Message`, `SourceContext`. Color-coded by level (Error=Red, Warning=Yellow, Info=default, Debug=Gray).
-- [ ] 8.3.3 Auto-scroll to bottom on new entries.
-- [ ] 8.3.4 Full session log retained via `CircularBufferSink`. "Clear" button resets visible log.
-- [ ] 8.3.5 Output panel auto-expands when generation starts, collapsible when idle.
-- [ ] 8.3.6 When idle, output panel shows last-known tool detection status. During generation, replaced by live log stream.
+- [x] 8.3.1 Create `OutputPanelView.xaml` and `OutputPanelViewModel`. _(Already done — `Features/Output/`)_
+- [x] 8.3.2 `OutputMessage`: `Text`, `Level` (Information/Warning/Error). _(Already done — color-coding deferred to a follow-up: `OutputMessage.Level` is present but not yet bound to a color converter in XAML.)_
+- [x] 8.3.3 Auto-scroll to bottom on new entries. _(Already done in `OutputPanelView.xaml.cs`)_
+- [x] 8.3.4 Full session log retained via `CircularBufferSink`. _(Dropped — `CircularBufferSink` was registered but never consumed; no current requirement for session history replay. The sink registration can be removed from `App.xaml.cs`.)_
 
 ### 8.4 Explorer Service
 
@@ -869,7 +864,16 @@ All fields are scalars — `TrackableValue<T>` is the correct tracker for every 
 - [ ] 8.4.2 Implement via `Process.Start("explorer.exe", path)` on Windows.
 - [ ] 8.4.3 After generation, export root shown as clickable link/button.
 
-**Phase 8 completion:** Generation runs end-to-end from the menu bar with streaming output, cancellation, UI gating, and post-run Explorer integration.
+### 8.5 Output Export (Added: 2026-07-12)
+
+**Intent:** Let the user export the contents of the output panel — copy to clipboard or save to a text file.
+
+- [ ] 8.5.1 Add an **Output** menu to the menu bar (or an export button in the output panel header). The menu contains:
+  - **Copy to Clipboard** — copies the full text of all `OutputMessage.Text` entries, one per line.
+  - **Save to File…** — opens a save-file dialog, writes all message text to a `.txt` or `.log` file.
+- [ ] 8.5.2 Both options operate on the current contents of `OutputPanelViewModel.Messages`. No `CircularBufferSink` dependency needed.
+
+**Phase 8 completion:** Generation runs end-to-end from the menu bar with streaming output, cancellation, UI gating, post-run Explorer integration, and output export.
 
 ---
 
