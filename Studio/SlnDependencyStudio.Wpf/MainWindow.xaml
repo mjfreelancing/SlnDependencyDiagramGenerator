@@ -124,10 +124,12 @@
                     <MenuItem Header="_Run" IsEnabled="{Binding RunMenuEnabled}">
                         <MenuItem
                             x:Name="AnalyzeMenuItem"
-                            Header="_Analyze" />
+                            Header="_Analyse"
+                            InputGestureText="Alt+Shift+A" />
                         <MenuItem
                             x:Name="GenerateMenuItem"
-                            Header="_Generate" />
+                            Header="_Generate"
+                            InputGestureText="Alt+Shift+G" />
                     </MenuItem>
                 </Menu>
 
