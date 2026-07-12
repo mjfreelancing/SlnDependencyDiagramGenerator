@@ -72,10 +72,10 @@
 
                         <!--  Row 0: Command FormField  -->
                         <studioControls:FormField
+                            Title="Command"
                             Grid.Row="0"
                             Grid.Column="1"
                             Margin="16,0,0,0"
-                            Title="Command"
                             ValidationError="{Binding PreGenError}">
                             <Grid IsEnabled="{Binding Enabled.Value}">
                                 <Grid.ColumnDefinitions>
@@ -183,9 +183,7 @@
                         </Grid.ColumnDefinitions>
 
                         <!--  Tool entries  -->
-                        <ItemsControl
-                            Grid.Column="0"
-                            ItemsSource="{Binding ToolStatusEntries}">
+                        <ItemsControl Grid.Column="0" ItemsSource="{Binding ToolStatusEntries}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Grid Margin="0,0,0,12">
