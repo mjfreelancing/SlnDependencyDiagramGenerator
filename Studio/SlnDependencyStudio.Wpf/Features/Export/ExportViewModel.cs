@@ -167,8 +167,8 @@ public sealed class ExportViewModel : ReactiveObject, IValidatableViewModel
     private ReactiveCommand<Unit, Unit> CreateBrowseCommand() =>
         ReactiveCommand.CreateFromObservable(() =>
         {
-            var sdsDirectory = _store.DocumentDirectory;
-            var resolvedPath = PathUtils.ResolveAsAbsolutePath(RootPath.Value ?? string.Empty, sdsDirectory);
+            var documentDirectory = _store.DocumentDirectory;
+            var resolvedPath = PathUtils.ResolveAsAbsolutePath(RootPath.Value ?? string.Empty, documentDirectory);
 
             return BrowseExportPathInteraction
                 .Handle(resolvedPath)
@@ -177,7 +177,7 @@ public sealed class ExportViewModel : ReactiveObject, IValidatableViewModel
                     if (path is not null)
                     {
                         RootPath.Value = UseRelativePath.Value
-                            ? PathUtils.MakeRelativeIfPossible(path, sdsDirectory)
+                            ? PathUtils.MakeRelativeIfPossible(path, documentDirectory)
                             : path;
                     }
                 })

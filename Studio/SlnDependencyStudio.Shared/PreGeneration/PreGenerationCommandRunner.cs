@@ -5,6 +5,7 @@ using AllOverIt.Process.Extensions;
 using Microsoft.Extensions.Logging;
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Shared.Enumerations;
+using System.Reactive.Subjects;
 
 namespace SlnDependencyStudio.Shared.PreGeneration;
 
@@ -12,6 +13,14 @@ namespace SlnDependencyStudio.Shared.PreGeneration;
 internal sealed class PreGenerationCommandRunner : IPreGenerationCommandRunner
 {
     private readonly ILogger<PreGenerationCommandRunner> _logger;
+    private readonly Subject<string> _stdoutSubject = new();
+    private readonly Subject<string> _stderrSubject = new();
+
+    /// <inheritdoc />
+    public IObservable<string> StdOut => _stdoutSubject;
+
+    /// <inheritdoc />
+    public IObservable<string> StdErr => _stderrSubject;
 
     /// <summary>Initializes a new instance of <see cref="PreGenerationCommandRunner"/>.</summary>
     /// <param name="logger">The logger instance.</param>
@@ -37,7 +46,9 @@ internal sealed class PreGenerationCommandRunner : IPreGenerationCommandRunner
             config.Command,
             config.Arguments);
 
-        var executorOptions = ProcessBuilder.For(config.Command);
+        var executorOptions = ProcessBuilder
+            .For(config.Command)
+            .WithNoWindow();
 
         if (config.WorkingDirectory.IsNotNullOrEmpty())
         {
@@ -59,14 +70,14 @@ internal sealed class PreGenerationCommandRunner : IPreGenerationCommandRunner
             {
                 if (args.Data is not null)
                 {
-                    _logger.LogInformation("{Output}", args.Data);
+                    _stdoutSubject.OnNext(args.Data);
                 }
             })
             .WithErrorOutputHandler((_, args) =>
             {
                 if (args.Data is not null)
                 {
-                    _logger.LogWarning("{Output}", args.Data);
+                    _stderrSubject.OnNext(args.Data);
                 }
             })
             .BuildProcessExecutor();

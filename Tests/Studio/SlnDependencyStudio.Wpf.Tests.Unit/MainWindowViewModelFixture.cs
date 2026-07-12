@@ -35,6 +35,7 @@ public class MainWindowViewModelFixture
     private readonly IViewFactory _viewFactory = Substitute.For<IViewFactory>();
     private readonly IToolStatusService _toolStatus = Substitute.For<IToolStatusService>();
     private readonly IPreGenerationAnalysisService _analysisService = Substitute.For<IPreGenerationAnalysisService>();
+    private readonly IGenerationService _generationService = Substitute.For<IGenerationService>();
     private readonly MainWindowViewModel _viewModel;
 
     public MainWindowViewModelFixture()
@@ -85,7 +86,7 @@ public class MainWindowViewModelFixture
 
         _viewModel = new MainWindowViewModel(
             _store, _projectService, _recentProjects, _errorDialog, _viewFactory,
-            _toolStatus, _analysisService, logger);
+            _toolStatus, _analysisService, _generationService, logger);
 
         _store.HasDocument.Returns(true);
     }
@@ -656,7 +657,7 @@ public class MainWindowViewModelFixture
 
             var vm = new MainWindowViewModel(
                 store, _projectService, _recentProjects, _errorDialog, _viewFactory,
-                _toolStatus, _analysisService, Substitute.For<ILogger<MainWindowViewModel>>());
+                _toolStatus, _analysisService, _generationService, Substitute.For<ILogger<MainWindowViewModel>>());
 
             var canExecute = vm.AnalyzeCommand.CanExecute.FirstAsync().Wait();
 
@@ -673,7 +674,7 @@ public class MainWindowViewModelFixture
 
             var vm = new MainWindowViewModel(
                 store, _projectService, _recentProjects, _errorDialog, _viewFactory,
-                _toolStatus, _analysisService, Substitute.For<ILogger<MainWindowViewModel>>());
+                _toolStatus, _analysisService, _generationService, Substitute.For<ILogger<MainWindowViewModel>>());
 
             var canExecute = vm.AnalyzeCommand.CanExecute.FirstAsync().Wait();
 

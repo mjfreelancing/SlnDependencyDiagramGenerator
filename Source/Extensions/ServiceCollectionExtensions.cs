@@ -54,6 +54,9 @@ public static class ServiceCollectionExtensions
             services.AddScoped<IToolDetectionService, ToolDetectionService>();
             services.AddScoped<IDependencyGenerator, DependencyGenerator>();
 
+            // Shared progress reporter — singleton so generator and renderers push to the same channel.
+            services.AddSingleton<IProgressReporter, ProgressReporter>();
+
             // Renderer contract supports multiple implementations (D2, Mermaid).
             services.AddScoped<IDiagramRenderer, D2DiagramRenderer>();
             services.AddScoped<IDiagramRenderer, MermaidDiagramRenderer>();

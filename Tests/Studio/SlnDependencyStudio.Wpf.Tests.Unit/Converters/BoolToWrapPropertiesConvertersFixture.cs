@@ -13,7 +13,7 @@ public class BoolToTextWrappingConverterFixture
     [Fact]
     public void Should_Return_Wrap_When_True()
     {
-        var result = _converter.Convert(true, typeof(TextWrapping), null, CultureInfo.InvariantCulture);
+        var result = _converter.Convert(true, typeof(TextWrapping), null!, CultureInfo.InvariantCulture);
 
         result.ShouldBe(TextWrapping.Wrap);
     }
@@ -21,7 +21,7 @@ public class BoolToTextWrappingConverterFixture
     [Fact]
     public void Should_Return_NoWrap_When_False()
     {
-        var result = _converter.Convert(false, typeof(TextWrapping), null, CultureInfo.InvariantCulture);
+        var result = _converter.Convert(false, typeof(TextWrapping), null!, CultureInfo.InvariantCulture);
 
         result.ShouldBe(TextWrapping.NoWrap);
     }
@@ -29,7 +29,7 @@ public class BoolToTextWrappingConverterFixture
     [Fact]
     public void Should_Return_NoWrap_When_Null()
     {
-        var result = _converter.Convert(null, typeof(TextWrapping), null, CultureInfo.InvariantCulture);
+        var result = _converter.Convert(null!, typeof(TextWrapping), null!, CultureInfo.InvariantCulture);
 
         result.ShouldBe(TextWrapping.NoWrap);
     }
@@ -38,7 +38,7 @@ public class BoolToTextWrappingConverterFixture
     public void ConvertBack_Should_Throw()
     {
         Should.Throw<NotSupportedException>(() =>
-            _converter.ConvertBack(null, typeof(bool), null, CultureInfo.InvariantCulture));
+            _converter.ConvertBack(null!, typeof(bool), null!, CultureInfo.InvariantCulture));
     }
 }
 
@@ -49,7 +49,7 @@ public class BoolToScrollBarVisibilityConverterFixture
     [Fact]
     public void Should_Return_Disabled_When_True()
     {
-        var result = _converter.Convert(true, typeof(ScrollBarVisibility), null, CultureInfo.InvariantCulture);
+        var result = _converter.Convert(true, typeof(ScrollBarVisibility), null!, CultureInfo.InvariantCulture);
 
         result.ShouldBe(ScrollBarVisibility.Disabled);
     }
@@ -57,7 +57,7 @@ public class BoolToScrollBarVisibilityConverterFixture
     [Fact]
     public void Should_Return_Auto_When_False()
     {
-        var result = _converter.Convert(false, typeof(ScrollBarVisibility), null, CultureInfo.InvariantCulture);
+        var result = _converter.Convert(false, typeof(ScrollBarVisibility), null!, CultureInfo.InvariantCulture);
 
         result.ShouldBe(ScrollBarVisibility.Auto);
     }
@@ -65,7 +65,7 @@ public class BoolToScrollBarVisibilityConverterFixture
     [Fact]
     public void Should_Return_Auto_When_Null()
     {
-        var result = _converter.Convert(null, typeof(ScrollBarVisibility), null, CultureInfo.InvariantCulture);
+        var result = _converter.Convert(null!, typeof(ScrollBarVisibility), null!, CultureInfo.InvariantCulture);
 
         result.ShouldBe(ScrollBarVisibility.Auto);
     }
@@ -74,6 +74,6 @@ public class BoolToScrollBarVisibilityConverterFixture
     public void ConvertBack_Should_Throw()
     {
         Should.Throw<NotSupportedException>(() =>
-            _converter.ConvertBack(null, typeof(bool), null, CultureInfo.InvariantCulture));
+            _converter.ConvertBack(null!, typeof(bool), null!, CultureInfo.InvariantCulture));
     }
 }

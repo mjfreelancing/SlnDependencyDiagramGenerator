@@ -27,12 +27,23 @@ internal sealed class ScopedOperationFactory<TService> : IScopedOperationFactory
     }
 
     /// <inheritdoc />
+    public async Task ExecuteAsync(Func<TService, CancellationToken, Task> operation, CancellationToken cancellationToken)
+    {
+        using var scope = _scopeFactory.CreateScope();
+        var service = scope.ServiceProvider.GetRequiredService<TService>();
+
+        // Must await here because of the using scope
+        await operation.Invoke(service, cancellationToken);
+    }
+
+    /// <inheritdoc />
     public async Task<TResult> ExecuteAsync<TResult>(Func<TService, CancellationToken, Task<TResult>> operation,
         CancellationToken cancellationToken)
     {
         using var scope = _scopeFactory.CreateScope();
         var service = scope.ServiceProvider.GetRequiredService<TService>();
 
-        return await operation.Invoke(service, cancellationToken).ConfigureAwait(false);
+        // Must await here because of the using scope
+        return await operation.Invoke(service, cancellationToken);
     }
 }

@@ -8,4 +8,7 @@ public sealed class OutputSettings
 
     /// <summary>Whether verbose logging (all application log events) is enabled. Defaults to <see langword="true"/>.</summary>
     public bool IsVerboseLogging { get; set; } = true;
+
+    /// <summary>Whether the output panel auto-scrolls to the bottom when new messages arrive. Defaults to <see langword="true"/>.</summary>
+    public bool AutoScroll { get; set; } = true;
 }

@@ -4,8 +4,8 @@
     <CentralPackageTransitivePinningEnabled>false</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
   <ItemGroup>
-    <PackageVersion Include="AllOverIt.Assertion" Version="9.3.1" />
-    <PackageVersion Include="AllOverIt.Validation" Version="9.3.1" />
+    <PackageVersion Include="AllOverIt.Assertion" Version="9.3.2" />
+    <PackageVersion Include="AllOverIt.Validation" Version="9.3.2" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
     <PackageVersion Include="Dapper" Version="2.1.35" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.9" />

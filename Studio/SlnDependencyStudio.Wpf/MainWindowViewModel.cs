@@ -40,8 +40,10 @@ public sealed class MainWindowViewModel : ActivatableViewModel
     private readonly IViewFactory _viewFactory;
     private readonly IToolStatusService _toolStatus;
     private readonly IPreGenerationAnalysisService _analysisService;
+    private readonly IGenerationService _generationService;
     private readonly OutputPanelViewModel _outputPanelViewModel;
     private readonly ILogger<MainWindowViewModel> _logger;
+    private CancellationTokenSource? _operationCts;
 
     // OAPHs initialized here with their real observable sources so they are
     // never null. They live for the lifetime of the ViewModel.
@@ -148,7 +150,7 @@ public sealed class MainWindowViewModel : ActivatableViewModel
     public MainWindowViewModel(IProjectDocumentStore store, IDependencyProjectService projectService,
         IRecentProjectsService recentProjectsService, IErrorDialogService errorDialog, IViewFactory viewFactory,
         IToolStatusService toolStatus, IPreGenerationAnalysisService analysisService,
-        ILogger<MainWindowViewModel> logger)
+        IGenerationService generationService, ILogger<MainWindowViewModel> logger)
     {
         _store = store;
         _projectService = projectService;
@@ -157,6 +159,7 @@ public sealed class MainWindowViewModel : ActivatableViewModel
         _viewFactory = viewFactory;
         _toolStatus = toolStatus;
         _analysisService = analysisService;
+        _generationService = generationService;
         _logger = logger;
 
         var outputPanelView = _viewFactory.CreateViewFor<OutputPanelViewModel>();
@@ -189,8 +192,9 @@ public sealed class MainWindowViewModel : ActivatableViewModel
         ExitCommand = ReactiveCommand.Create(() => { });
         OpenRecentProjectCommand = ReactiveCommand.CreateFromTask<string>(OpenRecentProjectAsync);
 
-        // GenerateCommand created first — AnalyzeCommand's canExecute depends on its IsExecuting.
-        GenerateCommand = ReactiveCommand.Create(() => { }, Observable.Return(false));
+        // Mutual exclusion between Analyze and Generate is handled by RunMenuEnabled
+        // which disables the entire Run menu during either operation.
+        GenerateCommand = CreateGenerateCommand();
         AnalyzeCommand = CreateAnalyzeCommand();
 
         // Populate navigation items. Each page VM receives the store via DI and self-initialises.
@@ -234,6 +238,15 @@ public sealed class MainWindowViewModel : ActivatableViewModel
         WireDocumentStateTracking(disposables);
         WireNavigation(disposables);
         WireRecentProjects(disposables);
+        WireCancelCommand(disposables);
+    }
+
+    private void WireCancelCommand(CompositeDisposable disposables)
+    {
+        _outputPanelViewModel
+            .CancelCommand
+            .Subscribe(_ => _operationCts?.Cancel())
+            .DisposeWith(disposables);
     }
 
     private void WireDocumentStateTracking(CompositeDisposable disposables)
@@ -484,30 +497,88 @@ public sealed class MainWindowViewModel : ActivatableViewModel
         // manually clear CurrentPage/SelectedNavigationItem here.
     }
 
+    private ReactiveCommand<Unit, Unit> CreateGenerateCommand()
+    {
+        var canGenerate = _store.WhenAnyValue(store => store.HasDocument);
+
+        return ReactiveCommand.CreateFromTask(GenerateAsync, canGenerate);
+    }
+
+    private async Task GenerateAsync(CancellationToken cancellationToken)
+    {
+        if (_store.IsDirty)
+        {
+            var action = await PromptDiscardAsync();
+
+            if (action == DiscardAction.Cancel)
+            {
+                return;
+            }
+
+            if (action == DiscardAction.Save)
+            {
+                await _store.SaveAsync(cancellationToken);
+            }
+        }
+
+        // Run generation via IGenerationService.
+        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        _operationCts = linkedCts;
+        _outputPanelViewModel.IsOperationRunning = true;
+
+        try
+        {
+            var tcs = new TaskCompletionSource();
+
+            _generationService
+                .RunAsync(linkedCts.Token)
+                .ObserveOn(RxSchedulers.MainThreadScheduler)
+                .Subscribe(
+                    onNext: message => _outputPanelViewModel.Messages.Add(message),
+                    onError: ex => tcs.TrySetException(ex),
+                    onCompleted: () => tcs.TrySetResult());
+
+            await tcs.Task;
+        }
+        finally
+        {
+            _outputPanelViewModel.IsOperationRunning = false;
+            _operationCts = null;
+        }
+    }
+
     private ReactiveCommand<Unit, Unit> CreateAnalyzeCommand()
     {
-        var canAnalyze = Observable
-            .CombineLatest(
-                _store.WhenAnyValue(store => store.HasDocument),
-                GenerateCommand.IsExecuting,
-                (hasDoc, generating) => hasDoc && !generating);
+        var canAnalyze = _store.WhenAnyValue(store => store.HasDocument);
 
         return ReactiveCommand.CreateFromTask(AnalyzeAsync, canAnalyze);
     }
 
     private async Task AnalyzeAsync(CancellationToken cancellationToken)
     {
-        var tcs = new TaskCompletionSource();
+        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        _operationCts = linkedCts;
+        _outputPanelViewModel.IsOperationRunning = true;
 
-        _analysisService
-            .RunAsync(cancellationToken)
-            .ObserveOn(RxSchedulers.MainThreadScheduler)
-            .Subscribe(
-                onNext: message => _outputPanelViewModel.Messages.Add(message),
-                onError: ex => tcs.TrySetException(ex),
-                onCompleted: () => tcs.TrySetResult());
+        try
+        {
+            var tcs = new TaskCompletionSource();
 
-        await tcs.Task;
+            _analysisService
+                .RunAsync(linkedCts.Token)
+                .ObserveOn(RxSchedulers.MainThreadScheduler)
+                .Subscribe(
+                    onNext: message => _outputPanelViewModel.Messages.Add(message),
+                    onError: ex => tcs.TrySetException(ex),
+                    onCompleted: () => tcs.TrySetResult());
+
+            await tcs.Task;
+        }
+        finally
+        {
+            _outputPanelViewModel.IsOperationRunning = false;
+            _operationCts = null;
+        }
     }
 
     private bool AnyValidationErrors()

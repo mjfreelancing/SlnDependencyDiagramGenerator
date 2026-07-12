@@ -18,5 +18,11 @@ public interface IScopedOperationFactory<TService> where TService : notnull
     /// Creates a scope, resolves <typeparamref name="TService"/>, invokes
     /// <paramref name="operation"/>, and disposes the scope.
     /// </summary>
+    Task ExecuteAsync(Func<TService, CancellationToken, Task> operation, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Creates a scope, resolves <typeparamref name="TService"/>, invokes
+    /// <paramref name="operation"/>, and disposes the scope.
+    /// </summary>
     Task<TResult> ExecuteAsync<TResult>(Func<TService, CancellationToken, Task<TResult>> operation, CancellationToken cancellationToken);
 }

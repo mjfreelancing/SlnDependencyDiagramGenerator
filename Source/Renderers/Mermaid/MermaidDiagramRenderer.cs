@@ -1,6 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
-using AllOverIt.Process;
+﻿using AllOverIt.Process;
 using AllOverIt.Process.Extensions;
+using Microsoft.Extensions.Logging;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Generator;
 using SlnDependencyDiagramGenerator.Generator.IntermediateRepresentation;
@@ -24,9 +24,10 @@ internal sealed class MermaidDiagramRenderer : DiagramRendererBase
 
     /// <summary>Initializes a new Mermaid diagram renderer.</summary>
     /// <param name="options">The diagram options.</param>
+    /// <param name="progressReporter">Optional shared progress reporter for streaming to callers.</param>
     /// <param name="logger">A logger for progress and diagnostics.</param>
-    public MermaidDiagramRenderer(GeneratorDiagramOptions options, ILogger<MermaidDiagramRenderer> logger)
-        : base(options, logger)
+    public MermaidDiagramRenderer(GeneratorDiagramOptions options, IProgressReporter progressReporter, ILogger<MermaidDiagramRenderer> logger)
+        : base(options, progressReporter, logger)
     {
     }
 
@@ -145,8 +146,7 @@ internal sealed class MermaidDiagramRenderer : DiagramRendererBase
     protected override async Task ExportImageFileAsync(string diagramFileName, DiagramImageFormat format, CancellationToken cancellationToken)
     {
         var imageFileName = Path.ChangeExtension(diagramFileName, format.ToString().ToLowerInvariant());
-
-        Logger.LogInformation("Creating image: {ImageName}", Path.GetFileName(imageFileName));
+        ProgressReporter.Report($"  Exporting {format}: {Path.GetFileName(imageFileName)}", Logger);
 
         var stopwatch = Stopwatch.StartNew();
 
@@ -175,7 +175,8 @@ internal sealed class MermaidDiagramRenderer : DiagramRendererBase
 
         stopwatch.Stop();
 
-        Logger.LogInformation("Image export complete ({Elapsed})", FormatElapsed(stopwatch.Elapsed));
+        var elapsed = FormatElapsed(stopwatch.Elapsed);
+        ProgressReporter.Report($"  Export complete ({elapsed})", Logger);
     }
 
     private static DiagramIrNode? FindNode(DiagramIntermediateRepresentation diagramRepresentation, string alias)

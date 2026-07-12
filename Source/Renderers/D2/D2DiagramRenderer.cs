@@ -1,6 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
-using AllOverIt.Process;
+﻿using AllOverIt.Process;
 using AllOverIt.Process.Extensions;
+using Microsoft.Extensions.Logging;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Generator;
 using SlnDependencyDiagramGenerator.Generator.IntermediateRepresentation;
@@ -26,8 +26,9 @@ internal sealed class D2DiagramRenderer : DiagramRendererBase
     /// <summary>Initializes a new D2 diagram renderer.</summary>
     /// <param name="options">The diagram options.</param>
     /// <param name="logger">A logger for progress and diagnostics.</param>
-    public D2DiagramRenderer(GeneratorDiagramOptions options, ILogger<D2DiagramRenderer> logger)
-        : base(options, logger)
+    /// <param name="progressReporter">Optional shared progress reporter for streaming to callers.</param>
+    public D2DiagramRenderer(GeneratorDiagramOptions options, IProgressReporter progressReporter, ILogger<D2DiagramRenderer> logger)
+        : base(options, progressReporter, logger)
     {
     }
 
@@ -121,8 +122,7 @@ internal sealed class D2DiagramRenderer : DiagramRendererBase
     protected override async Task ExportImageFileAsync(string diagramFileName, DiagramImageFormat format, CancellationToken cancellationToken)
     {
         var imageFileName = Path.ChangeExtension(diagramFileName, format.ToString().ToLowerInvariant());
-
-        Logger.LogInformation("Creating image: {ImageName}", Path.GetFileName(imageFileName));
+        ProgressReporter.Report($"  Exporting {format}: {Path.GetFileName(imageFileName)}", Logger);
 
         var stopwatch = Stopwatch.StartNew();
 
@@ -151,7 +151,8 @@ internal sealed class D2DiagramRenderer : DiagramRendererBase
 
         stopwatch.Stop();
 
-        Logger.LogInformation("Image export complete ({Elapsed})", FormatElapsed(stopwatch.Elapsed));
+        var elapsed = FormatElapsed(stopwatch.Elapsed);
+        ProgressReporter.Report($"  Export complete ({elapsed})", Logger);
     }
 
     private (string Fill, double Opacity) GetStyleValues(DiagramIrStyleRole styleRole)

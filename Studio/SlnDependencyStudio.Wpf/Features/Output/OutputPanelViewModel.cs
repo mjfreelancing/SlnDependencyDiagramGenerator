@@ -25,12 +25,27 @@ public sealed class OutputPanelViewModel : ReactiveObject, IStudioScopedDependen
 
     private bool _isVerbose;
     private bool _wrapContent;
+    private bool _autoScroll;
+    private bool _isOperationRunning;
 
     /// <summary>The messages displayed in the output panel.</summary>
     public ObservableCollection<OutputMessage> Messages { get; } = [];
 
     /// <summary>Command that clears the output panel.</summary>
     public ReactiveCommand<Unit, Unit> ClearCommand { get; }
+
+    /// <summary>Command that cancels the currently running operation (analysis or generation).</summary>
+    public ReactiveCommand<Unit, Unit> CancelCommand { get; }
+
+    /// <summary>
+    /// <see langword="true"/> while an analysis or generation operation is in progress.
+    /// Controls the visibility of the Cancel button in the output panel header.
+    /// </summary>
+    public bool IsOperationRunning
+    {
+        get => _isOperationRunning;
+        set => this.RaiseAndSetIfChanged(ref _isOperationRunning, value);
+    }
 
     /// <summary>
     /// When <see langword="true"/>, all application log events (Information and above)
@@ -70,6 +85,20 @@ public sealed class OutputPanelViewModel : ReactiveObject, IStudioScopedDependen
         }
     }
 
+    /// <summary>
+    /// When <see langword="true"/>, the output panel auto-scrolls to the
+    /// bottom when new messages arrive. Defaults to <see langword="true"/>.
+    /// </summary>
+    public bool AutoScroll
+    {
+        get => _autoScroll;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _autoScroll, value);
+            PersistIfNotInitializing();
+        }
+    }
+
     /// <summary>Initializes a new instance of <see cref="OutputPanelViewModel"/>.</summary>
     /// <param name="observableSink">The Serilog observable sink for verbose log streaming.</param>
     /// <param name="applicationSettings">The application settings service for persisting preferences.</param>
@@ -77,8 +106,9 @@ public sealed class OutputPanelViewModel : ReactiveObject, IStudioScopedDependen
     {
         _observableSink = observableSink;
         _applicationSettings = applicationSettings;
-        
+
         ClearCommand = ReactiveCommand.Create(Messages.Clear);
+        CancelCommand = ReactiveCommand.Create(() => { });
 
         RestorePreferences();
     }
@@ -92,6 +122,7 @@ public sealed class OutputPanelViewModel : ReactiveObject, IStudioScopedDependen
             var output = _applicationSettings.CurrentSettings.Output;
             WrapContent = output.WrapContent;
             IsVerbose = output.IsVerboseLogging;
+            AutoScroll = output.AutoScroll;
         }
         finally
         {
@@ -109,6 +140,7 @@ public sealed class OutputPanelViewModel : ReactiveObject, IStudioScopedDependen
         var output = _applicationSettings.CurrentSettings.Output;
         output.WrapContent = _wrapContent;
         output.IsVerboseLogging = _isVerbose;
+        output.AutoScroll = _autoScroll;
 
         _ = _applicationSettings.SaveSettingsAsync();
     }
@@ -141,6 +173,10 @@ public sealed class OutputPanelViewModel : ReactiveObject, IStudioScopedDependen
 
         var text = logEvent.RenderMessage();
 
-        return new OutputMessage { Text = text, Level = level };
+        return new OutputMessage
+        {
+            Text = $"[⚡] {text}",
+            Level = level
+        };
     }
 }

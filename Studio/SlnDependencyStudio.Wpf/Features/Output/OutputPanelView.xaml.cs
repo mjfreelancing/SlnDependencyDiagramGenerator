@@ -24,6 +24,9 @@ public partial class OutputPanelView : ReactiveUserControl<OutputPanelViewModel>
             this.Bind(ViewModel, vm => vm.WrapContent, view => view.WrapCheckBox.IsChecked)
                 .DisposeWith(disposables);
 
+            this.Bind(ViewModel, vm => vm.AutoScroll, view => view.AutoScrollCheckBox.IsChecked)
+                .DisposeWith(disposables);
+
             // Auto-scroll to the bottom when new messages arrive.
             ViewModel!.Messages.CollectionChanged += OnMessagesCollectionChanged;
 
@@ -35,7 +38,7 @@ public partial class OutputPanelView : ReactiveUserControl<OutputPanelViewModel>
 
     private void OnMessagesCollectionChanged(object? sender, NotifyCollectionChangedEventArgs eventArgs)
     {
-        if (eventArgs.Action == NotifyCollectionChangedAction.Add)
+        if (eventArgs.Action == NotifyCollectionChangedAction.Add && ViewModel!.AutoScroll)
         {
             MessageScrollViewer.ScrollToEnd();
         }

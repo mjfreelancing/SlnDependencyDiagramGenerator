@@ -53,6 +53,7 @@
         <PackageReference Include="NuGet.Protocol" />
         <PackageReference Include="Microsoft.VisualStudio.SolutionPersistence" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All" />
+        <PackageReference Include="System.Reactive" />
     </ItemGroup>
 
     <!--

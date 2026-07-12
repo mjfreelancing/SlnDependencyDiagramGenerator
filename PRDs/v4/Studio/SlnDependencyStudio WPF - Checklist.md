@@ -833,23 +833,23 @@ All fields are scalars — `TrackableValue<T>` is the correct tracker for every 
 
 ### 8.1 Generation Service
 
-- [ ] 8.1.1 Create `IGenerationService` under `Features/Run/` (co-located with `IPreGenerationAnalysisService`). Returns `IObservable<OutputMessage>` so generation output streams to the same output panel as dry-run analysis.
-- [ ] 8.1.2 Implement `GenerationService : IGenerationService, IStudioScopedDependency`. Reads the document from `IProjectDocumentStore`. Calls `IPreGenerationCommandRunner.RunAsync()` if pre-gen is enabled, then builds a `DependencyGeneratorConfig` from the document and calls `IDependencyGenerator.CreateDiagramsAsync()`. All log output is captured by the Serilog pipeline and surfaced through the `IObservableSink`.
-- [ ] 8.1.3 Support cancellation: `CancellationToken` passed through to the pre-generation runner, the generator, and all renderers.
+- [x] 8.1.1 Create `IGenerationService` under `Features/Run/` (co-located with `IPreGenerationAnalysisService`). Returns `IObservable<OutputMessage>` so generation output streams to the same output panel as dry-run analysis.
+- [x] 8.1.2 Implement `GenerationService : IGenerationService, IStudioScopedDependency`. Reads the document from `IProjectDocumentStore`. Calls `IPreGenerationCommandRunner.RunAsync()` if pre-gen is enabled, then builds a `DependencyGeneratorConfig` from the document and calls `IDependencyGenerator.CreateDiagramsAsync()`. All log output is captured by the Serilog pipeline and surfaced through the `IObservableSink`.
+- [x] 8.1.3 Support cancellation: `CancellationToken` passed through to the pre-generation runner, the generator, and all renderers.
 
 ### 8.2 Menu Bar Integration & Commands
 
-- [ ] 8.2.1 **Run → Generate** binds to `GenerateCommand` on `MainWindowViewModel` (placeholder already exists; replace the no-op delegate with the real implementation).
-- [ ] 8.2.2 `GenerateCommand` (canExecute already gated by `RunMenuEnabled` — no inline validation errors can exist when it's clickable):
+- [x] 8.2.1 **Run → Generate** binds to `GenerateCommand` on `MainWindowViewModel` (placeholder already exists; replace the no-op delegate with the real implementation).
+- [x] 8.2.2 `GenerateCommand` (canExecute already gated by `RunMenuEnabled` — no inline validation errors can exist when it's clickable):
   - If dirty, prompts the user to Save / Discard / Cancel (reuses the existing `PromptDiscardAsync` pattern from CloseProject). Cancel stops generation.
   - If the user saves, `IProjectDocumentStore.SaveAsync()` handles flush + persist + mark clean.
-  - Calls `IGenerationService.RunAsync()` and subscribes the output to `OutputPanelViewModel.Messages`.
+  - Calls `IGenerationService.RunAsync()` and subscribes the output to `OutputPanelViewModel.Messages`. _(Placeholder until 8.1 — writes "Generation is not yet implemented" to the output panel.)_
   - If the generator throws (FluentValidation failure or other error), the exception is caught and displayed in the output panel.
-- [ ] 8.2.3 During generation:
+- [x] 8.2.3 During generation:
   - Entire menu bar disabled (prevents concurrent operations and accidental navigation). `RunMenuEnabled` and `CanClose` gating already wired from Phase 7; no new properties needed.
   - A **Cancel** button appears in the output panel header, aborting via `CancellationTokenSource.Cancel()`.
-- [ ] 8.2.4 On cancel: `CancellationTokenSource.Cancel()`, "Generation cancelled" in output panel.
-- [ ] 8.2.5 On completion: success/failure in output panel, elapsed time.
+- [x] 8.2.4 On cancel: `CancellationTokenSource.Cancel()`, "Generation cancelled" in output panel. _(Cancel button wired; cancellation will propagate through the linked token when 8.1 adds `IGenerationService.RunAsync()`.)_
+- [x] 8.2.5 On completion: success/failure in output panel, elapsed time.
 
 ### 8.3 Output Panel (Completed in Phase 7)
 

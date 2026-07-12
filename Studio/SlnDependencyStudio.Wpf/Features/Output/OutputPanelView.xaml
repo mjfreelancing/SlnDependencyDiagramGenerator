@@ -15,6 +15,7 @@
     <UserControl.Resources>
         <converters:BoolToTextWrappingConverter x:Key="BoolToTextWrapping" />
         <converters:BoolToScrollBarVisibilityConverter x:Key="BoolToScrollBarVisibility" />
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
     </UserControl.Resources>
 
     <Grid>
@@ -34,7 +35,9 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
@@ -66,8 +69,27 @@
                     Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
                     ToolTip="Wrap long lines to the next line" />
 
-                <Button
+                <CheckBox
+                    x:Name="AutoScrollCheckBox"
                     Grid.Column="3"
+                    Margin="8,4,4,4"
+                    VerticalAlignment="Center"
+                    Content="Auto-scroll"
+                    FontSize="11"
+                    Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+                    ToolTip="Automatically scroll to the bottom when new messages arrive" />
+
+                <Button
+                    Grid.Column="4"
+                    VerticalAlignment="Center"
+                    Command="{Binding CancelCommand}"
+                    Content="Cancel"
+                    Style="{StaticResource MaterialDesignFlatButton}"
+                    Foreground="{DynamicResource MaterialDesign.Brush.ValidationError}"
+                    Visibility="{Binding IsOperationRunning, Converter={StaticResource BooleanToVisibilityConverter}}" />
+
+                <Button
+                    Grid.Column="5"
                     VerticalAlignment="Center"
                     Command="{Binding ClearCommand}"
                     Content="Clear"

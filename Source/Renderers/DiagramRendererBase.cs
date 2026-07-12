@@ -24,15 +24,23 @@ internal abstract class DiagramRendererBase : IDiagramRenderer
     /// <summary>The logger used for progress and diagnostics.</summary>
     protected readonly ILogger Logger;
 
+    /// <summary>
+    /// Shared progress reporter. When set, key progress messages are reported
+    /// here alongside normal logging, so callers can stream them to a UI.
+    /// </summary>
+    protected readonly IProgressReporter ProgressReporter;
+
     /// <inheritdoc />
     public abstract string FileExtension { get; }
 
     /// <summary>Initializes a new renderer base instance.</summary>
     /// <param name="options">The diagram options.</param>
+    /// <param name="progressReporter">Shared progress reporter for streaming to callers.</param>
     /// <param name="logger">A logger for progress and diagnostics.</param>
-    protected DiagramRendererBase(GeneratorDiagramOptions options, ILogger logger)
+    protected DiagramRendererBase(GeneratorDiagramOptions options, IProgressReporter progressReporter, ILogger logger)
     {
         Options = options.WhenNotNull();
+        ProgressReporter = progressReporter.WhenNotNull();
         Logger = logger.WhenNotNull();
     }
 
@@ -55,13 +63,14 @@ internal abstract class DiagramRendererBase : IDiagramRenderer
 
         var fileName = Path.Combine(exportPath, $"{baseName}.{FileExtension}");
 
-        Logger.LogInformation("Creating '{TargetFramework}' diagram: {FileName}", targetFramework, Path.GetFileName(fileName));
+        var relativeFileName = Path.GetFileName(fileName);
+        ProgressReporter.Report($"  {targetFramework}/{FileExtension}: Creating {relativeFileName}", Logger);
 
         await File
             .WriteAllTextAsync(fileName, content, cancellationToken)
             .ConfigureAwait(false);
 
-        Logger.LogInformation("Diagram file created: {FileName}", Path.GetFileName(fileName));
+        ProgressReporter.Report($"  {targetFramework}/{FileExtension}: Created {relativeFileName}", Logger);
 
         foreach (var format in imageFormats)
         {

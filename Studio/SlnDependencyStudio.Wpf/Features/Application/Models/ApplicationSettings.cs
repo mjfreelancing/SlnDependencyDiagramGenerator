@@ -34,7 +34,8 @@ public sealed class ApplicationSettings
             Output = new OutputSettings
             {
                 WrapContent = Output.WrapContent,
-                IsVerboseLogging = Output.IsVerboseLogging
+                IsVerboseLogging = Output.IsVerboseLogging,
+                AutoScroll = Output.AutoScroll
             }
         };
     }

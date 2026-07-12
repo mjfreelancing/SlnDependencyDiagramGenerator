@@ -1,3 +1,4 @@
+using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Shared.DependencyInjection;
 using SlnDependencyStudio.Wpf.Features.Diagrams;
@@ -75,4 +76,8 @@ public interface IProjectDocumentStore : IStudioSingletonDependency
 
     /// <summary>Closes the current document, resets all editor wrappers, and clears the file path.</summary>
     void Close();
+
+    /// <summary>Flushes all editor wrappers to the underlying document and returns a
+    /// <see cref="DependencyGeneratorConfig"/> snapshot ready for generation.</summary>
+    DependencyGeneratorConfig BuildGeneratorConfig();
 }

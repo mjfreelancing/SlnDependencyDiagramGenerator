@@ -5,10 +5,8 @@ using SlnDependencyStudio.Wpf.Features.Pipeline;
 using SlnDependencyStudio.Wpf.Features.Pipeline.Models;
 using SlnDependencyStudio.Wpf.Features.Pipeline.Services;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
-using System.Collections.Generic;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
-using System.Threading;
 
 namespace SlnDependencyStudio.Wpf.Tests.Unit.Features.Pipeline;
 
@@ -296,7 +294,7 @@ public class PipelineViewModelFixture
             _enabled.Value = true;
             _command.Value = string.Empty;
 
-            _viewModel.PreGenError.ShouldContain("Command must not be empty");
+            _viewModel.PreGenError!.ShouldContain("Command must not be empty");
         }
 
         [Fact]

@@ -2,6 +2,7 @@ using AllOverIt.Assertion;
 using ReactiveUI;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyStudio.Shared.Config;
+using SlnDependencyStudio.Shared.Utils;
 using SlnDependencyStudio.Wpf.Features.Diagrams;
 using SlnDependencyStudio.Wpf.Features.Export;
 using SlnDependencyStudio.Wpf.Features.Pipeline;
@@ -189,5 +190,27 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
         _exportOptionsEditor.SetOriginalValues(_document!.DiagramGenerator.Export);
         _diagramOptionsEditor.SetOriginalValues(_document!.DiagramGenerator.Diagram);
         _preGenerationEditor.SetOriginalValues(_document!.PreGeneration);
+    }
+
+    /// <inheritdoc />
+    public DependencyGeneratorConfig BuildGeneratorConfig()
+    {
+        Throw<InvalidOperationException>.WhenNull(_document, "No project is loaded");
+
+        FlushAllEditors();
+
+        var config = _document.DiagramGenerator;
+
+        // Resolve relative paths against the document directory so the generator
+        // receives absolute paths regardless of the current working directory.
+        if (DocumentFilePath is not null)
+        {
+            var docDir = Path.GetDirectoryName(DocumentFilePath)!;
+
+            config.Solution.SolutionPath = PathUtils.ResolveAsAbsolutePath(config.Solution.SolutionPath, docDir);
+            config.Export.RootPath = PathUtils.ResolveAsAbsolutePath(config.Export.RootPath, docDir);
+        }
+
+        return config;
     }
 }

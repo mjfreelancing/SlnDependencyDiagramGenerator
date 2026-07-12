@@ -12,12 +12,21 @@ namespace SlnDependencyDiagramGenerator.Tests.Unit.Renderers.D2;
 
 public class D2DiagramRendererFixture
 {
+    private readonly IProgressReporter _progressReporter;
+    private readonly ILogger<D2DiagramRenderer> _logger;
+
+    public D2DiagramRendererFixture()
+    {
+        _progressReporter = Substitute.For<IProgressReporter>();
+        _logger = Substitute.For<ILogger<D2DiagramRenderer>>();
+    }
+
     public class Render : D2DiagramRendererFixture
     {
         [Fact]
         public async Task Should_Render_A_Grouped_Graph_With_Custom_Direction_And_Styles()
         {
-            var renderer = new D2DiagramRenderer(CreateGroupedOptions(), Substitute.For<ILogger<D2DiagramRenderer>>());
+            var renderer = new D2DiagramRenderer(CreateGroupedOptions(), _progressReporter, _logger);
 
             var content = renderer.Render(CreateGroupedModel());
 
@@ -27,7 +36,7 @@ public class D2DiagramRendererFixture
         [Fact]
         public async Task Should_Render_Multiple_Project_And_Package_Groups_With_Shared_Project_References()
         {
-            var renderer = new D2DiagramRenderer(CreateExpandedGroupedOptions(), Substitute.For<ILogger<D2DiagramRenderer>>());
+            var renderer = new D2DiagramRenderer(CreateExpandedGroupedOptions(), _progressReporter, _logger);
 
             var content = renderer.Render(CreateExpandedGroupedModel());
 
@@ -37,7 +46,7 @@ public class D2DiagramRendererFixture
         [Fact]
         public async Task Should_Render_An_Ungrouped_Graph_With_Right_To_Left_Direction()
         {
-            var renderer = new D2DiagramRenderer(CreateUngroupedOptions(), Substitute.For<ILogger<D2DiagramRenderer>>());
+            var renderer = new D2DiagramRenderer(CreateUngroupedOptions(), _progressReporter, _logger);
 
             var content = renderer.Render(CreateUngroupedModel());
 

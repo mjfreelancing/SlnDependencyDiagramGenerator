@@ -1,6 +1,7 @@
 using AllOverIt.Extensions;
 using Microsoft.Extensions.Logging;
 using SlnDependencyDiagramGenerator.Generator.Discovery;
+using SlnDependencyStudio.Shared.Utils;
 using SlnDependencyStudio.Wpf.DependencyInjection;
 using SlnDependencyStudio.Wpf.Features.Output;
 using SlnDependencyStudio.Wpf.Features.Pipeline.Services;
@@ -51,10 +52,10 @@ internal sealed class PreGenerationAnalysisService : IPreGenerationAnalysisServi
                 }
 
                 // Resolve relative paths against the .sds project file's directory.
-                if (!Path.IsPathFullyQualified(solutionPath) && _store.DocumentFilePath is not null)
+                if (_store.DocumentFilePath is not null)
                 {
                     var projectDirectory = Path.GetDirectoryName(_store.DocumentFilePath)!;
-                    solutionPath = Path.GetFullPath(Path.Combine(projectDirectory, solutionPath));
+                    solutionPath = PathUtils.ResolveAsAbsolutePath(solutionPath, projectDirectory);
                 }
 
                 var solutionEditor = _store.SolutionOptionsEditor;
