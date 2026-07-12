@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using Shouldly;
 using SlnDependencyDiagramGenerator.Generator.ToolDetection;
+using SlnDependencyStudio.Wpf.DependencyInjection;
 using SlnDependencyStudio.Wpf.Features.Application;
 using SlnDependencyStudio.Wpf.Features.Application.Models;
 using SlnDependencyStudio.Wpf.Features.Pipeline.Services;
@@ -14,7 +15,6 @@ public class ToolStatusServiceFixture
 {
     private readonly IServiceScopeFactory _scopeFactory = Substitute.For<IServiceScopeFactory>();
     private readonly IServiceScope _scope = Substitute.For<IServiceScope>();
-    private readonly IServiceProvider _serviceProvider = Substitute.For<IServiceProvider>();
     private readonly IToolDetectionService _detectionService = Substitute.For<IToolDetectionService>();
     private readonly IApplicationSettingsService _applicationSettings = Substitute.For<IApplicationSettingsService>();
     private readonly ApplicationSettings _settings = new();
@@ -22,8 +22,7 @@ public class ToolStatusServiceFixture
     protected ToolStatusServiceFixture()
     {
         _scopeFactory.CreateScope().Returns(_scope);
-        _scope.ServiceProvider.Returns(_serviceProvider);
-        _serviceProvider.GetService(typeof(IToolDetectionService)).Returns(_detectionService);
+        _scope.ServiceProvider.GetService(typeof(IToolDetectionService)).Returns(_detectionService);
         _applicationSettings.CurrentSettings.Returns(_settings);
 
         _detectionService.KnownToolNames.Returns(["d2", "mmdc"]);
@@ -40,37 +39,6 @@ public class ToolStatusServiceFixture
                     ErrorMessage = $"'{toolName}' was not found on PATH."
                 });
             });
-    }
-
-    public class Construction : ToolStatusServiceFixture
-    {
-        [Fact]
-        public void Should_Seed_Two_Entries()
-        {
-            using var sut = CreateSut();
-
-            var entries = sut.ToolStatuses.FirstAsync().Wait();
-
-            entries.Count.ShouldBe(2);
-            entries.ShouldContain(e => e.ToolName == "d2");
-            entries.ShouldContain(e => e.ToolName == "mmdc");
-        }
-
-        [Fact]
-        public async Task Should_Seed_Entries_With_Default_Values()
-        {
-            using var sut = CreateSut();
-
-            var entries = await sut.ToolStatuses.FirstAsync();
-
-            entries.Count.ShouldBe(2);
-
-            foreach (var entry in entries)
-            {
-                entry.IsAvailable.ShouldBeFalse();
-                entry.ResolvedPath.ShouldBeNull();
-            }
-        }
     }
 
     public class RescanAsync : ToolStatusServiceFixture
@@ -227,6 +195,7 @@ public class ToolStatusServiceFixture
 
     private ToolStatusService CreateSut()
     {
-        return new ToolStatusService(_scopeFactory, _applicationSettings);
+        var detectionFactory = new ScopedOperationFactory<IToolDetectionService>(_scopeFactory);
+        return new ToolStatusService(detectionFactory, _applicationSettings);
     }
 }

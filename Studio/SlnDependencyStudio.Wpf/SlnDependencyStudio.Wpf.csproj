@@ -29,6 +29,7 @@
 		<PackageReference Include="AllOverIt.ReactiveUI" />
 		<PackageReference Include="AllOverIt.ReactiveUI.Wpf" />
 		<PackageReference Include="AllOverIt.DependencyInjection" />
+		<PackageReference Include="AllOverIt.Serilog" />
 		<PackageReference Include="Microsoft.Extensions.Hosting" />
 		<PackageReference Include="Serilog.Extensions.Hosting" />
 		<PackageReference Include="Serilog.Sinks.RollingFile" />

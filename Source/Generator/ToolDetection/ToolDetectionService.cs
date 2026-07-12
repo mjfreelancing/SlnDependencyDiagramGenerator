@@ -138,51 +138,55 @@ internal sealed class ToolDetectionService : IToolDetectionService
         }
     }
 
-    private static async Task<ToolStatus> CheckExplicitPathAsync(string toolName, string explicitPath, CancellationToken cancellationToken)
+    private async Task<ToolStatus> CheckExplicitPathAsync(string toolName, string explicitPath, CancellationToken cancellationToken)
     {
-        if (explicitPath.IsNullOrEmpty())
-        {
-            return new ToolStatus
-            {
-                ToolName = toolName,
-                IsAvailable = false,
-                ErrorMessage = $"Explicit path for '{toolName}' is empty."
-            };
-        }
-
         var exists = File.Exists(explicitPath);
 
-        return exists
-            ? new ToolStatus
+        if (exists)
+        {
+            _logger.LogInformation("The tool {ToolName} was found at {ExplicitPath}", toolName, explicitPath);
+
+            return new ToolStatus
             {
                 ToolName = toolName,
                 IsAvailable = true,
                 ResolvedPath = explicitPath
-            }
-            : new ToolStatus
-            {
-                ToolName = toolName,
-                IsAvailable = false,
-                ErrorMessage = $"The specified path for '{toolName}' was not found: {explicitPath}"
             };
+        }
+
+        _logger.LogInformation("The tool {ToolName} was not found at {ExplicitPath}", toolName, explicitPath);
+
+        return new ToolStatus
+        {
+            ToolName = toolName,
+            IsAvailable = false,
+            ErrorMessage = $"The specified path for '{toolName}' was not found: {explicitPath}"
+        };
     }
 
-    private static async Task<ToolStatus> CheckPathAsync(string toolName, CancellationToken cancellationToken)
+    private async Task<ToolStatus> CheckPathAsync(string toolName, CancellationToken cancellationToken)
     {
         var resolvedPath = await ResolveToolPathAsync(toolName, cancellationToken).ConfigureAwait(false);
 
-        return resolvedPath is not null
-            ? new ToolStatus
+        if (resolvedPath is not null)
+        {
+            _logger.LogInformation("The tool {ToolName} was found at {ResolvedPath}", toolName, resolvedPath);
+
+            return new ToolStatus
             {
                 ToolName = toolName,
                 IsAvailable = true,
                 ResolvedPath = resolvedPath
-            }
-            : new ToolStatus
-            {
-                ToolName = toolName,
-                IsAvailable = false,
-                ErrorMessage = $"'{toolName}' was not found on PATH."
             };
+        }
+
+        _logger.LogInformation("The tool {ToolName} was not found", toolName);
+
+        return new ToolStatus
+        {
+            ToolName = toolName,
+            IsAvailable = false,
+            ErrorMessage = $"'{toolName}' was not found on PATH."
+        };
     }
 }

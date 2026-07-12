@@ -1,5 +1,5 @@
-using Microsoft.Extensions.DependencyInjection;
 using SlnDependencyDiagramGenerator.Generator.ToolDetection;
+using SlnDependencyStudio.Wpf.DependencyInjection;
 using SlnDependencyStudio.Wpf.Features.Application;
 using SlnDependencyStudio.Wpf.Features.Pipeline.Models;
 using System.Collections.ObjectModel;
@@ -14,42 +14,34 @@ namespace SlnDependencyStudio.Wpf.Features.Pipeline.Services;
 /// </summary>
 internal sealed class ToolStatusService : IToolStatusService, IDisposable
 {
-    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly IScopedOperationFactory<IToolDetectionService> _toolDetectionFactory;
     private readonly IApplicationSettingsService _applicationSettings;
 
     private readonly ObservableCollection<ToolStatusEntry> _entries = [];
     private readonly BehaviorSubject<IReadOnlyList<ToolStatusEntry>> _statusSubject;
 
-    /// <summary>Initializes a new instance of <see cref="ToolStatusService"/>.</summary>
-    /// <param name="scopeFactory">Factory for creating scopes to resolve scoped dependencies.</param>
-    /// <param name="applicationSettings">Provides access to tool path overrides.</param>
-    public ToolStatusService(
-        IServiceScopeFactory scopeFactory,
-        IApplicationSettingsService applicationSettings)
-    {
-        _scopeFactory = scopeFactory;
-        _applicationSettings = applicationSettings;
-
-        _statusSubject = new BehaviorSubject<IReadOnlyList<ToolStatusEntry>>(_entries.ToArray());
-        ToolStatuses = _statusSubject.AsObservable();
-
-        // Fire-and-forget initial scan — this will seed entries from the detection service.
-        _ = RescanAsync(CancellationToken.None);
-    }
-
     /// <inheritdoc />
     public IObservable<IReadOnlyList<ToolStatusEntry>> ToolStatuses { get; }
+
+    /// <summary>Initializes a new instance of <see cref="ToolStatusService"/>.</summary>
+    /// <param name="toolDetectionFactory">Factory for creating scoped <see cref="IToolDetectionService"/> operations.</param>
+    /// <param name="applicationSettings">Provides access to tool path overrides.</param>
+    public ToolStatusService(IScopedOperationFactory<IToolDetectionService> toolDetectionFactory, IApplicationSettingsService applicationSettings)
+    {
+        _toolDetectionFactory = toolDetectionFactory;
+        _applicationSettings = applicationSettings;
+
+        _statusSubject = new BehaviorSubject<IReadOnlyList<ToolStatusEntry>>([.. _entries]);
+        ToolStatuses = _statusSubject.AsObservable();
+    }
 
     /// <inheritdoc />
     public async Task RescanAsync(CancellationToken cancellationToken)
     {
-        using var scope = _scopeFactory.CreateScope();
-        var detectionService = scope.ServiceProvider.GetRequiredService<IToolDetectionService>();
-
         var now = DateTime.UtcNow;
 
         // Seed or sync entries from the detection service's known tool list.
-        var knownToolNames = detectionService.KnownToolNames;
+        var knownToolNames = _toolDetectionFactory.Execute(svc => svc.KnownToolNames);
 
         for (var i = _entries.Count - 1; i >= 0; i--)
         {
@@ -72,8 +64,13 @@ internal sealed class ToolStatusService : IToolStatusService, IDisposable
             var settings = _applicationSettings.CurrentSettings;
             _ = settings.ToolPathOverrides.TryGetValue(entry.ToolName, out var overridePath);
 
-            var status = await detectionService
-                .CheckToolAvailabilityAsync(entry.ToolName, overridePath, cancellationToken)
+            // Resolves a new, scoped, instance of IToolDetectionService, calls DiscoverProjectsAsync(),
+            // disposes of the scope and returns the result.
+            var status = await _toolDetectionFactory
+                .ExecuteAsync((detectionService, token) =>
+                {
+                    return detectionService.CheckToolAvailabilityAsync(entry.ToolName, overridePath, token);
+                }, cancellationToken)
                 .ConfigureAwait(true);
 
             entry.IsAvailable = status.IsAvailable;

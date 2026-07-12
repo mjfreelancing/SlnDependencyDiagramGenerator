@@ -794,76 +794,82 @@ All fields are scalars — `TrackableValue<T>` is the correct tracker for every 
 
 ---
 
-## Phase 7 — Pre-Generation Analysis
+## Phase 7 — Dry-Run Analysis
 
-**Intent:** Before generation runs, present an analysis view that shows what the generator will process: all discovered projects, which are included/excluded (with reasons), and tool-readiness for the configured export types. This gives the user confidence before committing to a potentially long generation run.
+**Intent:** A read-only preview showing what the generator _would_ process — discovered projects, include/exclude decisions with reasons, and tool readiness. Activated via **Run → Analyze** in the menu bar. Advisory only; does not block generation.
 
 ### 7.1 Analysis Data Model
 
-- [ ] 7.1.1 Create a `PreGenerationAnalysisResult` model with collections: `AllDiscoveredProjects` (name + path), `IncludedProjects`, `ExcludedProjects` (with exclusion reason), and `ToolReadiness` (per-tool availability for configured formats).
-- [ ] 7.1.2 If the generator does not yet expose a public API to return project discovery results without running full generation, raise this as an explicit requirement (per FR-6.15) and implement the needed interface before proceeding.
+- [x] 7.1.1 Create an `AnalysisResult` model with collections: `AllDiscoveredProjects` (name + path), `IncludedProjects`, `ExcludedProjects` (with exclusion reason), and `ToolReadiness` (per-tool availability from `IToolStatusService`). _(Resolved: superseded by `OutputMessage` streaming + `ProjectDiscoveryResult` from core library; `IPreGenerationAnalysisService.RunAsync` streams results directly to the output panel.)_
+- [x] 7.1.2 ~~Discovery API gap~~ — `IProjectDiscoveryService.DiscoverProjectsAsync` already returns `ProjectDiscoveryResult` with included/excluded/all projects. No new API needed.
 
-### 7.2 Analysis View
+### 7.2 Analysis (Output Panel)
 
-- [ ] 7.2.1 Create `PreGenerationAnalysisView.xaml` and `PreGenerationAnalysisViewModel`.
-- [ ] 7.2.2 Display three expandable sections (use Material Design `Expander` or `Card`):
-  - **All Projects Discovered** — a scrollable list of project names and their paths.
-  - **Included in Generation** — projects that match include patterns and are not excluded.
-  - **Excluded from Generation** — projects with the reason (regex exclude, package filter, etc.).
-- [ ] 7.2.3 Display a **Tool Readiness** section showing each required tool and its availability status, mirroring the tool-status cards from Phase 6.
-- [ ] 7.2.4 Add a "Run Analysis" button on the generation toolbar (or as a pre-generation step). The analysis runs asynchronously and populates the view.
+- [x] 7.2.1 **Run → Analyze** calls `IProjectDiscoveryService.DiscoverProjectsAsync` and `IToolStatusService.ToolStatuses`, formats results, and writes them to the output panel (built in Phase 8).
+- [x] 7.2.2 The output panel shows three sections as formatted text:
+  - **Projects Discovered** — count and list of all project names and paths.
+  - **Included** — projects that match include patterns and are not excluded.
+  - **Excluded** — projects with the reason (regex exclude, package filter, etc.).
+- [x] 7.2.3 **Tool Readiness** section showing each tool and its availability (from `IToolStatusService`).
+- [x] 7.2.4 No dialog or progress bar needed — analysis is lightweight (`DiscoverProjectsAsync` only, no MSBuild evaluation). Results render directly in the output panel.
 
-### 7.3 Integration with Generation Flow
+### 7.3 Menu Bar Integration
 
-- [ ] 7.3.1 The "Generate" command should optionally run analysis first (or have an "Analyze & Generate" button). If analysis returns zero included projects or a missing required tool, block generation and show the analysis view with the problem highlighted.
-- [ ] 7.3.2 The analysis view is a configuration aid, not a general-purpose node browser (FR-10.2). Keep it focused and read-only.
+- [x] 7.3.1 Add a **Run** menu to the main window menu bar with two items: **Analyze** and **Generate**.
+- [x] 7.3.2 **Run → Analyze** runs discovery + tool check and writes results to the output panel.
+- [x] 7.3.3 **Run → Generate** triggers generation (Phase 8).
+- [x] 7.3.4 **Run** menu gating:
+  - Disabled when the document has any validation errors.
+  - Disabled entirely while analysis or generation is running.
+  - Window close blocked while analysis or generation is running (`CanClose`).
 
-**Phase 7 completion:** The user can run a pre-generation analysis to see exactly which projects will be processed and whether the required tools are ready, before committing to generation.
+**Phase 7 completion:** The user can run a dry-run analysis from the menu bar to preview exactly which projects will be processed and tool readiness — before committing to generation.
 
 ---
 
 ## Phase 8 — Generation Orchestration & Output
 
-**Intent:** Build the WPF-specific `IGenerationService` that wraps pre-generation command execution and `IDependencyGenerator.CreateDiagramsAsync`. Wire the "Generate" button. Stream all runtime output to the bottom output panel via Serilog's `ObservableSink`, with color-coded log levels. Disable editing during generation, enable cancellation, and prevent window close.
+**Intent:** Build the WPF-specific generation pipeline. Activated via **Run → Generate** in the menu bar. Validates, saves if dirty, runs pre-generation command + `CreateDiagramsAsync`, streams output to the bottom panel. Disables editing during generation, supports cancellation.
 
 ### 8.1 Generation Service (WPF-Specific)
 
-- [ ] 8.1.1 Create `IWpfGenerationService` with a method `ExecuteAsync(DependencyProjectDocument document, CancellationToken cancellationToken)` that returns an observable stream of `GenerationEvent` (log entries, progress updates, completion/failure).
-- [ ] 8.1.2 Implement `WpfGenerationService`. It calls `IPreGenerationCommandRunner.RunAsync()` (from Shared) if pre-gen is enabled, then calls `IDependencyGenerator.CreateDiagramsAsync()`. All log output is captured by the Serilog pipeline and surfaced through the `ObservableSink`.
-- [ ] 8.1.3 Support cancellation: the `CancellationToken` is passed to both the pre-generation runner and the generator. On cancel, the service emits a cancellation event.
+- [ ] 8.1.1 Create `IWpfGenerationService` with `ExecuteAsync(DependencyProjectDocument document, CancellationToken ct)` returning an observable stream of `GenerationEvent` (log entries, progress, completion/failure).
+- [ ] 8.1.2 Implement `WpfGenerationService`. Calls `IPreGenerationCommandRunner.RunAsync()` if pre-gen enabled, then `IDependencyGenerator.CreateDiagramsAsync()`. Log output captured via Serilog `ObservableSink`.
+- [ ] 8.1.3 Support cancellation: `CancellationToken` passed through to both the pre-generation runner and the generator.
 
-### 8.2 Generation View & Commands
+### 8.2 Menu Bar Integration & Commands
 
-- [ ] 8.2.1 Add a "Generate" button in the shell toolbar or navigation area. Bind to a `GenerateCommand` on `MainWindowViewModel`.
-- [ ] 8.2.2 The `GenerateCommand` should:
-  - Validate the current document (both FluentValidation and ReactiveUI.Validation).
-  - If validation fails, navigate to the first section with errors and do not start generation.
-  - If valid, save the document (if dirty, prompt or auto-save based on preference).
-  - Call `IWpfGenerationService.ExecuteAsync()`.
-- [ ] 8.2.3 While generation is running (FR-8.7, FR-8.8):
-  - Disable the "Generate" button (show a "Cancel" button instead).
-  - Disable all configuration editing controls via `CanEdit` observable bound to `IsGenerating`.
-  - Prevent window close via `CanClose` observable.
-  - Show a progress indicator (Material Design `ProgressBar` with indeterminate mode).
-- [ ] 8.2.4 On cancel, call `CancellationTokenSource.Cancel()`, show "Generation cancelled" in the output panel.
-- [ ] 8.2.5 On completion, show success or failure in the output panel. Display elapsed time. Show the export root path with a "Open in Explorer" button that calls `IExplorerService`.
+- [ ] 8.2.1 **Run → Generate** binds to `GenerateCommand` on `MainWindowViewModel`.
+- [ ] 8.2.2 `GenerateCommand`:
+  - Validates the document (FluentValidation + ReactiveUI).
+  - If validation fails, navigates to the first section with errors.
+  - If valid and dirty, prompts to save (or auto-saves based on preference).
+  - Calls `IWpfGenerationService.ExecuteAsync()`.
+- [ ] 8.2.3 During generation (same rules apply during analysis in Phase 7):
+  - Entire **Run** menu disabled (prevents concurrent operations).
+  - All configuration editing controls disabled via `IsGenerating` flag.
+  - Window close blocked — `Closing` event cancelled or `CanClose` observable returns false.
+  - Indeterminate progress bar shown.
+  - **Run → Cancel** becomes available to abort the operation.
+- [ ] 8.2.4 On cancel: `CancellationTokenSource.Cancel()`, "Generation cancelled" in output panel.
+- [ ] 8.2.5 On completion: success/failure in output panel, elapsed time, "Open in Explorer" button via `IExplorerService`.
 
 ### 8.3 Output Panel
 
-- [ ] 8.3.1 Create `OutputPanelView.xaml` and `OutputPanelViewModel`. The view model subscribes to the `ObservableSink` and exposes an `ObservableCollection<LogEntry>`.
-- [ ] 8.3.2 Each `LogEntry` has `Timestamp`, `Level`, `Message`, and `SourceContext`. Render entries in a `ListBox` with a `DataTemplate` that color-codes by level: Error=Red, Warning=Yellow, Information=White (or default foreground), Debug=Gray.
-- [ ] 8.3.3 Auto-scroll to the bottom as new entries arrive. Use a `ScrollViewer` with `ScrollToBottom` behavior triggered by collection changes.
-- [ ] 8.3.4 The output panel retains the full log for the session via the `CircularBufferSink`. Add a "Clear" button to reset the visible log.
-- [ ] 8.3.5 The output panel auto-expands when generation starts and can be manually collapsed when generation is idle.
-- [ ] 8.3.6 When idle (no generation in progress), the output panel content area displays tool detection status — showing d2 and mmdc availability as coloured dots with resolved paths — per the 1.4 design. This is distinct from the left-nav tool-status dots; it provides a detailed read-only view of the last-known tool check results. When generation starts, this idle content is replaced by the live log stream.
+- [ ] 8.3.1 Create `OutputPanelView.xaml` and `OutputPanelViewModel`. Subscribes to `ObservableSink`, exposes `ObservableCollection<LogEntry>`.
+- [ ] 8.3.2 `LogEntry`: `Timestamp`, `Level`, `Message`, `SourceContext`. Color-coded by level (Error=Red, Warning=Yellow, Info=default, Debug=Gray).
+- [ ] 8.3.3 Auto-scroll to bottom on new entries.
+- [ ] 8.3.4 Full session log retained via `CircularBufferSink`. "Clear" button resets visible log.
+- [ ] 8.3.5 Output panel auto-expands when generation starts, collapsible when idle.
+- [ ] 8.3.6 When idle, output panel shows last-known tool detection status. During generation, replaced by live log stream.
 
 ### 8.4 Explorer Service
 
 - [ ] 8.4.1 Create `IExplorerService` with `OpenAsync(string path)`.
-- [ ] 8.4.2 Implement using `Process.Start("explorer.exe", path)` on Windows.
-- [ ] 8.4.3 After generation completes, display the export root as a clickable hyperlink or button.
+- [ ] 8.4.2 Implement via `Process.Start("explorer.exe", path)` on Windows.
+- [ ] 8.4.3 After generation, export root shown as clickable link/button.
 
-**Phase 8 completion:** Generation runs end-to-end with streaming output, cancellation support, UI state gating during active runs, and post-run feedback including Explorer integration.
+**Phase 8 completion:** Generation runs end-to-end from the menu bar with streaming output, cancellation, UI gating, and post-run Explorer integration.
 
 ---
 

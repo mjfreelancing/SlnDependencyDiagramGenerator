@@ -9,7 +9,17 @@ namespace SlnDependencyStudio.Wpf.Features.Pipeline.Services;
 /// </summary>
 public interface IToolStatusService : IStudioSingletonDependency
 {
-    /// <summary>An observable list of tool status entries, updated on each scan.</summary>
+    // The underlying <c>BehaviorSubject</c> replays the latest snapshot to late subscribers,
+    // so the Pipeline page always receives the current state when it binds — no need to diff
+    // individual collection changes.
+
+    /// <summary>
+    /// An observable that emits a complete snapshot of all tool statuses whenever
+    /// a scan completes. Returns <c>IObservable&lt;IReadOnlyList&lt;T&gt;&gt;</c>
+    /// rather than <c>ObservableCollection&lt;T&gt;</c> because tool detection is refreshed
+    /// as a batch operation (<see cref="RescanAsync"/> produces a new full picture,
+    /// not incremental adds/removes).
+    /// </summary>
     IObservable<IReadOnlyList<ToolStatusEntry>> ToolStatuses { get; }
 
     /// <summary>Re-scans for all required tools and updates <see cref="ToolStatuses"/>.</summary>

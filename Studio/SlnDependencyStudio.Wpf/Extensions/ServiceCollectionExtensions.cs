@@ -7,6 +7,7 @@ using SlnDependencyStudio.Wpf.DependencyInjection;
 using SlnDependencyStudio.Wpf.Features.Diagrams;
 using SlnDependencyStudio.Wpf.Features.EmptyState;
 using SlnDependencyStudio.Wpf.Features.Export;
+using SlnDependencyStudio.Wpf.Features.Output;
 using SlnDependencyStudio.Wpf.Features.Pipeline;
 using SlnDependencyStudio.Wpf.Features.Project;
 using SlnDependencyStudio.Wpf.Features.Settings;
@@ -38,11 +39,14 @@ public static class ServiceCollectionExtensions
                 config.Filter((serviceType, _) => serviceType != typeof(IStudioSingletonDependency));
             });
 
+            services.AddSingleton(typeof(IScopedOperationFactory<>), typeof(ScopedOperationFactory<>));
+
             services.AddSingleton<SlnDependencyWpfAppBootstrapper>();
             services.AddSingleton<IViewFactory, ViewFactory>();
 
             services.RegisterWindowSingleton<MainWindowViewModel, MainWindow>();
             services.RegisterWindowTransient<SettingsWindowViewModel, SettingsWindow>();
+
             services.RegisterUserControlTransient<SettingsEditorViewModel, SettingsEditor>();
             services.RegisterUserControlTransient<ProjectViewModel, ProjectView>();
             services.RegisterUserControlTransient<SolutionViewModel, SolutionView>();
@@ -50,6 +54,7 @@ public static class ServiceCollectionExtensions
             services.RegisterUserControlTransient<DiagramsViewModel, DiagramsView>();
             services.RegisterUserControlTransient<PipelineViewModel, PipelineView>();
             services.RegisterUserControlTransient<EmptyStateViewModel, EmptyStateView>();
+            services.RegisterUserControlTransient<OutputPanelViewModel, OutputPanelView>();
 
             return services;
         }

@@ -51,6 +51,11 @@ public interface IProjectDocumentStore : IStudioSingletonDependency
     /// <remarks>This property is Observable.</remarks>
     bool HasDocument { get; }
 
+    /// <summary><see langword="true"/> while the document is opening or closing
+    /// and editor wrappers are being populated or reset.</summary>
+    /// <remarks>This property is Observable.</remarks>
+    bool IsTransitioning { get; }
+
     /// <summary>Opens and deserializes a dependency project from the specified file path,
     /// populating all editor wrappers from the document.</summary>
     /// <param name="filePath">The path to the <c>.sds</c> file.</param>

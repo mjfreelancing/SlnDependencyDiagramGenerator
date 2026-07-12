@@ -20,6 +20,9 @@ public sealed class ApplicationSettings
     /// <summary>The application theme. Defaults to <see cref="StudioTheme.Light"/>.</summary>
     public StudioTheme Theme { get; set; } = StudioTheme.Light;
 
+    /// <summary>Output panel preferences.</summary>
+    public OutputSettings Output { get; set; } = new();
+
     public ApplicationSettings Clone()
     {
         return new ApplicationSettings
@@ -27,7 +30,12 @@ public sealed class ApplicationSettings
             DefaultProjectFolder = DefaultProjectFolder,
             ToolPathOverrides = new Dictionary<string, string>(ToolPathOverrides),
             LogRetentionDays = LogRetentionDays,
-            Theme = Theme
+            Theme = Theme,
+            Output = new OutputSettings
+            {
+                WrapContent = Output.WrapContent,
+                IsVerboseLogging = Output.IsVerboseLogging
+            }
         };
     }
 }

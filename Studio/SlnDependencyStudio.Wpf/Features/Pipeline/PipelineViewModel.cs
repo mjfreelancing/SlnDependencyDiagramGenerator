@@ -7,7 +7,6 @@ using SlnDependencyStudio.Wpf.Controls;
 using SlnDependencyStudio.Wpf.Features.Pipeline.Models;
 using SlnDependencyStudio.Wpf.Features.Pipeline.Services;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Reactive;
 using System.Reactive.Linq;
@@ -83,13 +82,14 @@ public sealed class PipelineViewModel : ReactiveObject, IValidatableViewModel
 
         UseRelativePathForWorkingDirectory.SetOriginalValue(true);
 
-        _toolStatusEntries = new ObservableCollection<ToolStatusEntry>();
+        _toolStatusEntries = [];
         ToolStatusEntries = new ReadOnlyObservableCollection<ToolStatusEntry>(_toolStatusEntries);
 
         WirePreGenError();
         WireValidation();
         WireToolStatus();
         WireRelativePathToggle();
+
         BrowseCommandCommand = CreateBrowseCommandCommand();
         BrowseWorkingDirectoryCommand = CreateBrowseWorkingDirectoryCommand();
         RescanToolsCommand = CreateRescanToolsCommand();

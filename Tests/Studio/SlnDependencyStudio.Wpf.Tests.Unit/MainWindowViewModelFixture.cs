@@ -6,13 +6,19 @@ using ReactiveUI;
 using Shouldly;
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Wpf.Controls;
+using SlnDependencyStudio.Wpf.Features.Application;
+using SlnDependencyStudio.Wpf.Features.Application.Models;
+using SlnDependencyStudio.Wpf.Features.Diagrams;
 using SlnDependencyStudio.Wpf.Features.EmptyState;
 using SlnDependencyStudio.Wpf.Features.ErrorDialog;
-using SlnDependencyStudio.Wpf.Features.Diagrams;
 using SlnDependencyStudio.Wpf.Features.Export;
+using SlnDependencyStudio.Wpf.Features.Output;
+using SlnDependencyStudio.Wpf.Features.Pipeline;
+using SlnDependencyStudio.Wpf.Features.Pipeline.Services;
 using SlnDependencyStudio.Wpf.Features.Project;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
 using SlnDependencyStudio.Wpf.Features.RecentProjects;
+using SlnDependencyStudio.Wpf.Features.Run;
 using SlnDependencyStudio.Wpf.Features.Solution;
 using SlnDependencyStudio.Wpf.Models;
 using System.Reactive.Linq;
@@ -27,6 +33,8 @@ public class MainWindowViewModelFixture
     private readonly IRecentProjectsService _recentProjects = Substitute.For<IRecentProjectsService>();
     private readonly IErrorDialogService _errorDialog;
     private readonly IViewFactory _viewFactory = Substitute.For<IViewFactory>();
+    private readonly IToolStatusService _toolStatus = Substitute.For<IToolStatusService>();
+    private readonly IPreGenerationAnalysisService _analysisService = Substitute.For<IPreGenerationAnalysisService>();
     private readonly MainWindowViewModel _viewModel;
 
     public MainWindowViewModelFixture()
@@ -40,7 +48,44 @@ public class MainWindowViewModelFixture
 
         var logger = Substitute.For<ILogger<MainWindowViewModel>>();
 
-        _viewModel = new MainWindowViewModel(_store, _projectService, _recentProjects, _errorDialog, _viewFactory, logger);
+        // Set up the view factory to return a valid OutputPanelViewModel view.
+        var appSettings = Substitute.For<IApplicationSettingsService>();
+
+        var applicationSettings = new ApplicationSettings();
+        appSettings.CurrentSettings.Returns(applicationSettings);
+        appSettings.CurrentState.Returns(new ApplicationState());
+
+        var outputPanelViewModel = new OutputPanelViewModel(
+            Substitute.For<AllOverIt.Serilog.Sinks.Observable.IObservableSink>(),
+            appSettings);
+
+        var outputPanelView = Substitute.For<IViewFor<OutputPanelViewModel>>();
+        outputPanelView.ViewModel.Returns(outputPanelViewModel);
+
+        _viewFactory.CreateViewFor<OutputPanelViewModel>().Returns(outputPanelView);
+
+        // Ensure CreateViewFor returns a valid IViewFor for navigation page types.
+        _viewFactory.CreateViewFor<ProjectViewModel>().Returns(CreateMockView<ProjectViewModel>());
+        _viewFactory.CreateViewFor<SolutionViewModel>().Returns(CreateMockView<SolutionViewModel>());
+        _viewFactory.CreateViewFor<ExportViewModel>().Returns(CreateMockView<ExportViewModel>());
+        _viewFactory.CreateViewFor<DiagramsViewModel>().Returns(CreateMockView<DiagramsViewModel>());
+        _viewFactory.CreateViewFor<PipelineViewModel>().Returns(CreateMockView<PipelineViewModel>());
+
+        // EmptyStateViewModel is sealed — use a real instance, not a substitute.
+        // Its constructor calls IRecentProjectsService.GetRecent(), so set that return up first
+        // and create the instance outside any NSubstitute Returns() chain.
+        _recentProjects.GetRecent().Returns([]);
+
+        var emptyStateViewModel = new EmptyStateViewModel(_recentProjects);
+
+        var emptyStateView = Substitute.For<IViewFor<EmptyStateViewModel>>();
+        emptyStateView.ViewModel.Returns(emptyStateViewModel);
+
+        _viewFactory.CreateViewFor<EmptyStateViewModel>().Returns(emptyStateView);
+
+        _viewModel = new MainWindowViewModel(
+            _store, _projectService, _recentProjects, _errorDialog, _viewFactory,
+            _toolStatus, _analysisService, logger);
 
         _store.HasDocument.Returns(true);
     }
@@ -597,6 +642,61 @@ public class MainWindowViewModelFixture
 
             await _store.Received(1).OpenAsync("recent.sds", Arg.Any<CancellationToken>());
         }
+    }
+
+    public class AnalyzeCommand : MainWindowViewModelFixture
+    {
+        [Fact]
+        public void Should_Be_Disabled_When_No_Document()
+        {
+            // The base fixture sets _store.HasDocument.Returns(true) AFTER construction.
+            // For this test, create a fresh ViewModel where HasDocument starts as false.
+            var store = Substitute.For<IProjectDocumentStore>();
+            store.HasDocument.Returns(false);
+
+            var vm = new MainWindowViewModel(
+                store, _projectService, _recentProjects, _errorDialog, _viewFactory,
+                _toolStatus, _analysisService, Substitute.For<ILogger<MainWindowViewModel>>());
+
+            var canExecute = vm.AnalyzeCommand.CanExecute.FirstAsync().Wait();
+
+            canExecute.ShouldBeFalse();
+        }
+
+        [Fact]
+        public void Should_Be_Enabled_When_Document_Loaded()
+        {
+            // Create a ViewModel with HasDocument=true from the start so
+            // WhenAnyValue picks up the correct initial value.
+            var store = Substitute.For<IProjectDocumentStore>();
+            store.HasDocument.Returns(true);
+
+            var vm = new MainWindowViewModel(
+                store, _projectService, _recentProjects, _errorDialog, _viewFactory,
+                _toolStatus, _analysisService, Substitute.For<ILogger<MainWindowViewModel>>());
+
+            var canExecute = vm.AnalyzeCommand.CanExecute.FirstAsync().Wait();
+
+            canExecute.ShouldBeTrue();
+        }
+
+        [Fact]
+        public async Task Should_Invoke_AnalysisService_On_Execute()
+        {
+            _analysisService
+                .RunAsync(Arg.Any<CancellationToken>())
+                .Returns(System.Reactive.Linq.Observable.Return(
+                    new OutputMessage { Text = "test", Level = OutputMessageLevel.Information }));
+
+            await _viewModel.AnalyzeCommand.Execute();
+
+            await _analysisService.Received(1).RunAsync(Arg.Any<CancellationToken>());
+        }
+    }
+
+    private static IViewFor<T> CreateMockView<T>() where T : class
+    {
+        return Substitute.For<IViewFor<T>>();
     }
 
     private static IErrorDialogService CreateErrorDialogSubstitute(out Interaction<ErrorInfo, System.Reactive.Unit> interaction)

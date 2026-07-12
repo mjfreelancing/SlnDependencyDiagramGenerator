@@ -1,0 +1,119 @@
+<reactiveui:ReactiveUserControl
+    x:Class="SlnDependencyStudio.Wpf.Features.Output.OutputPanelView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:output="clr-namespace:SlnDependencyStudio.Wpf.Features.Output"
+    xmlns:reactiveui="http://reactiveui.net"
+    xmlns:converters="clr-namespace:SlnDependencyStudio.Wpf.Converters.Xaml"
+    d:DesignHeight="200"
+    d:DesignWidth="600"
+    x:TypeArguments="output:OutputPanelViewModel"
+    mc:Ignorable="d">
+
+    <UserControl.Resources>
+        <converters:BoolToTextWrappingConverter x:Key="BoolToTextWrapping" />
+        <converters:BoolToScrollBarVisibilityConverter x:Key="BoolToScrollBarVisibility" />
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!--  Header bar  -->
+        <Border
+            Grid.Row="0"
+            Padding="8,2"
+            Background="{DynamicResource MaterialDesign.Brush.Background}"
+            BorderBrush="{DynamicResource MaterialDesign.Brush.Separator.Background}"
+            BorderThickness="0,0,0,1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <TextBlock
+                    Grid.Column="0"
+                    VerticalAlignment="Center"
+                    FontSize="12"
+                    FontWeight="SemiBold"
+                    Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+                    Text="Output" />
+
+                <CheckBox
+                    x:Name="VerboseCheckBox"
+                    Grid.Column="1"
+                    Margin="16,4,4,4"
+                    VerticalAlignment="Center"
+                    Content="Verbose"
+                    FontSize="11"
+                    Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+                    ToolTip="Show all application log messages alongside session output" />
+
+                <CheckBox
+                    x:Name="WrapCheckBox"
+                    Grid.Column="2"
+                    Margin="8,4,4,4"
+                    VerticalAlignment="Center"
+                    Content="Wrap"
+                    FontSize="11"
+                    Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+                    ToolTip="Wrap long lines to the next line" />
+
+                <Button
+                    Grid.Column="3"
+                    VerticalAlignment="Center"
+                    Command="{Binding ClearCommand}"
+                    Content="Clear"
+                    Style="{StaticResource MaterialDesignFlatButton}"
+                    Foreground="{DynamicResource MaterialDesign.Brush.Primary}" />
+            </Grid>
+        </Border>
+
+        <!--  Message list  -->
+        <ScrollViewer
+            x:Name="MessageScrollViewer"
+            Grid.Row="1"
+            Padding="8,4"
+            HorizontalScrollBarVisibility="{Binding WrapContent, Converter={StaticResource BoolToScrollBarVisibility}}"
+            VerticalScrollBarVisibility="Auto">
+
+            <ItemsControl
+                x:Name="MessageItemsControl"
+                Background="Transparent"
+                BorderThickness="0"
+                ItemsSource="{Binding Messages}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type output:OutputMessage}">
+                        <TextBlock
+                            FontFamily="Consolas"
+                            FontSize="12"
+                            Margin="0,1"
+                            Text="{Binding Text}"
+                            TextWrapping="{Binding DataContext.WrapContent, RelativeSource={RelativeSource AncestorType={x:Type output:OutputPanelView}}, Converter={StaticResource BoolToTextWrapping}}">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Level}" Value="Warning">
+                                            <Setter Property="Foreground" Value="Goldenrod" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Level}" Value="Error">
+                                            <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.ValidationError}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </Grid>
+</reactiveui:ReactiveUserControl>

@@ -517,6 +517,35 @@ public class ProjectDocumentStoreFixture
         }
     }
 
+    public class IsTransitioning : ProjectDocumentStoreFixture
+    {
+        [Fact]
+        public void Should_Be_False_On_Construction()
+        {
+            _store.IsTransitioning.ShouldBeFalse();
+        }
+
+        [Fact]
+        public async Task Should_Be_False_After_OpenAsync_Completes()
+        {
+            _projectService
+                .OpenAsync("test.sds", Arg.Any<CancellationToken>())
+                .Returns(CreateDocument("Name", "Desc"));
+
+            await _store.OpenAsync("test.sds");
+
+            _store.IsTransitioning.ShouldBeFalse();
+        }
+
+        [Fact]
+        public void Should_Be_False_After_Close_Completes()
+        {
+            _store.Close();
+
+            _store.IsTransitioning.ShouldBeFalse();
+        }
+    }
+
     private static DependencyProjectDocument CreateDocument(string name, string description)
     {
         return new DependencyProjectDocument

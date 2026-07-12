@@ -2,15 +2,20 @@ using AllOverIt.Extensions;   // IsNotNullOrEmpty
 using AllOverIt.ReactiveUI;
 using AllOverIt.ReactiveUI.Factories;
 using Microsoft.Extensions.Logging;
-using ReactiveUI;using ReactiveUI.Validation.Abstractions;using SlnDependencyStudio.Wpf.Features.EmptyState;
-using SlnDependencyStudio.Wpf.Features.ErrorDialog;
+using ReactiveUI;
+using ReactiveUI.Validation.Abstractions;
 using SlnDependencyStudio.Wpf.Features.Diagrams;
+using SlnDependencyStudio.Wpf.Features.EmptyState;
+using SlnDependencyStudio.Wpf.Features.ErrorDialog;
 using SlnDependencyStudio.Wpf.Features.Export;
+using SlnDependencyStudio.Wpf.Features.Output;
 using SlnDependencyStudio.Wpf.Features.Pipeline;
+using SlnDependencyStudio.Wpf.Features.Pipeline.Services;
 using SlnDependencyStudio.Wpf.Features.Project;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
 using SlnDependencyStudio.Wpf.Features.RecentProjects;
 using SlnDependencyStudio.Wpf.Features.RecentProjects.Models;
+using SlnDependencyStudio.Wpf.Features.Run;
 using SlnDependencyStudio.Wpf.Features.Solution;
 using SlnDependencyStudio.Wpf.Models;
 using SlnDependencyStudio.Wpf.ViewModels;
@@ -33,14 +38,19 @@ public sealed class MainWindowViewModel : ActivatableViewModel
     private readonly IRecentProjectsService _recentProjectsService;
     private readonly IErrorDialogService _errorDialog;
     private readonly IViewFactory _viewFactory;
+    private readonly IToolStatusService _toolStatus;
+    private readonly IPreGenerationAnalysisService _analysisService;
+    private readonly OutputPanelViewModel _outputPanelViewModel;
     private readonly ILogger<MainWindowViewModel> _logger;
 
+    // OAPHs initialized here with their real observable sources so they are
+    // never null. They live for the lifetime of the ViewModel.
     private readonly ObservableAsPropertyHelper<bool> _hasDocument;
     private readonly ObservableAsPropertyHelper<bool> _hasRecentProjects;
+    private bool _canClose = true;
+    private bool _runMenuEnabled;
     private NavigationItemViewModel? _selectedNavigationItem;
     private object? _currentPage;
-    private bool _canClose = true;
-    private bool _isGenerating;
 
     // Tracks per-page validation subscriptions so old subscriptions are cleaned
     // up when the user navigates to a different page.
@@ -66,22 +76,31 @@ public sealed class MainWindowViewModel : ActivatableViewModel
     /// <summary>Validation errors collected across all editable sections.</summary>
     public ObservableCollection<ValidationSummaryItem> CurrentValidationSummary { get; } = [];
 
-    /// <summary>Whether the main window can be closed.</summary>
+    /// <summary>Whether the main window can be closed. False when a command is executing.</summary>
     public bool CanClose
     {
         get => _canClose;
-        set => this.RaiseAndSetIfChanged(ref _canClose, value);
+        private set => this.RaiseAndSetIfChanged(ref _canClose, value);
     }
 
     /// <summary><see langword="true"/> when a document is currently loaded in the store.</summary>
     public bool HasDocument => _hasDocument.Value;
 
-    /// <summary>Whether a generation run is currently in progress.</summary>
-    public bool IsGenerating
+    /// <summary>Whether the Run menu is enabled.</summary>
+    public bool RunMenuEnabled
     {
-        get => _isGenerating;
-        set => this.RaiseAndSetIfChanged(ref _isGenerating, value);
+        get => _runMenuEnabled;
+        private set => this.RaiseAndSetIfChanged(ref _runMenuEnabled, value);
     }
+
+    /// <summary>The output panel view (bottom of the window).</summary>
+    public object OutputPanel { get; }
+
+    /// <summary>Command that runs a dry-run analysis.</summary>
+    public ReactiveCommand<Unit, Unit> AnalyzeCommand { get; }
+
+    /// <summary>Command that runs generation (Phase 8 placeholder).</summary>
+    public ReactiveCommand<Unit, Unit> GenerateCommand { get; }
 
     /// <summary>Command that opens the application settings dialog.</summary>
     public ReactiveCommand<Unit, Unit> OpenSettingsCommand { get; }
@@ -127,15 +146,22 @@ public sealed class MainWindowViewModel : ActivatableViewModel
 
     /// <summary>Initializes a new instance of <see cref="MainWindowViewModel"/>.</summary>
     public MainWindowViewModel(IProjectDocumentStore store, IDependencyProjectService projectService,
-        IRecentProjectsService recentProjectsService, IErrorDialogService errorDialog,
-        IViewFactory viewFactory, ILogger<MainWindowViewModel> logger)
+        IRecentProjectsService recentProjectsService, IErrorDialogService errorDialog, IViewFactory viewFactory,
+        IToolStatusService toolStatus, IPreGenerationAnalysisService analysisService,
+        ILogger<MainWindowViewModel> logger)
     {
         _store = store;
         _projectService = projectService;
         _recentProjectsService = recentProjectsService;
         _errorDialog = errorDialog;
         _viewFactory = viewFactory;
+        _toolStatus = toolStatus;
+        _analysisService = analysisService;
         _logger = logger;
+
+        var outputPanelView = _viewFactory.CreateViewFor<OutputPanelViewModel>();
+        OutputPanel = outputPanelView;
+        _outputPanelViewModel = (OutputPanelViewModel)outputPanelView.ViewModel!;
 
         // OAPHs initialized here with their real observable sources so they are
         // never null. They live for the lifetime of the ViewModel.
@@ -162,6 +188,10 @@ public sealed class MainWindowViewModel : ActivatableViewModel
         CloseProjectCommand = CreateCloseProjectCommand();
         ExitCommand = ReactiveCommand.Create(() => { });
         OpenRecentProjectCommand = ReactiveCommand.CreateFromTask<string>(OpenRecentProjectAsync);
+
+        // GenerateCommand created first — AnalyzeCommand's canExecute depends on its IsExecuting.
+        GenerateCommand = ReactiveCommand.Create(() => { }, Observable.Return(false));
+        AnalyzeCommand = CreateAnalyzeCommand();
 
         // Populate navigation items. Each page VM receives the store via DI and self-initialises.
         NavigationItems =
@@ -202,7 +232,6 @@ public sealed class MainWindowViewModel : ActivatableViewModel
     protected override void OnActivated(CompositeDisposable disposables)
     {
         WireDocumentStateTracking(disposables);
-        WireSaveCommandLogging(disposables);
         WireNavigation(disposables);
         WireRecentProjects(disposables);
     }
@@ -242,6 +271,7 @@ public sealed class MainWindowViewModel : ActivatableViewModel
 
         _store
             .WhenAnyValue(store => store.IsDirty)
+            .Where(_ => !_store.IsTransitioning)
             .Subscribe(isDirty =>
             {
                 if (isDirty)
@@ -254,12 +284,34 @@ public sealed class MainWindowViewModel : ActivatableViewModel
                 }
             })
             .DisposeWith(disposables);
+
+        WireRunMenuGating(disposables);
     }
 
-    private void WireSaveCommandLogging(CompositeDisposable disposables)
+    private void WireRunMenuGating(CompositeDisposable disposables)
     {
-        SaveCommand.CanExecute
-            .Subscribe(enabled => _logger.LogInformation("Project can be saved: {Enabled}", enabled))
+        var validationErrorsChanged = Observable
+            .Merge(NavigationItems.Select(item =>
+                item.WhenAnyValue(nav => nav.HasValidationError)))
+            .StartWith(false);
+
+        Observable
+            .CombineLatest(
+                _store.WhenAnyValue(store => store.HasDocument),
+                validationErrorsChanged,
+                AnalyzeCommand.IsExecuting,
+                GenerateCommand.IsExecuting,
+                (hasDoc, _, analyzing, generating) =>
+                    hasDoc && !analyzing && !generating && !AnyValidationErrors())
+            .Subscribe(enabled => RunMenuEnabled = enabled)
+            .DisposeWith(disposables);
+
+        Observable
+            .CombineLatest(
+                AnalyzeCommand.IsExecuting,
+                GenerateCommand.IsExecuting,
+                (analyzing, generating) => !analyzing && !generating)
+            .Subscribe(canClose => CanClose = canClose)
             .DisposeWith(disposables);
     }
 
@@ -430,6 +482,37 @@ public sealed class MainWindowViewModel : ActivatableViewModel
         // The HasDocument subscription in WireDocumentStateTracking automatically
         // calls ShowEmptyState() when HasDocument becomes false. No need to
         // manually clear CurrentPage/SelectedNavigationItem here.
+    }
+
+    private ReactiveCommand<Unit, Unit> CreateAnalyzeCommand()
+    {
+        var canAnalyze = Observable
+            .CombineLatest(
+                _store.WhenAnyValue(store => store.HasDocument),
+                GenerateCommand.IsExecuting,
+                (hasDoc, generating) => hasDoc && !generating);
+
+        return ReactiveCommand.CreateFromTask(AnalyzeAsync, canAnalyze);
+    }
+
+    private async Task AnalyzeAsync(CancellationToken cancellationToken)
+    {
+        var tcs = new TaskCompletionSource();
+
+        _analysisService
+            .RunAsync(cancellationToken)
+            .ObserveOn(RxSchedulers.MainThreadScheduler)
+            .Subscribe(
+                onNext: message => _outputPanelViewModel.Messages.Add(message),
+                onError: ex => tcs.TrySetException(ex),
+                onCompleted: () => tcs.TrySetResult());
+
+        await tcs.Task;
+    }
+
+    private bool AnyValidationErrors()
+    {
+        return NavigationItems.Any(item => item.HasValidationError);
     }
 
     private ReactiveCommand<Unit, Unit> CreateSaveCommand()

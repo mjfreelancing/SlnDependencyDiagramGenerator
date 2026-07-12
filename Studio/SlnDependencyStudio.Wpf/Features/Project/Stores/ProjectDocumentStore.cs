@@ -29,6 +29,7 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
     private DependencyProjectDocument? _document;
     private string? _currentFilePath;
     private bool _hasDocument;
+    private bool _isTransitioning;
 
     /// <inheritdoc />
     public string? DocumentFilePath
@@ -65,6 +66,13 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
         set => this.RaiseAndSetIfChanged(ref _hasDocument, value);
     }
 
+    /// <inheritdoc />
+    public bool IsTransitioning
+    {
+        get => _isTransitioning;
+        private set => this.RaiseAndSetIfChanged(ref _isTransitioning, value);
+    }
+
     /// <summary>Initializes a new instance of the store.</summary>
     /// <param name="projectService">The project serialization service.</param>
     /// <param name="recentProjects">The recent projects service for MRU tracking.</param>
@@ -96,6 +104,8 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
     {
         filePath.WhenNotNull();
 
+        IsTransitioning = true;
+
         _document = await _projectService.OpenAsync(filePath, cancellationToken);
 
         HasDocument = true;
@@ -108,6 +118,8 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
         _preGenerationEditor.SetOriginalValues(_document.PreGeneration);
 
         _recentProjects.Add(filePath);
+
+        IsTransitioning = false;
     }
 
     /// <inheritdoc />
@@ -143,6 +155,8 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
     /// <inheritdoc />
     public void Close()
     {
+        IsTransitioning = true;
+
         _document = null;
         HasDocument = false;
         DocumentFilePath = null;
@@ -153,6 +167,8 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
         _exportOptionsEditor.SetOriginalValues(new GeneratorExportOptions());
         _diagramOptionsEditor.SetOriginalValues(new GeneratorDiagramOptions());
         _preGenerationEditor.SetOriginalValues(new PreGenerationConfig());
+
+        IsTransitioning = false;
     }
 
     /// <summary>Flushes all editor wrappers to the underlying document.</summary>

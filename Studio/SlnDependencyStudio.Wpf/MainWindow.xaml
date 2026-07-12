@@ -8,6 +8,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:reactiveui="http://reactiveui.net"
     xmlns:viewModels="clr-namespace:SlnDependencyStudio.Wpf.ViewModels"
+    xmlns:output="clr-namespace:SlnDependencyStudio.Wpf.Features.Output"
     xmlns:wpf="clr-namespace:SlnDependencyStudio.Wpf"
     Title="SlnDependencyStudio"
     Width="1200"
@@ -118,6 +119,15 @@
                             x:Name="ExitMenuItem"
                             Header="E_xit"
                             InputGestureText="Alt+F4" />
+                    </MenuItem>
+
+                    <MenuItem Header="_Run" IsEnabled="{Binding RunMenuEnabled}">
+                        <MenuItem
+                            x:Name="AnalyzeMenuItem"
+                            Header="_Analyze" />
+                        <MenuItem
+                            x:Name="GenerateMenuItem"
+                            Header="_Generate" />
                     </MenuItem>
                 </Menu>
 
@@ -253,17 +263,9 @@
                         ResizeBehavior="PreviousAndNext"
                         ResizeDirection="Rows" />
 
-                    <Border
+                    <ContentControl
                         Grid.Row="2"
-                        Padding="12"
-                        Background="{DynamicResource MaterialDesign.Brush.Background}"
-                        BorderBrush="{DynamicResource MaterialDesign.Brush.Separator.Background}"
-                        BorderThickness="0,1,0,0">
-                        <TextBlock
-                            FontSize="12"
-                            Foreground="{DynamicResource MaterialDesign.Brush.ForegroundLight}"
-                            Text="Output" />
-                    </Border>
+                        Content="{Binding OutputPanel}" />
                 </Grid>
             </Grid>
         </materialDesign:DialogHost>

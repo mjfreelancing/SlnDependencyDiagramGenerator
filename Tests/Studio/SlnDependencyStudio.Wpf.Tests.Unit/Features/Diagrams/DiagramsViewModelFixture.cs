@@ -220,7 +220,7 @@ public class DiagramsViewModelFixture
             _frameworkFill.Value = "bad";
             _packageFill.Value = "also-bad";
 
-            _viewModel.StylesHexError.ShouldContain("Framework");
+            _viewModel.StylesHexError!.ShouldContain("Framework");
         }
 
         [Fact]
@@ -230,7 +230,7 @@ public class DiagramsViewModelFixture
             _frameworkFill.Value = "#FF0000";
             _packageFill.Value = "bad";
 
-            _viewModel.StylesHexError.ShouldContain("Package");
+            _viewModel.StylesHexError!.ShouldContain("Package");
         }
 
         [Fact]
@@ -239,7 +239,7 @@ public class DiagramsViewModelFixture
             _formats.Items.Add(DiagramFormat.D2);
             _groupingFill.Value = "bad";
 
-            _viewModel.GroupingHexError.ShouldContain("Grouping");
+            _viewModel.GroupingHexError!.ShouldContain("Grouping");
             _viewModel.StylesHexError.ShouldBeNull();
         }
 
@@ -267,23 +267,23 @@ public class DiagramsViewModelFixture
             _transitiveFill.Value = "bad3";
             _groupingFill.Value = "bad4";
 
-            _viewModel.StylesHexError.ShouldContain("Framework");
-            _viewModel.GroupingHexError.ShouldContain("Grouping");
+            _viewModel.StylesHexError!.ShouldContain("Framework");
+            _viewModel.GroupingHexError!.ShouldContain("Grouping");
 
             // Fix Framework → Package error surfaces.
             _frameworkFill.Value = "#FF0000";
-            _viewModel.StylesHexError.ShouldContain("Package");
-            _viewModel.GroupingHexError.ShouldContain("Grouping");
+            _viewModel.StylesHexError!.ShouldContain("Package");
+            _viewModel.GroupingHexError!.ShouldContain("Grouping");
 
             // Fix Package → Transitive error surfaces.
             _packageFill.Value = "#00FF00";
-            _viewModel.StylesHexError.ShouldContain("Transitive");
-            _viewModel.GroupingHexError.ShouldContain("Grouping");
+            _viewModel.StylesHexError!.ShouldContain("Transitive");
+            _viewModel.GroupingHexError!.ShouldContain("Grouping");
 
             // Fix Transitive → Styles clean, Grouping still has error.
             _transitiveFill.Value = "#0000FF";
             _viewModel.StylesHexError.ShouldBeNull();
-            _viewModel.GroupingHexError.ShouldContain("Grouping");
+            _viewModel.GroupingHexError!.ShouldContain("Grouping");
 
             // Fix Grouping → all clean.
             _groupingFill.Value = "#FFFFFF";

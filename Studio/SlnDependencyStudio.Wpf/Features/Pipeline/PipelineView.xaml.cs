@@ -17,6 +17,9 @@ public partial class PipelineView : ReactiveUserControl<PipelineViewModel>
 
         this.WhenActivated(disposables =>
         {
+            // Trigger an initial tool scan when the user navigates to the Pipeline page.
+            ViewModel!.RescanToolsCommand.Execute().Subscribe();
+
             ViewModel!
                 .BrowseCommandInteraction
                 .RegisterHandler(ctx =>
