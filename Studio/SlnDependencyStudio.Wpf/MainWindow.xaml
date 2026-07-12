@@ -6,9 +6,9 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:output="clr-namespace:SlnDependencyStudio.Wpf.Features.Output"
     xmlns:reactiveui="http://reactiveui.net"
     xmlns:viewModels="clr-namespace:SlnDependencyStudio.Wpf.ViewModels"
-    xmlns:output="clr-namespace:SlnDependencyStudio.Wpf.Features.Output"
     xmlns:wpf="clr-namespace:SlnDependencyStudio.Wpf"
     Title="SlnDependencyStudio"
     Width="1200"
@@ -25,6 +25,37 @@
         <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
         <converters:NullToBoolConverter x:Key="NullToBool" />
     </Window.Resources>
+
+    <Window.InputBindings>
+        <KeyBinding
+            Key="N"
+            Command="{Binding NewProjectCommand}"
+            Modifiers="Control" />
+        <KeyBinding
+            Key="O"
+            Command="{Binding OpenProjectCommand}"
+            Modifiers="Control" />
+        <KeyBinding
+            Key="S"
+            Command="{Binding SaveCommand}"
+            Modifiers="Control" />
+        <KeyBinding
+            Key="S"
+            Command="{Binding SaveAsCommand}"
+            Modifiers="Control+Shift" />
+        <KeyBinding
+            Key="F4"
+            Command="{Binding CloseProjectCommand}"
+            Modifiers="Control" />
+        <KeyBinding
+            Key="A"
+            Command="{Binding AnalyzeCommand}"
+            Modifiers="Control+Shift" />
+        <KeyBinding
+            Key="G"
+            Command="{Binding GenerateCommand}"
+            Modifiers="Control+Shift" />
+    </Window.InputBindings>
 
     <Grid Background="{DynamicResource MaterialDesign.Brush.Card.Background}">
         <materialDesign:DialogHost x:Name="MainDialogHost" Identifier="MainDialogHost">
@@ -86,7 +117,8 @@
                         <MenuItem
                             x:Name="SaveAsMenuItem"
                             Command="{Binding SaveAsCommand}"
-                            Header="Save _As..." />
+                            Header="Save _As..."
+                            InputGestureText="Ctrl+Shift+S" />
                         <Separator />
                         <MenuItem
                             x:Name="CloseProjectMenuItem"
@@ -125,11 +157,11 @@
                         <MenuItem
                             x:Name="AnalyzeMenuItem"
                             Header="_Analyse"
-                            InputGestureText="Alt+Shift+A" />
+                            InputGestureText="Ctrl+Shift+A" />
                         <MenuItem
                             x:Name="GenerateMenuItem"
                             Header="_Generate"
-                            InputGestureText="Alt+Shift+G" />
+                            InputGestureText="Ctrl+Shift+G" />
                     </MenuItem>
                 </Menu>
 
@@ -265,9 +297,7 @@
                         ResizeBehavior="PreviousAndNext"
                         ResizeDirection="Rows" />
 
-                    <ContentControl
-                        Grid.Row="2"
-                        Content="{Binding OutputPanel}" />
+                    <ContentControl Grid.Row="2" Content="{Binding OutputPanel}" />
                 </Grid>
             </Grid>
         </materialDesign:DialogHost>
