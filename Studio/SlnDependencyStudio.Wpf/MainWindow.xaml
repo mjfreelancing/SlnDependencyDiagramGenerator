@@ -48,13 +48,12 @@
             Command="{Binding CloseProjectCommand}"
             Modifiers="Control" />
         <KeyBinding
-            Key="A"
+            Key="F5"
             Command="{Binding AnalyzeCommand}"
-            Modifiers="Control+Shift" />
+            Modifiers="Shift" />
         <KeyBinding
-            Key="G"
-            Command="{Binding GenerateCommand}"
-            Modifiers="Control+Shift" />
+            Key="F5"
+            Command="{Binding GenerateCommand}" />
     </Window.InputBindings>
 
     <Grid Background="{DynamicResource MaterialDesign.Brush.Card.Background}">
@@ -157,11 +156,11 @@
                         <MenuItem
                             x:Name="AnalyzeMenuItem"
                             Header="_Analyse"
-                            InputGestureText="Ctrl+Shift+A" />
+                            InputGestureText="Shift+F5" />
                         <MenuItem
                             x:Name="GenerateMenuItem"
                             Header="_Generate"
-                            InputGestureText="Ctrl+Shift+G" />
+                            InputGestureText="F5" />
                     </MenuItem>
                 </Menu>
 
