@@ -30,6 +30,7 @@ public sealed class OutputPanelViewModel : ReactiveObject, IStudioScopedDependen
     private bool _wrapContent;
     private bool _autoScroll;
     private bool _isOperationRunning;
+    private bool _canCancel;
 
     /// <summary>The messages displayed in the output panel.</summary>
     public ObservableCollection<OutputMessage> Messages { get; } = [];
@@ -57,6 +58,16 @@ public sealed class OutputPanelViewModel : ReactiveObject, IStudioScopedDependen
     {
         get => _isOperationRunning;
         set => this.RaiseAndSetIfChanged(ref _isOperationRunning, value);
+    }
+
+    /// <summary>
+    /// <see langword="true"/> when the current operation can be cancelled.
+    /// Set to <see langword="false"/> once cancellation has been requested.
+    /// </summary>
+    public bool CanCancel
+    {
+        get => _canCancel;
+        set => this.RaiseAndSetIfChanged(ref _canCancel, value);
     }
 
     /// <summary>
@@ -127,7 +138,9 @@ public sealed class OutputPanelViewModel : ReactiveObject, IStudioScopedDependen
             .StartWith(Messages.Count > 0);
 
         ClearCommand = ReactiveCommand.Create(Messages.Clear, hasContent);
-        CancelCommand = ReactiveCommand.Create(() => { });
+
+        var canCancel = this.WhenAnyValue(vm => vm.CanCancel);
+        CancelCommand = ReactiveCommand.Create(() => { }, canCancel);
 
         CopyAllCommand = ReactiveCommand.Create(() =>
         {

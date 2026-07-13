@@ -80,102 +80,131 @@
 
                 <!--  ====== MENU BAR ======  -->
 
-                <Menu
-                    Grid.Row="0"
-                    Grid.ColumnSpan="2"
-                    Padding="4,2,0,2"
-                    Background="{DynamicResource MaterialDesign.Brush.Background}"
-                    BorderBrush="{DynamicResource MaterialDesign.Brush.Separator.Background}"
-                    BorderThickness="0,0,0,1"
-                    Foreground="{DynamicResource MaterialDesign.Brush.Foreground}">
+                <Grid Grid.Row="0" Grid.ColumnSpan="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
 
-                    <Menu.Resources>
-                        <!--
-                            Any MenuItem added anywhere in this Menu is automatically disabled
-                            while an operation is running. No per-item bindings needed as the
-                            DataTrigger covers all.
-                        -->
-                        <Style BasedOn="{StaticResource {x:Type MenuItem}}" TargetType="MenuItem">
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsOperationRunning}" Value="True">
-                                    <Setter Property="IsEnabled" Value="False" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Menu.Resources>
+                    <Menu
+                        Grid.Column="0"
+                        Padding="4,2,0,2"
+                        Background="{DynamicResource MaterialDesign.Brush.Background}"
+                        BorderBrush="{DynamicResource MaterialDesign.Brush.Separator.Background}"
+                        BorderThickness="0,0,0,1"
+                        Foreground="{DynamicResource MaterialDesign.Brush.Foreground}">
 
-                    <MenuItem Header="_File">
-                        <MenuItem
-                            x:Name="NewProjectMenuItem"
-                            Command="{Binding NewProjectCommand}"
-                            Header="_New Project"
-                            InputGestureText="Ctrl+N" />
-                        <MenuItem
-                            x:Name="NewFromExistingMenuItem"
-                            Command="{Binding NewFromExistingCommand}"
-                            Header="New from _Existing..." />
-                        <Separator />
-                        <MenuItem
-                            x:Name="OpenProjectMenuItem"
-                            Command="{Binding OpenProjectCommand}"
-                            Header="_Open Project..."
-                            InputGestureText="Ctrl+O" />
-                        <Separator />
-                        <MenuItem
-                            x:Name="SaveMenuItem"
-                            Command="{Binding SaveCommand}"
-                            Header="_Save"
-                            InputGestureText="Ctrl+S" />
-                        <MenuItem
-                            x:Name="SaveAsMenuItem"
-                            Command="{Binding SaveAsCommand}"
-                            Header="Save _As..."
-                            InputGestureText="Ctrl+Shift+S" />
-                        <Separator />
-                        <MenuItem
-                            x:Name="CloseProjectMenuItem"
-                            Command="{Binding CloseProjectCommand}"
-                            Header="_Close"
-                            InputGestureText="Ctrl+F4" />
-                        <Separator />
-                        <MenuItem
-                            x:Name="RecentProjectsMenu"
-                            Header="_Recent Projects"
-                            IsEnabled="{Binding HasRecentProjects}"
-                            ItemsSource="{Binding RecentProjects}">
-                            <MenuItem.ItemContainerStyle>
-                                <Style TargetType="MenuItem">
-                                    <Setter Property="Header" Value="{Binding DisplayName}" />
-                                    <Setter Property="Padding" Value="0,6,0,6" />
-                                    <Setter Property="Command" Value="{Binding DataContext.OpenRecentProjectCommand, RelativeSource={RelativeSource AncestorType=MenuItem}}" />
-                                    <Setter Property="CommandParameter" Value="{Binding FilePath}" />
-                                    <Setter Property="ToolTip" Value="{Binding FilePath}" />
-                                </Style>
-                            </MenuItem.ItemContainerStyle>
+                        <Menu.Resources>
+                            <!--
+                                Any MenuItem added anywhere in this Menu is automatically disabled
+                                while an operation is running. No per-item bindings needed as the
+                                DataTrigger covers all.
+                            -->
+                            <Style BasedOn="{StaticResource {x:Type MenuItem}}" TargetType="MenuItem">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsOperationRunning}" Value="True">
+                                        <Setter Property="IsEnabled" Value="False" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Menu.Resources>
+
+                        <MenuItem Header="_File">
+                            <MenuItem
+                                x:Name="NewProjectMenuItem"
+                                Command="{Binding NewProjectCommand}"
+                                Header="_New Project"
+                                InputGestureText="Ctrl+N" />
+                            <MenuItem
+                                x:Name="NewFromExistingMenuItem"
+                                Command="{Binding NewFromExistingCommand}"
+                                Header="New from _Existing..." />
+                            <Separator />
+                            <MenuItem
+                                x:Name="OpenProjectMenuItem"
+                                Command="{Binding OpenProjectCommand}"
+                                Header="_Open Project..."
+                                InputGestureText="Ctrl+O" />
+                            <Separator />
+                            <MenuItem
+                                x:Name="SaveMenuItem"
+                                Command="{Binding SaveCommand}"
+                                Header="_Save"
+                                InputGestureText="Ctrl+S" />
+                            <MenuItem
+                                x:Name="SaveAsMenuItem"
+                                Command="{Binding SaveAsCommand}"
+                                Header="Save _As..."
+                                InputGestureText="Ctrl+Shift+S" />
+                            <Separator />
+                            <MenuItem
+                                x:Name="CloseProjectMenuItem"
+                                Command="{Binding CloseProjectCommand}"
+                                Header="_Close"
+                                InputGestureText="Ctrl+F4" />
+                            <Separator />
+                            <MenuItem
+                                x:Name="RecentProjectsMenu"
+                                Header="_Recent Projects"
+                                IsEnabled="{Binding HasRecentProjects}"
+                                ItemsSource="{Binding RecentProjects}">
+                                <MenuItem.ItemContainerStyle>
+                                    <Style TargetType="MenuItem">
+                                        <Setter Property="Header" Value="{Binding DisplayName}" />
+                                        <Setter Property="Padding" Value="0,6,0,6" />
+                                        <Setter Property="Command" Value="{Binding DataContext.OpenRecentProjectCommand, RelativeSource={RelativeSource AncestorType=MenuItem}}" />
+                                        <Setter Property="CommandParameter" Value="{Binding FilePath}" />
+                                        <Setter Property="ToolTip" Value="{Binding FilePath}" />
+                                    </Style>
+                                </MenuItem.ItemContainerStyle>
+                            </MenuItem>
+                            <Separator />
+                            <MenuItem
+                                x:Name="SettingsMenuItem"
+                                Command="{Binding OpenSettingsCommand}"
+                                Header="_Settings..." />
+                            <Separator />
+                            <MenuItem
+                                x:Name="ExitMenuItem"
+                                Header="E_xit"
+                                InputGestureText="Alt+F4" />
                         </MenuItem>
-                        <Separator />
-                        <MenuItem
-                            x:Name="SettingsMenuItem"
-                            Command="{Binding OpenSettingsCommand}"
-                            Header="_Settings..." />
-                        <Separator />
-                        <MenuItem
-                            x:Name="ExitMenuItem"
-                            Header="E_xit"
-                            InputGestureText="Alt+F4" />
-                    </MenuItem>
 
-                    <MenuItem Header="_Run" IsEnabled="{Binding RunMenuEnabled}">
-                        <MenuItem
-                            x:Name="AnalyzeMenuItem"
-                            Header="_Analyse"
-                            InputGestureText="Shift+F5" />
-                        <MenuItem
-                            x:Name="GenerateMenuItem"
-                            Header="_Generate"
-                            InputGestureText="F5" />
-                    </MenuItem>
-                </Menu>
+                        <MenuItem Header="_Run" IsEnabled="{Binding RunMenuEnabled}">
+                            <MenuItem
+                                x:Name="AnalyzeMenuItem"
+                                Header="_Analyse"
+                                InputGestureText="Shift+F5" />
+                            <MenuItem
+                                x:Name="GenerateMenuItem"
+                                Header="_Generate"
+                                InputGestureText="F5" />
+                        </MenuItem>
+                    </Menu>
+
+                    <!--  Operation in progress — shown in the menu bar during Analyse/Generate  -->
+                    <Border
+                        Grid.Column="1"
+                        Padding="16,3"
+                        Background="{DynamicResource MaterialDesign.Brush.Background}"
+                        BorderBrush="{DynamicResource MaterialDesign.Brush.Separator.Background}"
+                        BorderThickness="0,0,0,1"
+                        Visibility="{Binding IsOperationRunning, Converter={StaticResource BoolToVisibility}}">
+                        <StackPanel Orientation="Horizontal">
+                            <ProgressBar
+                                Width="16"
+                                Height="16"
+                                Margin="0,0,8,0"
+                                Foreground="{DynamicResource MaterialDesign.Brush.Primary}"
+                                IsIndeterminate="True" />
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                FontSize="12"
+                                Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+                                Text="{Binding OperationName}" />
+                        </StackPanel>
+                    </Border>
+                </Grid>
 
                 <!--  ====== LEFT NAVIGATION ======  -->
 

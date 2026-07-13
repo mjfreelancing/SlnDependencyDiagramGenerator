@@ -49,8 +49,11 @@ public sealed class MainWindowViewModel : ActivatableViewModel
     // never null. They live for the lifetime of the ViewModel.
     private readonly ObservableAsPropertyHelper<bool> _hasDocument;
     private readonly ObservableAsPropertyHelper<bool> _hasRecentProjects;
+    private readonly ReactiveCommand<Unit, Unit> _cancelOperationCommand;
     private bool _canClose = true;
     private bool _isOperationRunning;
+    private bool _canCancel = true;
+    private string _operationName = string.Empty;
     private bool _runMenuEnabled;
     private NavigationItemViewModel? _selectedNavigationItem;
     private object? _currentPage;
@@ -96,6 +99,24 @@ public sealed class MainWindowViewModel : ActivatableViewModel
     {
         get => _isOperationRunning;
         private set => this.RaiseAndSetIfChanged(ref _isOperationRunning, value);
+    }
+
+    /// <summary>
+    /// <see langword="true"/> when the Cancel button in the operation overlay
+    /// should be enabled. Flips to <see langword="false"/> as soon as the user
+    /// clicks Cancel.
+    /// </summary>
+    public bool CanCancel
+    {
+        get => _canCancel;
+        private set => this.RaiseAndSetIfChanged(ref _canCancel, value);
+    }
+
+    /// <summary>The display name of the currently running operation (e.g. "Operation in progress" or "Cancelling…").</summary>
+    public string OperationName
+    {
+        get => _operationName;
+        private set => this.RaiseAndSetIfChanged(ref _operationName, value);
     }
 
     /// <summary><see langword="true"/> when a document is currently loaded in the store.</summary>
@@ -203,6 +224,7 @@ public sealed class MainWindowViewModel : ActivatableViewModel
         SaveAsCommand = CreateSaveAsCommand();
         CloseProjectCommand = CreateCloseProjectCommand();
         ExitCommand = ReactiveCommand.Create(() => { });
+        _cancelOperationCommand = CreateCancelOperationCommand();
         OpenRecentProjectCommand = ReactiveCommand.CreateFromTask<string>(OpenRecentProjectAsync);
 
         // Mutual exclusion between Analyze and Generate is handled by RunMenuEnabled
@@ -256,10 +278,34 @@ public sealed class MainWindowViewModel : ActivatableViewModel
 
     private void WireCancelCommand(CompositeDisposable disposables)
     {
+        // Output panel's own Cancel button — delegates to the cancel command
+        // which is gated by CanCancel so double-clicks are ignored.
         _outputPanelViewModel
             .CancelCommand
-            .Subscribe(_ => _operationCts?.Cancel())
+            .Where(_ => CanCancel)
+            .Subscribe(_ => _cancelOperationCommand.Execute().Subscribe())
             .DisposeWith(disposables);
+    }
+
+    private ReactiveCommand<Unit, Unit> CreateCancelOperationCommand()
+    {
+        var canCancel = this.WhenAnyValue(vm => vm.CanCancel);
+
+        return ReactiveCommand.CreateFromTask(CancelOperationAsync, canCancel);
+    }
+
+    private async Task CancelOperationAsync(CancellationToken cancellationToken)
+    {
+        _operationCts?.Cancel();
+
+        CanCancel = false;
+        _outputPanelViewModel.CanCancel = false;
+        OperationName = "Cancelling…";
+
+        // Yield one dispatcher tick so that ReactiveCommand's CanExecute
+        // (gated by CanCancel) propagates to the button's IsEnabled before
+        // the command completes — the button visually disables immediately.
+        await Task.Yield();
     }
 
     private void WireDocumentStateTracking(CompositeDisposable disposables)
@@ -492,6 +538,10 @@ public sealed class MainWindowViewModel : ActivatableViewModel
         using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         _operationCts = linkedCts;
         _outputPanelViewModel.IsOperationRunning = true;
+        _outputPanelViewModel.CanCancel = true;
+
+        CanCancel = true;
+        OperationName = "Operation in progress";
 
         try
         {
@@ -511,6 +561,7 @@ public sealed class MainWindowViewModel : ActivatableViewModel
         {
             _outputPanelViewModel.IsOperationRunning = false;
             _operationCts = null;
+            OperationName = string.Empty;
         }
     }
 
@@ -531,6 +582,10 @@ public sealed class MainWindowViewModel : ActivatableViewModel
         using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         _operationCts = linkedCts;
         _outputPanelViewModel.IsOperationRunning = true;
+        _outputPanelViewModel.CanCancel = true;
+
+        CanCancel = true;
+        OperationName = "Operation in progress";
 
         try
         {
@@ -550,6 +605,7 @@ public sealed class MainWindowViewModel : ActivatableViewModel
         {
             _outputPanelViewModel.IsOperationRunning = false;
             _operationCts = null;
+            OperationName = string.Empty;
         }
     }
 
