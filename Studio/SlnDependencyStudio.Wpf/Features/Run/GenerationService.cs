@@ -136,7 +136,7 @@ internal sealed class GenerationService : IGenerationService
 
                 observer.OnNext(Error($"Generation timed out: {ex.Message}"));
             }
-            catch (Exception ex)
+            catch (Exception ex)    // Could be ToolNotFoundException or DependencyGeneratorException
             {
                 _logger.LogError(ex, "Generation failed");
 

@@ -338,19 +338,9 @@ public sealed class MainWindowViewModel : ActivatableViewModel
 
     private async Task OpenProjectAsync()
     {
-        if (_store.IsDirty)
+        if (!await SaveIfDirtyAsync(CancellationToken.None))
         {
-            var action = await PromptDiscardAsync();
-
-            if (action == DiscardAction.Cancel)
-            {
-                return;
-            }
-
-            if (action == DiscardAction.Save)
-            {
-                await SaveAsync();
-            }
+            return;
         }
 
         var filePath = await OpenFileInteraction.Handle(StudioFilesFilter);
@@ -380,19 +370,9 @@ public sealed class MainWindowViewModel : ActivatableViewModel
 
     private async Task NewProjectAsync()
     {
-        if (_store.IsDirty)
+        if (!await SaveIfDirtyAsync(CancellationToken.None))
         {
-            var action = await PromptDiscardAsync();
-
-            if (action == DiscardAction.Cancel)
-            {
-                return;
-            }
-
-            if (action == DiscardAction.Save)
-            {
-                await SaveAsync();
-            }
+            return;
         }
 
         var document = _projectService.CreateFromDefaults();
@@ -415,19 +395,9 @@ public sealed class MainWindowViewModel : ActivatableViewModel
 
     private async Task NewFromExistingAsync()
     {
-        if (_store.IsDirty)
+        if (!await SaveIfDirtyAsync(CancellationToken.None))
         {
-            var action = await PromptDiscardAsync();
-
-            if (action == DiscardAction.Cancel)
-            {
-                return;
-            }
-
-            if (action == DiscardAction.Save)
-            {
-                await SaveAsync();
-            }
+            return;
         }
 
         var sourcePath = await OpenFileInteraction.Handle(StudioFilesFilter);
@@ -475,19 +445,9 @@ public sealed class MainWindowViewModel : ActivatableViewModel
 
     private async Task CloseProjectAsync()
     {
-        if (_store.IsDirty)
+        if (!await SaveIfDirtyAsync(CancellationToken.None))
         {
-            var action = await PromptDiscardAsync();
-
-            if (action == DiscardAction.Cancel)
-            {
-                return;
-            }
-
-            if (action == DiscardAction.Save)
-            {
-                await SaveAsync();
-            }
+            return;
         }
 
         _store.Close();
@@ -506,19 +466,9 @@ public sealed class MainWindowViewModel : ActivatableViewModel
 
     private async Task GenerateAsync(CancellationToken cancellationToken)
     {
-        if (_store.IsDirty)
+        if (!await SaveIfDirtyAsync(cancellationToken))
         {
-            var action = await PromptDiscardAsync();
-
-            if (action == DiscardAction.Cancel)
-            {
-                return;
-            }
-
-            if (action == DiscardAction.Save)
-            {
-                await _store.SaveAsync(cancellationToken);
-            }
+            return;
         }
 
         // Run generation via IGenerationService.
@@ -556,6 +506,11 @@ public sealed class MainWindowViewModel : ActivatableViewModel
 
     private async Task AnalyzeAsync(CancellationToken cancellationToken)
     {
+        if (!await SaveIfDirtyAsync(cancellationToken))
+        {
+            return;
+        }
+
         using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         _operationCts = linkedCts;
         _outputPanelViewModel.IsOperationRunning = true;
@@ -617,6 +572,29 @@ public sealed class MainWindowViewModel : ActivatableViewModel
             : "Untitled";
 
         return await ConfirmDiscardInteraction.Handle(displayName);
+    }
+
+    /// <summary>
+    /// When the document is dirty, prompts the user to save or discard changes.
+    /// Returns <see langword="false"/> if the user cancelled, <see langword="true"/> to proceed.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token for the save operation.</param>
+    /// <remarks>Selecting <see cref="DiscardAction.Discard"/> returns true so the caller continues.</remarks>
+    private async Task<bool> SaveIfDirtyAsync(CancellationToken cancellationToken)
+    {
+        if (!_store.IsDirty)
+        {
+            return true;
+        }
+
+        var action = await PromptDiscardAsync();
+
+        if (action == DiscardAction.Save)
+        {
+            await _store.SaveAsync(cancellationToken);
+        }
+
+        return action != DiscardAction.Cancel;
     }
 
     /// <summary>Selects the navigation item whose <see cref="NavigationItemViewModel.ViewModelType"/>
@@ -722,19 +700,9 @@ public sealed class MainWindowViewModel : ActivatableViewModel
 
     private async Task OpenRecentProjectAsync(string filePath)
     {
-        if (_store.IsDirty)
+        if (!await SaveIfDirtyAsync(CancellationToken.None))
         {
-            var action = await PromptDiscardAsync();
-
-            if (action == DiscardAction.Cancel)
-            {
-                return;
-            }
-
-            if (action == DiscardAction.Save)
-            {
-                await SaveAsync();
-            }
+            return;
         }
 
         try
