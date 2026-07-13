@@ -124,6 +124,10 @@ internal sealed class CommandLineRunHandler : CommandLineHandlerBase, ICommandLi
 
         _logger.LogInformation("Running Pre-generation command...");
 
+        // Subscribe to stdout/stderr so the output is captured in the CLI's log output.
+        using var stdoutSub = _preGenerationCommandRunner.StdOut.Subscribe(line => _logger.LogInformation("{Line}", line));
+        using var stderrSub = _preGenerationCommandRunner.StdErr.Subscribe(line => _logger.LogError("{Line}", line));
+
         // Validation ensures the command is set
         var preGenResult = await _preGenerationCommandRunner.RunAsync(preGenConfig, cancellationToken);
 
