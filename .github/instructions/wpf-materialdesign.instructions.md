@@ -339,6 +339,118 @@ When theming breaks, consult these in order:
 
 ---
 
+## Modal Dialog Pattern
+
+All modal dialogs shown via `DialogHost.Show()` follow a consistent visual structure. Use `MessageDialog` for simple info/error messages or create a purpose-specific dialog that inherits this pattern.
+
+### Structure
+
+```
+materialDesign:Card (Padding="0", Margin="24", MaxWidth="480")
+└── Grid
+    ├── Column 0: 5px accent Border (semantic colour)
+    └── Column 1: StackPanel (Margin="24,20,24,20")
+        ├── Header: horizontal StackPanel
+        │   ├── 44×44 Ellipse (Opacity="0.12") — tinted icon background
+        │   ├── PackIcon (24×24, centred in ellipse)
+        │   └── TitleText (FontSize="18", SemiBold)
+        ├── Message body (FontSize="14", ForegroundLight, LineHeight="22")
+        ├── 1px separator (Separator.Background, Margin="0,20,0,16")
+        └── Action buttons (right-aligned, horizontal)
+```
+
+### Dependency Properties (Shared Contract)
+
+Every modal dialog that uses this pattern should expose these dependency properties:
+
+| Property         | Type     | Default                          | Purpose                                                                 |
+| ---------------- | -------- | -------------------------------- | ----------------------------------------------------------------------- |
+| `IconForeground` | `string` | `"MaterialDesign.Brush.Primary"` | DynamicResource key for icon, icon-background ellipse, and accent strip |
+| `AccentBrushKey` | `string` | `"MaterialDesign.Brush.Primary"` | DynamicResource key for the accent strip independently of the icon      |
+
+When `IconForeground` changes, the callback cascades to all three named elements via `SetResourceReference`:
+
+```csharp
+private static void OnIconForegroundChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+{
+    var dialog = (T)d;
+    var key = (string)e.NewValue;
+    dialog.IconControl.SetResourceReference(ForegroundProperty, key);
+    dialog.IconBackground.SetResourceReference(Ellipse.FillProperty, key);
+    dialog.AccentStrip.SetResourceReference(Border.BackgroundProperty, key);
+}
+```
+
+### Semantic Accent Colours
+
+| Context                   | `IconForeground`                         | Icon                 |
+| ------------------------- | ---------------------------------------- | -------------------- |
+| Information / neutral     | `MaterialDesign.Brush.Primary` (default) | `InformationOutline` |
+| Warning / unsaved changes | `MaterialDesign.Brush.Primary` (default) | `AlertOutline`       |
+| Error                     | `MaterialDesign.Brush.ValidationError`   | `ErrorOutline`       |
+
+### Usage Examples
+
+**Error dialog:**
+
+```csharp
+var dialog = new MessageDialog
+{
+    Title = "Open Failed",
+    Message = "Could not open the project file.",
+    IconKind = PackIconKind.ErrorOutline,
+    IconForeground = "MaterialDesign.Brush.ValidationError"
+};
+await DialogHost.Show(dialog, "MainDialogHost");
+```
+
+**Info / close-prevention:**
+
+```csharp
+var dialog = new MessageDialog
+{
+    Title = "Operation in Progress",
+    Message = "Please wait for it to complete or cancel it before closing.",
+    IconKind = PackIconKind.InformationOutline
+    // IconForeground defaults to Primary (blue accent)
+};
+await DialogHost.Show(dialog, "MainDialogHost");
+```
+
+**Unsaved changes confirmation:**
+
+```csharp
+var dialog = new ConfirmDiscardDialog
+{
+    Title = $"Save changes to \"{projectName}\"?",
+    // IconForeground defaults to Primary, Icon is always AlertOutline
+};
+var result = await DialogHost.Show(dialog, "MainDialogHost");
+```
+
+### Existing Dialogs
+
+| Dialog                 | Purpose                                               | File                              |
+| ---------------------- | ----------------------------------------------------- | --------------------------------- |
+| `DialogBase`           | Abstract base with shared DPs and cascading callbacks | `Views/DialogBase.cs`             |
+| `MessageDialog`        | General-purpose info/error/warning                    | `Views/MessageDialog.xaml`        |
+| `ConfirmDiscardDialog` | Save/Discard/Cancel confirmation                      | `Views/ConfirmDiscardDialog.xaml` |
+
+When creating a new modal dialog, inherit from `DialogBase` and follow this pattern for visual consistency. Wire the named XAML elements to the base class properties in the constructor after `InitializeComponent()`:
+
+```csharp
+public MyNewDialog()
+{
+    InitializeComponent();
+
+    DialogIcon = IconControl;
+    DialogIconBackground = IconBackground;
+    DialogAccentStrip = AccentStrip;
+}
+```
+
+---
+
 ## Common Pitfalls
 
 ### StaticResource in window style (pre-v5.0.0 only)
