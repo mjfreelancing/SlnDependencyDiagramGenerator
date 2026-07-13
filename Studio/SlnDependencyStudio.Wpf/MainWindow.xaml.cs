@@ -150,10 +150,12 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                 {
                     var error = context.Input;
 
-                    var dialog = new Views.ErrorMessageDialog
+                    var dialog = new Views.MessageDialog
                     {
                         Title = error.Title,
-                        Message = error.Message
+                        Message = error.Message,
+                        IconKind = PackIconKind.ErrorOutline,
+                        IconForeground = "MaterialDesign.Brush.ValidationError"
                     };
 
                     await DialogHost.Show(dialog, "MainDialogHost");
@@ -203,6 +205,15 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 
         if (ViewModel is not null && !ViewModel.CanClose)
         {
+            var messageDialog = new Views.MessageDialog
+            {
+                Title = "Operation in Progress",
+                Message = "An operation is currently running.\n\nPlease wait for it to complete or cancel\nit before closing the application.",
+                IconKind = PackIconKind.InformationOutline
+            };
+
+            await DialogHost.Show(messageDialog, "MainDialogHost");
+
             return;
         }
 
