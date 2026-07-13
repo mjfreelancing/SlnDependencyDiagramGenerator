@@ -81,6 +81,11 @@ internal sealed class CommandLineRunHandler : CommandLineHandlerBase, ICommandLi
             _logger.LogError("Invalid regular expression: {Message}", exception.Message);
             return StudioCliExitCode.RunCommandFailed.Value;
         }
+        catch (ToolNotFoundException exception)
+        {
+            _logger.LogError("Required diagram tool not found: {Message}", exception.Message);
+            return StudioCliExitCode.DiagramToolNotFound.Value;
+        }
         catch (DependencyGeneratorException exception)
         {
             _logger.LogError("Diagram generator failed: {Message}", exception.Message);

@@ -235,6 +235,33 @@ public class CommandLineRunHandlerFixture
     }
 
     [Fact]
+    public async Task Should_Return_DiagramToolNotFound_When_Tool_Not_Found()
+    {
+        var serializer = Substitute.For<IDependencyProjectSerializer>();
+
+        serializer
+            .DeserializeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(CreateValidDocument(preGenEnabled: false)));
+
+        var dependencyGenerator = Substitute.For<IDependencyGenerator>();
+
+        dependencyGenerator
+            .CreateDiagramsAsync(Arg.Any<DependencyGeneratorConfig>(), Arg.Any<CancellationToken>())
+            .ThrowsAsync(new ToolNotFoundException("Required external tools are not available"));
+
+        var preGenRunner = Substitute.For<IPreGenerationCommandRunner>();
+        var validationInvoker = Substitute.For<IValidationInvoker>();
+        var logger = Substitute.For<ILogger<CommandLineRunHandler>>();
+
+        var handler = new CommandLineRunHandler(serializer, dependencyGenerator, preGenRunner, validationInvoker, logger);
+
+        var result = await handler.HandleAsync(
+            Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None);
+
+        result.ShouldBe(StudioCliExitCode.DiagramToolNotFound.Value);
+    }
+
+    [Fact]
     public async Task Should_Return_RunCommandFailed_When_Cancelled()
     {
         var serializer = Substitute.For<IDependencyProjectSerializer>();

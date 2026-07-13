@@ -24,6 +24,9 @@ public sealed class StudioCliExitCode : EnrichedEnum<StudioCliExitCode>
     /// <summary>The diagram generator threw an error during <c>CreateDiagramsAsync</c>.</summary>
     public static readonly StudioCliExitCode DiagramGeneratorFailed = new(1006);
 
+    /// <summary>A required external diagram tool (such as d2 or mmdc) was not found.</summary>
+    public static readonly StudioCliExitCode DiagramToolNotFound = new(1007);
+
     /// <summary>An unexpected CLI failure occurred.</summary>
     public static readonly StudioCliExitCode UnhandledCliFailure = new(1999);
 

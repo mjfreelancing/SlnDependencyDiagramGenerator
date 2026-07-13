@@ -3,7 +3,7 @@
 namespace SlnDependencyDiagramGenerator.Exceptions;
 
 /// <summary>The exception type raised when an error occurs while processing the dependency diagram generator.</summary>
-public sealed class DependencyGeneratorException : Exception
+public class DependencyGeneratorException : Exception
 {
     /// <summary>Initializes a new dependency generator exception.</summary>
     /// <param name="message">The error message.</param>

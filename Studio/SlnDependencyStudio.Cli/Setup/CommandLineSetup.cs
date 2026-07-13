@@ -43,7 +43,8 @@ internal sealed class CommandLineSetup
         command.SetAction(async parseResult =>
         {
             var configFilename = parseResult.GetValue(configFileOption)!;
-            setExitCode(await handler.HandleAsync(configFilename, _cancellationToken));
+            var exitCode = await handler.HandleAsync(configFilename, _cancellationToken);
+            setExitCode(exitCode);
         });
 
         _commands.Add(command);
@@ -67,7 +68,8 @@ internal sealed class CommandLineSetup
         command.SetAction(async parseResult =>
         {
             var configFilename = parseResult.GetValue(configFileOption)!;
-            setExitCode(await handler.HandleAsync(configFilename, _cancellationToken));
+            var exitCode = await handler.HandleAsync(configFilename, _cancellationToken);
+            setExitCode(exitCode);
         });
 
         _commands.Add(command);

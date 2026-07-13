@@ -6,6 +6,7 @@ using AllOverIt.Validation;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
 using SlnDependencyDiagramGenerator.Config;
+using SlnDependencyDiagramGenerator.Exceptions;
 using SlnDependencyDiagramGenerator.Generator.Discovery;
 using SlnDependencyDiagramGenerator.Generator.Nodes;
 using SlnDependencyDiagramGenerator.Generator.ToolDetection;
@@ -80,6 +81,9 @@ public sealed class DependencyGenerator : IDependencyGenerator
 
         ValidateConfiguration(configuration);
 
+        // Fail early if required external tools are not available.
+        await AssertToolAvailabilityAsync(configuration, cancellationToken).ConfigureAwait(false);
+
         var individualTransitiveDepth = configuration.Solution.Individual.Enabled
             ? configuration.Solution.Individual.TransitiveDepth
             : 0;
@@ -111,10 +115,6 @@ public sealed class DependencyGenerator : IDependencyGenerator
         _progressReporter.Report($"Discovered {targetFrameworks.Length} target framework(s): {string.Join(", ", targetFrameworks)}", _logger);
 
         var renderers = GetRenderers(configuration);
-
-        // Check tool availability and log warnings before processing projects,
-        // so failures are visible early even if generation continues.
-        await LogToolAvailabilityAsync(configuration, cancellationToken).ConfigureAwait(false);
 
         // Log which projects were resolved, included, and excluded.
         await LogProjectDiscoveryAsync(solutionPath, regexToInclude, regexToExclude, cancellationToken).ConfigureAwait(false);
@@ -560,34 +560,24 @@ public sealed class DependencyGenerator : IDependencyGenerator
         }
     }
 
-    private async Task LogToolAvailabilityAsync(DependencyGeneratorConfig configuration, CancellationToken cancellationToken)
+    private async Task AssertToolAvailabilityAsync(DependencyGeneratorConfig configuration, CancellationToken cancellationToken)
     {
-        if (configuration.Export.ImageFormats.Length == 0)
-        {
-            return;
-        }
-
         var readiness = await _toolDetection
             .CheckConfiguredToolsAsync(configuration.Diagram.Formats, cancellationToken)
             .ConfigureAwait(false);
 
-        if (!readiness.AllRequiredToolsAvailable)
+        if (readiness.AllRequiredToolsAvailable)
         {
-            foreach (var status in readiness.ToolStatuses)
-            {
-                if (!status.IsAvailable)
-                {
-                    if (status.ErrorMessage is not null)
-                    {
-                        _logger.LogError("{Message}", status.ErrorMessage);
-                    }
-                    else
-                    {
-                        _logger.LogError("'{ToolName}' is not available.", status.ToolName);
-                    }
-                }
-            }
+            return;
         }
+
+        var unavailable = readiness.ToolStatuses
+            .Where(status => !status.IsAvailable)
+            .Select(status => status.ToolName);
+
+        var message = $"Required external tools are not available: {string.Join(", ", unavailable)}";
+
+        throw new ToolNotFoundException(message);
     }
 
     private async Task LogProjectDiscoveryAsync(string solutionPath, string[] regexToInclude, string[] regexToExclude,
