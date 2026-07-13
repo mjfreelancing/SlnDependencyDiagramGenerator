@@ -50,6 +50,7 @@ public sealed class MainWindowViewModel : ActivatableViewModel
     private readonly ObservableAsPropertyHelper<bool> _hasDocument;
     private readonly ObservableAsPropertyHelper<bool> _hasRecentProjects;
     private bool _canClose = true;
+    private bool _isOperationRunning;
     private bool _runMenuEnabled;
     private NavigationItemViewModel? _selectedNavigationItem;
     private object? _currentPage;
@@ -83,6 +84,18 @@ public sealed class MainWindowViewModel : ActivatableViewModel
     {
         get => _canClose;
         private set => this.RaiseAndSetIfChanged(ref _canClose, value);
+    }
+
+    /// <summary>
+    /// <see langword="true"/> when a long-running operation (analyse or generate)
+    /// is in progress. Bound by a <c>Menu.Resources</c> style to disable all
+    /// <see cref="MenuItem"/>s during execution — new menus added anywhere in
+    /// the <c>Menu</c> inherit this behaviour automatically.
+    /// </summary>
+    public bool IsOperationRunning
+    {
+        get => _isOperationRunning;
+        private set => this.RaiseAndSetIfChanged(ref _isOperationRunning, value);
     }
 
     /// <summary><see langword="true"/> when a document is currently loaded in the store.</summary>
@@ -308,23 +321,27 @@ public sealed class MainWindowViewModel : ActivatableViewModel
                 item.WhenAnyValue(nav => nav.HasValidationError)))
             .StartWith(false);
 
+        // Single source of truth for operation state — both Run menu and
+        // the global MenuItem style in the view consume this.
         Observable
             .CombineLatest(
-                _store.WhenAnyValue(store => store.HasDocument),
-                validationErrorsChanged,
                 AnalyzeCommand.IsExecuting,
                 GenerateCommand.IsExecuting,
-                (hasDoc, _, analyzing, generating) =>
-                    hasDoc && !analyzing && !generating && !AnyValidationErrors())
-            .Subscribe(enabled => RunMenuEnabled = enabled)
+                (analyzing, generating) => analyzing || generating)
+            .Subscribe(running => IsOperationRunning = running)
             .DisposeWith(disposables);
 
         Observable
             .CombineLatest(
-                AnalyzeCommand.IsExecuting,
-                GenerateCommand.IsExecuting,
-                (analyzing, generating) => !analyzing && !generating)
-            .Subscribe(canClose => CanClose = canClose)
+                _store.WhenAnyValue(store => store.HasDocument),
+                validationErrorsChanged,
+                this.WhenAnyValue(vm => vm.IsOperationRunning),
+                (hasDoc, _, running) => hasDoc && !running && !AnyValidationErrors())
+            .Subscribe(enabled => RunMenuEnabled = enabled)
+            .DisposeWith(disposables);
+
+        this.WhenAnyValue(vm => vm.IsOperationRunning)
+            .Subscribe(running => CanClose = !running)
             .DisposeWith(disposables);
     }
 

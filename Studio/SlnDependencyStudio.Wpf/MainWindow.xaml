@@ -51,9 +51,7 @@
             Key="F5"
             Command="{Binding AnalyzeCommand}"
             Modifiers="Shift" />
-        <KeyBinding
-            Key="F5"
-            Command="{Binding GenerateCommand}" />
+        <KeyBinding Key="F5" Command="{Binding GenerateCommand}" />
     </Window.InputBindings>
 
     <Grid Background="{DynamicResource MaterialDesign.Brush.Card.Background}">
@@ -90,6 +88,21 @@
                     BorderBrush="{DynamicResource MaterialDesign.Brush.Separator.Background}"
                     BorderThickness="0,0,0,1"
                     Foreground="{DynamicResource MaterialDesign.Brush.Foreground}">
+
+                    <Menu.Resources>
+                        <!--
+                            Any MenuItem added anywhere in this Menu is automatically disabled
+                            while an operation is running. No per-item bindings needed as the
+                            DataTrigger covers all.
+                        -->
+                        <Style BasedOn="{StaticResource {x:Type MenuItem}}" TargetType="MenuItem">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsOperationRunning}" Value="True">
+                                    <Setter Property="IsEnabled" Value="False" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Menu.Resources>
 
                     <MenuItem Header="_File">
                         <MenuItem
