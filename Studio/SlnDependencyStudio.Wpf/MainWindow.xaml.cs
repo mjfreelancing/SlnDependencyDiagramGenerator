@@ -133,7 +133,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 
                     var dialog = new Views.ConfirmDiscardDialog
                     {
-                        Message = $"Save changes to \"{projectName}\"?"
+                        Title = $"Save changes to \"{projectName}\"?"
                     };
 
                     // The buttons in the dialog are bound to the DiscardAction enum values — see the CommandParameter bindings in the XAML.

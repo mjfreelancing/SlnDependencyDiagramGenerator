@@ -6,39 +6,98 @@
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:models="clr-namespace:SlnDependencyStudio.Wpf.Models"
-    xmlns:wpf="clr-namespace:SlnDependencyStudio.Wpf"
-    d:DesignWidth="350"
+    d:DesignWidth="380"
     mc:Ignorable="d">
 
-    <StackPanel Margin="16">
-        <TextBlock
-            x:Name="MessageText"
-            Margin="0,0,0,16"
-            FontSize="14"
-            Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
-            TextWrapping="Wrap" />
+    <materialDesign:Card
+        MaxWidth="480"
+        Margin="24"
+        Padding="0">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="5" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
 
-        <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+            <!--  Semantic accent strip  -->
+            <Border
+                x:Name="AccentStrip"
+                Grid.Column="0"
+                Background="{DynamicResource MaterialDesign.Brush.Primary}" />
 
-            <Button
-                Margin="0,0,8,0"
-                Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}"
-                CommandParameter="{x:Static models:DiscardAction.Save}"
-                Content="Save"
-                Style="{StaticResource MaterialDesignFlatButton}" />
+            <!--  Content  -->
+            <StackPanel Grid.Column="1" Margin="24,20,24,20">
 
-            <Button
-                Margin="0,0,8,0"
-                Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}"
-                CommandParameter="{x:Static models:DiscardAction.Discard}"
-                Content="Discard"
-                Style="{StaticResource MaterialDesignOutlinedButton}" />
+                <!--  Header  -->
+                <StackPanel Margin="0,0,0,8" Orientation="Horizontal">
+                    <!--  Tinted circle icon  -->
+                    <Grid Margin="0,0,16,0" VerticalAlignment="Top">
+                        <Ellipse
+                            x:Name="IconBackground"
+                            Width="44"
+                            Height="44"
+                            Fill="{DynamicResource MaterialDesign.Brush.Primary}"
+                            Opacity="0.12" />
+                        <materialDesign:PackIcon
+                            x:Name="IconControl"
+                            Width="24"
+                            Height="24"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Foreground="{DynamicResource MaterialDesign.Brush.Primary}"
+                            Kind="AlertOutline" />
+                    </Grid>
 
-            <Button
-                Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}"
-                CommandParameter="{x:Static models:DiscardAction.Cancel}"
-                Content="Cancel"
-                IsCancel="True" />
-        </StackPanel>
-    </StackPanel>
+                    <TextBlock
+                        x:Name="TitleText"
+                        VerticalAlignment="Center"
+                        FontSize="18"
+                        FontWeight="SemiBold"
+                        Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+                        TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+
+                <!--  Message body  -->
+                <TextBlock
+                    x:Name="MessageText"
+                    Margin="0,4,0,0"
+                    FontSize="14"
+                    Foreground="{DynamicResource MaterialDesign.Brush.ForegroundLight}"
+                    LineHeight="22"
+                    Text="Your changes will be ignored if you don't save them."
+                    TextWrapping="Wrap" />
+
+                <!--  Footer separator  -->
+                <Border
+                    Height="1"
+                    Margin="0,20,0,16"
+                    Background="{DynamicResource MaterialDesign.Brush.Separator.Background}" />
+
+                <!--  Actions  -->
+                <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+
+                    <Button
+                        Margin="0,0,8,0"
+                        Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}"
+                        CommandParameter="{x:Static models:DiscardAction.Save}"
+                        Content="Save"
+                        Style="{StaticResource MaterialDesignFlatButton}" />
+
+                    <Button
+                        Margin="0,0,8,0"
+                        Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}"
+                        CommandParameter="{x:Static models:DiscardAction.Discard}"
+                        Content="Discard"
+                        Style="{StaticResource MaterialDesignOutlinedButton}" />
+
+                    <Button
+                        Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}"
+                        CommandParameter="{x:Static models:DiscardAction.Cancel}"
+                        Content="Cancel"
+                        IsCancel="True" />
+                </StackPanel>
+
+            </StackPanel>
+        </Grid>
+    </materialDesign:Card>
 </UserControl>
