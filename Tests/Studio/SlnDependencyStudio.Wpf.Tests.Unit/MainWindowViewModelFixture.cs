@@ -30,7 +30,7 @@ public class MainWindowViewModelFixture
 {
     private readonly IProjectDocumentStore _store = Substitute.For<IProjectDocumentStore>();
     private readonly IDependencyProjectService _projectService = Substitute.For<IDependencyProjectService>();
-    private readonly IRecentProjectsService _recentProjects = Substitute.For<IRecentProjectsService>();
+    private readonly IRecentProjectsStore _recentProjects = Substitute.For<IRecentProjectsStore>();
     private readonly IErrorDialogService _errorDialog;
     private readonly IViewFactory _viewFactory = Substitute.For<IViewFactory>();
     private readonly IToolStatusService _toolStatus = Substitute.For<IToolStatusService>();
@@ -73,9 +73,10 @@ public class MainWindowViewModelFixture
         _viewFactory.CreateViewFor<PipelineViewModel>().Returns(CreateMockView<PipelineViewModel>());
 
         // EmptyStateViewModel is sealed — use a real instance, not a substitute.
-        // Its constructor calls IRecentProjectsService.GetRecent(), so set that return up first
-        // and create the instance outside any NSubstitute Returns() chain.
-        _recentProjects.GetRecent().Returns([]);
+        // It reads RecentProjects from the store directly, so set up the store's
+        // collection before creating the view model.
+        _recentProjects.RecentProjects.Returns([]);
+        _recentProjects.HasRecentProjects.Returns(false);
 
         var emptyStateViewModel = new EmptyStateViewModel(_recentProjects);
 

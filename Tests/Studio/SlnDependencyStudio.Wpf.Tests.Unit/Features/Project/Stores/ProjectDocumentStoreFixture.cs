@@ -14,7 +14,7 @@ namespace SlnDependencyStudio.Wpf.Tests.Unit.Features.Project.Stores;
 public class ProjectDocumentStoreFixture
 {
     private readonly IDependencyProjectService _projectService = Substitute.For<IDependencyProjectService>();
-    private readonly IRecentProjectsService _recentProjects = Substitute.For<IRecentProjectsService>();
+    private readonly IRecentProjectsStore _recentProjects = Substitute.For<IRecentProjectsStore>();
     private readonly ProjectDocumentStore _store;
 
     public ProjectDocumentStoreFixture()

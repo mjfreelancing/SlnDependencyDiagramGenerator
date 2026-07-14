@@ -133,7 +133,7 @@ public class OutputPanelViewModelFixture
             subject.OnNext(logEvent);
 
             _viewModel.Messages.Count.ShouldBe(1);
-            _viewModel.Messages[0].Text.ShouldBe("Test message");
+            _viewModel.Messages[0].Text.ShouldBe("[⚡] Test message");
         }
 
         [Fact]
