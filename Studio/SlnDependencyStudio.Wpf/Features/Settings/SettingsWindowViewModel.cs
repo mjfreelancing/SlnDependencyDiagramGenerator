@@ -109,6 +109,6 @@ public sealed class SettingsWindowViewModel : ReactiveObject
                 /* vm => vm.SettingsEditorViewModel!.SomeOtherProp */
                 (retentionDays /* , string someOtherProp */) => new RestartSensitiveSettings(retentionDays /* , string someOtherProp */))
             .Select(settings => settings != _originalRestartSettings)
-            .BindTo(this, x => x.IsRestartRequired);
+            .BindTo(this, vm => vm.IsRestartRequired);
     }
 }

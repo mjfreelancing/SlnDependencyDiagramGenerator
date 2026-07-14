@@ -41,9 +41,9 @@ internal sealed class ExportOptionsEditor : ReactiveObject, IExportOptionsEditor
         _isDirty = Observable
             .CombineLatest(
                 RootPath.WhenAnyValue(path => path.IsDirty),
-                ClearContents.WhenAnyValue(cc => cc.IsDirty),
-                ImageFormats.WhenAnyValue(f => f.IsDirty),
-                (root, clear, imageFormats) => root || clear || imageFormats)
+                ClearContents.WhenAnyValue(contents => contents.IsDirty),
+                ImageFormats.WhenAnyValue(formats => formats.IsDirty),
+                (pathDirty, contentsDirty, formatsDirty) => pathDirty || contentsDirty || formatsDirty)
             .ToProperty(this, nameof(IsDirty));
     }
 

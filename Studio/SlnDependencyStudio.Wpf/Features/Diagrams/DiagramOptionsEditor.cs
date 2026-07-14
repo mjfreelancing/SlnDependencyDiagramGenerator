@@ -76,19 +76,19 @@ internal sealed class DiagramOptionsEditor : ReactiveObject, IDiagramOptionsEdit
 
         var dirtyFlags = new IObservable<bool>[]
         {
-            Formats.WhenAnyValue(f => f.IsDirty),
-            Direction.WhenAnyValue(d => d.IsDirty),
-            FrameworkFill.WhenAnyValue(f => f.IsDirty),
-            FrameworkOpacity.WhenAnyValue(o => o.IsDirty),
-            PackageFill.WhenAnyValue(f => f.IsDirty),
-            PackageOpacity.WhenAnyValue(o => o.IsDirty),
-            TransitiveFill.WhenAnyValue(f => f.IsDirty),
-            TransitiveOpacity.WhenAnyValue(o => o.IsDirty),
-            GroupingEnabled.WhenAnyValue(e => e.IsDirty),
-            GroupingFill.WhenAnyValue(f => f.IsDirty),
-            GroupingOpacity.WhenAnyValue(o => o.IsDirty),
-            GroupName.WhenAnyValue(n => n.IsDirty),
-            GroupNameAlias.WhenAnyValue(a => a.IsDirty)
+            Formats.WhenAnyValue(formats => formats.IsDirty),
+            Direction.WhenAnyValue(direction => direction.IsDirty),
+            FrameworkFill.WhenAnyValue(frameworkFill => frameworkFill.IsDirty),
+            FrameworkOpacity.WhenAnyValue(frameworkOpacity => frameworkOpacity.IsDirty),
+            PackageFill.WhenAnyValue(packageFill => packageFill.IsDirty),
+            PackageOpacity.WhenAnyValue(packageOpacity => packageOpacity.IsDirty),
+            TransitiveFill.WhenAnyValue(transitiveFill => transitiveFill.IsDirty),
+            TransitiveOpacity.WhenAnyValue(transitiveOpacity => transitiveOpacity.IsDirty),
+            GroupingEnabled.WhenAnyValue(groupingEnabled => groupingEnabled.IsDirty),
+            GroupingFill.WhenAnyValue(groupingFill => groupingFill.IsDirty),
+            GroupingOpacity.WhenAnyValue(groupingOpacity => groupingOpacity.IsDirty),
+            GroupName.WhenAnyValue(groupName => groupName.IsDirty),
+            GroupNameAlias.WhenAnyValue(groupNameAlias => groupNameAlias.IsDirty)
         };
 
         var subscription = Observable

@@ -43,11 +43,11 @@ internal sealed class PreGenerationConfigEditor : ReactiveObject, IPreGeneration
 
         var dirtyFlags = new[]
         {
-            Enabled.WhenAnyValue(e => e.IsDirty),
-            Command.WhenAnyValue(c => c.IsDirty),
-            Arguments.WhenAnyValue(a => a.IsDirty),
-            WorkingDirectory.WhenAnyValue(w => w.IsDirty),
-            ContinueOnFailure.WhenAnyValue(c => c.IsDirty)
+            Enabled.WhenAnyValue(enabled => enabled.IsDirty),
+            Command.WhenAnyValue(command => command.IsDirty),
+            Arguments.WhenAnyValue(arguments => arguments.IsDirty),
+            WorkingDirectory.WhenAnyValue(workingDirectory => workingDirectory.IsDirty),
+            ContinueOnFailure.WhenAnyValue(continueOnFailure => continueOnFailure.IsDirty)
         };
 
         var subscription = Observable

@@ -144,7 +144,7 @@ public sealed class OutputPanelViewModel : ReactiveObject, IStudioScopedDependen
 
         CopyAllCommand = ReactiveCommand.Create(() =>
         {
-            var text = string.Join(Environment.NewLine, Messages.Select(m => m.Text));
+            var text = string.Join(Environment.NewLine, Messages.Select(message => message.Text));
             Clipboard.SetText(text);
         }, hasContent);
 
@@ -154,7 +154,7 @@ public sealed class OutputPanelViewModel : ReactiveObject, IStudioScopedDependen
 
             if (filePath is not null)
             {
-                var text = string.Join(Environment.NewLine, Messages.Select(m => m.Text));
+                var text = string.Join(Environment.NewLine, Messages.Select(message => message.Text));
                 await File.WriteAllTextAsync(filePath, text);
             }
         }, hasContent);

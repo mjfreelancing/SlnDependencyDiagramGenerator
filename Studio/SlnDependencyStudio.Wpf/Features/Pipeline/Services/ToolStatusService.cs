@@ -53,7 +53,7 @@ internal sealed class ToolStatusService : IToolStatusService, IDisposable
 
         foreach (var toolName in knownToolNames)
         {
-            if (!_entries.Any(e => e.ToolName == toolName))
+            if (!_entries.Any(entry => entry.ToolName == toolName))
             {
                 _entries.Add(new ToolStatusEntry { ToolName = toolName });
             }

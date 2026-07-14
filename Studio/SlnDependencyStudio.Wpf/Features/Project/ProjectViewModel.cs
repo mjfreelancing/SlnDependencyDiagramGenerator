@@ -39,7 +39,7 @@ public sealed class ProjectViewModel : ReactiveObject, IValidatableViewModel
         _store = store;
 
         _store
-            .WhenAnyValue(s => s.DocumentFilePath)
+            .WhenAnyValue(store => store.DocumentFilePath)
             .Subscribe(path => DocumentFilePath = path);
 
         this.ValidationRule(
