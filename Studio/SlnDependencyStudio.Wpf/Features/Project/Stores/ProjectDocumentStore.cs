@@ -20,7 +20,7 @@ namespace SlnDependencyStudio.Wpf.Features.Project.Stores;
 internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentStore
 {
     private readonly IDependencyProjectService _projectService;
-    private readonly IRecentProjectsService _recentProjects;
+    private readonly IRecentProjectsStore _recentProjects;
     private readonly ProjectMetadataEditor _metadataEditor;
     private readonly SolutionOptionsEditor _solutionOptionsEditor;
     private readonly ExportOptionsEditor _exportOptionsEditor;
@@ -76,8 +76,8 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
 
     /// <summary>Initializes a new instance of the store.</summary>
     /// <param name="projectService">The project serialization service.</param>
-    /// <param name="recentProjects">The recent projects service for MRU tracking.</param>
-    public ProjectDocumentStore(IDependencyProjectService projectService, IRecentProjectsService recentProjects)
+    /// <param name="recentProjects">The recent projects store for MRU tracking.</param>
+    public ProjectDocumentStore(IDependencyProjectService projectService, IRecentProjectsStore recentProjects)
     {
         _projectService = projectService.WhenNotNull();
         _recentProjects = recentProjects.WhenNotNull();

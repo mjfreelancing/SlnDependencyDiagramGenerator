@@ -37,21 +37,12 @@ internal sealed class RecentProjectsService : IRecentProjectsService
     /// <inheritdoc />
     public RecentProjectEntry[] GetRecent()
     {
-        var entries = _settingsService.CurrentState.RecentProjects
-            .Where(File.Exists)
-            .Select(filePath => new RecentProjectEntry(filePath, Path.GetFileNameWithoutExtension(filePath)))
-            .ToArray();
-
-        // Prune any entries that no longer exist on disk.
-        if (entries.Length != _settingsService.CurrentState.RecentProjects.Count)
-        {
-            _settingsService.CurrentState.RecentProjects.RemoveAll(
-                path => entries.All(entry => entry.FilePath != path));
-
-            _settingsService.SaveState();
-        }
-
-        return entries;
+        return [.. _settingsService.CurrentState.RecentProjects
+            .Select(filePath =>
+            {
+                var exists = File.Exists(filePath);
+                return new RecentProjectEntry(filePath, Path.GetFileNameWithoutExtension(filePath), exists);
+            })];
     }
 
     /// <inheritdoc />

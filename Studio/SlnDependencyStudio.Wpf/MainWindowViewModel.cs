@@ -20,7 +20,6 @@ using SlnDependencyStudio.Wpf.Features.Solution;
 using SlnDependencyStudio.Wpf.Models;
 using SlnDependencyStudio.Wpf.ViewModels;
 using System.Collections.ObjectModel;
-using System.Collections.Specialized;
 using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Disposables.Fluent;
@@ -35,7 +34,7 @@ public sealed class MainWindowViewModel : ActivatableViewModel
 
     private readonly IProjectDocumentStore _store;
     private readonly IDependencyProjectService _projectService;
-    private readonly IRecentProjectsService _recentProjectsService;
+    private readonly IRecentProjectsStore _recentProjectsStore;
     private readonly IErrorDialogService _errorDialog;
     private readonly IViewFactory _viewFactory;
     private readonly IToolStatusService _toolStatus;
@@ -48,7 +47,6 @@ public sealed class MainWindowViewModel : ActivatableViewModel
     // OAPHs initialized here with their real observable sources so they are
     // never null. They live for the lifetime of the ViewModel.
     private readonly ObservableAsPropertyHelper<bool> _hasDocument;
-    private readonly ObservableAsPropertyHelper<bool> _hasRecentProjects;
     private readonly ReactiveCommand<Unit, Unit> _cancelOperationCommand;
     private bool _canClose = true;
     private bool _isOperationRunning;
@@ -168,27 +166,30 @@ public sealed class MainWindowViewModel : ActivatableViewModel
     /// <summary>Interaction for showing a save-before-discard confirmation dialog.</summary>
     public Interaction<string, DiscardAction> ConfirmDiscardInteraction { get; } = new();
 
-    /// <summary>Recently opened project files, most recent first.</summary>
-    public ObservableCollection<RecentProjectEntry> RecentProjects { get; } = [];
+    /// <summary>Recently opened project files, most recent first. Shared collection from the store.</summary>
+    public ObservableCollection<RecentProjectEntry> RecentProjects => _recentProjectsStore.RecentProjects;
 
     /// <summary><see langword="true"/> when at least one recent project exists.</summary>
-    public bool HasRecentProjects => _hasRecentProjects.Value;
+    public bool HasRecentProjects => _recentProjectsStore.HasRecentProjects;
 
     /// <summary>Command that opens a recent project from the list.</summary>
     public ReactiveCommand<string, Unit> OpenRecentProjectCommand { get; }
+
+    /// <summary>Command that removes a recent project entry from the list.</summary>
+    public ReactiveCommand<string, Unit> RemoveRecentProjectCommand { get; }
 
     /// <summary>Command that closes the application.</summary>
     public ReactiveCommand<Unit, Unit> ExitCommand { get; }
 
     /// <summary>Initializes a new instance of <see cref="MainWindowViewModel"/>.</summary>
     public MainWindowViewModel(IProjectDocumentStore store, IDependencyProjectService projectService,
-        IRecentProjectsService recentProjectsService, IErrorDialogService errorDialog, IViewFactory viewFactory,
+        IRecentProjectsStore recentProjectsStore, IErrorDialogService errorDialog, IViewFactory viewFactory,
         IToolStatusService toolStatus, IPreGenerationAnalysisService analysisService,
         IGenerationService generationService, ILogger<MainWindowViewModel> logger)
     {
         _store = store;
         _projectService = projectService;
-        _recentProjectsService = recentProjectsService;
+        _recentProjectsStore = recentProjectsStore;
         _errorDialog = errorDialog;
         _viewFactory = viewFactory;
         _toolStatus = toolStatus;
@@ -200,21 +201,9 @@ public sealed class MainWindowViewModel : ActivatableViewModel
         OutputPanel = outputPanelView;
         _outputPanelViewModel = (OutputPanelViewModel)outputPanelView.ViewModel!;
 
-        // OAPHs initialized here with their real observable sources so they are
-        // never null. They live for the lifetime of the ViewModel.
-        RefreshRecentProjects();
-
         _hasDocument = _store
             .WhenAnyValue(store => store.HasDocument)
             .ToProperty(this, nameof(HasDocument));
-
-        _hasRecentProjects = Observable
-            .FromEventPattern<NotifyCollectionChangedEventHandler, NotifyCollectionChangedEventArgs>(
-                handler => RecentProjects.CollectionChanged += handler,
-                handler => RecentProjects.CollectionChanged -= handler)
-            .Select(_ => RecentProjects.Count > 0)
-            .StartWith(RecentProjects.Count > 0)
-            .ToProperty(this, nameof(HasRecentProjects));
 
         OpenSettingsCommand = ReactiveCommand.Create(() => { });
         OpenProjectCommand = ReactiveCommand.CreateFromTask(OpenProjectAsync);
@@ -226,6 +215,7 @@ public sealed class MainWindowViewModel : ActivatableViewModel
         ExitCommand = ReactiveCommand.Create(() => { });
         _cancelOperationCommand = CreateCancelOperationCommand();
         OpenRecentProjectCommand = ReactiveCommand.CreateFromTask<string>(OpenRecentProjectAsync);
+        RemoveRecentProjectCommand = ReactiveCommand.Create<string>(RemoveRecentProject);
 
         // Mutual exclusion between Analyze and Generate is handled by RunMenuEnabled
         // which disables the entire Run menu during either operation.
@@ -272,7 +262,6 @@ public sealed class MainWindowViewModel : ActivatableViewModel
     {
         WireDocumentStateTracking(disposables);
         WireNavigation(disposables);
-        WireRecentProjects(disposables);
         WireCancelCommand(disposables);
     }
 
@@ -756,19 +745,9 @@ public sealed class MainWindowViewModel : ActivatableViewModel
         _logger.LogInformation("Showing empty-state landing page");
     }
 
-    private void WireRecentProjects(CompositeDisposable disposables)
-    {
-        RefreshRecentProjects();
-    }
-
     internal void RefreshRecentProjects()
     {
-        RecentProjects.Clear();
-
-        foreach (var entry in _recentProjectsService.GetRecent())
-        {
-            RecentProjects.Add(entry);
-        }
+        _recentProjectsStore.Refresh();
     }
 
     private async Task OpenRecentProjectAsync(string filePath)
@@ -786,8 +765,7 @@ public sealed class MainWindowViewModel : ActivatableViewModel
         {
             _logger.LogError(ex, "Failed to open recent project, removing from list: {FilePath}", filePath);
 
-            _recentProjectsService.Remove(filePath);
-            RefreshRecentProjects();
+            _recentProjectsStore.Remove(filePath);
 
             await _errorDialog.ShowError.Handle(
                 new ErrorInfo("Open Failed", $"The recent project could not be opened. It may have been moved or deleted.\n\n{ex.Message}"));
@@ -798,5 +776,10 @@ public sealed class MainWindowViewModel : ActivatableViewModel
         _logger.LogInformation("Opened recent project: {FilePath}", filePath);
 
         SelectNavigationItem<ProjectViewModel>();
+    }
+
+    private void RemoveRecentProject(string filePath)
+    {
+        _recentProjectsStore.Remove(filePath);
     }
 }

@@ -212,49 +212,114 @@
             <ItemsControl ItemsSource="{Binding RecentProjects}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate DataType="{x:Type models:RecentProjectEntry}">
-                        <Button
-                            Margin="0,1,0,1"
-                            Command="{Binding DataContext.OpenRecentProjectCommand, ElementName=Root}"
-                            CommandParameter="{Binding FilePath}"
-                            Style="{StaticResource RecentRowButtonStyle}">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
+                        <Grid Margin="0,1,0,1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
 
+                            <Button
+                                Grid.Column="0"
+                                Command="{Binding DataContext.OpenRecentProjectCommand, ElementName=Root}"
+                                CommandParameter="{Binding FilePath}"
+                                IsEnabled="{Binding Exists}"
+                                Style="{StaticResource RecentRowButtonStyle}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+
+                                    <materialDesign:PackIcon
+                                        Grid.RowSpan="2"
+                                        Width="20"
+                                        Height="20"
+                                        Margin="0,0,12,0"
+                                        VerticalAlignment="Center">
+                                        <materialDesign:PackIcon.Style>
+                                            <Style TargetType="materialDesign:PackIcon">
+                                                <Setter Property="Kind" Value="FolderOpen" />
+                                                <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.ForegroundLight}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Exists}" Value="False">
+                                                        <Setter Property="Kind" Value="FileRemoveOutline" />
+                                                        <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.ValidationError}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </materialDesign:PackIcon.Style>
+                                    </materialDesign:PackIcon>
+
+                                    <TextBlock
+                                        Grid.Row="0"
+                                        Grid.Column="1"
+                                        FontSize="13"
+                                        FontWeight="Medium"
+                                        Text="{Binding DisplayName}">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Exists}" Value="False">
+                                                        <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.ForegroundLight}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+
+                                    <TextBlock
+                                        Grid.Row="1"
+                                        Grid.Column="1"
+                                        Margin="0,2,0,0"
+                                        FontSize="11"
+                                        Text="{Binding FilePath}"
+                                        TextTrimming="CharacterEllipsis">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.ForegroundLight}" />
+                                                <Setter Property="ToolTip" Value="{Binding FilePath}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Exists}" Value="False">
+                                                        <Setter Property="ToolTip" Value="File not found" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </Grid>
+                            </Button>
+
+                            <Button
+                                Grid.Column="1"
+                                Width="28"
+                                Height="28"
+                                Margin="4,0,0,0"
+                                Padding="0"
+                                VerticalAlignment="Center"
+                                Command="{Binding DataContext.RemoveRecentProjectCommand, ElementName=Root}"
+                                CommandParameter="{Binding FilePath}"
+                                ToolTip="Remove from recent projects">
+                                <Button.Style>
+                                    <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignFlatButton}">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Exists}" Value="False">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
                                 <materialDesign:PackIcon
-                                    Grid.RowSpan="2"
-                                    Width="20"
-                                    Height="20"
-                                    Margin="0,0,12,0"
-                                    VerticalAlignment="Center"
-                                    Foreground="{DynamicResource MaterialDesign.Brush.ForegroundLight}"
-                                    Kind="FolderOpen" />
-
-                                <TextBlock
-                                    Grid.Row="0"
-                                    Grid.Column="1"
-                                    FontSize="13"
-                                    FontWeight="Medium"
-                                    Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
-                                    Text="{Binding DisplayName}" />
-
-                                <TextBlock
-                                    Grid.Row="1"
-                                    Grid.Column="1"
-                                    Margin="0,2,0,0"
-                                    FontSize="11"
-                                    Foreground="{DynamicResource MaterialDesign.Brush.ForegroundLight}"
-                                    Text="{Binding FilePath}"
-                                    TextTrimming="CharacterEllipsis"
-                                    ToolTip="{Binding FilePath}" />
-                            </Grid>
-                        </Button>
+                                    Width="14"
+                                    Height="14"
+                                    Kind="Close" />
+                            </Button>
+                        </Grid>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>

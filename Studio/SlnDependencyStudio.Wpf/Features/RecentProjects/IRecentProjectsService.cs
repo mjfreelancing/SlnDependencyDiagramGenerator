@@ -11,7 +11,9 @@ public interface IRecentProjectsService : IStudioSingletonDependency
     /// <param name="filePath">The full path to the <c>.sds</c> file.</param>
     void Add(string filePath);
 
-    /// <summary>Returns the current list of recent project entries, most recent first.</summary>
+    /// <summary>Returns the current list of recent project entries, most recent first.
+    /// Entries whose files no longer exist are included with <see cref="RecentProjectEntry.Exists"/>
+    /// set to <see langword="false"/>.</summary>
     /// <returns>A read-only list of recent project entries.</returns>
     RecentProjectEntry[] GetRecent();
 

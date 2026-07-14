@@ -6,6 +6,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:models="clr-namespace:SlnDependencyStudio.Wpf.Features.RecentProjects.Models"
     xmlns:output="clr-namespace:SlnDependencyStudio.Wpf.Features.Output"
     xmlns:reactiveui="http://reactiveui.net"
     xmlns:viewModels="clr-namespace:SlnDependencyStudio.Wpf.ViewModels"
@@ -150,13 +151,67 @@
                                 ItemsSource="{Binding RecentProjects}">
                                 <MenuItem.ItemContainerStyle>
                                     <Style TargetType="MenuItem">
-                                        <Setter Property="Header" Value="{Binding DisplayName}" />
-                                        <Setter Property="Padding" Value="0,6,0,6" />
                                         <Setter Property="Command" Value="{Binding DataContext.OpenRecentProjectCommand, RelativeSource={RelativeSource AncestorType=MenuItem}}" />
                                         <Setter Property="CommandParameter" Value="{Binding FilePath}" />
                                         <Setter Property="ToolTip" Value="{Binding FilePath}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Exists}" Value="False">
+                                                <Setter Property="ToolTip" Value="File not found" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
                                     </Style>
                                 </MenuItem.ItemContainerStyle>
+                                <MenuItem.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type models:RecentProjectEntry}">
+                                        <DockPanel>
+                                            <Button
+                                                DockPanel.Dock="Right"
+                                                Width="20"
+                                                Height="20"
+                                                Margin="8,0,0,0"
+                                                Padding="0"
+                                                Command="{Binding DataContext.RemoveRecentProjectCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                CommandParameter="{Binding FilePath}"
+                                                ToolTip="Remove from recent projects">
+                                                <Button.Style>
+                                                    <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignFlatButton}">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Exists}" Value="False">
+                                                                <Setter Property="Visibility" Value="Visible" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Button.Style>
+                                                <materialDesign:PackIcon
+                                                    Width="12"
+                                                    Height="12"
+                                                    Kind="Close" />
+                                            </Button>
+
+                                            <materialDesign:PackIcon
+                                                Width="16"
+                                                Height="16"
+                                                Margin="0,0,8,0"
+                                                VerticalAlignment="Center">
+                                                <materialDesign:PackIcon.Style>
+                                                    <Style TargetType="materialDesign:PackIcon">
+                                                        <Setter Property="Kind" Value="FolderOpen" />
+                                                        <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.ForegroundLight}" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Exists}" Value="False">
+                                                                <Setter Property="Kind" Value="FileRemoveOutline" />
+                                                                <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.ValidationError}" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </materialDesign:PackIcon.Style>
+                                            </materialDesign:PackIcon>
+
+                                            <TextBlock VerticalAlignment="Center" Text="{Binding DisplayName}" />
+                                        </DockPanel>
+                                    </DataTemplate>
+                                </MenuItem.ItemTemplate>
                             </MenuItem>
                             <Separator />
                             <MenuItem
