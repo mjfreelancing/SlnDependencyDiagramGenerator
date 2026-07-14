@@ -883,20 +883,19 @@ All fields are scalars — `TrackableValue<T>` is the correct tracker for every 
 
 ### 9.1 Keyboard Shortcuts
 
-- [ ] 9.1.1 Add `KeyBinding` entries to `MainWindow`:
+- [x] 9.1.1 Add `KeyBinding` entries to `MainWindow`:
   - `Ctrl+N` — New project (from defaults)
   - `Ctrl+O` — Open project
   - `Ctrl+S` — Save
   - `Ctrl+Shift+S` — Save As
   - `F5` — Generate
   - `Ctrl+Shift+O` — Open output folder (most recent export root)
-  - `Escape` — Cancel generation (when running)
-- [ ] 9.1.2 Ensure keyboard shortcuts work regardless of which control has focus (use `InputBindings` at the window level, not control level).
+- [x] 9.1.2 Ensure keyboard shortcuts work regardless of which control has focus (use `InputBindings` at the window level, not control level).
 
 ### 9.2 Validation Status in Navigation
 
-- [ ] 9.2.1 Each `NavigationItemViewModel` should expose an `HasErrors` observable derived from the associated view model's validation context.
-- [ ] 9.2.2 In the navigation `DataTemplate`, show a red exclamation icon next to sections with errors.
+- [x] 9.2.1 Each `NavigationItemViewModel` should expose an `HasErrors` observable derived from the associated view model's validation context.
+- [x] 9.2.2 In the navigation `DataTemplate`, show a red exclamation icon next to sections with errors.
 
 ### 9.3 Window State Persistence
 
@@ -905,16 +904,10 @@ All fields are scalars — `TrackableValue<T>` is the correct tracker for every 
 
 ### 9.4 Recent Projects in Empty State
 
-- [ ] 9.4.1 When the empty-state view is shown, also display the 5 most recent projects as clickable tiles below the main actions.
-- [ ] 9.4.2 If a recent project path no longer exists, show it greyed out with a "file not found" indicator.
+- [x] 9.4.1 When the empty-state view is shown, also display the 5 most recent projects as clickable tiles below the main actions.
+- [x] 9.4.2 If a recent project path no longer exists, show it greyed out with a "file not found" indicator.
 
-### 9.5 Documentation-Evidence File
-
-- [ ] 9.5.1 Create `Studio/SlnDependencyStudio.Wpf/docs/evidence.md` as the documentation-evidence capture file (FR-11.6).
-- [ ] 9.5.2 Populate it with implementation notes accumulated during Phases 1–8: service descriptions, key classes, file locations, binding patterns, and architectural decisions.
-- [ ] 9.5.3 The evidence file must reference class names, method signatures, and file paths so it can later be transformed into accurate user guides. It should NOT be a user guide itself.
-
-### 9.6 UX Polish
+### 9.5 UX Polish
 
 - [ ] 9.6.1 Add subtle animations/transitions when switching navigation sections (Material Design `TransitioningContent` or simple opacity fade).
 - [ ] 9.6.2 Add a status bar at the bottom of the window showing: current project name (or "No project"), dirty indicator (•), and last generation timestamp.
