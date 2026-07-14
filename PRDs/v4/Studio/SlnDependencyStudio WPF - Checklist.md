@@ -909,9 +909,8 @@ All fields are scalars — `TrackableValue<T>` is the correct tracker for every 
 
 ### 9.5 UX Polish
 
-- [ ] 9.6.1 Add subtle animations/transitions when switching navigation sections (Material Design `TransitioningContent` or simple opacity fade).
-- [ ] 9.6.2 Add a status bar at the bottom of the window showing: current project name (or "No project"), dirty indicator (•), and last generation timestamp.
-- [ ] 9.6.3 Use a **specialised Material Design agent** to review the overall look-and-feel and suggest refinements to spacing, typography, and component selection.
+- [ ] 9.5.1 Add subtle animations/transitions when switching navigation sections (Material Design `TransitioningContent` or simple opacity fade).
+- [ ] 9.5.2 Use a **specialised Material Design agent** to review the overall look-and-feel and suggest refinements to spacing, typography, and component selection.
 
 **Phase 9 completion:** The application feels polished and productive. Keyboard shortcuts work globally, validation status is visible at a glance, window state persists, and the documentation-evidence file is populated.
 
