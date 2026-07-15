@@ -47,7 +47,7 @@ public static class ServiceCollectionExtensions
             // - no public abstraction required
             // - does not participate in unit testing (but is integration tested)
             services.AddScoped<ProjectAssetReader>();
-            services.AddScoped<SolutionParser>();
+            services.AddScoped<ISolutionParser, SolutionParser>();
 
             // Public generator-facing boundaries (used by DependencyGenerator and candidate frontend consumers).
             services.AddScoped<IProjectDiscoveryService, ProjectDiscoveryService>();

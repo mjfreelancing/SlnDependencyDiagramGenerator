@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 namespace SlnDependencyDiagramGenerator.Parser;
 
 /// <summary>Parses solution projects and resolves project, framework, and package dependencies.</summary>
-internal sealed partial class SolutionParser
+internal partial class SolutionParser : ISolutionParser
 {
     [GeneratedRegex(@"^[a-z]+(\d+\.\d+)", RegexOptions.IgnoreCase, "en-AU")]
     private static partial Regex TargetFrameworkRegex();
@@ -75,10 +75,8 @@ internal sealed partial class SolutionParser
     /// </summary>
     /// <param name="projects">The pre-filtered projects.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>
-    /// A distinct, ordered list of base target frameworks (for example, <c>net10.0</c>).
-    /// </returns>
-    internal Task<string[]> DiscoverTargetFrameworksAsync(IReadOnlyList<SolutionProjectDescriptor> projects,
+    /// <inheritdoc />
+    public Task<string[]> DiscoverTargetFrameworksAsync(IReadOnlyList<SolutionProjectDescriptor> projects,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -118,10 +116,8 @@ internal sealed partial class SolutionParser
     /// </summary>
     /// <param name="request">The parse request parameters.</param>
     /// <param name="projects">The pre-filtered projects.</param>
-    /// <returns>
-    /// The built project models for the requested target framework.
-    /// </returns>
-    internal SolutionProject[] BuildParsedProjects(SolutionParseRequest request, IReadOnlyList<SolutionProjectDescriptor> projects)
+    /// <inheritdoc />
+    public SolutionProject[] BuildParsedProjects(SolutionParseRequest request, IReadOnlyList<SolutionProjectDescriptor> projects)
     {
         var excludeSet = new HashSet<string>(request.ExcludePackages, StringComparer.OrdinalIgnoreCase);
         var excludeFrameworkSet = new HashSet<string>(request.ExcludeFrameworks, StringComparer.OrdinalIgnoreCase);
@@ -139,12 +135,9 @@ internal sealed partial class SolutionParser
     /// <param name="regexToInclude">Regex patterns used to include projects.</param>
     /// <param name="regexToExclude">Regex patterns used to exclude projects.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>
-    /// The full filtered classification used by discovery, framework detection, and parsing.
-    /// </returns>
-    internal async Task<FilteredSolutionProjects> DiscoverProjectsAsync(string solutionFilePath, string[] regexToInclude,
-        string[] regexToExclude,
-        CancellationToken cancellationToken)
+    /// <inheritdoc />
+    public async Task<FilteredSolutionProjects> DiscoverProjectsAsync(string solutionFilePath, string[] regexToInclude,
+        string[] regexToExclude, CancellationToken cancellationToken)
     {
         solutionFilePath = Path.GetFullPath(solutionFilePath);
 
@@ -164,14 +157,14 @@ internal sealed partial class SolutionParser
     /// <summary>
     /// Converts a target framework moniker into a sortable <see cref="Version"/>.
     /// </summary>
-    /// <param name="tfm">The target framework moniker.</param>
+    /// <param name="targetFrameworkMoniker">The target framework moniker.</param>
     /// <returns>
     /// The parsed framework version, or <c>0.0</c> when no version segment is present.
     /// </returns>
-    private static Version TfmSortVersion(string tfm)
+    private static Version TfmSortVersion(string targetFrameworkMoniker)
     {
         // e.g. "net10.0-windows" -> "10.0", "netstandard2.1" -> "2.1"
-        var match = TargetFrameworkRegex().Match(tfm);
+        var match = TargetFrameworkRegex().Match(targetFrameworkMoniker);
 
         return match.Success
             ? Version.Parse(match.Groups[1].Value)

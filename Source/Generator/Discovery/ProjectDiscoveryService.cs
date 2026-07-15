@@ -8,16 +8,16 @@ using System.Threading.Tasks;
 
 namespace SlnDependencyDiagramGenerator.Generator.Discovery;
 
-/// <summary>Provides project discovery and parsing services by coordinating with <see cref="SolutionParser" />.</summary>
+/// <summary>Provides project discovery and parsing services by coordinating with <see cref="ISolutionParser" />.</summary>
 internal sealed class ProjectDiscoveryService : IProjectDiscoveryService
 {
-    private readonly SolutionParser _solutionParser;
+    private readonly ISolutionParser _solutionParser;
     private string _cachedDiscoveryKey = string.Empty;
     private FilteredSolutionProjects? _cachedFilteredProjects;
 
     /// <summary>Initializes a new instance of <see cref="ProjectDiscoveryService"/>.</summary>
     /// <param name="solutionParser">The parser used to discover and parse solution projects.</param>
-    public ProjectDiscoveryService(SolutionParser solutionParser)
+    public ProjectDiscoveryService(ISolutionParser solutionParser)
     {
         _solutionParser = solutionParser.WhenNotNull();
     }
