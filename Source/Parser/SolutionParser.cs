@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 namespace SlnDependencyDiagramGenerator.Parser;
 
 /// <summary>Parses solution projects and resolves project, framework, and package dependencies.</summary>
-internal partial class SolutionParser : ISolutionParser
+internal sealed partial class SolutionParser : ISolutionParser
 {
     [GeneratedRegex(@"^[a-z]+(\d+\.\d+)", RegexOptions.IgnoreCase, "en-AU")]
     private static partial Regex TargetFrameworkRegex();
@@ -24,28 +24,31 @@ internal partial class SolutionParser : ISolutionParser
     private string _cachedSolutionFilePath = string.Empty;
     private IReadOnlyList<SolutionProjectDescriptor> _cachedProjects = [];
     private readonly Dictionary<string, ISolutionProjectResolver> _solutionProjectResolvers;
-    private readonly ProjectAssetReader _assetReader;
+    private readonly IProjectAssetReader _assetReader;
 
     /// <summary>Initializes a new parser instance.</summary>
     /// <param name="assetReader">The project assets reader used to resolve target frameworks and packages.</param>
-    public SolutionParser(ProjectAssetReader assetReader)
+    /// <param name="solutionProjectResolvers">The set of solution project resolvers, keyed by file extension.</param>
+    public SolutionParser(IProjectAssetReader assetReader, IEnumerable<ISolutionProjectResolver> solutionProjectResolvers)
     {
         _assetReader = assetReader.WhenNotNull();
+        _ = solutionProjectResolvers.WhenNotNull();
 
         // SDK-style project evaluation requires a registered MSBuild instance so SDK resolvers
         // can locate Microsoft.NET.Sdk and related toolset components.
         MsBuildSdkResolver.EnsureInitialized();
 
-        _solutionProjectResolvers = new Dictionary<string, ISolutionProjectResolver>(StringComparer.OrdinalIgnoreCase)
+        _solutionProjectResolvers = new Dictionary<string, ISolutionProjectResolver>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var resolver in solutionProjectResolvers)
         {
-            [".sln"] = new SlnSolutionProjectResolver(),
-            [".slnx"] = new SlnxSolutionProjectResolver()
-        };
+            _solutionProjectResolvers[resolver.Extension] = resolver;
+        }
     }
 
     // For use with integration tests.
     internal SolutionParser()
-        : this(new ProjectAssetReader())
+        : this(new ProjectAssetReader(), [new SlnSolutionProjectResolver(), new SlnxSolutionProjectResolver()])
     {
     }
 
