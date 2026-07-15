@@ -1,6 +1,8 @@
 using AllOverIt.Extensions;
 using Microsoft.Extensions.Logging;
+using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Generator;
+using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Shared.Enumerations;
 using SlnDependencyStudio.Shared.PreGeneration;
 using SlnDependencyStudio.Shared.Utils;
@@ -48,75 +50,12 @@ internal sealed class GenerationService : IGenerationService
 
                 var config = _store.BuildGeneratorConfig();
 
-                // Run pre-generation command if enabled.
-                var preGen = _store.PreGenerationEditor;
+                var shouldContinue = await RunPreGenerationAsync(observer, cancellationToken).ConfigureAwait(false);
 
-                if (preGen.Enabled.Value && preGen.Command.Value.IsNotNullOrEmpty())
+                if (shouldContinue)
                 {
-                    observer.OnNext(Info("Running pre-generation command…"));
-
-                    var workingDirectory = preGen.WorkingDirectory.Value;
-
-                    if (workingDirectory.IsNotNullOrEmpty() && _store.DocumentFilePath is not null)
-                    {
-                        var projectDir = Path.GetDirectoryName(_store.DocumentFilePath)!;
-                        workingDirectory = PathUtils.ResolveAsAbsolutePath(workingDirectory, projectDir);
-                    }
-
-                    var preGenConfig = new Shared.Config.PreGenerationConfig
-                    {
-                        Enabled = preGen.Enabled.Value,
-                        Command = preGen.Command.Value,
-                        Arguments = preGen.Arguments.Value,
-                        WorkingDirectory = workingDirectory,
-                        ContinueOnFailure = preGen.ContinueOnFailure.Value
-                    };
-
-                    PreGenerationCommandResult preGenResult;
-
-                    preGenResult = await _runnerFactory
-                        .ExecuteAsync(async (runner, token) =>
-                        {
-                            using var stdoutSub = runner.StdOut.Subscribe(line => observer.OnNext(Info(line)));
-                            using var stderrSub = runner.StdErr.Subscribe(line => observer.OnNext(Warning(line)));
-
-                            // Must await here due to the above using scopes
-                            return await runner.RunAsync(preGenConfig, token);
-                        }, cancellationToken)
-                        .ConfigureAwait(false);
-
-                    if (preGenResult.Succeeded)
-                    {
-                        observer.OnNext(Info("Pre-generation command completed successfully"));
-                    }
-                    else if (preGenResult.ExitCode == StudioExitCode.PreGenerationCommandCancelled.Value)
-                    {
-                        observer.OnNext(Warning("Pre-generation command was cancelled"));
-                        return;
-                    }
-                    else if (preGenConfig.ContinueOnFailure)
-                    {
-                        observer.OnNext(Warning($"Pre-generation command failed (continuing): {preGenResult.ErrorMessage}"));
-                    }
-                    else
-                    {
-                        observer.OnNext(Error($"Pre-generation command failed: {preGenResult.ErrorMessage}"));
-                        return;
-                    }
+                    await RunDiagramGenerationAsync(observer, config, cancellationToken).ConfigureAwait(false);
                 }
-
-                // Run the diagram generator.
-                observer.OnNext(Info("Generating diagrams…"));
-
-                await _generatorFactory
-                    .ExecuteAsync(async (generator, token) =>
-                    {
-                        using var stdoutSub = generator.OnProgress.Subscribe(line => observer.OnNext(Info(line)));
-
-                        // Must await here due to the above using scope
-                        await generator.CreateDiagramsAsync(config, token);
-                    }, cancellationToken)
-                    .ConfigureAwait(false);
 
                 var elapsed = DateTime.UtcNow - startTime;
 
@@ -136,7 +75,7 @@ internal sealed class GenerationService : IGenerationService
 
                 observer.OnNext(Error($"Generation timed out: {ex.Message}"));
             }
-            catch (Exception ex)    // Could be ToolNotFoundException or DependencyGeneratorException
+            catch (Exception ex)
             {
                 _logger.LogError(ex, "Generation failed");
 
@@ -147,6 +86,92 @@ internal sealed class GenerationService : IGenerationService
                 observer.OnCompleted();
             }
         });
+    }
+
+    /// <summary>
+    /// Runs the pre-generation command if enabled in the store.
+    /// </summary>
+    /// <returns><see langword="true"/> when the pipeline should continue; <see langword="false"/> when it should stop.</returns>
+    internal async Task<bool> RunPreGenerationAsync(IObserver<OutputMessage> observer, CancellationToken cancellationToken)
+    {
+        var preGen = _store.PreGenerationEditor;
+
+        if (!preGen.Enabled.Value || preGen.Command.Value.IsNullOrEmpty())
+        {
+            return true;
+        }
+
+        observer.OnNext(Info("Running pre-generation command…"));
+
+        var workingDirectory = preGen.WorkingDirectory.Value;
+
+        if (workingDirectory.IsNotNullOrEmpty() && _store.DocumentFilePath is not null)
+        {
+            var projectDir = Path.GetDirectoryName(_store.DocumentFilePath)!;
+            workingDirectory = PathUtils.ResolveAsAbsolutePath(workingDirectory, projectDir);
+        }
+
+        var preGenConfig = new PreGenerationConfig
+        {
+            Enabled = preGen.Enabled.Value,
+            Command = preGen.Command.Value,
+            Arguments = preGen.Arguments.Value,
+            WorkingDirectory = workingDirectory,
+            ContinueOnFailure = preGen.ContinueOnFailure.Value
+        };
+
+        var preGenResult = await _runnerFactory
+            .ExecuteAsync(async (runner, token) =>
+            {
+                using var stdoutSub = runner.StdOut.Subscribe(line => observer.OnNext(Info(line)));
+                using var stderrSub = runner.StdErr.Subscribe(line => observer.OnNext(Warning(line)));
+
+                return await runner.RunAsync(preGenConfig, token);
+            }, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (preGenResult.Succeeded)
+        {
+            observer.OnNext(Info("Pre-generation command completed successfully"));
+
+            return true;
+        }
+
+        if (preGenResult.ExitCode == StudioExitCode.PreGenerationCommandCancelled.Value)
+        {
+            observer.OnNext(Warning("Pre-generation command was cancelled"));
+
+            return false;
+        }
+
+        if (preGenConfig.ContinueOnFailure)
+        {
+            observer.OnNext(Warning($"Pre-generation command failed (continuing): {preGenResult.ErrorMessage}"));
+
+            return true;
+        }
+
+        observer.OnNext(Error($"Pre-generation command failed: {preGenResult.ErrorMessage}"));
+
+        return false;
+    }
+
+    /// <summary>
+    /// Runs the diagram generator, streaming progress to the observer.
+    /// </summary>
+    internal async Task RunDiagramGenerationAsync(IObserver<OutputMessage> observer, DependencyGeneratorConfig config,
+        CancellationToken cancellationToken)
+    {
+        observer.OnNext(Info("Generating diagrams…"));
+
+        await _generatorFactory
+            .ExecuteAsync(async (generator, token) =>
+            {
+                using var progressSub = generator.OnProgress.Subscribe(line => observer.OnNext(Info(line)));
+
+                await generator.CreateDiagramsAsync(config, token);
+            }, cancellationToken)
+            .ConfigureAwait(false);
     }
 
     private static OutputMessage Info(string text) => new() { Text = text, Level = OutputMessageLevel.Information };
