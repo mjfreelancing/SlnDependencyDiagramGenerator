@@ -84,7 +84,7 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBox
                                     Grid.Column="0"
-                                    materialDesign:HintAssist.Hint="Executable name, e.g. dotnet or build.cmd"
+                                    materialDesign:HintAssist.Hint="e.g. dotnet"
                                     Text="{Binding Command.Value, UpdateSourceTrigger=PropertyChanged}" />
                                 <Button
                                     Grid.Column="1"
@@ -108,7 +108,7 @@
                             Grid.Row="2"
                             Grid.Column="1"
                             Margin="16,6,0,0"
-                            materialDesign:HintAssist.Hint="Command-line arguments"
+                            materialDesign:HintAssist.Hint="e.g. restore MyProject.slnx"
                             IsEnabled="{Binding Enabled.Value}"
                             Text="{Binding Arguments.Value, UpdateSourceTrigger=PropertyChanged}" />
 
@@ -138,7 +138,7 @@
                             <TextBox
                                 Grid.Row="0"
                                 Grid.Column="0"
-                                materialDesign:HintAssist.Hint="Working directory (empty = solution directory)"
+                                materialDesign:HintAssist.Hint="e.g. C:\Dev\MyProject"
                                 Text="{Binding WorkingDirectory.Value, UpdateSourceTrigger=PropertyChanged}" />
                             <Button
                                 Grid.Row="0"
