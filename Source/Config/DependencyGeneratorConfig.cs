@@ -1,4 +1,6 @@
-﻿namespace SlnDependencyDiagramGenerator.Config;
+﻿using System.Collections.Generic;
+
+namespace SlnDependencyDiagramGenerator.Config;
 
 /// <summary>Provides configuration options that specify which projects in a solution are processed,
 /// how dependency depth and diagram styling are applied, and where diagram/source outputs are exported.</summary>

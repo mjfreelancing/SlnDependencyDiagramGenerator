@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Generator;
 using SlnDependencyDiagramGenerator.Generator.IntermediateRepresentation;
+using SlnDependencyDiagramGenerator.Generator.ToolDetection;
 using System;
 using System.Diagnostics;
 using System.Globalization;
@@ -25,10 +26,12 @@ internal sealed class D2DiagramRenderer : DiagramRendererBase
 
     /// <summary>Initializes a new D2 diagram renderer.</summary>
     /// <param name="options">The diagram options.</param>
-    /// <param name="logger">A logger for progress and diagnostics.</param>
     /// <param name="progressReporter">Optional shared progress reporter for streaming to callers.</param>
-    public D2DiagramRenderer(GeneratorDiagramOptions options, IProgressReporter progressReporter, ILogger<D2DiagramRenderer> logger)
-        : base(options, progressReporter, logger)
+    /// <param name="toolPathResolver">Resolves effective tool paths for external CLI invocation.</param>
+    /// <param name="logger">A logger for progress and diagnostics.</param>
+    public D2DiagramRenderer(GeneratorDiagramOptions options, IProgressReporter progressReporter,
+        IToolPathResolver toolPathResolver, ILogger<D2DiagramRenderer> logger)
+        : base(options, progressReporter, toolPathResolver, logger)
     {
     }
 
@@ -124,11 +127,13 @@ internal sealed class D2DiagramRenderer : DiagramRendererBase
         var imageFileName = Path.ChangeExtension(diagramFileName, format.ToString().ToLowerInvariant());
         ProgressReporter.Report($"  Exporting {format}: {Path.GetFileName(imageFileName)}", Logger);
 
+        var d2Path = ToolPathResolver.GetEffectivePath(DiagramFormat.D2);
+
         var stopwatch = Stopwatch.StartNew();
 
         // D2 sends all output to stderr - "err:" lines are errors, everything else is info/success.
         var d2Process = ProcessBuilder
-            .For("d2")
+            .For(d2Path)
             .WithNoWindow()
             .WithArguments("-l", "elk", diagramFileName, imageFileName)
             .WithErrorOutputHandler((sender, eventArgs) =>

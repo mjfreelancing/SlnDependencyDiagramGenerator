@@ -43,6 +43,7 @@ public sealed class DependencyGenerator : IDependencyGenerator
 
     private readonly IProjectDiscoveryService _projectDiscovery;
     private readonly IToolDetectionService _toolDetection;
+    private readonly IToolPathResolver _toolPathResolver;
     private readonly IValidationInvoker _validationInvoker;
     private readonly ILoggerFactory _loggerFactory;
     private readonly ILogger<DependencyGenerator> _logger;
@@ -54,14 +55,17 @@ public sealed class DependencyGenerator : IDependencyGenerator
     /// <summary>Initializes a new dependency generator instance with explicitly provided services (for DI).</summary>
     /// <param name="projectDiscovery">The project discovery service used for parsing solutions and resolving dependencies.</param>
     /// <param name="toolDetection">The tool detection service used for checking external CLI tool availability.</param>
+    /// <param name="toolPathResolver">Resolves effective tool paths for external CLI invocation.</param>
     /// <param name="validationInvoker">The validation invoker used to validate configuration before generation.</param>
     /// <param name="loggerFactory">The logger factory used to create loggers for the generator and renderers.</param>
     /// <param name="progressReporter">The shared progress reporter for streaming progress to callers.</param>
     public DependencyGenerator(IProjectDiscoveryService projectDiscovery, IToolDetectionService toolDetection,
-        IValidationInvoker validationInvoker, ILoggerFactory loggerFactory, IProgressReporter progressReporter)
+        IToolPathResolver toolPathResolver, IValidationInvoker validationInvoker, ILoggerFactory loggerFactory,
+        IProgressReporter progressReporter)
     {
         _projectDiscovery = projectDiscovery.WhenNotNull();
         _toolDetection = toolDetection.WhenNotNull();
+        _toolPathResolver = toolPathResolver.WhenNotNull();
         _loggerFactory = loggerFactory.WhenNotNull();
         _validationInvoker = validationInvoker.WhenNotNull();
         _progressReporter = progressReporter.WhenNotNull();
@@ -285,8 +289,8 @@ public sealed class DependencyGenerator : IDependencyGenerator
             .Distinct()
             .Select<DiagramFormat, IDiagramRenderer>(diagramFormat => diagramFormat switch
             {
-                DiagramFormat.Mermaid => new MermaidDiagramRenderer(diagramOptions, _progressReporter, _loggerFactory.CreateLogger<MermaidDiagramRenderer>()),
-                DiagramFormat.D2 => new D2DiagramRenderer(diagramOptions, _progressReporter, _loggerFactory.CreateLogger<D2DiagramRenderer>()),
+                DiagramFormat.Mermaid => new MermaidDiagramRenderer(diagramOptions, _progressReporter, _toolPathResolver, _loggerFactory.CreateLogger<MermaidDiagramRenderer>()),
+                DiagramFormat.D2 => new D2DiagramRenderer(diagramOptions, _progressReporter, _toolPathResolver, _loggerFactory.CreateLogger<D2DiagramRenderer>()),
                 _ => throw new ArgumentOutOfRangeException(nameof(diagramFormat))
             })];
     }
@@ -562,16 +566,29 @@ public sealed class DependencyGenerator : IDependencyGenerator
 
     private async Task AssertToolAvailabilityAsync(DependencyGeneratorConfig configuration, CancellationToken cancellationToken)
     {
-        var readiness = await _toolDetection
-            .CheckConfiguredToolsAsync(configuration.Diagram.Formats, cancellationToken)
-            .ConfigureAwait(false);
+        var formats = configuration.Diagram.Formats;
 
-        if (readiness.AllRequiredToolsAvailable)
+        if (formats.Length == 0)
         {
             return;
         }
 
-        var unavailable = readiness.ToolStatuses
+        var tasks = formats
+            .Distinct()
+            .Select(async format =>
+            {
+                return await _toolDetection.CheckToolAvailabilityAsync(
+                    _toolPathResolver.GetToolName(format), cancellationToken: cancellationToken).ConfigureAwait(false);
+            });
+
+        var statuses = await Task.WhenAll(tasks).ConfigureAwait(false);
+
+        if (statuses.All(status => status.IsAvailable))
+        {
+            return;
+        }
+
+        var unavailable = statuses
             .Where(status => !status.IsAvailable)
             .Select(status => status.ToolName);
 

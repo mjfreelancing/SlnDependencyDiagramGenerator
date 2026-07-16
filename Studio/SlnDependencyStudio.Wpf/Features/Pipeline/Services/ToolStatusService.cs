@@ -1,6 +1,4 @@
 using SlnDependencyDiagramGenerator.Generator.ToolDetection;
-using SlnDependencyStudio.Wpf.DependencyInjection;
-using SlnDependencyStudio.Wpf.Features.Application;
 using SlnDependencyStudio.Wpf.Features.Pipeline.Models;
 using System.Collections.ObjectModel;
 using System.Reactive.Linq;
@@ -14,8 +12,8 @@ namespace SlnDependencyStudio.Wpf.Features.Pipeline.Services;
 /// </summary>
 internal sealed class ToolStatusService : IToolStatusService, IDisposable
 {
-    private readonly IScopedOperationFactory<IToolDetectionService> _toolDetectionFactory;
-    private readonly IApplicationSettingsService _applicationSettings;
+    private readonly IToolPathResolver _toolPathResolver;
+    private readonly IToolDetectionService _toolDetection;
 
     private readonly ObservableCollection<ToolStatusEntry> _entries = [];
     private readonly BehaviorSubject<IReadOnlyList<ToolStatusEntry>> _statusSubject;
@@ -24,12 +22,12 @@ internal sealed class ToolStatusService : IToolStatusService, IDisposable
     public IObservable<IReadOnlyList<ToolStatusEntry>> ToolStatuses { get; }
 
     /// <summary>Initializes a new instance of <see cref="ToolStatusService"/>.</summary>
-    /// <param name="toolDetectionFactory">Factory for creating scoped <see cref="IToolDetectionService"/> operations.</param>
-    /// <param name="applicationSettings">Provides access to tool path overrides.</param>
-    public ToolStatusService(IScopedOperationFactory<IToolDetectionService> toolDetectionFactory, IApplicationSettingsService applicationSettings)
+    /// <param name="toolPathResolver">Resolves effective tool paths for external CLI tools.</param>
+    /// <param name="toolDetection">The tool detection service.</param>
+    public ToolStatusService(IToolPathResolver toolPathResolver, IToolDetectionService toolDetection)
     {
-        _toolDetectionFactory = toolDetectionFactory;
-        _applicationSettings = applicationSettings;
+        _toolPathResolver = toolPathResolver;
+        _toolDetection = toolDetection;
 
         _statusSubject = new BehaviorSubject<IReadOnlyList<ToolStatusEntry>>([.. _entries]);
         ToolStatuses = _statusSubject.AsObservable();
@@ -41,7 +39,7 @@ internal sealed class ToolStatusService : IToolStatusService, IDisposable
         var now = DateTime.UtcNow;
 
         // Seed or sync entries from the detection service's known tool list.
-        var knownToolNames = _toolDetectionFactory.Execute(svc => svc.KnownToolNames);
+        var knownToolNames = _toolDetection.KnownToolNames;
 
         for (var i = _entries.Count - 1; i >= 0; i--)
         {
@@ -61,16 +59,8 @@ internal sealed class ToolStatusService : IToolStatusService, IDisposable
 
         foreach (var entry in _entries)
         {
-            var settings = _applicationSettings.CurrentSettings;
-            _ = settings.ToolPathOverrides.TryGetValue(entry.ToolName, out var overridePath);
-
-            // Resolves a new, scoped, instance of IToolDetectionService, calls DiscoverProjectsAsync(),
-            // disposes of the scope and returns the result.
-            var status = await _toolDetectionFactory
-                .ExecuteAsync((detectionService, token) =>
-                {
-                    return detectionService.CheckToolAvailabilityAsync(entry.ToolName, overridePath, token);
-                }, cancellationToken)
+            var status = await _toolDetection
+                .CheckToolAvailabilityAsync(entry.ToolName, cancellationToken)
                 .ConfigureAwait(true);
 
             entry.IsAvailable = status.IsAvailable;

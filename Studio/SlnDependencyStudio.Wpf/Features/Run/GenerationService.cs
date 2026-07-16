@@ -9,6 +9,7 @@ using SlnDependencyStudio.Shared.Utils;
 using SlnDependencyStudio.Wpf.DependencyInjection;
 using SlnDependencyStudio.Wpf.Features.Output;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
+using System;
 using System.IO;
 using System.Reactive.Linq;
 
@@ -26,7 +27,8 @@ internal sealed class GenerationService : IGenerationService
     private readonly ILogger<GenerationService> _logger;
 
     /// <summary>Initializes a new instance of <see cref="GenerationService"/>.</summary>
-    public GenerationService(IProjectDocumentStore store, IScopedOperationFactory<IPreGenerationCommandRunner> runnerFactory,
+    public GenerationService(IProjectDocumentStore store,
+        IScopedOperationFactory<IPreGenerationCommandRunner> runnerFactory,
         IScopedOperationFactory<IDependencyGenerator> generatorFactory, ILogger<GenerationService> logger)
     {
         _store = store;

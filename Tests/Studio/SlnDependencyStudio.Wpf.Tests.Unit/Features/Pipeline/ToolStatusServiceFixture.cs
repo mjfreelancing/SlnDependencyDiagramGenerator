@@ -1,10 +1,6 @@
-using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using Shouldly;
 using SlnDependencyDiagramGenerator.Generator.ToolDetection;
-using SlnDependencyStudio.Wpf.DependencyInjection;
-using SlnDependencyStudio.Wpf.Features.Application;
-using SlnDependencyStudio.Wpf.Features.Application.Models;
 using SlnDependencyStudio.Wpf.Features.Pipeline.Services;
 using System.Reactive.Linq;
 
@@ -13,22 +9,15 @@ namespace SlnDependencyStudio.Wpf.Tests.Unit.Features.Pipeline;
 [Collection(nameof(ReactiveUIInitializer))]
 public class ToolStatusServiceFixture
 {
-    private readonly IServiceScopeFactory _scopeFactory = Substitute.For<IServiceScopeFactory>();
-    private readonly IServiceScope _scope = Substitute.For<IServiceScope>();
+    private readonly IToolPathResolver _toolPathResolver = Substitute.For<IToolPathResolver>();
     private readonly IToolDetectionService _detectionService = Substitute.For<IToolDetectionService>();
-    private readonly IApplicationSettingsService _applicationSettings = Substitute.For<IApplicationSettingsService>();
-    private readonly ApplicationSettings _settings = new();
 
     protected ToolStatusServiceFixture()
     {
-        _scopeFactory.CreateScope().Returns(_scope);
-        _scope.ServiceProvider.GetService(typeof(IToolDetectionService)).Returns(_detectionService);
-        _applicationSettings.CurrentSettings.Returns(_settings);
-
         _detectionService.KnownToolNames.Returns(["d2", "mmdc"]);
 
         _detectionService
-            .CheckToolAvailabilityAsync(Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
+            .CheckToolAvailabilityAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(callInfo =>
             {
                 var toolName = callInfo.ArgAt<string>(0);
@@ -47,7 +36,7 @@ public class ToolStatusServiceFixture
         public async Task Should_Update_Entries_With_Detection_Results()
         {
             _detectionService
-                .CheckToolAvailabilityAsync("d2", null, Arg.Any<CancellationToken>())
+                .CheckToolAvailabilityAsync("d2", Arg.Any<CancellationToken>())
                 .Returns(Task.FromResult(new ToolStatus
                 {
                     ToolName = "d2",
@@ -80,24 +69,6 @@ public class ToolStatusServiceFixture
         }
 
         [Fact]
-        public async Task Should_Pass_Tool_Path_Override_From_Settings()
-        {
-            _settings.ToolPathOverrides["d2"] = @"C:\custom\d2.exe";
-
-            using var sut = CreateSut();
-
-            // Perform an explicit rescan — the initial fire-and-forget scan may
-            // race with this, so clear received calls first.
-            _detectionService.ClearReceivedCalls();
-
-            await sut.RescanAsync(CancellationToken.None);
-
-            await _detectionService
-                .Received(1)
-                .CheckToolAvailabilityAsync("d2", @"C:\custom\d2.exe", Arg.Any<CancellationToken>());
-        }
-
-        [Fact]
         public async Task Should_Set_LastChecked_On_Each_Entry()
         {
             using var sut = CreateSut();
@@ -121,7 +92,6 @@ public class ToolStatusServiceFixture
 
             using var sut = CreateSut();
 
-            // Wait for the fire-and-forget initial scan to complete.
             await sut.RescanAsync(CancellationToken.None);
 
             var entries = await sut.ToolStatuses.FirstAsync();
@@ -138,7 +108,6 @@ public class ToolStatusServiceFixture
             using var sut = CreateSut();
             await sut.RescanAsync(CancellationToken.None);
 
-            // Now the detection service reports a new tool.
             _detectionService.KnownToolNames.Returns(["d2", "mmdc"]);
 
             await sut.RescanAsync(CancellationToken.None);
@@ -156,7 +125,6 @@ public class ToolStatusServiceFixture
             using var sut = CreateSut();
             await sut.RescanAsync(CancellationToken.None);
 
-            // Now only d2 is known.
             _detectionService.KnownToolNames.Returns(["d2"]);
             _detectionService.ClearReceivedCalls();
 
@@ -174,28 +142,26 @@ public class ToolStatusServiceFixture
 
             using var sut = CreateSut();
 
-            // Clear calls from the fire-and-forget initial scan.
             _detectionService.ClearReceivedCalls();
 
             await sut.RescanAsync(CancellationToken.None);
 
             await _detectionService
                 .Received(1)
-                .CheckToolAvailabilityAsync("dot", null, Arg.Any<CancellationToken>());
+                .CheckToolAvailabilityAsync("dot", Arg.Any<CancellationToken>());
 
             await _detectionService
                 .DidNotReceive()
-                .CheckToolAvailabilityAsync("d2", Arg.Any<string?>(), Arg.Any<CancellationToken>());
+                .CheckToolAvailabilityAsync("d2", Arg.Any<CancellationToken>());
 
             await _detectionService
                 .DidNotReceive()
-                .CheckToolAvailabilityAsync("mmdc", Arg.Any<string?>(), Arg.Any<CancellationToken>());
+                .CheckToolAvailabilityAsync("mmdc", Arg.Any<CancellationToken>());
         }
     }
 
     private ToolStatusService CreateSut()
     {
-        var detectionFactory = new ScopedOperationFactory<IToolDetectionService>(_scopeFactory);
-        return new ToolStatusService(detectionFactory, _applicationSettings);
+        return new ToolStatusService(_toolPathResolver, _detectionService);
     }
 }

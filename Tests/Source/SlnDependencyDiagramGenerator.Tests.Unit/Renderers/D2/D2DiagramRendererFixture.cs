@@ -1,7 +1,8 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Generator;
+using SlnDependencyDiagramGenerator.Generator.ToolDetection;
 using SlnDependencyDiagramGenerator.Generator.Nodes;
 using SlnDependencyDiagramGenerator.Renderers.D2;
 using System.Collections.Generic;
@@ -26,7 +27,7 @@ public class D2DiagramRendererFixture
         [Fact]
         public async Task Should_Render_A_Grouped_Graph_With_Custom_Direction_And_Styles()
         {
-            var renderer = new D2DiagramRenderer(CreateGroupedOptions(), _progressReporter, _logger);
+            var renderer = new D2DiagramRenderer(CreateGroupedOptions(), _progressReporter, Substitute.For<IToolPathResolver>(), _logger);
 
             var content = renderer.Render(CreateGroupedModel());
 
@@ -36,7 +37,7 @@ public class D2DiagramRendererFixture
         [Fact]
         public async Task Should_Render_Multiple_Project_And_Package_Groups_With_Shared_Project_References()
         {
-            var renderer = new D2DiagramRenderer(CreateExpandedGroupedOptions(), _progressReporter, _logger);
+            var renderer = new D2DiagramRenderer(CreateExpandedGroupedOptions(), _progressReporter, Substitute.For<IToolPathResolver>(), _logger);
 
             var content = renderer.Render(CreateExpandedGroupedModel());
 
@@ -46,7 +47,7 @@ public class D2DiagramRendererFixture
         [Fact]
         public async Task Should_Render_An_Ungrouped_Graph_With_Right_To_Left_Direction()
         {
-            var renderer = new D2DiagramRenderer(CreateUngroupedOptions(), _progressReporter, _logger);
+            var renderer = new D2DiagramRenderer(CreateUngroupedOptions(), _progressReporter, Substitute.For<IToolPathResolver>(), _logger);
 
             var content = renderer.Render(CreateUngroupedModel());
 

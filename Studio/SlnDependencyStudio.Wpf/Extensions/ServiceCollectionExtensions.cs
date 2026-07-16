@@ -2,8 +2,10 @@ using AllOverIt.DependencyInjection.Extensions;
 using AllOverIt.ReactiveUI.Factories;
 using AllOverIt.ReactiveUI.Wpf.Extensions;
 using Microsoft.Extensions.DependencyInjection;
+using SlnDependencyDiagramGenerator.Generator.ToolDetection;
 using SlnDependencyStudio.Shared.DependencyInjection;
 using SlnDependencyStudio.Wpf.DependencyInjection;
+using SlnDependencyStudio.Wpf.Features.Application;
 using SlnDependencyStudio.Wpf.Features.Diagrams;
 using SlnDependencyStudio.Wpf.Features.EmptyState;
 using SlnDependencyStudio.Wpf.Features.Export;
@@ -29,6 +31,13 @@ public static class ServiceCollectionExtensions
             services.AutoRegisterScoped<DependencyRegistrar, IStudioScopedDependency>(config =>
             {
                 config.Filter((serviceType, _) => serviceType != typeof(IStudioScopedDependency));
+            });
+
+            // Override the Source library's default (empty) provider with one that reads WPF settings.
+            services.AddSingleton<ToolPathOverridesProvider>(provider =>
+            {
+                var settings = provider.GetRequiredService<IApplicationSettingsService>();
+                return () => settings.CurrentSettings.ToolPathOverrides;
             });
 
             // AutoRegisterTransient is deferred until needed by a specific phase.

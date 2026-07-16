@@ -30,17 +30,23 @@ internal abstract class DiagramRendererBase : IDiagramRenderer
     /// </summary>
     protected readonly IProgressReporter ProgressReporter;
 
+    /// <summary>Resolves tool paths for external CLI invocation.</summary>
+    protected readonly IToolPathResolver ToolPathResolver;
+
     /// <inheritdoc />
     public abstract string FileExtension { get; }
 
     /// <summary>Initializes a new renderer base instance.</summary>
     /// <param name="options">The diagram options.</param>
     /// <param name="progressReporter">Shared progress reporter for streaming to callers.</param>
+    /// <param name="toolPathResolver">Resolves effective tool paths for external invocation.</param>
     /// <param name="logger">A logger for progress and diagnostics.</param>
-    protected DiagramRendererBase(GeneratorDiagramOptions options, IProgressReporter progressReporter, ILogger logger)
+    protected DiagramRendererBase(GeneratorDiagramOptions options, IProgressReporter progressReporter,
+        IToolPathResolver toolPathResolver, ILogger logger)
     {
         Options = options.WhenNotNull();
         ProgressReporter = progressReporter.WhenNotNull();
+        ToolPathResolver = toolPathResolver.WhenNotNull();
         Logger = logger.WhenNotNull();
     }
 

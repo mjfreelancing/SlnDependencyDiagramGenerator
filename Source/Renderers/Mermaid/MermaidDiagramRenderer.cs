@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Generator;
 using SlnDependencyDiagramGenerator.Generator.IntermediateRepresentation;
+using SlnDependencyDiagramGenerator.Generator.ToolDetection;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -25,9 +26,11 @@ internal sealed class MermaidDiagramRenderer : DiagramRendererBase
     /// <summary>Initializes a new Mermaid diagram renderer.</summary>
     /// <param name="options">The diagram options.</param>
     /// <param name="progressReporter">Optional shared progress reporter for streaming to callers.</param>
+    /// <param name="toolPathResolver">Resolves effective tool paths for external CLI invocation.</param>
     /// <param name="logger">A logger for progress and diagnostics.</param>
-    public MermaidDiagramRenderer(GeneratorDiagramOptions options, IProgressReporter progressReporter, ILogger<MermaidDiagramRenderer> logger)
-        : base(options, progressReporter, logger)
+    public MermaidDiagramRenderer(GeneratorDiagramOptions options, IProgressReporter progressReporter,
+        IToolPathResolver toolPathResolver, ILogger<MermaidDiagramRenderer> logger)
+        : base(options, progressReporter, toolPathResolver, logger)
     {
     }
 
@@ -152,9 +155,11 @@ internal sealed class MermaidDiagramRenderer : DiagramRendererBase
 
         // On Windows, npm installs mmdc as mmdc.cmd (not mmdc.exe). CreateProcess does not perform
         // PATHEXT expansion, so we must go through cmd.exe /c to let the shell resolve the .cmd extension.
+        var mmdcPath = ToolPathResolver.GetEffectivePath(DiagramFormat.Mermaid);
+
         var (mmdcExe, mmdcArgs) = OperatingSystem.IsWindows()
-            ? ("cmd.exe", new[] { "/c", MermaidCliToolName, "-i", diagramFileName, "-o", imageFileName, "--scale", "4" })
-            : (MermaidCliToolName, ["-i", diagramFileName, "-o", imageFileName, "--scale", "4"]);
+            ? ("cmd.exe", new[] { "/c", mmdcPath, "-i", diagramFileName, "-o", imageFileName, "--scale", "4" })
+            : (mmdcPath, new[] { "-i", diagramFileName, "-o", imageFileName, "--scale", "4" });
 
         var mmdProcess = ProcessBuilder
             .For(mmdcExe)

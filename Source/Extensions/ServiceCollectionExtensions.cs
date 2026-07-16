@@ -38,6 +38,8 @@ public static class ServiceCollectionExtensions
             services.AddScoped<ISolutionParser, SolutionParser>();
             services.AddScoped<IProjectDiscoveryService, ProjectDiscoveryService>();
             services.AddScoped<IToolDetectionService, ToolDetectionService>();
+            services.AddSingleton<ToolPathOverridesProvider>(() => []);
+            services.AddScoped<IToolPathResolver, ToolPathResolver>();
             services.AddScoped<IDependencyGenerator, DependencyGenerator>();
             services.AddSingleton<IProgressReporter, ProgressReporter>();
             services.AddScoped<IDiagramRenderer, D2DiagramRenderer>();

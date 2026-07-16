@@ -19,6 +19,7 @@ public class DependencyGeneratorFixture
 {
     private readonly IProjectDiscoveryService _projectDiscovery = Substitute.For<IProjectDiscoveryService>();
     private readonly IToolDetectionService _toolDetection = Substitute.For<IToolDetectionService>();
+    private readonly IToolPathResolver _toolPathResolver = Substitute.For<IToolPathResolver>();
     private readonly IValidationInvoker _validationInvoker = Substitute.For<IValidationInvoker>();
     private readonly ILoggerFactory _loggerFactory = Substitute.For<ILoggerFactory>();
     private readonly IProgressReporter _progressReporter = Substitute.For<IProgressReporter>();
@@ -49,8 +50,7 @@ public class DependencyGeneratorFixture
             using var cts = new CancellationTokenSource();
             await cts.CancelAsync();
 
-            await Should.ThrowAsync<OperationCanceledException>(
-                () => sut.CreateDiagramsAsync(config, cts.Token));
+            await Should.ThrowAsync<OperationCanceledException>(() => sut.CreateDiagramsAsync(config, cts.Token));
         }
 
         [Fact]
@@ -60,14 +60,12 @@ public class DependencyGeneratorFixture
             var config = new TestConfigBuilder().WithFormats(DiagramFormat.D2).Build();
 
             var unavailableStatus = new ToolStatus { ToolName = "d2", IsAvailable = false, ErrorMessage = "d2 not found" };
-            var readinessResult = new ToolReadinessResult { ToolStatuses = [unavailableStatus] };
 
             _toolDetection
-                .CheckConfiguredToolsAsync(Arg.Any<DiagramFormat[]>(), Arg.Any<CancellationToken>())
-                .Returns(readinessResult);
+                .CheckToolAvailabilityAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(unavailableStatus));
 
-            var exception = await Should.ThrowAsync<ToolNotFoundException>(
-                () => sut.CreateDiagramsAsync(config, CancellationToken.None));
+            var exception = await Should.ThrowAsync<ToolNotFoundException>(() => sut.CreateDiagramsAsync(config, CancellationToken.None));
 
             exception.Message.ShouldContain("d2");
         }
@@ -79,11 +77,10 @@ public class DependencyGeneratorFixture
             var config = new TestConfigBuilder().WithFormats(DiagramFormat.D2).Build();
 
             var availableStatus = new ToolStatus { ToolName = "d2", IsAvailable = true, ResolvedPath = "/usr/bin/d2" };
-            var readinessResult = new ToolReadinessResult { ToolStatuses = [availableStatus] };
 
             _toolDetection
-                .CheckConfiguredToolsAsync(Arg.Any<DiagramFormat[]>(), Arg.Any<CancellationToken>())
-                .Returns(readinessResult);
+                .CheckToolAvailabilityAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(availableStatus));
 
             _projectDiscovery
                 .DiscoverTargetFrameworksAsync(Arg.Any<string>(), Arg.Any<string[]>(), Arg.Any<string[]>(), Arg.Any<CancellationToken>())
@@ -97,7 +94,6 @@ public class DependencyGeneratorFixture
                 .ParseProjectsAsync(Arg.Any<SolutionParseRequest>(), Arg.Any<CancellationToken>())
                 .Returns([]);
 
-            // Should not throw — tools are available (empty project list is handled downstream).
             await Should.NotThrowAsync(
                 () => sut.CreateDiagramsAsync(config, CancellationToken.None));
         }
@@ -109,11 +105,10 @@ public class DependencyGeneratorFixture
             var config = new TestConfigBuilder().Build();
 
             var availableStatus = new ToolStatus { ToolName = "d2", IsAvailable = true, ResolvedPath = "/usr/bin/d2" };
-            var readinessResult = new ToolReadinessResult { ToolStatuses = [availableStatus] };
 
             _toolDetection
-                .CheckConfiguredToolsAsync(Arg.Any<DiagramFormat[]>(), Arg.Any<CancellationToken>())
-                .Returns(readinessResult);
+                .CheckToolAvailabilityAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(availableStatus));
 
             _projectDiscovery
                 .DiscoverTargetFrameworksAsync(Arg.Any<string>(), Arg.Any<string[]>(), Arg.Any<string[]>(), Arg.Any<CancellationToken>())
@@ -125,7 +120,6 @@ public class DependencyGeneratorFixture
                 Arg.Is<string>(message => message.Contains("No target frameworks discovered")),
                 Arg.Any<ILogger>());
 
-            // Should not attempt to parse projects when no TFs are discovered.
             await _projectDiscovery.DidNotReceive().ParseProjectsAsync(
                 Arg.Any<SolutionParseRequest>(), Arg.Any<CancellationToken>());
         }
@@ -137,11 +131,10 @@ public class DependencyGeneratorFixture
             var config = new TestConfigBuilder().Build();
 
             var availableStatus = new ToolStatus { ToolName = "d2", IsAvailable = true, ResolvedPath = "/usr/bin/d2" };
-            var readinessResult = new ToolReadinessResult { ToolStatuses = [availableStatus] };
 
             _toolDetection
-                .CheckConfiguredToolsAsync(Arg.Any<DiagramFormat[]>(), Arg.Any<CancellationToken>())
-                .Returns(readinessResult);
+                .CheckToolAvailabilityAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(availableStatus));
 
             _projectDiscovery
                 .DiscoverTargetFrameworksAsync(Arg.Any<string>(), Arg.Any<string[]>(), Arg.Any<string[]>(), Arg.Any<CancellationToken>())
@@ -174,13 +167,11 @@ public class DependencyGeneratorFixture
                 .Build();
 
             var availableStatus = new ToolStatus { ToolName = "d2", IsAvailable = true, ResolvedPath = "/usr/bin/d2" };
-            var readinessResult = new ToolReadinessResult { ToolStatuses = [availableStatus] };
 
             _toolDetection
-                .CheckConfiguredToolsAsync(Arg.Any<DiagramFormat[]>(), Arg.Any<CancellationToken>())
-                .Returns(readinessResult);
+                .CheckToolAvailabilityAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(availableStatus));
 
-            // Return empty so we don't go deeper into renderer creation.
             _projectDiscovery
                 .DiscoverTargetFrameworksAsync(Arg.Any<string>(), Arg.Any<string[]>(), Arg.Any<string[]>(), Arg.Any<CancellationToken>())
                 .Returns([]);
@@ -206,11 +197,10 @@ public class DependencyGeneratorFixture
                 .Build();
 
             var availableStatus = new ToolStatus { ToolName = "d2", IsAvailable = true, ResolvedPath = "/usr/bin/d2" };
-            var readinessResult = new ToolReadinessResult { ToolStatuses = [availableStatus] };
 
             _toolDetection
-                .CheckConfiguredToolsAsync(Arg.Any<DiagramFormat[]>(), Arg.Any<CancellationToken>())
-                .Returns(readinessResult);
+                .CheckToolAvailabilityAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(availableStatus));
 
             _projectDiscovery
                 .DiscoverTargetFrameworksAsync(Arg.Any<string>(), Arg.Any<string[]>(), Arg.Any<string[]>(), Arg.Any<CancellationToken>())
@@ -220,7 +210,6 @@ public class DependencyGeneratorFixture
                 .DiscoverProjectsAsync(Arg.Any<string>(), Arg.Any<string[]>(), Arg.Any<string[]>(), Arg.Any<CancellationToken>())
                 .Returns(CreateEmptyDiscoveryResult());
 
-            // Return empty so we don't enter per-project iteration.
             _projectDiscovery
                 .ParseProjectsAsync(Arg.Any<SolutionParseRequest>(), Arg.Any<CancellationToken>())
                 .Returns([]);
@@ -238,25 +227,20 @@ public class DependencyGeneratorFixture
         }
 
         [Fact]
-        public async Task Should_Propagate_Negative_Individual_TransitiveDepth_As_Zero()
+        public async Task Should_Use_Disabled_Individual_Depth_As_Zero()
         {
-            // Disable Individual scope so the non-enabled path takes effect (depth forced to 0).
             var sut = CreateSut();
-            var config = new TestConfigBuilder()
-                .WithFormats(DiagramFormat.D2)
-                .Build();
 
-            // Override: disable individual, enable all with depth 3.
+            var config = new TestConfigBuilder().WithFormats(DiagramFormat.D2).Build();
             config.Solution.Individual.Enabled = false;
             config.Solution.All.Enabled = true;
             config.Solution.All.TransitiveDepth = 3;
 
             var availableStatus = new ToolStatus { ToolName = "d2", IsAvailable = true, ResolvedPath = "/usr/bin/d2" };
-            var readinessResult = new ToolReadinessResult { ToolStatuses = [availableStatus] };
 
             _toolDetection
-                .CheckConfiguredToolsAsync(Arg.Any<DiagramFormat[]>(), Arg.Any<CancellationToken>())
-                .Returns(readinessResult);
+                .CheckToolAvailabilityAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(availableStatus));
 
             _projectDiscovery
                 .DiscoverTargetFrameworksAsync(Arg.Any<string>(), Arg.Any<string[]>(), Arg.Any<string[]>(), Arg.Any<CancellationToken>())
@@ -266,15 +250,12 @@ public class DependencyGeneratorFixture
                 .DiscoverProjectsAsync(Arg.Any<string>(), Arg.Any<string[]>(), Arg.Any<string[]>(), Arg.Any<CancellationToken>())
                 .Returns(CreateEmptyDiscoveryResult());
 
-            // Return empty so we don't enter per-project iteration.
             _projectDiscovery
                 .ParseProjectsAsync(Arg.Any<SolutionParseRequest>(), Arg.Any<CancellationToken>())
                 .Returns([]);
 
             await sut.CreateDiagramsAsync(config, CancellationToken.None);
 
-            // Individual is disabled, so its depth contributes 0. All is enabled with depth 3.
-            // MaxTransitiveDepth should be 3.
             await _projectDiscovery.Received(1).ParseProjectsAsync(
                 Arg.Is<SolutionParseRequest>(request => request.MaxTransitiveDepth == 3),
                 Arg.Any<CancellationToken>());
@@ -284,21 +265,17 @@ public class DependencyGeneratorFixture
         public async Task Should_Use_Max_TransitiveDepth_Across_Scopes()
         {
             var sut = CreateSut();
-            var config = new TestConfigBuilder()
-                .WithFormats(DiagramFormat.D2)
-                .Build();
-
+            var config = new TestConfigBuilder().WithFormats(DiagramFormat.D2).Build();
             config.Solution.Individual.Enabled = true;
             config.Solution.Individual.TransitiveDepth = 2;
             config.Solution.All.Enabled = true;
             config.Solution.All.TransitiveDepth = 5;
 
             var availableStatus = new ToolStatus { ToolName = "d2", IsAvailable = true, ResolvedPath = "/usr/bin/d2" };
-            var readinessResult = new ToolReadinessResult { ToolStatuses = [availableStatus] };
 
             _toolDetection
-                .CheckConfiguredToolsAsync(Arg.Any<DiagramFormat[]>(), Arg.Any<CancellationToken>())
-                .Returns(readinessResult);
+                .CheckToolAvailabilityAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(availableStatus));
 
             _projectDiscovery
                 .DiscoverTargetFrameworksAsync(Arg.Any<string>(), Arg.Any<string[]>(), Arg.Any<string[]>(), Arg.Any<CancellationToken>())
@@ -320,11 +297,60 @@ public class DependencyGeneratorFixture
         }
 
         [Fact]
-        public async Task Should_Expose_Progress_Observable()
+        public void Should_Expose_Progress_Observable()
         {
             var sut = CreateSut();
 
             sut.OnProgress.ShouldNotBeNull();
+        }
+
+        [Fact]
+        public async Task Should_Not_Check_Tools_When_No_Formats_Are_Configured()
+        {
+            var sut = CreateSut();
+            var config = new TestConfigBuilder().WithFormats().Build();
+
+            _projectDiscovery
+                .DiscoverTargetFrameworksAsync(Arg.Any<string>(), Arg.Any<string[]>(), Arg.Any<string[]>(), Arg.Any<CancellationToken>())
+                .Returns([]);
+
+            await sut.CreateDiagramsAsync(config, CancellationToken.None);
+
+            await _toolDetection.DidNotReceive().CheckToolAvailabilityAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+        }
+
+        [Fact]
+        public async Task Should_Check_All_Distinct_Formats_When_Multiple_Configured()
+        {
+            var sut = CreateSut();
+            var config = new TestConfigBuilder().WithFormats(DiagramFormat.D2, DiagramFormat.Mermaid).Build();
+
+            _toolPathResolver.GetToolName(DiagramFormat.D2).Returns("d2");
+            _toolPathResolver.GetToolName(DiagramFormat.Mermaid).Returns("mmdc");
+
+            var availableStatus = new ToolStatus { ToolName = "d2", IsAvailable = true, ResolvedPath = "/usr/bin/d2" };
+
+            _toolDetection
+                .CheckToolAvailabilityAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(availableStatus));
+
+            _projectDiscovery
+                .DiscoverTargetFrameworksAsync(Arg.Any<string>(), Arg.Any<string[]>(), Arg.Any<string[]>(), Arg.Any<CancellationToken>())
+                .Returns(["net10.0"]);
+
+            _projectDiscovery
+                .DiscoverProjectsAsync(Arg.Any<string>(), Arg.Any<string[]>(), Arg.Any<string[]>(), Arg.Any<CancellationToken>())
+                .Returns(CreateEmptyDiscoveryResult());
+
+            _projectDiscovery
+                .ParseProjectsAsync(Arg.Any<SolutionParseRequest>(), Arg.Any<CancellationToken>())
+                .Returns([]);
+
+            await sut.CreateDiagramsAsync(config, CancellationToken.None);
+
+            await _toolDetection.Received(1).CheckToolAvailabilityAsync("d2", Arg.Any<CancellationToken>());
+
+            await _toolDetection.Received(1).CheckToolAvailabilityAsync("mmdc", Arg.Any<CancellationToken>());
         }
     }
 
@@ -343,6 +369,7 @@ public class DependencyGeneratorFixture
     {
         _loggerFactory.CreateLogger<DependencyGenerator>().Returns(_logger);
 
-        return new DependencyGenerator(_projectDiscovery, _toolDetection, _validationInvoker, _loggerFactory, _progressReporter);
+        return new DependencyGenerator(_projectDiscovery, _toolDetection, _toolPathResolver,
+            _validationInvoker, _loggerFactory, _progressReporter);
     }
 }
