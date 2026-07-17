@@ -3,7 +3,7 @@
 "VSVersion" = "3:800"
 "ProjectType" = "8:{978C614F-708E-4E1A-B201-565925725DBA}"
 "IsWebType" = "8:FALSE"
-"ProjectName" = "8:SlnDependencyGeneratorWpfSetup"
+"ProjectName" = "8:SlnDependencyGeneratorWpf"
 "LanguageId" = "3:1033"
 "CodePage" = "3:1252"
 "UILanguageId" = "3:1033"
@@ -33,7 +33,7 @@
         "DisplayName" = "8:Debug"
         "IsDebugOnly" = "11:TRUE"
         "IsReleaseOnly" = "11:FALSE"
-        "OutputFilename" = "8:Debug\\SlnDependencyGeneratorWpfSetup.msi"
+        "OutputFilename" = "8:Debug\\SlnDependencyGeneratorWpf.msi"
         "PackageFilesAs" = "3:2"
         "PackageFileSize" = "3:-2147483648"
         "CabType" = "3:1"
@@ -45,18 +45,13 @@
         "InstallerBootstrapper" = "3:2"
             "BootstrapperCfg:{63ACBE69-63AA-4F98-B2B6-99F9E24495F2}"
             {
-            "Enabled" = "11:TRUE"
+            "Enabled" = "11:FALSE"
             "PromptEnabled" = "11:TRUE"
             "PrerequisitesLocation" = "2:1"
             "Url" = "8:"
             "ComponentsUrl" = "8:"
                 "Items"
                 {
-                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:.NETFramework,Version=v4.7.2"
-                    {
-                    "Name" = "8:Microsoft .NET Framework 4.7.2 (x86 and x64)"
-                    "ProductCode" = "8:.NETFramework,Version=v4.7.2"
-                    }
                 }
             }
         }
@@ -65,7 +60,7 @@
         "DisplayName" = "8:Release"
         "IsDebugOnly" = "11:FALSE"
         "IsReleaseOnly" = "11:TRUE"
-        "OutputFilename" = "8:Release\\SlnDependencyGeneratorWpfSetup.msi"
+        "OutputFilename" = "8:Release\\SlnDependencyGeneratorWpf.msi"
         "PackageFilesAs" = "3:2"
         "PackageFileSize" = "3:-2147483648"
         "CabType" = "3:1"
@@ -194,7 +189,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:SlnDependencyGeneratorWpfSetup"
         "ProductCode" = "8:{B713A003-CD18-4A07-9C8E-AB52796D4C3F}"
-        "PackageCode" = "8:{22268C93-087C-4B1D-BC64-2DD3033EBFCB}"
+        "PackageCode" = "8:{0ECF43FB-90A3-4666-94D8-A6C002B36A70}"
         "UpgradeCode" = "8:{E07DB3DA-D5D1-4C93-8A2C-7A4EC4B19ADC}"
         "AspNetVersion" = "8:2.0.50727.0"
         "RestartWWWService" = "11:FALSE"
@@ -715,7 +710,7 @@
         {
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_9944BC1784244B879D8A798DDFB5AACB"
             {
-            "SourcePath" = "8:..\\..\\Studio\\SlnDependencyStudio.Wpf\\obj\\Debug\\net10.0-windows10.0.19041\\apphost.exe"
+            "SourcePath" = "8:..\\..\\Studio\\SlnDependencyStudio.Wpf\\obj\\Release\\net10.0-windows10.0.19041\\apphost.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_D5F94365C8704E7994243EF7B3521A79"
