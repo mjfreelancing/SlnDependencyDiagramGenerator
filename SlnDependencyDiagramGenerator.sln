@@ -21,6 +21,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{0AB3BF05
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Studio", "Studio", "{E7FC634A-46D6-8D60-CF2F-7736DEAAEBAC}"
 	ProjectSection(SolutionItems) = preProject
+		Studio\Directory.Build.props = Studio\Directory.Build.props
 		Studio\Directory.Packages.props = Studio\Directory.Packages.props
 	EndProjectSection
 EndProject

@@ -5,8 +5,6 @@
 		<TargetFramework>net10.0-windows10.0.19041</TargetFramework>
 		<UseWPF>true</UseWPF>
 		<LangVersion>Latest</LangVersion>
-		<ImplicitUsings>enable</ImplicitUsings>
-		<Nullable>enable</Nullable>
 		<RootNamespace>SlnDependencyStudio.Wpf</RootNamespace>
 		<AssemblyName>SlnDependencyStudio.Wpf</AssemblyName>
 		<ApplicationIcon>app.ico</ApplicationIcon>
