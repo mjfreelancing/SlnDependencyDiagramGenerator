@@ -5,6 +5,9 @@ using System.Threading.Tasks;
 
 namespace SlnDependencyDiagramGenerator.Generator;
 
+/// <summary>Generates dependency diagrams from solution and project metadata, producing output
+/// in supported diagram formats (such as Mermaid and D2) along with optional images and dependency
+/// summaries.</summary>
 public interface IDependencyGenerator
 {
     /// <summary>

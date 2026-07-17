@@ -10,10 +10,13 @@ namespace SlnDependencyStudio.Shared.Extensions;
 /// <summary>Extension methods for registering Studio shared services with DI.</summary>
 public static class ServiceCollectionExtensions
 {
+    /// <summary>
+    /// Defines extension methods for registering Studio shared services.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
     extension(IServiceCollection services)
     {
         /// <summary>Registers all shared Sln Dependency Studio services with the service collection.</summary>
-        /// <param name="services">The service collection.</param>
         /// <param name="validationRegistry">The validation registry to register additional validators with. This source registry
         /// is expected to have been returned from <see cref="SlnDependencyDiagramGenerator.Extensions.ServiceCollectionExtensions.AddSlnDependencyGenerator"/>.</param>
         /// <returns>The service collection, for chaining.</returns>

@@ -5,56 +5,63 @@ namespace SlnDependencyStudio.Shared.Config.Extensions;
 
 public static class DependencyProjectDocumentExtensions
 {
+    /// <summary>
+    /// Defines extension methods for <see cref="DependencyProjectDocument"/>.
+    /// </summary>
+    /// <param name="document">The dependency project document.</param>
     extension(DependencyProjectDocument document)
     {
-        public void LogConfiguration<T>(string configFilename, ILogger<T> _logger)
+        /// <summary>Logs the pre-generation and diagram generation configuration.</summary>
+        /// <param name="configFilename">The configuration file path.</param>
+        /// <param name="logger">The logger instance.</param>
+        public void LogConfiguration<T>(string configFilename, ILogger<T> logger)
         {
-            _logger.LogInformation("Configuration file: {ConfigFilePath}", Path.GetFullPath(configFilename));
+            logger.LogInformation("Configuration file: {ConfigFilePath}", Path.GetFullPath(configFilename));
 
-            LogPreGeneratorConfiguration(document.PreGeneration, _logger);
-            LogGeneratorConfiguration(document.DiagramGenerator, _logger);
+            LogPreGeneratorConfiguration(document.PreGeneration, logger);
+            LogGeneratorConfiguration(document.DiagramGenerator, logger);
         }
     }
 
-    private static void LogPreGeneratorConfiguration<T>(PreGenerationConfig config, ILogger<T> _logger)
+    private static void LogPreGeneratorConfiguration<T>(PreGenerationConfig config, ILogger<T> logger)
     {
-        _logger.LogInformation("Pre-generation command configuration:");
-        _logger.LogInformation("  Enabled          : {Enabled}", config.Enabled);
-        _logger.LogInformation("  Command          : {Command}", config.Command);
-        _logger.LogInformation("  Arguments        : {Arguments}", config.Arguments);
-        _logger.LogInformation("  Working directory: {WorkingDirectory}", config.WorkingDirectory);
-        _logger.LogInformation("  Continue on fail : {ContinueOnFailure}", config.ContinueOnFailure);
+        logger.LogInformation("Pre-generation command configuration:");
+        logger.LogInformation("  Enabled          : {Enabled}", config.Enabled);
+        logger.LogInformation("  Command          : {Command}", config.Command);
+        logger.LogInformation("  Arguments        : {Arguments}", config.Arguments);
+        logger.LogInformation("  Working directory: {WorkingDirectory}", config.WorkingDirectory);
+        logger.LogInformation("  Continue on fail : {ContinueOnFailure}", config.ContinueOnFailure);
     }
 
-    private static void LogGeneratorConfiguration<T>(DependencyGeneratorConfig config, ILogger<T> _logger)
+    private static void LogGeneratorConfiguration<T>(DependencyGeneratorConfig config, ILogger<T> logger)
     {
-        _logger.LogInformation("Diagram Generation configuration:");
-        _logger.LogInformation("  Resolved paths and options:");
-        _logger.LogInformation("    Solution path    : {SolutionPath}", config.Solution.SolutionPath);
-        _logger.LogInformation("    Export root      : {ExportRoot}", config.Export.RootPath);
-        _logger.LogInformation("    Clear contents   : {ClearContents}", config.Export.ClearContents);
-        _logger.LogInformation("    Diagram formats  : {Formats}", string.Join(", ", config.Diagram.Formats));
-        _logger.LogInformation("    Diagram direction: {Direction}", config.Diagram.Direction);
-        _logger.LogInformation("    Group name       : {GroupName}", config.Diagram.GroupName);
-        _logger.LogInformation("    Group alias      : {GroupAlias}", config.Diagram.GroupNameAlias);
-        _logger.LogInformation("    Grouping enabled : {GroupingEnabled}", config.Diagram.Grouping.Enabled);
-        _logger.LogInformation("    Image formats    : {ImageFormats}", string.Join(", ", config.Export.ImageFormats));
+        logger.LogInformation("Diagram Generation configuration:");
+        logger.LogInformation("  Resolved paths and options:");
+        logger.LogInformation("    Solution path    : {SolutionPath}", config.Solution.SolutionPath);
+        logger.LogInformation("    Export root      : {ExportRoot}", config.Export.RootPath);
+        logger.LogInformation("    Clear contents   : {ClearContents}", config.Export.ClearContents);
+        logger.LogInformation("    Diagram formats  : {Formats}", string.Join(", ", config.Diagram.Formats));
+        logger.LogInformation("    Diagram direction: {Direction}", config.Diagram.Direction);
+        logger.LogInformation("    Group name       : {GroupName}", config.Diagram.GroupName);
+        logger.LogInformation("    Group alias      : {GroupAlias}", config.Diagram.GroupNameAlias);
+        logger.LogInformation("    Grouping enabled : {GroupingEnabled}", config.Diagram.Grouping.Enabled);
+        logger.LogInformation("    Image formats    : {ImageFormats}", string.Join(", ", config.Export.ImageFormats));
 
-        _logger.LogInformation("    Solution scopes:");
+        logger.LogInformation("    Solution scopes:");
 
-        _logger.LogInformation("      Individual — Enabled: {IndividualEnabled}, IncludeDeps: {IndividualIncludeDeps}, TransitiveDepth: {IndividualTransitiveDepth}",
+        logger.LogInformation("      Individual — Enabled: {IndividualEnabled}, IncludeDeps: {IndividualIncludeDeps}, TransitiveDepth: {IndividualTransitiveDepth}",
             config.Solution.Individual.Enabled,
             config.Solution.Individual.IncludeDependencies,
             config.Solution.Individual.TransitiveDepth);
 
-        _logger.LogInformation("      All        — Enabled: {AllEnabled}, IncludeDeps: {AllIncludeDeps}, TransitiveDepth: {AllTransitiveDepth}",
+        logger.LogInformation("      All        — Enabled: {AllEnabled}, IncludeDeps: {AllIncludeDeps}, TransitiveDepth: {AllTransitiveDepth}",
             config.Solution.All.Enabled,
             config.Solution.All.IncludeDependencies,
             config.Solution.All.TransitiveDepth);
 
-        _logger.LogInformation("    Regex include        : {RegexInclude}", string.Join(", ", config.Solution.RegexToInclude));
-        _logger.LogInformation("    Regex exclude        : {RegexExclude}", string.Join(", ", config.Solution.RegexToExclude));
-        _logger.LogInformation("    Packages to exclude  : {PackagesExclude}", string.Join(", ", config.Solution.PackagesToExclude));
-        _logger.LogInformation("    Frameworks to exclude: {FrameworksExclude}", string.Join(", ", config.Solution.FrameworksToExclude));
+        logger.LogInformation("    Regex include        : {RegexInclude}", string.Join(", ", config.Solution.RegexToInclude));
+        logger.LogInformation("    Regex exclude        : {RegexExclude}", string.Join(", ", config.Solution.RegexToExclude));
+        logger.LogInformation("    Packages to exclude  : {PackagesExclude}", string.Join(", ", config.Solution.PackagesToExclude));
+        logger.LogInformation("    Frameworks to exclude: {FrameworksExclude}", string.Join(", ", config.Solution.FrameworksToExclude));
     }
 }
