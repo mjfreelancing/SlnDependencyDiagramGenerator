@@ -89,7 +89,7 @@
                         </Grid.ColumnDefinitions>
                         <TextBox
                             Grid.Column="0"
-                            materialDesign:HintAssist.Hint="Regex pattern, e.g. .*\.csproj"
+                            materialDesign:HintAssist.Hint="Regex pattern, e.g. \.*\.csproj"
                             Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
                             Text="{Binding RegexToIncludeInput.NewItemText, UpdateSourceTrigger=PropertyChanged}" />
                         <Button
@@ -139,7 +139,7 @@
                         </Grid.ColumnDefinitions>
                         <TextBox
                             Grid.Column="0"
-                            materialDesign:HintAssist.Hint="Regex pattern, e.g. .*Tests\.csproj"
+                            materialDesign:HintAssist.Hint="Regex pattern, e.g. .*Tests.*\.csproj"
                             Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
                             Text="{Binding RegexToExcludeInput.NewItemText, UpdateSourceTrigger=PropertyChanged}" />
                         <Button

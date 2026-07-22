@@ -8,6 +8,10 @@ namespace SlnDependencyStudio.Shared.Extensions;
 /// <summary>Host builder extensions for configuring Studio-wide Serilog logging.</summary>
 public static class HostBuilderExtensions
 {
+    /// <summary>
+    /// Defines extension methods for <see cref="IHostBuilder"/>.
+    /// </summary>
+    /// <param name="hostBuilder">The host builder.</param>
     extension(IHostBuilder hostBuilder)
     {
         /// <summary>
@@ -25,7 +29,6 @@ public static class HostBuilderExtensions
         ///   frontend uses <c>%AppData%/SlnDependencyStudio/Logs</c> as the fixed log directory.</description></item>
         /// </list>
         /// </remarks>
-        /// <param name="hostBuilder">The host builder.</param>
         /// <param name="configure">An optional callback that receives the <see cref="IServiceProvider"/>
         /// and the <see cref="LoggerConfiguration"/> so the caller can add frontend-specific sinks,
         /// enrichers, or filters (for example, a console sink for CLI, or a circular-buffer sink for WPF).</param>

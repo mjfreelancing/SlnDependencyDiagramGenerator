@@ -21,6 +21,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{0AB3BF05
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Studio", "Studio", "{E7FC634A-46D6-8D60-CF2F-7736DEAAEBAC}"
 	ProjectSection(SolutionItems) = preProject
+		Studio\Directory.Build.props = Studio\Directory.Build.props
 		Studio\Directory.Packages.props = Studio\Directory.Packages.props
 	EndProjectSection
 EndProject
@@ -52,7 +53,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Source", "Source", "{C0F1DB
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SlnDependencyStudio.Wpf.Tests.Unit", "Tests\Studio\SlnDependencyStudio.Wpf.Tests.Unit\SlnDependencyStudio.Wpf.Tests.Unit.csproj", "{2825F3C5-CD78-4599-9E83-B7B01BD46BAC}"
 EndProject
-Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "SlnDependencyGeneratorWpfSetup", "Installers\SlnDependencyGeneratorWpfSetup\SlnDependencyGeneratorWpfSetup.vdproj", "{8705706B-4862-6F26-A91C-61B930C3B097}"
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "SlnDependencyGeneratorWpf", "Installers\SlnDependencyGeneratorWpfSetup\SlnDependencyGeneratorWpf.vdproj", "{8705706B-4862-6F26-A91C-61B930C3B097}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Installers", "Installers", "{026EDD64-7583-4D39-B75F-3181EDDBA87A}"
 EndProject

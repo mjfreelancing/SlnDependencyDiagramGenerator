@@ -20,10 +20,13 @@ namespace SlnDependencyStudio.Wpf.Extensions;
 /// <summary>Extension methods for registering WPF-specific Studio services with DI.</summary>
 public static class ServiceCollectionExtensions
 {
+    /// <summary>
+    /// Defines extension methods for registering WPF-specific Studio services.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
     extension(IServiceCollection services)
     {
         /// <summary>Registers WPF-specific services with the service collection.</summary>
-        /// <param name="services">The service collection.</param>
         /// <returns>The service collection, for chaining.</returns>
         public IServiceCollection AddWpfDependencies()
         {
