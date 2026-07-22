@@ -8,6 +8,7 @@ using SlnDependencyStudio.Wpf.Features.Pipeline.Models;
 using SlnDependencyStudio.Wpf.Features.Pipeline.Services;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Disposables.Fluent;
@@ -154,21 +155,21 @@ public sealed class PipelineViewModel : ReactiveObject, IValidatableViewModel, I
                     return;
                 }
 
-                var docDir = System.IO.Path.GetDirectoryName(docPath);
+                var docDir = Path.GetDirectoryName(docPath);
 
                 if (docDir is null)
                 {
                     return;
                 }
 
-                var isCurrentlyRelative = !System.IO.Path.IsPathFullyQualified(path);
+                var isCurrentlyRelative = !Path.IsPathFullyQualified(path);
 
                 if (useRelative)
                 {
                     // Only convert if currently absolute — relative paths are already correct.
                     if (!isCurrentlyRelative)
                     {
-                        WorkingDirectory.Value = System.IO.Path.GetRelativePath(docDir, path);
+                        WorkingDirectory.Value = Path.GetRelativePath(docDir, path);
                     }
                 }
                 else
@@ -176,7 +177,7 @@ public sealed class PipelineViewModel : ReactiveObject, IValidatableViewModel, I
                     // Only convert if currently relative — absolute paths are already correct.
                     if (isCurrentlyRelative)
                     {
-                        WorkingDirectory.Value = System.IO.Path.GetFullPath(path, docDir);
+                        WorkingDirectory.Value = Path.GetFullPath(path, docDir);
                     }
                 }
             })
@@ -201,11 +202,11 @@ public sealed class PipelineViewModel : ReactiveObject, IValidatableViewModel, I
                         return;
                     }
 
-                    Command.Value = System.IO.Path.GetFileName(fullPath);
+                    Command.Value = Path.GetFileName(fullPath);
 
                     if (WorkingDirectory.Value.IsNullOrEmpty())
                     {
-                        var directory = System.IO.Path.GetDirectoryName(fullPath);
+                        var directory = Path.GetDirectoryName(fullPath);
 
                         if (directory is not null)
                         {
@@ -236,11 +237,11 @@ public sealed class PipelineViewModel : ReactiveObject, IValidatableViewModel, I
 
                         if (docPath is not null)
                         {
-                            var docDir = System.IO.Path.GetDirectoryName(docPath);
+                            var docDir = Path.GetDirectoryName(docPath);
 
                             if (docDir is not null)
                             {
-                                path = System.IO.Path.GetRelativePath(docDir, path);
+                                path = Path.GetRelativePath(docDir, path);
                             }
                         }
                     }
