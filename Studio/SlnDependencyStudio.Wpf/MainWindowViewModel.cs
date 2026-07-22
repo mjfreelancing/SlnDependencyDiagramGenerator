@@ -77,9 +77,6 @@ public sealed class MainWindowViewModel : ActivatableViewModel
         set => this.RaiseAndSetIfChanged(ref _currentPage, value);
     }
 
-    /// <summary>Validation errors collected across all editable sections.</summary>
-    public ObservableCollection<ValidationSummaryItem> CurrentValidationSummary { get; } = [];
-
     /// <summary>Whether the main window can be closed. False when a command is executing.</summary>
     public bool CanClose
     {
