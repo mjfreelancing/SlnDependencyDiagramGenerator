@@ -11,6 +11,8 @@ using SlnDependencyStudio.Wpf.Features.Project.Stores;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Reactive;
+using System.Reactive.Disposables;
+using System.Reactive.Disposables.Fluent;
 using System.Reactive.Linq;
 
 namespace SlnDependencyStudio.Wpf.Features.Export;
@@ -18,9 +20,10 @@ namespace SlnDependencyStudio.Wpf.Features.Export;
 /// <summary>View model for the "Export" navigation page. Delegates all document-related
 /// bindings to the <see cref="IProjectDocumentStore"/> so that the store is the single
 /// source of truth for the currently open document.</summary>
-public sealed class ExportViewModel : ReactiveObject, IValidatableViewModel
+public sealed class ExportViewModel : ReactiveObject, IValidatableViewModel, IDisposable
 {
     private readonly IProjectDocumentStore _store;
+    private readonly CompositeDisposable _disposables = [];
     private bool _isSyncing;
 
     /// <summary>The export root path. Bound via <c>RootPath.Value</c> in XAML.</summary>
@@ -80,7 +83,11 @@ public sealed class ExportViewModel : ReactiveObject, IValidatableViewModel
 
     private void WireImageFormatSync()
     {
-        ImageFormats.Items.CollectionChanged += OnImageFormatsCollectionChanged;
+        Observable.FromEventPattern<NotifyCollectionChangedEventHandler, NotifyCollectionChangedEventArgs>(
+                handler => ImageFormats.Items.CollectionChanged += handler,
+                handler => ImageFormats.Items.CollectionChanged -= handler)
+            .Subscribe(eventPattern => OnImageFormatsCollectionChanged(eventPattern.Sender, eventPattern.EventArgs))
+            .DisposeWith(_disposables);
 
         SyncImageFormatTogglesFromCollection();
 
@@ -88,7 +95,8 @@ public sealed class ExportViewModel : ReactiveObject, IValidatableViewModel
         {
             toggle
                 .WhenAnyValue(toggleItem => toggleItem.IsChecked)
-                .Subscribe(isChecked => OnImageFormatToggleChanged(toggle, isChecked));
+                .Subscribe(isChecked => OnImageFormatToggleChanged(toggle, isChecked))
+                .DisposeWith(_disposables);
         }
     }
 
@@ -153,7 +161,8 @@ public sealed class ExportViewModel : ReactiveObject, IValidatableViewModel
                 RootPath.Value = useRelative
                     ? PathUtils.MakeRelativeIfPossible(absolutePath, _store.DocumentDirectory)
                     : absolutePath;
-            });
+            })
+            .DisposeWith(_disposables);
     }
 
     private void WireValidation()
@@ -183,6 +192,12 @@ public sealed class ExportViewModel : ReactiveObject, IValidatableViewModel
                 })
                 .Select(_ => Unit.Default);
         });
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        _disposables.Dispose();
+    }
 
     private static string GetDisplayName(DiagramImageFormat format)
     {

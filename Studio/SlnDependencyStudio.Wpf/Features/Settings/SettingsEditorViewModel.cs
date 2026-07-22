@@ -100,6 +100,8 @@ public sealed class SettingsEditorViewModel : ReactiveObject
         // Apply the theme live as the user toggles — no need to wait for Save.
         var studioTheme = currentSettings.Theme;
 
+        // Self-referencing — subscription is on 'this', collected with the ViewModel.
+        // Also, this VM is a dialog child; no caller disposes it, so IDisposable would be dead code.
         this.WhenAnyValue(vm => vm.IsDarkTheme)
             .Subscribe(isDark => themeService.ApplyTheme(isDark ? StudioTheme.Dark : StudioTheme.Light));
 

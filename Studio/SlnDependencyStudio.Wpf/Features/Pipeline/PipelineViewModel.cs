@@ -9,16 +9,19 @@ using SlnDependencyStudio.Wpf.Features.Pipeline.Services;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
 using System.Collections.ObjectModel;
 using System.Reactive;
+using System.Reactive.Disposables;
+using System.Reactive.Disposables.Fluent;
 using System.Reactive.Linq;
 
 namespace SlnDependencyStudio.Wpf.Features.Pipeline;
 
 /// <summary>View model for the "Pipeline" navigation page.</summary>
-public sealed class PipelineViewModel : ReactiveObject, IValidatableViewModel
+public sealed class PipelineViewModel : ReactiveObject, IValidatableViewModel, IDisposable
 {
     private readonly IProjectDocumentStore _store;
     private readonly IToolStatusService _toolStatus;
     private readonly ObservableCollection<ToolStatusEntry> _toolStatusEntries;
+    private readonly CompositeDisposable _disposables = [];
 
     /// <summary>Whether the pre-generation command is enabled.</summary>
     public TrackableValue<bool> Enabled => _store.PreGenerationEditor.Enabled;
@@ -104,7 +107,8 @@ public sealed class PipelineViewModel : ReactiveObject, IValidatableViewModel
                     enabled && command.IsNullOrEmpty()
                         ? "Command must not be empty when pre-generation is enabled."
                         : null)
-            .Subscribe(error => PreGenError = error);
+            .Subscribe(error => PreGenError = error)
+            .DisposeWith(_disposables);
     }
 
     private void WireValidation()
@@ -127,7 +131,8 @@ public sealed class PipelineViewModel : ReactiveObject, IValidatableViewModel
                 {
                     _toolStatusEntries.Add(entries[i]);
                 }
-            });
+            })
+            .DisposeWith(_disposables);
     }
 
     private void WireRelativePathToggle()
@@ -174,15 +179,13 @@ public sealed class PipelineViewModel : ReactiveObject, IValidatableViewModel
                         WorkingDirectory.Value = System.IO.Path.GetFullPath(path, docDir);
                     }
                 }
-            });
+            })
+            .DisposeWith(_disposables);
     }
 
     private ReactiveCommand<Unit, Unit> CreateRescanToolsCommand()
     {
-        return ReactiveCommand.CreateFromTask(async ct =>
-        {
-            await _toolStatus.RescanAsync(ct);
-        });
+        return ReactiveCommand.CreateFromTask(_toolStatus.RescanAsync);
     }
 
     private ReactiveCommand<Unit, Unit> CreateBrowseCommandCommand()
@@ -246,5 +249,11 @@ public sealed class PipelineViewModel : ReactiveObject, IValidatableViewModel
                 })
                 .Select(_ => Unit.Default);
         });
+    }
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        _disposables.Dispose();
     }
 }

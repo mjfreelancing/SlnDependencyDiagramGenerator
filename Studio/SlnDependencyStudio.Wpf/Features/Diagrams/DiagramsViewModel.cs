@@ -8,6 +8,8 @@ using SlnDependencyStudio.Wpf.Features.Diagrams.Models;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Reactive.Disposables;
+using System.Reactive.Disposables.Fluent;
 using System.Reactive.Linq;
 using System.Text.RegularExpressions;
 
@@ -15,12 +17,13 @@ namespace SlnDependencyStudio.Wpf.Features.Diagrams;
 
 /// <summary>View model for the "Diagrams" navigation page. Delegates all document-related
 /// bindings to the <see cref="IProjectDocumentStore"/> and manages format toggle state.</summary>
-public sealed partial class DiagramsViewModel : ReactiveObject, IValidatableViewModel
+public sealed partial class DiagramsViewModel : ReactiveObject, IValidatableViewModel, IDisposable
 {
     [GeneratedRegex(@"^#?[0-9A-Fa-f]{6}$")]
     private static partial Regex HexPatternRegex();
 
     private readonly IProjectDocumentStore _store;
+    private readonly CompositeDisposable _disposables = [];
 
     // Guards against infinite recursion between toggle changes and collection sync.
     // Toggling a checkbox modifies the Formats collection, which fires CollectionChanged,
@@ -126,7 +129,11 @@ public sealed partial class DiagramsViewModel : ReactiveObject, IValidatableView
     private void WireFormatToggleSync()
     {
         // When the Formats collection changes (e.g. document load), sync toggle states.
-        Formats.Items.CollectionChanged += OnFormatsCollectionChanged;
+        Observable.FromEventPattern<NotifyCollectionChangedEventHandler, NotifyCollectionChangedEventArgs>(
+                handler => Formats.Items.CollectionChanged += handler,
+                handler => Formats.Items.CollectionChanged -= handler)
+            .Subscribe(eventPattern => OnFormatsCollectionChanged(eventPattern.Sender, eventPattern.EventArgs))
+            .DisposeWith(_disposables);
 
         // Initial sync: set toggle states from the current collection contents.
         // This covers the case where the ViewModel is created after a document is already loaded.
@@ -137,7 +144,8 @@ public sealed partial class DiagramsViewModel : ReactiveObject, IValidatableView
         {
             toggle
                 .WhenAnyValue(toggleItem => toggleItem.IsChecked)
-                .Subscribe(isChecked => OnToggleChanged(toggle, isChecked));
+                .Subscribe(isChecked => OnToggleChanged(toggle, isChecked))
+                .DisposeWith(_disposables);
         }
     }
 
@@ -197,12 +205,14 @@ public sealed partial class DiagramsViewModel : ReactiveObject, IValidatableView
                     GetHexError(framework, "Framework", hexPattern) ??
                     GetHexError(package, "Package", hexPattern) ??
                     GetHexError(transitive, "Transitive", hexPattern))
-            .Subscribe(error => StylesHexError = error);
+            .Subscribe(error => StylesHexError = error)
+            .DisposeWith(_disposables);
 
         this.WhenAnyValue(
                 vm => vm.GroupingFill.Value,
                 grouping => GetHexError(grouping, "Grouping", hexPattern))
-            .Subscribe(error => GroupingHexError = error);
+            .Subscribe(error => GroupingHexError = error)
+            .DisposeWith(_disposables);
     }
 
     private void WireValidation()
@@ -266,6 +276,12 @@ public sealed partial class DiagramsViewModel : ReactiveObject, IValidatableView
             DiagramFormat.Mermaid => "Mermaid",
             _ => format.ToString()
         };
+    }
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        _disposables.Dispose();
     }
 
     private static MaterialDesignThemes.Wpf.PackIconKind GetIconKind(DiagramFormat format)

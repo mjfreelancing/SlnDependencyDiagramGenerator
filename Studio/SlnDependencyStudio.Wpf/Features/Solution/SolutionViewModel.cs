@@ -9,6 +9,8 @@ using SlnDependencyStudio.Wpf.Controls;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
 using System.IO;
 using System.Reactive;
+using System.Reactive.Disposables;
+using System.Reactive.Disposables.Fluent;
 using System.Reactive.Linq;
 using System.Text.RegularExpressions;
 
@@ -17,9 +19,10 @@ namespace SlnDependencyStudio.Wpf.Features.Solution;
 /// <summary>View model for the "Solution" navigation page. Delegates all document-related
 /// bindings to the <see cref="IProjectDocumentStore"/> so that the store is the single
 /// source of truth for the currently open document.</summary>
-public sealed class SolutionViewModel : ReactiveObject, IValidatableViewModel
+public sealed class SolutionViewModel : ReactiveObject, IValidatableViewModel, IDisposable
 {
     private readonly IProjectDocumentStore _store;
+    private readonly CompositeDisposable _disposables = [];
 
     /// <summary>The solution path. Bound via <c>SolutionPath.Value</c> in XAML.</summary>
     public TrackableValue<string> SolutionPath => _store.SolutionOptionsEditor.SolutionPath;
@@ -120,6 +123,13 @@ public sealed class SolutionViewModel : ReactiveObject, IValidatableViewModel
 
     private void WireRelativePathToggle()
     {
+        // this.WhenAnyValue(vm => ...) creates an observable whose subscription handle is rooted
+        // on this — nothing external holds it. Even though UseRelativePath delegates to the singleton
+        // store's TrackableValue<bool>, the WhenAnyValue chain originates from property-change
+        // notifications on this.
+        //
+        // Hence, a self-referencing subscription — Not a leak, but DisposeWith keeps the pattern
+        // consistent across all page VMs.
         this.WhenAnyValue(vm => vm.UseRelativePath.Value)
             .Skip(1)        // Skip the initial seeded value after loading
             .Subscribe(useRelative =>
@@ -136,7 +146,8 @@ public sealed class SolutionViewModel : ReactiveObject, IValidatableViewModel
                 SolutionPath.Value = useRelative
                     ? PathUtils.MakeRelativeIfPossible(absolutePath, _store.DocumentDirectory)
                     : absolutePath;
-            });
+            })
+            .DisposeWith(_disposables);
     }
 
     private static string? TryValidateRegex(string pattern)
@@ -171,5 +182,11 @@ public sealed class SolutionViewModel : ReactiveObject, IValidatableViewModel
                 })
                 .Select(_ => Unit.Default);
         });
+    }
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        _disposables.Dispose();
     }
 }

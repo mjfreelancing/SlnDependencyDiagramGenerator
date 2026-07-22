@@ -130,6 +130,7 @@ public sealed class OutputPanelViewModel : ReactiveObject, IStudioScopedDependen
         _observableSink = observableSink;
         _applicationSettings = applicationSettings;
 
+        // Self-referencing — Messages is owned by this ViewModel.
         var hasContent = Observable
             .FromEventPattern<NotifyCollectionChangedEventHandler, NotifyCollectionChangedEventArgs>(
                 handler => Messages.CollectionChanged += handler,
@@ -196,6 +197,7 @@ public sealed class OutputPanelViewModel : ReactiveObject, IStudioScopedDependen
 
     private void SubscribeToVerboseLog()
     {
+        // Manually managed via IsVerbose setter — disposed on toggle-off. No IDisposable needed on ViewModel.
         _verboseSubscription?.Dispose();
 
         _verboseSubscription = _observableSink

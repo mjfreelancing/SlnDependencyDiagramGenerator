@@ -4,6 +4,8 @@ using ReactiveUI.Validation.Contexts;
 using ReactiveUI.Validation.Extensions;
 using SlnDependencyStudio.Wpf.Controls;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
+using System.Reactive.Disposables;
+using System.Reactive.Disposables.Fluent;
 using System.Reactive.Linq;
 
 namespace SlnDependencyStudio.Wpf.Features.Project;
@@ -11,9 +13,10 @@ namespace SlnDependencyStudio.Wpf.Features.Project;
 /// <summary>View model for the "Project" navigation page. Delegates all document-related
 /// bindings to the <see cref="IProjectDocumentStore"/> so that the store is the single
 /// source of truth for the currently open document.</summary>
-public sealed class ProjectViewModel : ReactiveObject, IValidatableViewModel
+public sealed class ProjectViewModel : ReactiveObject, IValidatableViewModel, IDisposable
 {
     private readonly IProjectDocumentStore _store;
+    private readonly CompositeDisposable _disposables = [];
     private string? _documentFilePath;
 
     /// <summary>The project name. Bound via <c>ProjectName.Value</c> in XAML.</summary>
@@ -40,11 +43,18 @@ public sealed class ProjectViewModel : ReactiveObject, IValidatableViewModel
 
         _store
             .WhenAnyValue(store => store.DocumentFilePath)
-            .Subscribe(path => DocumentFilePath = path);
+            .Subscribe(path => DocumentFilePath = path)
+            .DisposeWith(_disposables);
 
         this.ValidationRule(
             viewModel => viewModel.ProjectName.Value,
             name => !string.IsNullOrWhiteSpace(name),
             "Project name must not be empty");
+    }
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        _disposables.Dispose();
     }
 }

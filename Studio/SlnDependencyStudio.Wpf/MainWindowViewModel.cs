@@ -675,6 +675,11 @@ public sealed class MainWindowViewModel : ActivatableViewModel
     {
         _logger.LogInformation("Navigating to page: {PageName}", viewModel.DisplayName);
 
+        if (CurrentPage is IViewFor { ViewModel: IDisposable disposableVm })
+        {
+            disposableVm.Dispose();
+        }
+
         var view = viewModel.CreateView(_viewFactory);
         CurrentPage = view;
 
