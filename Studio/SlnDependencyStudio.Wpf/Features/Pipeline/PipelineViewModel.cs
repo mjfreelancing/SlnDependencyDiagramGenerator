@@ -3,6 +3,7 @@ using ReactiveUI;
 using ReactiveUI.Validation.Abstractions;
 using ReactiveUI.Validation.Contexts;
 using ReactiveUI.Validation.Extensions;
+using SlnDependencyStudio.Shared.Utils;
 using SlnDependencyStudio.Wpf.Controls;
 using SlnDependencyStudio.Wpf.Features.Pipeline.Models;
 using SlnDependencyStudio.Wpf.Features.Pipeline.Services;
@@ -222,8 +223,10 @@ public sealed class PipelineViewModel : ReactiveObject, IValidatableViewModel, I
     {
         return ReactiveCommand.CreateFromObservable(() =>
         {
+            var resolvedPath = PathUtils.ResolveAsAbsolutePath(WorkingDirectory.Value, _store.DocumentDirectory);
+
             return BrowseWorkingDirectoryInteraction
-                .Handle(WorkingDirectory.Value ?? string.Empty)
+                .Handle(resolvedPath)
                 .Do(path =>
                 {
                     if (path is null)
