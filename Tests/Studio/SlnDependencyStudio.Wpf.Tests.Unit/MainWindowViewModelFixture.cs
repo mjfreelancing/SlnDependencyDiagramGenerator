@@ -23,6 +23,7 @@ using SlnDependencyStudio.Wpf.Features.Run;
 using SlnDependencyStudio.Wpf.Features.Solution;
 using SlnDependencyStudio.Wpf.Models;
 using System.Reactive.Linq;
+using System.Reactive.Subjects;
 
 namespace SlnDependencyStudio.Wpf.Tests.Unit;
 
@@ -695,6 +696,68 @@ public class MainWindowViewModelFixture
             await _viewModel.AnalyzeCommand.Execute();
 
             await _analysisService.Received(1).RunAsync(Arg.Any<CancellationToken>());
+        }
+    }
+
+    public class CanCloseState : MainWindowViewModelFixture
+    {
+        [Fact]
+        public void Should_Be_True_By_Default()
+        {
+            _viewModel.CanClose.ShouldBeTrue();
+        }
+    }
+
+    public class GenerateCommand : MainWindowViewModelFixture
+    {
+        [Fact]
+        public void Should_Be_Disabled_When_No_Document()
+        {
+            var store = Substitute.For<IProjectDocumentStore>();
+            store.HasDocument.Returns(false);
+
+            var vm = new MainWindowViewModel(
+                store, _projectService, _recentProjects, _errorDialog, _viewFactory,
+                _toolStatus, _analysisService, _generationService, Substitute.For<ILogger<MainWindowViewModel>>());
+
+            var canExecute = vm.GenerateCommand.CanExecute.FirstAsync().Wait();
+
+            canExecute.ShouldBeFalse();
+        }
+
+        [Fact]
+        public void Should_Be_Enabled_When_Document_Loaded()
+        {
+            var store = Substitute.For<IProjectDocumentStore>();
+            store.HasDocument.Returns(true);
+
+            var vm = new MainWindowViewModel(
+                store, _projectService, _recentProjects, _errorDialog, _viewFactory,
+                _toolStatus, _analysisService, _generationService, Substitute.For<ILogger<MainWindowViewModel>>());
+
+            var canExecute = vm.GenerateCommand.CanExecute.FirstAsync().Wait();
+
+            canExecute.ShouldBeTrue();
+        }
+
+        [Fact]
+        public async Task Should_Invoke_GenerationService_On_Execute()
+        {
+            var subject = new Subject<OutputMessage>();
+
+            _generationService
+                .RunAsync(Arg.Any<CancellationToken>())
+                .Returns(subject);
+
+            // Execute and wait briefly for the command to start
+            var executeTask = _viewModel.GenerateCommand.Execute();
+
+            // Complete the generation
+            subject.OnCompleted();
+
+            await executeTask;
+
+            await _generationService.Received(1).RunAsync(Arg.Any<CancellationToken>());
         }
     }
 
