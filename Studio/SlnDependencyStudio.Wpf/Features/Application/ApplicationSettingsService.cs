@@ -1,23 +1,20 @@
 using AllOverIt.Assertion;
 using SlnDependencyStudio.Shared.Serialization;
+using SlnDependencyStudio.Wpf.Abstractions.IO;
 using SlnDependencyStudio.Wpf.Features.Application.Models;
 using System.IO;
 
 namespace SlnDependencyStudio.Wpf.Features.Application;
 
 /// <summary>Default implementation of <see cref="IApplicationSettingsService"/>.
-/// Persists settings to <c>%AppData%/SlnDependencyStudio/settings.json</c> using
-/// <see cref="System.Text.Json"/> with an atomic write strategy.</summary>
+/// Persists settings to a configurable directory (defaults to <c>%AppData%/SlnDependencyStudio</c>).</summary>
 internal sealed class ApplicationSettingsService : IApplicationSettingsService
 {
-    private static readonly string SettingsDirectory = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "SlnDependencyStudio");
-
-    private static readonly string SettingsFilePath = Path.Combine(SettingsDirectory, "settings.json");
-    private static readonly string StateFilePath = Path.Combine(SettingsDirectory, "state.json");
-
     private readonly IStudioJsonSerializer _jsonSerializer;
+    private readonly IFileSystem _fileSystem;
+    private readonly string _settingsDirectory;
+    private readonly string _settingsFilePath;
+    private readonly string _stateFilePath;
 
     /// <inheritdoc />
     public ApplicationSettings CurrentSettings { get; private set; } = new();
@@ -25,11 +22,27 @@ internal sealed class ApplicationSettingsService : IApplicationSettingsService
     /// <inheritdoc />
     public ApplicationState CurrentState { get; private set; } = new();
 
-    /// <summary>Initializes a new instance of <see cref="ApplicationSettingsService"/>.</summary>
+    /// <summary>Initializes a new instance of <see cref="ApplicationSettingsService"/>
+    /// with the default <c>%AppData%/SlnDependencyStudio</c> directory.</summary>
     /// <param name="jsonSerializer">The JSON serializer used to persist and load settings.</param>
-    public ApplicationSettingsService(IStudioJsonSerializer jsonSerializer)
+    /// <param name="fileSystem">The file system abstraction.</param>
+    public ApplicationSettingsService(IStudioJsonSerializer jsonSerializer, IFileSystem fileSystem)
+        : this(jsonSerializer, fileSystem, GetDefaultSettingsDirectory())
+    {
+    }
+
+    /// <summary>Initializes a new instance of <see cref="ApplicationSettingsService"/>
+    /// with a custom settings directory (used by tests).</summary>
+    /// <param name="jsonSerializer">The JSON serializer used to persist and load settings.</param>
+    /// <param name="fileSystem">The file system abstraction.</param>
+    /// <param name="settingsDirectory">The directory to store settings and state files.</param>
+    internal ApplicationSettingsService(IStudioJsonSerializer jsonSerializer, IFileSystem fileSystem, string settingsDirectory)
     {
         _jsonSerializer = jsonSerializer.WhenNotNull();
+        _fileSystem = fileSystem.WhenNotNull();
+        _settingsDirectory = settingsDirectory.WhenNotNull();
+        _settingsFilePath = Path.Combine(_settingsDirectory, "settings.json");
+        _stateFilePath = Path.Combine(_settingsDirectory, "state.json");
     }
 
     /// <inheritdoc />
@@ -41,52 +54,59 @@ internal sealed class ApplicationSettingsService : IApplicationSettingsService
 
     private async Task LoadSettingsAsync(CancellationToken cancellationToken)
     {
-        if (!File.Exists(SettingsFilePath))
+        if (!_fileSystem.FileExists(_settingsFilePath))
         {
             CurrentSettings = new ApplicationSettings();
             return;
         }
 
-        await using var stream = new FileStream(SettingsFilePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+        await using var stream = _fileSystem.OpenRead(_settingsFilePath);
         CurrentSettings = (await _jsonSerializer.DeserializeAsync<ApplicationSettings>(stream, cancellationToken))!;
     }
 
     private async Task LoadStateAsync(CancellationToken cancellationToken)
     {
-        if (!File.Exists(StateFilePath))
+        if (!_fileSystem.FileExists(_stateFilePath))
         {
             CurrentState = new ApplicationState();
             return;
         }
 
-        await using var stream = new FileStream(StateFilePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+        await using var stream = _fileSystem.OpenRead(_stateFilePath);
         CurrentState = (await _jsonSerializer.DeserializeAsync<ApplicationState>(stream, cancellationToken))!;
     }
 
     /// <inheritdoc />
     public async Task SaveSettingsAsync(CancellationToken cancellationToken = default)
     {
-        Directory.CreateDirectory(SettingsDirectory);
+        _fileSystem.CreateDirectory(_settingsDirectory);
 
-        var tempPath = SettingsFilePath + ".tmp";
+        var tempPath = _settingsFilePath + ".tmp";
 
-        await using (var stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None))
+        await using (var stream = _fileSystem.OpenWrite(tempPath))
         {
             await _jsonSerializer.SerializeAsync(stream, CurrentSettings, cancellationToken);
         }
 
-        File.Move(tempPath, SettingsFilePath, overwrite: true);
+        _fileSystem.MoveFile(tempPath, _settingsFilePath, overwrite: true);
     }
 
     /// <inheritdoc />
     public void SaveState()
     {
-        Directory.CreateDirectory(SettingsDirectory);
+        _fileSystem.CreateDirectory(_settingsDirectory);
 
-        var tempPath = StateFilePath + ".tmp";
+        var tempPath = _stateFilePath + ".tmp";
         var json = _jsonSerializer.Serialize(CurrentState);
 
-        File.WriteAllText(tempPath, json);
-        File.Move(tempPath, StateFilePath, overwrite: true);
+        _fileSystem.WriteAllText(tempPath, json);
+        _fileSystem.MoveFile(tempPath, _stateFilePath, overwrite: true);
+    }
+
+    private static string GetDefaultSettingsDirectory()
+    {
+        return Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "SlnDependencyStudio");
     }
 }

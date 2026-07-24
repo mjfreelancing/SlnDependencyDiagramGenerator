@@ -15,4 +15,19 @@ internal sealed class SystemFileSystem : IFileSystem
     /// <inheritdoc />
     public Task WriteAllTextAsync(string path, string text, CancellationToken cancellationToken = default)
         => File.WriteAllTextAsync(path, text, cancellationToken);
+
+    /// <inheritdoc />
+    public void WriteAllText(string path, string text) => File.WriteAllText(path, text);
+
+    /// <inheritdoc />
+    public Stream OpenRead(string path) => new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+
+    /// <inheritdoc />
+    public Stream OpenWrite(string path) => new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None);
+
+    /// <inheritdoc />
+    public void CreateDirectory(string path) => Directory.CreateDirectory(path);
+
+    /// <inheritdoc />
+    public void MoveFile(string source, string destination, bool overwrite) => File.Move(source, destination, overwrite);
 }
