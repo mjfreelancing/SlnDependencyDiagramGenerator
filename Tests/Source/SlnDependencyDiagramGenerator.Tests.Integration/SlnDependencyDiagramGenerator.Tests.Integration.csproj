@@ -27,11 +27,9 @@
         <ProjectReference Include="..\..\..\Studio\SlnDependencyStudio.Shared\SlnDependencyStudio.Shared.csproj" />
     </ItemGroup>
 
-    <!--
-        Fixture projects under Fixtures/ are real projects and still build/restore normally as part of solution builds.
-        This only prevents fixture source files from being compiled again into the integration test assembly,
-        which would otherwise cause duplicate type/assembly-attribute and top-level-statement errors.
-    -->
+    <!-- Fixture directories under Fixtures/ are real projects (they build and restore as part of the solution).
+         Without this, their .cs files would be compiled into the integration test assembly,
+         causing duplicate type/assembly-attribute and top-level-statement errors. -->
     <ItemGroup>
         <Compile Remove="Fixtures\**\*.cs" />
     </ItemGroup>

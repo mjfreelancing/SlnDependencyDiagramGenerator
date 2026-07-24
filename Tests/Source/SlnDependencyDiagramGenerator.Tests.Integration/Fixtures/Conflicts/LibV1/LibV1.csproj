@@ -6,10 +6,12 @@
     <Nullable>enable</Nullable>
     <!-- Deliberately old Newtonsoft.Json for version-conflict test fixture -->
     <NoWarn>NU1903</NoWarn>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" />
+    <!-- Deliberately old version to create a cross-project version conflict with LibV2 -->
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
   </ItemGroup>
 
 </Project>

@@ -28,8 +28,11 @@
         <ProjectReference Include="..\..\..\Source\SlnDependencyDiagramGenerator.csproj" />
     </ItemGroup>
 
+    <!-- Fixture files (.sds) under Fixtures/ are found at runtime via
+         AppContext.BaseDirectory, which resolves to the build output directory.
+         Without CopyToOutputDirectory, these files would not be available when tests execute. -->
     <ItemGroup>
-        <None Update="Fixtures\**\*" CopyToOutputDirectory="PreserveNewest" />
+        <None Include="Fixtures\**\*" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
 
 </Project>

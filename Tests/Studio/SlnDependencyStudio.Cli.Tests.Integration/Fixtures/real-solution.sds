@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "projectName": "CLI Real Solution Test",
+    "description": "Config pointing to SoloLib.slnx fixture"
+  },
+  "diagramGenerator": {
+    "solution": {
+      "solutionPath": "SoloLib/SoloLib.slnx",
+      "regexToInclude": [".*"],
+      "regexToExclude": [],
+      "packagesToExclude": [],
+      "frameworksToExclude": [],
+      "individual": {
+        "enabled": true,
+        "includeDependencies": true,
+        "transitiveDepth": 1
+      },
+      "all": {
+        "enabled": true,
+        "includeDependencies": true,
+        "transitiveDepth": 1
+      }
+    },
+    "diagram": {
+      "formats": ["Mermaid"],
+      "direction": "LR",
+      "groupName": "CLI Test Group",
+      "groupNameAlias": "clitest",
+      "grouping": { "enabled": true },
+      "frameworkStyle": { "fill": "#E8E8E8", "opacity": 1.0 },
+      "packageStyle": { "fill": "#D4E6F1", "opacity": 1.0 },
+      "transitiveStyle": { "fill": "#FADBD8", "opacity": 1.0 }
+    },
+    "export": {
+      "rootPath": "..\\Output",
+      "imageFormats": [],
+      "clearContents": true
+    }
+  },
+  "preGeneration": {
+    "enabled": false,
+    "command": "",
+    "arguments": "",
+    "workingDirectory": "",
+    "continueOnFailure": false
+  }
+}

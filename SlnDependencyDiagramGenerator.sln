@@ -47,19 +47,18 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SlnDependencyDiagramGenerator.Tests.Unit", "Tests\Source\SlnDependencyDiagramGenerator.Tests.Unit\SlnDependencyDiagramGenerator.Tests.Unit.csproj", "{1759BE74-67BF-56E6-578C-1BFCFC4339BD}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Source", "Source", "{C0F1DB63-1A70-43EB-9C9C-CFE42853453A}"
-	ProjectSection(SolutionItems) = preProject
-		Tests\Source\SlnDependencyDiagramGenerator.Tests.Integration\SlnDependencyDiagramGenerator.Tests.Integration.csproj = Tests\Source\SlnDependencyDiagramGenerator.Tests.Integration\SlnDependencyDiagramGenerator.Tests.Integration.csproj
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SlnDependencyStudio.Wpf.Tests.Unit", "Tests\Studio\SlnDependencyStudio.Wpf.Tests.Unit\SlnDependencyStudio.Wpf.Tests.Unit.csproj", "{2825F3C5-CD78-4599-9E83-B7B01BD46BAC}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Installers", "Installers", "{026EDD64-7583-4D39-B75F-3181EDDBA87A}"
 EndProject
-Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "SlnDependencyGeneratorWpf", "Installers\SlnDependencyGeneratorUI\SlnDependencyGeneratorWpf.vdproj", "{EA9FE387-834D-0B73-5DFC-F0A50E993EC5}"
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "SlnDependencyGeneratorUI", "Installers\SlnDependencyGeneratorUI\SlnDependencyGeneratorWpf.vdproj", "{EA9FE387-834D-0B73-5DFC-F0A50E993EC5}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SlnDependencyStudio.Wpf.Tests.Integration", "Tests\Studio\SlnDependencyStudio.Wpf.Tests.Integration\SlnDependencyStudio.Wpf.Tests.Integration.csproj", "{8839DE9D-8A5C-4467-BED9-3C654C3D5EFF}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SlnDependencyStudio.Cli.Tests.Integration", "Tests\Studio\SlnDependencyStudio.Cli.Tests.Integration\SlnDependencyStudio.Cli.Tests.Integration.csproj", "{2F529BAC-2884-4F50-9B80-145EAD2B5C43}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SlnDependencyDiagramGenerator.Tests.Integration", "Tests\Source\SlnDependencyDiagramGenerator.Tests.Integration\SlnDependencyDiagramGenerator.Tests.Integration.csproj", "{3E2DF329-E746-CA07-9926-551A7EFB98B9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -239,6 +238,18 @@ Global
 		{2F529BAC-2884-4F50-9B80-145EAD2B5C43}.Release|x64.Build.0 = Release|Any CPU
 		{2F529BAC-2884-4F50-9B80-145EAD2B5C43}.Release|x86.ActiveCfg = Release|Any CPU
 		{2F529BAC-2884-4F50-9B80-145EAD2B5C43}.Release|x86.Build.0 = Release|Any CPU
+		{3E2DF329-E746-CA07-9926-551A7EFB98B9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3E2DF329-E746-CA07-9926-551A7EFB98B9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3E2DF329-E746-CA07-9926-551A7EFB98B9}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{3E2DF329-E746-CA07-9926-551A7EFB98B9}.Debug|x64.Build.0 = Debug|Any CPU
+		{3E2DF329-E746-CA07-9926-551A7EFB98B9}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{3E2DF329-E746-CA07-9926-551A7EFB98B9}.Debug|x86.Build.0 = Debug|Any CPU
+		{3E2DF329-E746-CA07-9926-551A7EFB98B9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3E2DF329-E746-CA07-9926-551A7EFB98B9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3E2DF329-E746-CA07-9926-551A7EFB98B9}.Release|x64.ActiveCfg = Release|Any CPU
+		{3E2DF329-E746-CA07-9926-551A7EFB98B9}.Release|x64.Build.0 = Release|Any CPU
+		{3E2DF329-E746-CA07-9926-551A7EFB98B9}.Release|x86.ActiveCfg = Release|Any CPU
+		{3E2DF329-E746-CA07-9926-551A7EFB98B9}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -260,6 +271,7 @@ Global
 		{EA9FE387-834D-0B73-5DFC-F0A50E993EC5} = {026EDD64-7583-4D39-B75F-3181EDDBA87A}
 		{8839DE9D-8A5C-4467-BED9-3C654C3D5EFF} = {2C920A23-D610-5BCD-25E5-3C62F0764F07}
 		{2F529BAC-2884-4F50-9B80-145EAD2B5C43} = {2C920A23-D610-5BCD-25E5-3C62F0764F07}
+		{3E2DF329-E746-CA07-9926-551A7EFB98B9} = {C0F1DB63-1A70-43EB-9C9C-CFE42853453A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {84E15A70-1B30-4C9C-B34D-E418BF24940C}

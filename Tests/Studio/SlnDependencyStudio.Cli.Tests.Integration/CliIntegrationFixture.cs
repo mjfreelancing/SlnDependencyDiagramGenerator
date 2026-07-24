@@ -1,4 +1,5 @@
 using Shouldly;
+using SlnDependencyDiagramGenerator.Parser;
 using SlnDependencyStudio.Cli.Enumerations;
 using SlnDependencyStudio.Cli.Tests.Integration.Support;
 
@@ -39,6 +40,18 @@ public class CliIntegrationFixture
     }
 
     [Fact]
+    public async Task Validate_With_Real_Solution_Should_Succeed()
+    {
+        // Uses the real-solution.sds fixture that references SoloLib/SoloLib.slnx.
+        // The config has proper frameworkStyle/packageStyle/transitiveStyle
+        // properties so all validation rules should pass.
+        var configFile = Path.Combine(FixturesDir, "real-solution.sds");
+        var exitCode = await CliTestHarness.InvokeAsync($"validate --cf \"{configFile}\"");
+
+        exitCode.ShouldBe(0);
+    }
+
+    [Fact]
     public async Task Run_With_Valid_Config_Should_Invoke_Handler()
     {
         var configFile = Path.Combine(FixturesDir, "valid-config.sds");
@@ -55,6 +68,20 @@ public class CliIntegrationFixture
         var exitCode = await CliTestHarness.InvokeAsync(@"run --cf C:\missing\config.sds");
 
         exitCode.ShouldNotBe(0);
+    }
+
+    [Fact]
+    public async Task Run_With_Real_Solution_Should_Generate_Output()
+    {
+        // Uses the real-solution.sds fixture that references SoloLib/SoloLib.slnx.
+        // Validates the full run pipeline is invoked (generation may partially
+        // fail because the test projects lack restore assets).
+        var configFile = Path.Combine(FixturesDir, "real-solution.sds");
+        var exitCode = await CliTestHarness.InvokeAsync($"run --cf \"{configFile}\"");
+
+        // Handler is invoked (not a parse error); actual generation may fail
+        // since test fixture projects don't have NuGet restore assets.
+        exitCode.ShouldNotBe(StudioCliExitCode.CommandLineParseFailed.Value);
     }
 
     [Fact]

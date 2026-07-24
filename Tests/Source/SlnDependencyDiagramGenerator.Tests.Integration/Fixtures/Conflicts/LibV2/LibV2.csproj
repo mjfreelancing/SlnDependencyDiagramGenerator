@@ -6,10 +6,11 @@
     <Nullable>enable</Nullable>
     <!-- Test fixture with deliberate package versions — vulnerabilities not exploitable -->
     <NoWarn>NU1903</NoWarn>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 
 </Project>
