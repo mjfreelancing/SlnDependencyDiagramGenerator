@@ -3,10 +3,10 @@ using AllOverIt.Serilog.Sinks.Observable;
 using ReactiveUI;
 using Serilog.Events;
 using SlnDependencyStudio.Shared.DependencyInjection;
+using SlnDependencyStudio.Wpf.Abstractions.IO;
 using SlnDependencyStudio.Wpf.Features.Application;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
-using System.IO;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Windows;
@@ -23,6 +23,7 @@ public sealed class OutputPanelViewModel : ReactiveObject, IStudioScopedDependen
 {
     private readonly IObservableSink _observableSink;
     private readonly IApplicationSettingsService _applicationSettings;
+    private readonly IFileSystem _fileSystem;
     private IDisposable? _verboseSubscription;
     private bool _initializing;
 
@@ -125,10 +126,12 @@ public sealed class OutputPanelViewModel : ReactiveObject, IStudioScopedDependen
     /// <summary>Initializes a new instance of <see cref="OutputPanelViewModel"/>.</summary>
     /// <param name="observableSink">The Serilog observable sink for verbose log streaming.</param>
     /// <param name="applicationSettings">The application settings service for persisting preferences.</param>
-    public OutputPanelViewModel(IObservableSink observableSink, IApplicationSettingsService applicationSettings)
+    /// <param name="fileSystem">The file system abstraction for saving output.</param>
+    public OutputPanelViewModel(IObservableSink observableSink, IApplicationSettingsService applicationSettings, IFileSystem fileSystem)
     {
         _observableSink = observableSink;
         _applicationSettings = applicationSettings;
+        _fileSystem = fileSystem;
 
         // Self-referencing — Messages is owned by this ViewModel.
         var hasContent = Observable
@@ -156,7 +159,7 @@ public sealed class OutputPanelViewModel : ReactiveObject, IStudioScopedDependen
             if (filePath is not null)
             {
                 var text = string.Join(Environment.NewLine, Messages.Select(message => message.Text));
-                await File.WriteAllTextAsync(filePath, text);
+                await _fileSystem.WriteAllTextAsync(filePath, text);
             }
         }, hasContent);
 

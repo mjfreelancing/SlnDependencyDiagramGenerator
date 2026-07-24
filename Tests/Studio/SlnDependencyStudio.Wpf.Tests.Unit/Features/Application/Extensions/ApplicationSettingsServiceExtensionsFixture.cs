@@ -1,5 +1,6 @@
 using NSubstitute;
 using Shouldly;
+using SlnDependencyStudio.Wpf.Abstractions.IO;
 using SlnDependencyStudio.Wpf.Features.Application;
 using SlnDependencyStudio.Wpf.Features.Application.Extensions;
 using SlnDependencyStudio.Wpf.Features.Application.Models;
@@ -9,6 +10,7 @@ namespace SlnDependencyStudio.Wpf.Tests.Unit.Features.Application.Extensions;
 public class ApplicationSettingsServiceExtensionsFixture
 {
     private readonly IApplicationSettingsService _settingsService = Substitute.For<IApplicationSettingsService>();
+    private readonly IFileSystem _fileSystem = Substitute.For<IFileSystem>();
     private readonly ApplicationSettings _settings = new();
 
     public ApplicationSettingsServiceExtensionsFixture()
@@ -21,19 +23,21 @@ public class ApplicationSettingsServiceExtensionsFixture
         [Fact]
         public void Should_Return_Folder_When_Set_And_Exists()
         {
-            _settings.DefaultProjectFolder = Environment.CurrentDirectory;
+            _settings.DefaultProjectFolder = @"C:\Projects";
+            _fileSystem.DirectoryExists(@"C:\Projects").Returns(true);
 
-            var result = _settingsService.ResolveProjectFolder();
+            var result = _settingsService.ResolveProjectFolder(_fileSystem);
 
-            result.ShouldBe(Environment.CurrentDirectory);
+            result.ShouldBe(@"C:\Projects");
         }
 
         [Fact]
         public void Should_Return_Empty_When_Folder_Does_Not_Exist()
         {
             _settings.DefaultProjectFolder = @"C:\NonExistentFolder_12345";
+            _fileSystem.DirectoryExists(@"C:\NonExistentFolder_12345").Returns(false);
 
-            var result = _settingsService.ResolveProjectFolder();
+            var result = _settingsService.ResolveProjectFolder(_fileSystem);
 
             result.ShouldBe(string.Empty);
         }
@@ -43,7 +47,7 @@ public class ApplicationSettingsServiceExtensionsFixture
         {
             _settings.DefaultProjectFolder = null!;
 
-            var result = _settingsService.ResolveProjectFolder();
+            var result = _settingsService.ResolveProjectFolder(_fileSystem);
 
             result.ShouldBe(string.Empty);
         }
@@ -53,7 +57,7 @@ public class ApplicationSettingsServiceExtensionsFixture
         {
             _settings.DefaultProjectFolder = string.Empty;
 
-            var result = _settingsService.ResolveProjectFolder();
+            var result = _settingsService.ResolveProjectFolder(_fileSystem);
 
             result.ShouldBe(string.Empty);
         }
@@ -63,7 +67,7 @@ public class ApplicationSettingsServiceExtensionsFixture
         {
             _settings.DefaultProjectFolder = "   ";
 
-            var result = _settingsService.ResolveProjectFolder();
+            var result = _settingsService.ResolveProjectFolder(_fileSystem);
 
             result.ShouldBe(string.Empty);
         }

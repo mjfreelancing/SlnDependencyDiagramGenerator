@@ -1,4 +1,5 @@
 using AllOverIt.Assertion;
+using SlnDependencyStudio.Wpf.Abstractions.IO;
 using SlnDependencyStudio.Wpf.Features.Application;
 using SlnDependencyStudio.Wpf.Features.RecentProjects.Models;
 using System.IO;
@@ -9,10 +10,12 @@ internal sealed class RecentProjectsService : IRecentProjectsService
 {
     private const int MaxEntries = 10;
 
+    private readonly IFileSystem _fileSystem;
     private readonly IApplicationSettingsService _settingsService;
 
-    public RecentProjectsService(IApplicationSettingsService settingsService)
+    public RecentProjectsService(IFileSystem fileSystem, IApplicationSettingsService settingsService)
     {
+        _fileSystem = fileSystem.WhenNotNull();
         _settingsService = settingsService.WhenNotNull();
     }
 
@@ -40,7 +43,7 @@ internal sealed class RecentProjectsService : IRecentProjectsService
         return [.. _settingsService.CurrentState.RecentProjects
             .Select(filePath =>
             {
-                var exists = File.Exists(filePath);
+                var exists = _fileSystem.FileExists(filePath);
                 return new RecentProjectEntry(filePath, Path.GetFileNameWithoutExtension(filePath), exists);
             })];
     }

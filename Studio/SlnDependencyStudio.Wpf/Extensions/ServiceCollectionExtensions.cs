@@ -4,6 +4,7 @@ using AllOverIt.ReactiveUI.Wpf.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using SlnDependencyDiagramGenerator.Generator.ToolDetection;
 using SlnDependencyStudio.Shared.DependencyInjection;
+using SlnDependencyStudio.Wpf.Abstractions.IO;
 using SlnDependencyStudio.Wpf.DependencyInjection;
 using SlnDependencyStudio.Wpf.Features.Application;
 using SlnDependencyStudio.Wpf.Features.Diagrams;
@@ -51,6 +52,7 @@ public static class ServiceCollectionExtensions
                 config.Filter((serviceType, _) => serviceType != typeof(IStudioSingletonDependency));
             });
 
+            services.AddSingleton<IFileSystem, SystemFileSystem>();
             services.AddSingleton(typeof(IScopedOperationFactory<>), typeof(ScopedOperationFactory<>));
 
             services.AddSingleton<SlnDependencyWpfAppBootstrapper>();

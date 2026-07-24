@@ -1,5 +1,5 @@
 using AllOverIt.Extensions;
-using System.IO;
+using SlnDependencyStudio.Wpf.Abstractions.IO;
 
 namespace SlnDependencyStudio.Wpf.Features.Application.Extensions;
 
@@ -14,12 +14,13 @@ public static class ApplicationSettingsServiceExtensions
     {
         /// <summary>Returns the configured default project folder if it is set and exists on disk;
         /// otherwise returns <see cref="string.Empty"/> so file dialogs fall back to the system default.</summary>
+        /// <param name="fileSystem">The file system abstraction to use for existence checks.</param>
         /// <returns>The configured folder path, or an empty string.</returns>
-        public string ResolveProjectFolder()
+        public string ResolveProjectFolder(IFileSystem fileSystem)
         {
             var folder = service.CurrentSettings.DefaultProjectFolder;
 
-            return folder.IsNotNullOrEmpty() && Directory.Exists(folder)
+            return folder.IsNotNullOrEmpty() && fileSystem.DirectoryExists(folder)
                 ? folder
                 : string.Empty;
         }

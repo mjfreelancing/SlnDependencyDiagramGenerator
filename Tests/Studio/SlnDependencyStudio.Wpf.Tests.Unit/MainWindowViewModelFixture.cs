@@ -6,6 +6,7 @@ using ReactiveUI;
 using Shouldly;
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Wpf.Controls;
+using SlnDependencyStudio.Wpf.Abstractions.IO;
 using SlnDependencyStudio.Wpf.Features.Application;
 using SlnDependencyStudio.Wpf.Features.Application.Models;
 using SlnDependencyStudio.Wpf.Features.Diagrams;
@@ -58,7 +59,8 @@ public class MainWindowViewModelFixture
 
         var outputPanelViewModel = new OutputPanelViewModel(
             Substitute.For<AllOverIt.Serilog.Sinks.Observable.IObservableSink>(),
-            appSettings);
+            appSettings,
+            Substitute.For<IFileSystem>());
 
         var outputPanelView = Substitute.For<IViewFor<OutputPanelViewModel>>();
         outputPanelView.ViewModel.Returns(outputPanelViewModel);

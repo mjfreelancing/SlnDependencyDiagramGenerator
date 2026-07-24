@@ -1,6 +1,7 @@
 using AllOverIt.Serilog.Sinks.Observable;
 using NSubstitute;
 using Shouldly;
+using SlnDependencyStudio.Wpf.Abstractions.IO;
 using SlnDependencyStudio.Wpf.Features.Application;
 using SlnDependencyStudio.Wpf.Features.Application.Models;
 using SlnDependencyStudio.Wpf.Features.Output;
@@ -17,6 +18,7 @@ public class OutputPanelViewModelFixture
 {
     private readonly IObservableSink _observableSink = Substitute.For<IObservableSink>();
     private readonly IApplicationSettingsService _appSettings = Substitute.For<IApplicationSettingsService>();
+    private readonly IFileSystem _fileSystem = Substitute.For<IFileSystem>();
     private readonly ApplicationSettings _settings = new();
     private readonly OutputPanelViewModel _viewModel;
 
@@ -25,7 +27,7 @@ public class OutputPanelViewModelFixture
         _appSettings.CurrentSettings.Returns(_settings);
         _appSettings.CurrentState.Returns(new ApplicationState());
 
-        _viewModel = new OutputPanelViewModel(_observableSink, _appSettings);
+        _viewModel = new OutputPanelViewModel(_observableSink, _appSettings, _fileSystem);
     }
 
     public class Construction : OutputPanelViewModelFixture
@@ -54,7 +56,7 @@ public class OutputPanelViewModelFixture
         {
             _settings.Output.WrapContent = true;
 
-            var vm = new OutputPanelViewModel(_observableSink, _appSettings);
+            var vm = new OutputPanelViewModel(_observableSink, _appSettings, _fileSystem);
 
             vm.WrapContent.ShouldBeTrue();
         }
@@ -64,7 +66,7 @@ public class OutputPanelViewModelFixture
         {
             _settings.Output.IsVerboseLogging = false;
 
-            var vm = new OutputPanelViewModel(_observableSink, _appSettings);
+            var vm = new OutputPanelViewModel(_observableSink, _appSettings, _fileSystem);
 
             vm.IsVerbose.ShouldBeFalse();
         }
