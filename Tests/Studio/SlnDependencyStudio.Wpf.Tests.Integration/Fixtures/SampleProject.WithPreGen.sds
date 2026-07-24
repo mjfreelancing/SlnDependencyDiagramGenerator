@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "projectName": "With Pre-Gen",
+    "description": "Pre-generation command enabled"
+  },
+  "diagramGenerator": {
+    "solution": {
+      "solutionPath": "C:\\Projects\\PreGen\\PreGen.sln",
+      "regexToInclude": [],
+      "regexToExclude": [],
+      "packagesToExclude": [],
+      "frameworksToExclude": [],
+      "individual": { "enabled": true, "includeDependencies": false, "transitiveDepth": 0 },
+      "all": { "enabled": false, "includeDependencies": false, "transitiveDepth": 0 }
+    },
+    "diagram": {
+      "formats": ["Mermaid"],
+      "direction": "LR",
+      "groupName": "PreGen Group",
+      "groupNameAlias": "pregen",
+      "grouping": { "enabled": true },
+      "fillStyle": {
+        "framework": { "color": "#E8E8E8", "opacity": 1.0 },
+        "packageExplicit": { "color": "#D4E6F1", "opacity": 1.0 },
+        "packageTransitive": { "color": "#FADBD8", "opacity": 1.0 }
+      }
+    },
+    "export": {
+      "rootPath": "%TEMP%\\SlnDependencyGenTest\\PreGen",
+      "imageFormats": [],
+      "clearContents": true
+    }
+  },
+  "preGeneration": {
+    "enabled": true,
+    "command": "cmd.exe",
+    "arguments": "/c echo pre-generation",
+    "workingDirectory": "",
+    "continueOnFailure": false
+  }
+}

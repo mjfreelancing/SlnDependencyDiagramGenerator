@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "projectName": "With Exclusions",
+    "description": "Packages and frameworks excluded"
+  },
+  "diagramGenerator": {
+    "solution": {
+      "solutionPath": "C:\\Projects\\Exclusions\\Exclusions.sln",
+      "regexToInclude": ["^Src\\\\.*"],
+      "regexToExclude": ["Tests\\\\.*", "Samples\\\\.*"],
+      "packagesToExclude": ["Newtonsoft.Json", "Dapper"],
+      "frameworksToExclude": ["net48", "netstandard2.0"],
+      "individual": { "enabled": true, "includeDependencies": false, "transitiveDepth": 0 },
+      "all": { "enabled": true, "includeDependencies": true, "transitiveDepth": 3 }
+    },
+    "diagram": {
+      "formats": ["Mermaid", "D2"],
+      "direction": "RL",
+      "groupName": "Exclusions Group",
+      "groupNameAlias": "exclusions",
+      "grouping": { "enabled": true },
+      "fillStyle": {
+        "framework": { "color": "#F9E79F", "opacity": 0.85 },
+        "packageExplicit": { "color": "#A3E4D7", "opacity": 0.85 },
+        "packageTransitive": { "color": "#F1948A", "opacity": 0.85 }
+      }
+    },
+    "export": {
+      "rootPath": "%TEMP%\\SlnDependencyGenTest\\Exclusions",
+      "imageFormats": ["pdf"],
+      "clearContents": true
+    }
+  },
+  "preGeneration": {
+    "enabled": true,
+    "command": "dotnet",
+    "arguments": "restore",
+    "workingDirectory": "",
+    "continueOnFailure": true
+  }
+}

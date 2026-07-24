@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "projectName": "Sample Project",
+    "description": "A sample project for integration testing"
+  },
+  "diagramGenerator": {
+    "solution": {
+      "solutionPath": "C:\\Projects\\Sample\\Sample.sln",
+      "regexToInclude": [],
+      "regexToExclude": [],
+      "packagesToExclude": [],
+      "frameworksToExclude": [],
+      "individual": {
+        "enabled": true,
+        "includeDependencies": false,
+        "transitiveDepth": 0
+      },
+      "all": {
+        "enabled": false,
+        "includeDependencies": false,
+        "transitiveDepth": 0
+      }
+    },
+    "diagram": {
+      "formats": ["Mermaid"],
+      "direction": "LR",
+      "groupName": "Sample Group",
+      "groupNameAlias": "sample",
+      "grouping": {
+        "enabled": true
+      },
+      "fillStyle": {
+        "framework": {
+          "color": "#E8E8E8",
+          "opacity": 1.0
+        },
+        "packageExplicit": {
+          "color": "#D4E6F1",
+          "opacity": 1.0
+        },
+        "packageTransitive": {
+          "color": "#FADBD8",
+          "opacity": 1.0
+        }
+      }
+    },
+    "export": {
+      "rootPath": "%TEMP%\\SlnDependencyGenTest\\Output",
+      "imageFormats": [],
+      "clearContents": true
+    }
+  },
+  "preGeneration": {
+    "enabled": false,
+    "command": "",
+    "arguments": "",
+    "workingDirectory": "",
+    "continueOnFailure": false
+  }
+}

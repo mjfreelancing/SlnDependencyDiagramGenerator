@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "projectName": "Both Formats",
+    "description": "D2 and Mermaid format test"
+  },
+  "diagramGenerator": {
+    "solution": {
+      "solutionPath": "C:\\Projects\\Both\\Both.sln",
+      "regexToInclude": [],
+      "regexToExclude": [],
+      "packagesToExclude": [],
+      "frameworksToExclude": [],
+      "individual": { "enabled": true, "includeDependencies": false, "transitiveDepth": 0 },
+      "all": { "enabled": true, "includeDependencies": true, "transitiveDepth": 2 }
+    },
+    "diagram": {
+      "formats": ["D2", "Mermaid"],
+      "direction": "TB",
+      "groupName": "Both Group",
+      "groupNameAlias": "both",
+      "grouping": { "enabled": false },
+      "fillStyle": {
+        "framework": { "color": "#D5F5E3", "opacity": 0.9 },
+        "packageExplicit": { "color": "#AED6F1", "opacity": 0.9 },
+        "packageTransitive": { "color": "#F5CBA7", "opacity": 0.9 }
+      }
+    },
+    "export": {
+      "rootPath": "%TEMP%\\SlnDependencyGenTest\\Both",
+      "imageFormats": ["png", "svg"],
+      "clearContents": false
+    }
+  },
+  "preGeneration": {
+    "enabled": false,
+    "command": "",
+    "arguments": "",
+    "workingDirectory": "",
+    "continueOnFailure": false
+  }
+}

@@ -53,7 +53,9 @@ public class NavigationItemViewModelFixture
             _item.PropertyChanged += (_, e) =>
             {
                 if (e.PropertyName == nameof(NavigationItemViewModel.DisplayName))
+                {
                     raised = true;
+                }
             };
 
             _item.DisplayName = "Test";
