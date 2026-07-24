@@ -236,8 +236,8 @@ public class GenerationServiceFixture
 
             var messages = await CollectMessagesAsync(CancellationToken.None);
 
-            messages.ShouldContain(m => m.Text == "=== Generation Started ===");
-            messages.ShouldContain(m => m.Text.StartsWith("=== Generation Completed ("));
+            messages.ShouldContain(message => message.Text == "=== Generation Started ===");
+            messages.ShouldContain(message => message.Text.StartsWith("=== Generation Completed ("));
             messages.Last().Level.ShouldBe(OutputMessageLevel.Information);
         }
 
@@ -261,7 +261,7 @@ public class GenerationServiceFixture
 
             var messages = await CollectMessagesAsync(CancellationToken.None);
 
-            messages.ShouldContain(m => m.Text == "Processing LibA" && m.Level == OutputMessageLevel.Information);
+            messages.ShouldContain(message => message.Text == "Processing LibA" && message.Level == OutputMessageLevel.Information);
         }
 
         [Fact]
@@ -272,8 +272,7 @@ public class GenerationServiceFixture
 
             var messages = await CollectMessagesAsync(CancellationToken.None);
 
-            messages.ShouldContain(m => m.Text == "Generation failed: Something went wrong"
-                                        && m.Level == OutputMessageLevel.Error);
+            messages.ShouldContain(message => message.Text == "Generation failed: Something went wrong" && message.Level == OutputMessageLevel.Error);
         }
 
         [Fact]
@@ -284,8 +283,7 @@ public class GenerationServiceFixture
 
             var messages = await CollectMessagesAsync(CancellationToken.None);
 
-            messages.ShouldContain(m => m.Text == "Generation cancelled"
-                                        && m.Level == OutputMessageLevel.Warning);
+            messages.ShouldContain(message => message.Text == "Generation cancelled" && message.Level == OutputMessageLevel.Warning);
         }
 
         [Fact]
@@ -296,8 +294,7 @@ public class GenerationServiceFixture
 
             var messages = await CollectMessagesAsync(CancellationToken.None);
 
-            messages.ShouldContain(m => m.Text == "Generation timed out: Timed out"
-                                        && m.Level == OutputMessageLevel.Error);
+            messages.ShouldContain(message => message.Text == "Generation timed out: Timed out" && message.Level == OutputMessageLevel.Error);
         }
 
         [Fact]
@@ -313,9 +310,9 @@ public class GenerationServiceFixture
 
             var messages = await CollectMessagesAsync(CancellationToken.None);
 
-            messages.ShouldContain(m => m.Text == "Pre-generation command completed successfully");
-            messages.ShouldContain(m => m.Text == "Generating diagrams…");
-            messages.ShouldContain(m => m.Text.StartsWith("=== Generation Completed ("));
+            messages.ShouldContain(message => message.Text == "Pre-generation command completed successfully");
+            messages.ShouldContain(message => message.Text == "Generating diagrams…");
+            messages.ShouldContain(message => message.Text.StartsWith("=== Generation Completed ("));
         }
 
         [Fact]
@@ -335,9 +332,9 @@ public class GenerationServiceFixture
 
             var messages = await CollectMessagesAsync(CancellationToken.None);
 
-            messages.ShouldContain(m => m.Text == "Pre-generation command failed: Build failed"
-                                        && m.Level == OutputMessageLevel.Error);
-            messages.ShouldNotContain(m => m.Text == "Generating diagrams…");
+            messages.ShouldContain(message => message.Text == "Pre-generation command failed: Build failed"
+                                        && message.Level == OutputMessageLevel.Error);
+            messages.ShouldNotContain(message => message.Text == "Generating diagrams…");
             _ = _generatorFactory.DidNotReceiveWithAnyArgs().ExecuteAsync(default!, default);
         }
 
@@ -361,9 +358,9 @@ public class GenerationServiceFixture
 
             var messages = await CollectMessagesAsync(CancellationToken.None);
 
-            messages.ShouldContain(m => m.Text.Contains("continuing"));
-            messages.ShouldContain(m => m.Text == "Generating diagrams…");
-            messages.ShouldContain(m => m.Text.StartsWith("=== Generation Completed ("));
+            messages.ShouldContain(message => message.Text.Contains("continuing"));
+            messages.ShouldContain(message => message.Text == "Generating diagrams…");
+            messages.ShouldContain(message => message.Text.StartsWith("=== Generation Completed ("));
         }
 
         [Fact]

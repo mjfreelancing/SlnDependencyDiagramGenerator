@@ -126,9 +126,9 @@ public class CommandLineSetupFixture
         await parseResult.InvokeAsync();
 
         logger.Received(1).Log(
-            Arg.Is<LogLevel>(l => l == LogLevel.Error),
+            Arg.Is<LogLevel>(level => level == LogLevel.Error),
             Arg.Any<EventId>(),
-            Arg.Is<object>(o => o.ToString()!.Contains("run")),
+            Arg.Is<object>(obj => obj.ToString()!.Contains("run")),
             null,
             Arg.Any<Func<object, Exception?, string>>());
     }

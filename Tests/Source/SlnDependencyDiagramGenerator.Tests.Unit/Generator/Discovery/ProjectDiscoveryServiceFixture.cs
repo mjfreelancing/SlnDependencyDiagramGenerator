@@ -172,7 +172,7 @@ public class ProjectDiscoveryServiceFixture
             result[0].Name.ShouldBe("LibA");
 
             _solutionParser.Received(1).BuildParsedProjects(
-                Arg.Is<SolutionParseRequest>(r => r.TargetFramework == "net10.0" && r.MaxTransitiveDepth == 2),
+                Arg.Is<SolutionParseRequest>(request => request.TargetFramework == "net10.0" && request.MaxTransitiveDepth == 2),
                 Arg.Is<IReadOnlyList<SolutionProjectDescriptor>>(list => list.Count == 1));
         }
     }

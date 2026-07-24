@@ -53,7 +53,7 @@ public class DiagramsViewModelFixture
 
             foreach (var format in expectedFormats)
             {
-                _viewModel.FormatToggles.ShouldContain(t => t.Format == format);
+                _viewModel.FormatToggles.ShouldContain(toggle => toggle.Format == format);
             }
         }
 
@@ -75,14 +75,14 @@ public class DiagramsViewModelFixture
 
             var viewModel = new DiagramsViewModel(_store);
 
-            viewModel.FormatToggles.Single(t => t.Format == DiagramFormat.D2).IsChecked.ShouldBeTrue();
-            viewModel.FormatToggles.Single(t => t.Format == DiagramFormat.Mermaid).IsChecked.ShouldBeTrue();
+            viewModel.FormatToggles.Single(toggle => toggle.Format == DiagramFormat.D2).IsChecked.ShouldBeTrue();
+            viewModel.FormatToggles.Single(toggle => toggle.Format == DiagramFormat.Mermaid).IsChecked.ShouldBeTrue();
         }
 
         [Fact]
         public void Should_Add_Format_When_Toggle_Checked()
         {
-            var d2Toggle = _viewModel.FormatToggles.Single(t => t.Format == DiagramFormat.D2);
+            var d2Toggle = _viewModel.FormatToggles.Single(toggle => toggle.Format == DiagramFormat.D2);
 
             d2Toggle.IsChecked = true;
 
@@ -94,7 +94,7 @@ public class DiagramsViewModelFixture
         {
             _formats.Items.Add(DiagramFormat.Mermaid);
 
-            var mermaidToggle = _viewModel.FormatToggles.Single(t => t.Format == DiagramFormat.Mermaid);
+            var mermaidToggle = _viewModel.FormatToggles.Single(toggle => toggle.Format == DiagramFormat.Mermaid);
             mermaidToggle.IsChecked = false;
 
             _formats.Items.ShouldNotContain(DiagramFormat.Mermaid);
@@ -103,7 +103,7 @@ public class DiagramsViewModelFixture
         [Fact]
         public void Should_Sync_Toggle_When_Collection_Changes_Externally()
         {
-            var d2Toggle = _viewModel.FormatToggles.Single(t => t.Format == DiagramFormat.D2);
+            var d2Toggle = _viewModel.FormatToggles.Single(toggle => toggle.Format == DiagramFormat.D2);
 
             _formats.Items.Add(DiagramFormat.D2);
 

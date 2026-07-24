@@ -61,7 +61,7 @@ public class PreGenerationAnalysisServiceFixture
 
             var messages = await _service.RunAsync(CancellationToken.None).ToList();
 
-            messages.Any(m => m.Text.StartsWith("Projects Discovered:")).ShouldBeTrue();
+            messages.Any(message => message.Text.StartsWith("Projects Discovered:")).ShouldBeTrue();
         }
 
         [Fact]
@@ -109,7 +109,7 @@ public class PreGenerationAnalysisServiceFixture
 
             await _discoveryService.Received(1).DiscoverProjectsAsync(
                 Arg.Any<string>(),
-                Arg.Is<string[]>(r => r.Length == 1 && r[0] == expectedRegex[0]),
+                Arg.Is<string[]>(regex => regex.Length == 1 && regex[0] == expectedRegex[0]),
                 Arg.Any<string[]>(),
                 Arg.Any<CancellationToken>());
 
@@ -127,7 +127,7 @@ public class PreGenerationAnalysisServiceFixture
 
             var messages = await _service.RunAsync(CancellationToken.None).ToList();
 
-            messages.Any(m => m.Text == "Analysis cancelled").ShouldBeTrue();
+            messages.Any(message => message.Text == "Analysis cancelled").ShouldBeTrue();
         }
 
         [Fact]
@@ -141,7 +141,7 @@ public class PreGenerationAnalysisServiceFixture
 
             var messages = await _service.RunAsync(CancellationToken.None).ToList();
 
-            messages.Any(m => m.Text.Contains("Analysis failed")).ShouldBeTrue();
+            messages.Any(message => message.Text.Contains("Analysis failed")).ShouldBeTrue();
         }
     }
 

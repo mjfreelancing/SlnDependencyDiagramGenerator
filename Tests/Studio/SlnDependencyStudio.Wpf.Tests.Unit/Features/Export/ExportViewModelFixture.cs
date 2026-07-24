@@ -68,7 +68,7 @@ public class ExportViewModelFixture
 
             foreach (var format in expectedFormats)
             {
-                _viewModel.ImageFormatToggles.ShouldContain(t => t.Format == format);
+                _viewModel.ImageFormatToggles.ShouldContain(toggle => toggle.Format == format);
             }
         }
 
@@ -210,7 +210,7 @@ public class ExportViewModelFixture
         [Fact]
         public void Should_Add_Format_When_Toggle_Checked()
         {
-            var pngToggle = _viewModel.ImageFormatToggles.Single(t => t.Format == DiagramImageFormat.Png);
+            var pngToggle = _viewModel.ImageFormatToggles.Single(toggle => toggle.Format == DiagramImageFormat.Png);
 
             pngToggle.IsChecked = true;
 
@@ -222,7 +222,7 @@ public class ExportViewModelFixture
         {
             _imageFormats.Items.Add(DiagramImageFormat.Svg);
 
-            var svgToggle = _viewModel.ImageFormatToggles.Single(t => t.Format == DiagramImageFormat.Svg);
+            var svgToggle = _viewModel.ImageFormatToggles.Single(toggle => toggle.Format == DiagramImageFormat.Svg);
             svgToggle.IsChecked = false;
 
             _imageFormats.Items.ShouldNotContain(DiagramImageFormat.Svg);
@@ -231,7 +231,7 @@ public class ExportViewModelFixture
         [Fact]
         public void Should_Sync_Toggle_When_Collection_Changes_Externally()
         {
-            var pngToggle = _viewModel.ImageFormatToggles.Single(t => t.Format == DiagramImageFormat.Png);
+            var pngToggle = _viewModel.ImageFormatToggles.Single(toggle => toggle.Format == DiagramImageFormat.Png);
 
             _imageFormats.Items.Add(DiagramImageFormat.Png);
 

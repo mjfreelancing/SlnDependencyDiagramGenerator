@@ -61,7 +61,7 @@ public class RecentProjectsStoreFixture
             _store.Add(@"C:\added.sds");
 
             _service.Received(1).Add(@"C:\added.sds");
-            _store.RecentProjects.ShouldContain(e => e.FilePath == @"C:\added.sds");
+            _store.RecentProjects.ShouldContain(entry => entry.FilePath == @"C:\added.sds");
         }
 
         [Fact]
@@ -98,7 +98,7 @@ public class RecentProjectsStoreFixture
             _store.Remove(@"C:\removed.sds");
 
             _store.RecentProjects.Count.ShouldBe(1);
-            _store.RecentProjects.ShouldNotContain(e => e.FilePath == @"C:\removed.sds");
+            _store.RecentProjects.ShouldNotContain(entry => entry.FilePath == @"C:\removed.sds");
         }
     }
 

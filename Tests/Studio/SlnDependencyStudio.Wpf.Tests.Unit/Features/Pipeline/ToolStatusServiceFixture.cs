@@ -50,7 +50,7 @@ public class ToolStatusServiceFixture
 
             var entries = await sut.ToolStatuses.FirstAsync();
 
-            var d2 = entries.Single(e => e.ToolName == "d2");
+            var d2 = entries.Single(entry => entry.ToolName == "d2");
             d2.IsAvailable.ShouldBeTrue();
             d2.ResolvedPath.ShouldBe(@"C:\tools\d2.exe");
         }
@@ -64,7 +64,7 @@ public class ToolStatusServiceFixture
 
             var entries = await sut.ToolStatuses.FirstAsync();
 
-            var mmdc = entries.Single(e => e.ToolName == "mmdc");
+            var mmdc = entries.Single(entry => entry.ToolName == "mmdc");
             mmdc.IsAvailable.ShouldBeFalse();
         }
 
@@ -97,7 +97,7 @@ public class ToolStatusServiceFixture
             var entries = await sut.ToolStatuses.FirstAsync();
 
             entries.Count.ShouldBe(2);
-            entries.Select(e => e.ToolName).ShouldBe(["d2", "mmdc"], ignoreOrder: true);
+            entries.Select(entry => entry.ToolName).ShouldBe(["d2", "mmdc"], ignoreOrder: true);
         }
 
         [Fact]
@@ -114,7 +114,7 @@ public class ToolStatusServiceFixture
 
             var entries = await sut.ToolStatuses.FirstAsync();
             entries.Count.ShouldBe(2);
-            entries.ShouldContain(e => e.ToolName == "mmdc");
+            entries.ShouldContain(entry => entry.ToolName == "mmdc");
         }
 
         [Fact]
