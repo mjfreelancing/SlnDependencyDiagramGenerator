@@ -226,6 +226,186 @@ public class GenerationServiceFixture
         }
     }
 
+    public class RunAsync : GenerationServiceFixture
+    {
+        [Fact]
+        public async Task Should_Emit_Started_And_Completed_When_Successful()
+        {
+            SetupStoreConfig();
+            SetupGenerator();
+
+            var messages = await CollectMessagesAsync(CancellationToken.None);
+
+            messages.ShouldContain(m => m.Text == "=== Generation Started ===");
+            messages.ShouldContain(m => m.Text.StartsWith("=== Generation Completed ("));
+            messages.Last().Level.ShouldBe(OutputMessageLevel.Information);
+        }
+
+        [Fact]
+        public async Task Should_Stream_Progress_From_Generator()
+        {
+            SetupStoreConfig();
+
+            var generator = Substitute.For<IDependencyGenerator>();
+            generator.OnProgress.Returns(Observable.Return("Processing LibA"));
+
+            _generatorFactory
+                .ExecuteAsync(
+                    Arg.Any<Func<IDependencyGenerator, CancellationToken, Task>>(),
+                    Arg.Any<CancellationToken>())
+                .ReturnsForAnyArgs(callInfo =>
+                {
+                    var operation = callInfo.Arg<Func<IDependencyGenerator, CancellationToken, Task>>();
+                    return operation(generator, callInfo.ArgAt<CancellationToken>(1));
+                });
+
+            var messages = await CollectMessagesAsync(CancellationToken.None);
+
+            messages.ShouldContain(m => m.Text == "Processing LibA" && m.Level == OutputMessageLevel.Information);
+        }
+
+        [Fact]
+        public async Task Should_Emit_Error_When_Generator_Throws()
+        {
+            SetupStoreConfig();
+            SetupGeneratorThatThrows(new InvalidOperationException("Something went wrong"));
+
+            var messages = await CollectMessagesAsync(CancellationToken.None);
+
+            messages.ShouldContain(m => m.Text == "Generation failed: Something went wrong"
+                                        && m.Level == OutputMessageLevel.Error);
+        }
+
+        [Fact]
+        public async Task Should_Emit_Cancelled_When_OperationCanceledException()
+        {
+            SetupStoreConfig();
+            SetupGeneratorThatThrows(new OperationCanceledException());
+
+            var messages = await CollectMessagesAsync(CancellationToken.None);
+
+            messages.ShouldContain(m => m.Text == "Generation cancelled"
+                                        && m.Level == OutputMessageLevel.Warning);
+        }
+
+        [Fact]
+        public async Task Should_Emit_Timeout_Error_When_TimeoutException()
+        {
+            SetupStoreConfig();
+            SetupGeneratorThatThrows(new TimeoutException("Timed out"));
+
+            var messages = await CollectMessagesAsync(CancellationToken.None);
+
+            messages.ShouldContain(m => m.Text == "Generation timed out: Timed out"
+                                        && m.Level == OutputMessageLevel.Error);
+        }
+
+        [Fact]
+        public async Task Should_Run_Generator_After_PreGen_Success()
+        {
+            SetupStoreConfig();
+
+            _preGenEnabled.Value = true;
+            _preGenCommand.Value = "dotnet build";
+
+            SetupPreGenRunner(new PreGenerationCommandResult { Succeeded = true, ExitCode = 0 });
+            SetupGenerator();
+
+            var messages = await CollectMessagesAsync(CancellationToken.None);
+
+            messages.ShouldContain(m => m.Text == "Pre-generation command completed successfully");
+            messages.ShouldContain(m => m.Text == "Generating diagrams…");
+            messages.ShouldContain(m => m.Text.StartsWith("=== Generation Completed ("));
+        }
+
+        [Fact]
+        public async Task Should_Abort_When_PreGen_Fails_Without_Continue()
+        {
+            SetupStoreConfig();
+
+            _preGenEnabled.Value = true;
+            _preGenCommand.Value = "dotnet build";
+
+            SetupPreGenRunner(new PreGenerationCommandResult
+            {
+                Succeeded = false,
+                ExitCode = 3,
+                ErrorMessage = "Build failed"
+            });
+
+            var messages = await CollectMessagesAsync(CancellationToken.None);
+
+            messages.ShouldContain(m => m.Text == "Pre-generation command failed: Build failed"
+                                        && m.Level == OutputMessageLevel.Error);
+            messages.ShouldNotContain(m => m.Text == "Generating diagrams…");
+            _ = _generatorFactory.DidNotReceiveWithAnyArgs().ExecuteAsync(default!, default);
+        }
+
+        [Fact]
+        public async Task Should_Continue_When_PreGen_Fails_With_Continue()
+        {
+            SetupStoreConfig();
+
+            _preGenEnabled.Value = true;
+            _preGenCommand.Value = "dotnet build";
+            _preGenContinueOnFailure.Value = true;
+
+            SetupPreGenRunner(new PreGenerationCommandResult
+            {
+                Succeeded = false,
+                ExitCode = 3,
+                ErrorMessage = "Build failed"
+            });
+
+            SetupGenerator();
+
+            var messages = await CollectMessagesAsync(CancellationToken.None);
+
+            messages.ShouldContain(m => m.Text.Contains("continuing"));
+            messages.ShouldContain(m => m.Text == "Generating diagrams…");
+            messages.ShouldContain(m => m.Text.StartsWith("=== Generation Completed ("));
+        }
+
+        [Fact]
+        public async Task Should_Build_Config_From_Store()
+        {
+            SetupStoreConfig();
+            SetupGenerator();
+
+            await CollectMessagesAsync(CancellationToken.None);
+
+            _store.Received(1).BuildGeneratorConfig();
+        }
+
+        private async Task<IList<OutputMessage>> CollectMessagesAsync(CancellationToken cancellationToken)
+        {
+            return await _service.RunAsync(cancellationToken).ToList();
+        }
+
+        private void SetupStoreConfig()
+        {
+            _store.BuildGeneratorConfig().Returns(new DependencyGeneratorConfig());
+        }
+
+        private void SetupGeneratorThatThrows(Exception exception)
+        {
+            var generator = Substitute.For<IDependencyGenerator>();
+            generator.OnProgress.Returns(Observable.Empty<string>());
+            generator.CreateDiagramsAsync(Arg.Any<DependencyGeneratorConfig>(), Arg.Any<CancellationToken>())
+                .Returns(Task.FromException(exception));
+
+            _generatorFactory
+                .ExecuteAsync(
+                    Arg.Any<Func<IDependencyGenerator, CancellationToken, Task>>(),
+                    Arg.Any<CancellationToken>())
+                .ReturnsForAnyArgs(callInfo =>
+                {
+                    var operation = callInfo.Arg<Func<IDependencyGenerator, CancellationToken, Task>>();
+                    return operation(generator, callInfo.ArgAt<CancellationToken>(1));
+                });
+        }
+    }
+
     private static TestObserver CreateObserver() => new();
 
     private sealed class TestObserver : IObserver<OutputMessage>
