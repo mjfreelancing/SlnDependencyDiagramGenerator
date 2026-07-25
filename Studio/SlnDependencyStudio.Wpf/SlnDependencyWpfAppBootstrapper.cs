@@ -1,6 +1,7 @@
 using AllOverIt.ReactiveUI.Factories;
 using SlnDependencyStudio.Wpf.Features.Application;
 using SlnDependencyStudio.Wpf.Features.Theming;
+using System.Windows;
 
 namespace SlnDependencyStudio.Wpf;
 
@@ -33,7 +34,7 @@ internal sealed class SlnDependencyWpfAppBootstrapper
         }
         catch (Exception ex)
         {
-            // TODO: Decide what to do here
+            MessageBox.Show(ex.Message, "Startup Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 }
