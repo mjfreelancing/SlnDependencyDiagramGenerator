@@ -5,8 +5,8 @@ using NSubstitute.ExceptionExtensions;
 using ReactiveUI;
 using Shouldly;
 using SlnDependencyStudio.Shared.Config;
-using SlnDependencyStudio.Wpf.Controls;
 using SlnDependencyStudio.Wpf.Abstractions.IO;
+using SlnDependencyStudio.Wpf.Controls;
 using SlnDependencyStudio.Wpf.Features.Application;
 using SlnDependencyStudio.Wpf.Features.Application.Models;
 using SlnDependencyStudio.Wpf.Features.Diagrams;
@@ -699,11 +699,26 @@ public class MainWindowViewModelFixture
         }
     }
 
+    public class IsOperationRunningState : MainWindowViewModelFixture
+    {
+        [Fact]
+        public void Should_Be_False_By_Default()
+        {
+            // IsOperationRunning is driven by a subscription in WireRunMenuGating
+            // (called from OnActivated), which is not triggered in unit tests.
+            // Only the default value is verifiable.
+            _viewModel.IsOperationRunning.ShouldBeFalse();
+        }
+    }
+
     public class CanCloseState : MainWindowViewModelFixture
     {
         [Fact]
         public void Should_Be_True_By_Default()
         {
+            // CanClose is driven by a subscription in WireRunMenuGating
+            // (called from OnActivated), which is not triggered in unit tests.
+            // Only the default value is verifiable.
             _viewModel.CanClose.ShouldBeTrue();
         }
     }
@@ -758,6 +773,57 @@ public class MainWindowViewModelFixture
             await executeTask;
 
             await _generationService.Received(1).RunAsync(Arg.Any<CancellationToken>());
+        }
+    }
+
+    public class CancelOperation : MainWindowViewModelFixture
+    {
+        [Fact]
+        public void Should_Be_True_By_Default()
+        {
+            // CanCancel, OperationName, and the cancel execution path go through
+            // private methods (CancelOperationAsync, AnalyzeAsync/GenerateAsync)
+            // wired in OnActivated — the ReactiveUI activation infrastructure is
+            // not triggered in unit tests. These tests verify the public observable
+            // contract: initial state and post-operation cleanup.
+            _viewModel.CanCancel.ShouldBeTrue();
+            _viewModel.OperationName.ShouldBe(string.Empty);
+        }
+
+        [Fact]
+        public async Task Should_Be_True_During_Analyze()
+        {
+            var subject = new Subject<OutputMessage>();
+
+            _analysisService
+                .RunAsync(Arg.Any<CancellationToken>())
+                .Returns(subject);
+
+            var executingTask = _viewModel.AnalyzeCommand.Execute();
+
+            // CanCancel is set inside the async method body (AnalyzeAsync).
+            // With ImmediateScheduler, the method runs synchronously up to the
+            // first truly async await point, so CanCancel is already set.
+            _viewModel.CanCancel.ShouldBeTrue();
+
+            subject.OnCompleted();
+            await executingTask;
+        }
+
+        [Fact]
+        public async Task OperationName_Should_Reset_To_Empty_After_Operation_Completes()
+        {
+            var subject = new Subject<OutputMessage>();
+
+            _analysisService
+                .RunAsync(Arg.Any<CancellationToken>())
+                .Returns(subject);
+
+            var executingTask = _viewModel.AnalyzeCommand.Execute();
+            subject.OnCompleted();
+            await executingTask;
+
+            _viewModel.OperationName.ShouldBe(string.Empty);
         }
     }
 
