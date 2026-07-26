@@ -151,6 +151,7 @@
                                 ItemsSource="{Binding RecentProjects}">
                                 <MenuItem.ItemContainerStyle>
                                     <Style TargetType="MenuItem">
+                                        <Setter Property="Padding" Value="8,8" />
                                         <Setter Property="Command" Value="{Binding DataContext.OpenRecentProjectCommand, RelativeSource={RelativeSource AncestorType=MenuItem}}" />
                                         <Setter Property="CommandParameter" Value="{Binding FilePath}" />
                                         <Setter Property="ToolTip" Value="{Binding FilePath}" />
