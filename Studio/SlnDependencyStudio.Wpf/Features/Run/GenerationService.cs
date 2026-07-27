@@ -9,9 +9,9 @@ using SlnDependencyStudio.Shared.Utils;
 using SlnDependencyStudio.Wpf.DependencyInjection;
 using SlnDependencyStudio.Wpf.Features.Output;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
-using System;
 using System.IO;
 using System.Reactive.Linq;
+using System.Text;
 
 namespace SlnDependencyStudio.Wpf.Features.Run;
 
@@ -141,7 +141,22 @@ internal sealed class GenerationService : IGenerationService
 
         if (preGenResult.ExitCode == StudioExitCode.PreGenerationCommandCancelled.Value)
         {
-            observer.OnNext(Warning("Pre-generation command was cancelled"));
+            var sb = new StringBuilder();
+
+            sb.Append($"Pre-generation command '{preGenConfig.Command}' ");
+
+            if (preGenConfig.Arguments.IsNullOrEmpty())
+            {
+                sb.Append("(with no args) ");
+            }
+            else
+            {
+                sb.Append($"with args '{preGenConfig.Arguments}' ");
+            }
+
+            sb.Append("was cancelled");
+
+            observer.OnNext(Warning(sb.ToString()));
 
             return false;
         }
