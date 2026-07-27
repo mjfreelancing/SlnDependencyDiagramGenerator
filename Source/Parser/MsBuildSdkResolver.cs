@@ -1,4 +1,5 @@
 ﻿using Microsoft.Build.Locator;
+using SlnDependencyDiagramGenerator.Utils;
 using System;
 using System.IO;
 using System.Linq;
@@ -40,11 +41,11 @@ internal static class MsBuildSdkResolver
     private static readonly object SyncRoot = new();
 #endif
 
-    private static bool _isInitialized;
-    private static string _registrationSummary = "MSBuild registration has not yet been attempted.";
-    private static string _registeredInstanceName = "<none>";
-    private static string _registeredInstanceVersion = "<none>";
-    private static string _registeredInstancePath = "<none>";
+    private static bool IsInitialized;
+    private static string RegistrationSummary = "MSBuild registration has not yet been attempted.";
+    private static string RegisteredInstanceName = "<none>";
+    private static string RegisteredInstanceVersion = "<none>";
+    private static string RegisteredInstancePath = "<none>";
 
     /// <summary>
     /// Ensures an MSBuild instance is registered for the current process before any
@@ -53,29 +54,51 @@ internal static class MsBuildSdkResolver
     /// <remarks>
     /// This method is idempotent and thread-safe. It can be called repeatedly from different
     /// parser entry points without re-registering MSBuild.
+    /// <para/>
+    /// MSBuildLocator.RegisterDefaults() and the loaded MSBuild assemblies can modify process-level
+    /// environment variables (e.g. <c>MSBuildSDKPath</c>, <c>MSBUILD_EXE_PATH</c>). This method snapshots the
+    /// environment before registration and restores any changes afterwards, so child processes
+    /// launched later by the host application always inherit the original unmodified environment.
+    /// <para/>
+    /// References:
+    /// <see href="https://learn.microsoft.com/dotnet/core/tools/sdk-errors/netsdk1045#path-environment-variable">NETSDK1045 — MSBuildSDKPath environment variable</see>
+    /// and
+    /// <see href="https://learn.microsoft.com/visualstudio/msbuild/errors/msb4193">MSB4193 — MSBUILD_EXE_PATH environment variable</see>
     /// </remarks>
     public static void EnsureInitialized()
     {
         // Fast path for repeat calls after registration has already happened.
-        if (_isInitialized || MSBuildLocator.IsRegistered)
+        if (IsInitialized || MSBuildLocator.IsRegistered)
         {
-            _isInitialized = true;
+            IsInitialized = true;
 
             return;
         }
 
         lock (SyncRoot)
         {
-            if (_isInitialized || MSBuildLocator.IsRegistered)
+            if (IsInitialized || MSBuildLocator.IsRegistered)
             {
-                _isInitialized = true;
+                IsInitialized = true;
 
                 return;
             }
 
-            RegisterMsBuildInstance();
+            // MSBuildLocator.RegisterDefaults() and the loaded MSBuild assemblies can modify or
+            // introduce process-level environment variables (e.g. MSBuildSDKPath, MSBUILD_EXE_PATH).
+            // Child processes inherit the parent's environment, so any such changes can cause
+            // pre-generation commands like 'dotnet restore' to fail on subsequent invocations.
+            // EnvironmentVariablesMemento captures the state before and restores it after.
+            //
+            // References:
+            //   https://learn.microsoft.com/dotnet/core/tools/sdk-errors/netsdk1045#path-environment-variable
+            //   https://learn.microsoft.com/visualstudio/msbuild/errors/msb4193
+            using (new EnvironmentVariablesMemento())
+            {
+                RegisterMsBuildInstance();
+            }
 
-            _isInitialized = true;
+            IsInitialized = true;
         }
     }
 
@@ -100,10 +123,10 @@ internal static class MsBuildSdkResolver
         builder.AppendLine($"Runtime: {RuntimeInformation.FrameworkDescription}");
         builder.AppendLine($"Process architecture: {RuntimeInformation.ProcessArchitecture}");
         builder.AppendLine($"MSBuildLocator.IsRegistered: {MSBuildLocator.IsRegistered}");
-        builder.AppendLine($"Registration summary: {_registrationSummary}");
-        builder.AppendLine($"Registered instance name: {_registeredInstanceName}");
-        builder.AppendLine($"Registered instance version: {_registeredInstanceVersion}");
-        builder.AppendLine($"Registered instance path: {_registeredInstancePath}");
+        builder.AppendLine($"Registration summary: {RegistrationSummary}");
+        builder.AppendLine($"Registered instance name: {RegisteredInstanceName}");
+        builder.AppendLine($"Registered instance version: {RegisteredInstanceVersion}");
+        builder.AppendLine($"Registered instance path: {RegisteredInstancePath}");
         builder.AppendLine($"Loaded Microsoft.Build assembly: {loadedAssemblyName}");
         builder.AppendLine($"Loaded Microsoft.Build assembly path: {loadedAssemblyPath}");
 
@@ -122,10 +145,10 @@ internal static class MsBuildSdkResolver
         // Let the locator pick the best local instance first (typically .NET SDK MSBuild).
         if (TryRegisterDefaults())
         {
-            _registrationSummary = "Registered using MSBuildLocator.RegisterDefaults().";
-            _registeredInstanceName = "RegisterDefaults";
-            _registeredInstanceVersion = "<auto>";
-            _registeredInstancePath = "<auto>";
+            RegistrationSummary = "Registered using MSBuildLocator.RegisterDefaults().";
+            RegisteredInstanceName = "RegisterDefaults";
+            RegisteredInstanceVersion = "<auto>";
+            RegisteredInstancePath = "<auto>";
 
             return;
         }
@@ -142,10 +165,10 @@ internal static class MsBuildSdkResolver
             {
                 MSBuildLocator.RegisterInstance(instance);
 
-                _registrationSummary = $"Registered using discovered Visual Studio instance '{instance.Name}' ({instance.Version}) at '{instance.MSBuildPath}'.";
-                _registeredInstanceName = instance.Name;
-                _registeredInstanceVersion = instance.Version.ToString();
-                _registeredInstancePath = instance.MSBuildPath;
+                RegistrationSummary = $"Registered using discovered Visual Studio instance '{instance.Name}' ({instance.Version}) at '{instance.MSBuildPath}'.";
+                RegisteredInstanceName = instance.Name;
+                RegisteredInstanceVersion = instance.Version.ToString();
+                RegisteredInstancePath = instance.MSBuildPath;
 
                 return;
             }
@@ -174,7 +197,7 @@ internal static class MsBuildSdkResolver
         }
         catch (Exception exception) when (exception is InvalidOperationException or FileNotFoundException or FileLoadException or BadImageFormatException)
         {
-            _registrationSummary = $"RegisterDefaults failed: {exception.GetType().Name}: {exception.Message}";
+            RegistrationSummary = $"RegisterDefaults failed: {exception.GetType().Name}: {exception.Message}";
 
             return false;
         }
