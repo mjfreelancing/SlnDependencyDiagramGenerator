@@ -166,16 +166,16 @@
                                     <DataTemplate DataType="{x:Type models:RecentProjectEntry}">
                                         <DockPanel>
                                             <Button
-                                                DockPanel.Dock="Right"
                                                 Width="20"
                                                 Height="20"
                                                 Margin="8,0,0,0"
                                                 Padding="0"
                                                 Command="{Binding DataContext.RemoveRecentProjectCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                                 CommandParameter="{Binding FilePath}"
+                                                DockPanel.Dock="Right"
                                                 ToolTip="Remove from recent projects">
                                                 <Button.Style>
-                                                    <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignFlatButton}">
+                                                    <Style BasedOn="{StaticResource MaterialDesignFlatButton}" TargetType="Button">
                                                         <Setter Property="Visibility" Value="Collapsed" />
                                                         <Style.Triggers>
                                                             <DataTrigger Binding="{Binding Exists}" Value="False">
