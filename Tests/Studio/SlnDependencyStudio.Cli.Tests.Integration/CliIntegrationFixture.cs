@@ -108,4 +108,40 @@ public class CliIntegrationFixture
 
         exitCode.ShouldNotBe(StudioCliExitCode.CommandLineParseFailed.Value);
     }
+
+    [Fact]
+    public async Task Validate_With_Verbose_Flag_Should_Not_Parse_Error()
+    {
+        var configFile = Path.Combine(FixturesDir, "valid-config.sds");
+        var exitCode = await CliTestHarness.InvokeAsync($"validate --verbose --cf \"{configFile}\"");
+
+        exitCode.ShouldNotBe(StudioCliExitCode.CommandLineParseFailed.Value);
+    }
+
+    [Fact]
+    public async Task Validate_With_Verbose_Short_Flag_Should_Not_Parse_Error()
+    {
+        var configFile = Path.Combine(FixturesDir, "valid-config.sds");
+        var exitCode = await CliTestHarness.InvokeAsync($"validate -v --cf \"{configFile}\"");
+
+        exitCode.ShouldNotBe(StudioCliExitCode.CommandLineParseFailed.Value);
+    }
+
+    [Fact]
+    public async Task Run_With_Verbose_Flag_Should_Not_Parse_Error()
+    {
+        var configFile = Path.Combine(FixturesDir, "valid-config.sds");
+        var exitCode = await CliTestHarness.InvokeAsync($"run --verbose --cf \"{configFile}\"");
+
+        exitCode.ShouldNotBe(StudioCliExitCode.CommandLineParseFailed.Value);
+    }
+
+    [Fact]
+    public async Task Run_With_Verbose_Short_Flag_Should_Not_Parse_Error()
+    {
+        var configFile = Path.Combine(FixturesDir, "valid-config.sds");
+        var exitCode = await CliTestHarness.InvokeAsync($"run -v --cf \"{configFile}\"");
+
+        exitCode.ShouldNotBe(StudioCliExitCode.CommandLineParseFailed.Value);
+    }
 }
