@@ -1,6 +1,7 @@
-using AllOverIt.Extensions;
+using AllOverIt.Assertion;
 using AllOverIt.Serilog.Sinks.Observable;
 using ReactiveUI;
+using Serilog.Core;
 using Serilog.Events;
 using SlnDependencyStudio.Shared.DependencyInjection;
 using SlnDependencyStudio.Wpf.Abstractions.IO;
@@ -15,16 +16,18 @@ namespace SlnDependencyStudio.Wpf.Features.Output;
 
 /// <summary>
 /// View model for the output panel at the bottom of the main window.
-/// Displays messages from analysis/generation sessions. When <see cref="IsVerbose"/>
-/// is enabled, also streams all application log events from <see cref="IObservableSink"/>.
+/// Displays messages from analysis/generation sessions. The <see cref="IsVerbose"/>
+/// toggle controls the <see cref="LoggingLevelSwitch"/> minimum level, allowing
+/// more verbose log events to stream into the output panel when enabled.
 /// Preferences are persisted under <c>ApplicationSettings.Output</c>.
 /// </summary>
-public sealed class OutputPanelViewModel : ReactiveObject, IStudioScopedDependency
+public sealed class OutputPanelViewModel : ReactiveObject, IStudioScopedDependency, IDisposable
 {
     private readonly IObservableSink _observableSink;
     private readonly IApplicationSettingsService _applicationSettings;
     private readonly IFileSystem _fileSystem;
-    private IDisposable? _verboseSubscription;
+    private readonly LoggingLevelSwitch _levelSwitch;
+    private readonly IDisposable _sinkSubscription;
     private bool _initializing;
 
     private bool _isVerbose;
@@ -72,8 +75,9 @@ public sealed class OutputPanelViewModel : ReactiveObject, IStudioScopedDependen
     }
 
     /// <summary>
-    /// When <see langword="true"/>, all application log events (Information and above)
-    /// also appear in the output panel. Defaults to <see langword="true"/></c>.
+    /// When <see langword="true"/>, the <see cref="LoggingLevelSwitch"/> minimum level
+    /// is lowered to <see cref="LogEventLevel.Debug"/> so more verbose log events appear
+    /// in the output panel. Defaults to <see langword="true"/>.
     /// </summary>
     public bool IsVerbose
     {
@@ -82,14 +86,9 @@ public sealed class OutputPanelViewModel : ReactiveObject, IStudioScopedDependen
         {
             this.RaiseAndSetIfChanged(ref _isVerbose, value);
 
-            if (value)
-            {
-                SubscribeToVerboseLog();
-            }
-            else
-            {
-                UnsubscribeFromVerboseLog();
-            }
+            _levelSwitch.MinimumLevel = value
+                ? LogEventLevel.Debug
+                : LogEventLevel.Information;
 
             PersistIfNotInitializing();
         }
@@ -124,14 +123,17 @@ public sealed class OutputPanelViewModel : ReactiveObject, IStudioScopedDependen
     }
 
     /// <summary>Initializes a new instance of <see cref="OutputPanelViewModel"/>.</summary>
-    /// <param name="observableSink">The Serilog observable sink for verbose log streaming.</param>
+    /// <param name="observableSink">The Serilog observable sink for streaming log events.</param>
+    /// <param name="levelSwitch">The logging level switch that controls the minimum log level.</param>
     /// <param name="applicationSettings">The application settings service for persisting preferences.</param>
     /// <param name="fileSystem">The file system abstraction for saving output.</param>
-    public OutputPanelViewModel(IObservableSink observableSink, IApplicationSettingsService applicationSettings, IFileSystem fileSystem)
+    public OutputPanelViewModel(IObservableSink observableSink, LoggingLevelSwitch levelSwitch,
+        IApplicationSettingsService applicationSettings, IFileSystem fileSystem)
     {
-        _observableSink = observableSink;
-        _applicationSettings = applicationSettings;
-        _fileSystem = fileSystem;
+        _observableSink = observableSink.WhenNotNull();
+        _levelSwitch = levelSwitch.WhenNotNull();
+        _applicationSettings = applicationSettings.WhenNotNull();
+        _fileSystem = fileSystem.WhenNotNull();
 
         // Self-referencing — Messages is owned by this ViewModel.
         var hasContent = Observable
@@ -162,6 +164,13 @@ public sealed class OutputPanelViewModel : ReactiveObject, IStudioScopedDependen
                 await _fileSystem.WriteAllTextAsync(filePath, text);
             }
         }, hasContent);
+
+        // Subscribe to the observable sink unconditionally. The LoggingLevelSwitch controls
+        // which log levels reach the sink — no need for a Where filter here.
+        _sinkSubscription = _observableSink
+            .Select(MapToOutputMessage)
+            .ObserveOn(RxSchedulers.MainThreadScheduler)
+            .Subscribe(Messages.Add);
 
         RestorePreferences();
     }
@@ -198,22 +207,10 @@ public sealed class OutputPanelViewModel : ReactiveObject, IStudioScopedDependen
         _ = _applicationSettings.SaveSettingsAsync();
     }
 
-    private void SubscribeToVerboseLog()
+    /// <inheritdoc />
+    public void Dispose()
     {
-        // Manually managed via IsVerbose setter — disposed on toggle-off. No IDisposable needed on ViewModel.
-        _verboseSubscription?.Dispose();
-
-        _verboseSubscription = _observableSink
-            .Where(logEvent => logEvent.Level >= LogEventLevel.Information)
-            .Select(MapToOutputMessage)
-            .ObserveOn(RxSchedulers.MainThreadScheduler)
-            .Subscribe(Messages.Add);
-    }
-
-    private void UnsubscribeFromVerboseLog()
-    {
-        _verboseSubscription?.Dispose();
-        _verboseSubscription = null;
+        _sinkSubscription.Dispose();
     }
 
     private static OutputMessage MapToOutputMessage(LogEvent logEvent)
@@ -229,7 +226,7 @@ public sealed class OutputPanelViewModel : ReactiveObject, IStudioScopedDependen
 
         return new OutputMessage
         {
-            Text = $"[⚡] {text}",
+            Text = text,
             Level = level
         };
     }

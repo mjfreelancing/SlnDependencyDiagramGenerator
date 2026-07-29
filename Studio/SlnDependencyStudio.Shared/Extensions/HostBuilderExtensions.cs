@@ -1,7 +1,10 @@
 ﻿using AllOverIt.Extensions;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
+using Serilog.Core;
+using Serilog.Events;
 
 namespace SlnDependencyStudio.Shared.Extensions;
 
@@ -38,9 +41,16 @@ public static class HostBuilderExtensions
         public IHostBuilder UseStudioSerilog(Action<IServiceProvider, LoggerConfiguration>? configure = null,
             string? logDirectory = null)
         {
+            var levelSwitch = new LoggingLevelSwitch(LogEventLevel.Information);
+
+            hostBuilder.ConfigureServices((_, services) =>
+            {
+                services.AddSingleton(levelSwitch);
+            });
+
             return hostBuilder.UseSerilog((hostContext, services, configuration) =>
             {
-                configuration.MinimumLevel.Information();
+                configuration.MinimumLevel.ControlledBy(levelSwitch);
 
                 configure?.Invoke(services, configuration);
 

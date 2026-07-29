@@ -47,28 +47,20 @@ public sealed class DependencyGenerator : IDependencyGenerator
     private readonly IValidationInvoker _validationInvoker;
     private readonly ILoggerFactory _loggerFactory;
     private readonly ILogger<DependencyGenerator> _logger;
-    private readonly IProgressReporter _progressReporter;
-
-    /// <inheritdoc />
-    public IObservable<string> OnProgress => _progressReporter.OnProgress;
-
     /// <summary>Initializes a new dependency generator instance with explicitly provided services (for DI).</summary>
     /// <param name="projectDiscovery">The project discovery service used for parsing solutions and resolving dependencies.</param>
     /// <param name="toolDetection">The tool detection service used for checking external CLI tool availability.</param>
     /// <param name="toolPathResolver">Resolves effective tool paths for external CLI invocation.</param>
     /// <param name="validationInvoker">The validation invoker used to validate configuration before generation.</param>
     /// <param name="loggerFactory">The logger factory used to create loggers for the generator and renderers.</param>
-    /// <param name="progressReporter">The shared progress reporter for streaming progress to callers.</param>
     public DependencyGenerator(IProjectDiscoveryService projectDiscovery, IToolDetectionService toolDetection,
-        IToolPathResolver toolPathResolver, IValidationInvoker validationInvoker, ILoggerFactory loggerFactory,
-        IProgressReporter progressReporter)
+        IToolPathResolver toolPathResolver, IValidationInvoker validationInvoker, ILoggerFactory loggerFactory)
     {
         _projectDiscovery = projectDiscovery.WhenNotNull();
         _toolDetection = toolDetection.WhenNotNull();
         _toolPathResolver = toolPathResolver.WhenNotNull();
         _loggerFactory = loggerFactory.WhenNotNull();
         _validationInvoker = validationInvoker.WhenNotNull();
-        _progressReporter = progressReporter.WhenNotNull();
         _logger = loggerFactory.CreateLogger<DependencyGenerator>();
     }
 
@@ -111,12 +103,13 @@ public sealed class DependencyGenerator : IDependencyGenerator
 
         if (targetFrameworks.Length == 0)
         {
-            _progressReporter.Report($"No target frameworks discovered in {Path.GetFileName(solutionPath)}", _logger);
+            _logger.LogDebug("No target frameworks discovered in {SolutionPath}", Path.GetFileName(solutionPath));
 
             return;
         }
 
-        _progressReporter.Report($"Discovered {targetFrameworks.Length} target framework(s): {string.Join(", ", targetFrameworks)}", _logger);
+        _logger.LogDebug("Discovered {TargetFrameworkCount} target framework(s): {TargetFrameworks}",
+            targetFrameworks.Length, string.Join(", ", targetFrameworks));
 
         var renderers = GetRenderers(configuration);
 
@@ -157,7 +150,7 @@ public sealed class DependencyGenerator : IDependencyGenerator
                 continue;
             }
 
-            _progressReporter.Report($"Processing target framework: {targetFramework}", _logger);
+            _logger.LogDebug("Processing target framework: {TargetFramework}", targetFramework);
 
             foreach (var project in allProjects)
             {
@@ -179,20 +172,20 @@ public sealed class DependencyGenerator : IDependencyGenerator
                 ClearFolder(exportPath);
             }
 
-            _progressReporter.Report($"Exporting summary for {targetFramework}…", _logger);
+            _logger.LogDebug("Exporting summary for {TargetFramework}…", targetFramework);
 
             await ExportAsSummaryAsync(exportPath, solutionProjects, cancellationToken).ConfigureAwait(false);
 
             if (configuration.Solution.Individual.Enabled)
             {
-                _progressReporter.Report($"Generating per-project diagrams for {targetFramework}…", _logger);
+                _logger.LogDebug("Generating per-project diagrams for {TargetFramework}…", targetFramework);
 
                 await ExportAsIndividualAsync(configuration, targetFramework, exportPath, solutionProjects, renderers, cancellationToken).ConfigureAwait(false);
             }
 
             if (configuration.Solution.All.Enabled)
             {
-                _progressReporter.Report($"Generating all-projects diagram for {targetFramework}…", _logger);
+                _logger.LogDebug("Generating all-projects diagram for {TargetFramework}…", targetFramework);
 
                 await ExportAsAllAsync(configuration, targetFramework, exportPath, solutionProjects, renderers, cancellationToken).ConfigureAwait(false);
             }
@@ -235,7 +228,7 @@ public sealed class DependencyGenerator : IDependencyGenerator
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                _progressReporter.Report($"  {renderer.FileExtension}: {scopedProject.Name}", _logger);
+                _logger.LogDebug("  {FileExtension}: {ProjectName}", renderer.FileExtension, scopedProject.Name);
 
                 var packagesWithMultipleVersions = GetDeepOrderedDistinctPackageDependencies(scopedProject, solutionProjects, kvp => kvp.Count() > 1)
                     .ToDictionary(kvp => kvp.Key, kvp => GetDiagramPackageGroupId(kvp.Key));
@@ -289,8 +282,8 @@ public sealed class DependencyGenerator : IDependencyGenerator
             .Distinct()
             .Select<DiagramFormat, IDiagramRenderer>(diagramFormat => diagramFormat switch
             {
-                DiagramFormat.Mermaid => new MermaidDiagramRenderer(diagramOptions, _progressReporter, _toolPathResolver, _loggerFactory.CreateLogger<MermaidDiagramRenderer>()),
-                DiagramFormat.D2 => new D2DiagramRenderer(diagramOptions, _progressReporter, _toolPathResolver, _loggerFactory.CreateLogger<D2DiagramRenderer>()),
+                DiagramFormat.Mermaid => new MermaidDiagramRenderer(diagramOptions, _toolPathResolver, _loggerFactory.CreateLogger<MermaidDiagramRenderer>()),
+                DiagramFormat.D2 => new D2DiagramRenderer(diagramOptions, _toolPathResolver, _loggerFactory.CreateLogger<D2DiagramRenderer>()),
                 _ => throw new ArgumentOutOfRangeException(nameof(diagramFormat))
             })];
     }
@@ -419,13 +412,13 @@ public sealed class DependencyGenerator : IDependencyGenerator
 
         var filename = Path.Combine(exportPath, SummaryDependencyGenerator.MarkdownFilename);
 
-        _progressReporter.Report($"Exporting Summary: \"{filename}\"", _logger);
+        _logger.LogDebug("Exporting Summary: \"{Filename}\"", filename);
 
         await File
             .WriteAllTextAsync(filename, content, cancellationToken)
             .ConfigureAwait(false);
 
-        _progressReporter.Report("Export complete", _logger);
+        _logger.LogDebug("Export complete");
     }
 
     private static string GetProjectName(ProjectReference projectReference)

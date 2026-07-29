@@ -21,12 +21,8 @@ public class DiagramRendererBaseFixture
     {
         public override string FileExtension => ".test";
 
-        public TestDiagramRenderer(
-            GeneratorDiagramOptions options,
-            IProgressReporter progressReporter,
-            IToolPathResolver toolPathResolver,
-            ILogger logger)
-            : base(options, progressReporter, toolPathResolver, logger)
+        public TestDiagramRenderer(GeneratorDiagramOptions options, IToolPathResolver toolPathResolver, ILogger logger)
+            : base(options, toolPathResolver, logger)
         {
         }
 
@@ -406,7 +402,6 @@ public class DiagramRendererBaseFixture
     {
         return new TestDiagramRenderer(
             options ?? DefaultOptions(),
-            Substitute.For<IProgressReporter>(),
             Substitute.For<IToolPathResolver>(),
             Substitute.For<ILogger>());
     }

@@ -1,12 +1,12 @@
 using AllOverIt.Serilog.Sinks.Observable;
 using NSubstitute;
+using Serilog.Core;
+using Serilog.Events;
 using Shouldly;
 using SlnDependencyStudio.Wpf.Abstractions.IO;
 using SlnDependencyStudio.Wpf.Features.Application;
 using SlnDependencyStudio.Wpf.Features.Application.Models;
 using SlnDependencyStudio.Wpf.Features.Output;
-using Serilog.Events;
-using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
@@ -19,7 +19,9 @@ public class OutputPanelViewModelFixture
     private readonly IObservableSink _observableSink = Substitute.For<IObservableSink>();
     private readonly IApplicationSettingsService _appSettings = Substitute.For<IApplicationSettingsService>();
     private readonly IFileSystem _fileSystem = Substitute.For<IFileSystem>();
+    private readonly LoggingLevelSwitch _levelSwitch = new(LogEventLevel.Information);
     private readonly ApplicationSettings _settings = new();
+    private readonly Subject<LogEvent> _sinkSubject = new();
     private readonly OutputPanelViewModel _viewModel;
 
     public OutputPanelViewModelFixture()
@@ -27,7 +29,13 @@ public class OutputPanelViewModelFixture
         _appSettings.CurrentSettings.Returns(_settings);
         _appSettings.CurrentState.Returns(new ApplicationState());
 
-        _viewModel = new OutputPanelViewModel(_observableSink, _appSettings, _fileSystem);
+        // Wire the mock observable sink to the subject so tests can push events.
+        _observableSink
+            .Subscribe(Arg.Any<IObserver<LogEvent>>())
+            .Returns(Disposable.Empty)
+            .AndDoes(callInfo => _sinkSubject.Subscribe(callInfo.Arg<IObserver<LogEvent>>()));
+
+        _viewModel = new OutputPanelViewModel(_observableSink, _levelSwitch, _appSettings, _fileSystem);
     }
 
     public class Construction : OutputPanelViewModelFixture
@@ -56,7 +64,7 @@ public class OutputPanelViewModelFixture
         {
             _settings.Output.WrapContent = true;
 
-            var vm = new OutputPanelViewModel(_observableSink, _appSettings, _fileSystem);
+            var vm = new OutputPanelViewModel(_observableSink, _levelSwitch, _appSettings, _fileSystem);
 
             vm.WrapContent.ShouldBeTrue();
         }
@@ -66,7 +74,7 @@ public class OutputPanelViewModelFixture
         {
             _settings.Output.IsVerboseLogging = false;
 
-            var vm = new OutputPanelViewModel(_observableSink, _appSettings, _fileSystem);
+            var vm = new OutputPanelViewModel(_observableSink, _levelSwitch, _appSettings, _fileSystem);
 
             vm.IsVerbose.ShouldBeFalse();
         }
@@ -121,53 +129,22 @@ public class OutputPanelViewModelFixture
     public class VerboseSubscription : OutputPanelViewModelFixture
     {
         [Fact]
-        public void Should_Add_Messages_When_Verbose_And_Events_Emitted()
+        public void Should_Add_Messages_When_Events_Emitted()
         {
-            var subject = new Subject<LogEvent>();
-            _observableSink.Subscribe(Arg.Any<IObserver<LogEvent>>())
-                .Returns(Disposable.Empty)
-                .AndDoes(ci => subject.Subscribe(ci.Arg<IObserver<LogEvent>>()));
-
-            _viewModel.IsVerbose = true;
-
             var logEvent = CreateLogEvent(LogEventLevel.Information, "Test message");
 
-            subject.OnNext(logEvent);
+            _sinkSubject.OnNext(logEvent);
 
             _viewModel.Messages.Count.ShouldBe(1);
-            _viewModel.Messages[0].Text.ShouldBe("[⚡] Test message");
-        }
-
-        [Fact]
-        public void Should_Not_Add_Messages_Below_Information()
-        {
-            var subject = new Subject<LogEvent>();
-            _observableSink.Subscribe(Arg.Any<IObserver<LogEvent>>())
-                .Returns(Disposable.Empty)
-                .AndDoes(ci => subject.Subscribe(ci.Arg<IObserver<LogEvent>>()));
-
-            _viewModel.IsVerbose = true;
-
-            var logEvent = CreateLogEvent(LogEventLevel.Debug, "Debug message");
-
-            subject.OnNext(logEvent);
-
-            _viewModel.Messages.ShouldBeEmpty();
+            _viewModel.Messages[0].Text.ShouldBe("Test message");
         }
 
         [Fact]
         public void Should_Color_Errors_As_Error()
         {
-            var subject = new Subject<LogEvent>();
-            _observableSink.Subscribe(Arg.Any<IObserver<LogEvent>>())
-                .Returns(Disposable.Empty)
-                .AndDoes(ci => subject.Subscribe(ci.Arg<IObserver<LogEvent>>()));
-
-            _viewModel.IsVerbose = true;
-
             var logEvent = CreateLogEvent(LogEventLevel.Error, "Error message");
 
-            subject.OnNext(logEvent);
+            _sinkSubject.OnNext(logEvent);
 
             _viewModel.Messages[0].Level.ShouldBe(OutputMessageLevel.Error);
         }
@@ -175,27 +152,26 @@ public class OutputPanelViewModelFixture
         [Fact]
         public void Should_Color_Warnings_As_Warning()
         {
-            var subject = new Subject<LogEvent>();
-            _observableSink.Subscribe(Arg.Any<IObserver<LogEvent>>())
-                .Returns(Disposable.Empty)
-                .AndDoes(ci => subject.Subscribe(ci.Arg<IObserver<LogEvent>>()));
-
-            _viewModel.IsVerbose = true;
-
             var logEvent = CreateLogEvent(LogEventLevel.Warning, "Warning message");
 
-            subject.OnNext(logEvent);
+            _sinkSubject.OnNext(logEvent);
 
             _viewModel.Messages[0].Level.ShouldBe(OutputMessageLevel.Warning);
         }
 
         [Fact]
-        public void Should_Dispose_Subscription_When_Toggled_Off()
+        public void Should_Update_LevelSwitch_When_Toggled()
         {
-            _viewModel.IsVerbose = true;
+            // Default settings have IsVerboseLogging = true, so the switch starts at Debug.
+            _levelSwitch.MinimumLevel.ShouldBe(LogEventLevel.Debug);
+
             _viewModel.IsVerbose = false;
 
-            // No assertion needed — just verifying no exception on double-dispose
+            _levelSwitch.MinimumLevel.ShouldBe(LogEventLevel.Information);
+
+            _viewModel.IsVerbose = true;
+
+            _levelSwitch.MinimumLevel.ShouldBe(LogEventLevel.Debug);
         }
 
         private static LogEvent CreateLogEvent(LogEventLevel level, string message)

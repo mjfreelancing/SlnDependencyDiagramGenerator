@@ -182,12 +182,7 @@ internal sealed class GenerationService : IGenerationService
         observer.OnNext(Info("Generating diagrams…"));
 
         await _generatorFactory
-            .ExecuteAsync(async (generator, token) =>
-            {
-                using var progressSub = generator.OnProgress.Subscribe(line => observer.OnNext(Info(line)));
-
-                await generator.CreateDiagramsAsync(config, token);
-            }, cancellationToken)
+            .ExecuteAsync((generator, token) => generator.CreateDiagramsAsync(config, token), cancellationToken)
             .ConfigureAwait(false);
     }
 

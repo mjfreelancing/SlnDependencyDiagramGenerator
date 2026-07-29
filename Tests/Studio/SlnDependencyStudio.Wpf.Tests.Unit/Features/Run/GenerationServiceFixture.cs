@@ -200,30 +200,6 @@ public class GenerationServiceFixture
             observer.Messages.ShouldContain(message => message.Text == "Generating diagrams…");
         }
 
-        [Fact]
-        public async Task Should_Stream_Progress_From_Generator()
-        {
-            var observer = CreateObserver();
-            var generator = Substitute.For<IDependencyGenerator>();
-
-            generator.OnProgress.Returns(Observable.Return("Processing LibA"));
-
-            _generatorFactory
-                .ExecuteAsync(
-                    Arg.Any<Func<IDependencyGenerator, CancellationToken, Task>>(),
-                    Arg.Any<CancellationToken>())
-                .Returns(callInfo =>
-                {
-                    var operation = callInfo.Arg<Func<IDependencyGenerator, CancellationToken, Task>>();
-                    return operation(generator, callInfo.Arg<CancellationToken>());
-                });
-
-            var config = new DependencyGeneratorConfig();
-
-            await _service.RunDiagramGenerationAsync(observer, config, CancellationToken.None);
-
-            observer.Messages.ShouldContain(message => message.Text == "Processing LibA" && message.Level == OutputMessageLevel.Information);
-        }
     }
 
     public class RunAsync : GenerationServiceFixture
@@ -239,29 +215,6 @@ public class GenerationServiceFixture
             messages.ShouldContain(message => message.Text == "=== Generation Started ===");
             messages.ShouldContain(message => message.Text.StartsWith("=== Generation Completed ("));
             messages.Last().Level.ShouldBe(OutputMessageLevel.Information);
-        }
-
-        [Fact]
-        public async Task Should_Stream_Progress_From_Generator()
-        {
-            SetupStoreConfig();
-
-            var generator = Substitute.For<IDependencyGenerator>();
-            generator.OnProgress.Returns(Observable.Return("Processing LibA"));
-
-            _generatorFactory
-                .ExecuteAsync(
-                    Arg.Any<Func<IDependencyGenerator, CancellationToken, Task>>(),
-                    Arg.Any<CancellationToken>())
-                .ReturnsForAnyArgs(callInfo =>
-                {
-                    var operation = callInfo.Arg<Func<IDependencyGenerator, CancellationToken, Task>>();
-                    return operation(generator, callInfo.ArgAt<CancellationToken>(1));
-                });
-
-            var messages = await CollectMessagesAsync(CancellationToken.None);
-
-            messages.ShouldContain(message => message.Text == "Processing LibA" && message.Level == OutputMessageLevel.Information);
         }
 
         [Fact]
@@ -387,7 +340,6 @@ public class GenerationServiceFixture
         private void SetupGeneratorThatThrows(Exception exception)
         {
             var generator = Substitute.For<IDependencyGenerator>();
-            generator.OnProgress.Returns(Observable.Empty<string>());
             generator.CreateDiagramsAsync(Arg.Any<DependencyGeneratorConfig>(), Arg.Any<CancellationToken>())
                 .Returns(Task.FromException(exception));
 
@@ -436,7 +388,6 @@ public class GenerationServiceFixture
     private void SetupGenerator()
     {
         var generator = Substitute.For<IDependencyGenerator>();
-        generator.OnProgress.Returns(Observable.Empty<string>());
 
         _generatorFactory
             .ExecuteAsync(

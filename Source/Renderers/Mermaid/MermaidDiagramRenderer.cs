@@ -25,12 +25,10 @@ internal sealed class MermaidDiagramRenderer : DiagramRendererBase
 
     /// <summary>Initializes a new Mermaid diagram renderer.</summary>
     /// <param name="options">The diagram options.</param>
-    /// <param name="progressReporter">Optional shared progress reporter for streaming to callers.</param>
     /// <param name="toolPathResolver">Resolves effective tool paths for external CLI invocation.</param>
     /// <param name="logger">A logger for progress and diagnostics.</param>
-    public MermaidDiagramRenderer(GeneratorDiagramOptions options, IProgressReporter progressReporter,
-        IToolPathResolver toolPathResolver, ILogger<MermaidDiagramRenderer> logger)
-        : base(options, progressReporter, toolPathResolver, logger)
+    public MermaidDiagramRenderer(GeneratorDiagramOptions options, IToolPathResolver toolPathResolver, ILogger<MermaidDiagramRenderer> logger)
+        : base(options, toolPathResolver, logger)
     {
     }
 
@@ -149,7 +147,7 @@ internal sealed class MermaidDiagramRenderer : DiagramRendererBase
     protected override async Task ExportImageFileAsync(string diagramFileName, DiagramImageFormat format, CancellationToken cancellationToken)
     {
         var imageFileName = Path.ChangeExtension(diagramFileName, format.ToString().ToLowerInvariant());
-        ProgressReporter.Report($"  Exporting {format}: {Path.GetFileName(imageFileName)}", Logger);
+        Logger.LogDebug("  Exporting {Format}: {FileName}", format, Path.GetFileName(imageFileName));
 
         var stopwatch = Stopwatch.StartNew();
 
@@ -181,7 +179,7 @@ internal sealed class MermaidDiagramRenderer : DiagramRendererBase
         stopwatch.Stop();
 
         var elapsed = FormatElapsed(stopwatch.Elapsed);
-        ProgressReporter.Report($"  Export complete ({elapsed})", Logger);
+        Logger.LogDebug("  Export complete ({Elapsed})", elapsed);
     }
 
     private static DiagramIrNode? FindNode(DiagramIntermediateRepresentation diagramRepresentation, string alias)

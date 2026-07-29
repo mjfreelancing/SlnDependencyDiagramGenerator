@@ -22,7 +22,6 @@ public class DependencyGeneratorFixture
     private readonly IToolPathResolver _toolPathResolver = Substitute.For<IToolPathResolver>();
     private readonly IValidationInvoker _validationInvoker = Substitute.For<IValidationInvoker>();
     private readonly ILoggerFactory _loggerFactory = Substitute.For<ILoggerFactory>();
-    private readonly IProgressReporter _progressReporter = Substitute.For<IProgressReporter>();
     private readonly ILogger<DependencyGenerator> _logger = Substitute.For<ILogger<DependencyGenerator>>();
 
     public class ValidateConfiguration : DependencyGeneratorFixture
@@ -116,9 +115,12 @@ public class DependencyGeneratorFixture
 
             await sut.CreateDiagramsAsync(config, CancellationToken.None);
 
-            _progressReporter.Received(1).Report(
-                Arg.Is<string>(message => message.Contains("No target frameworks discovered")),
-                Arg.Any<ILogger>());
+            _logger.Received(1).Log(
+                LogLevel.Debug,
+                Arg.Any<EventId>(),
+                Arg.Is<object>(o => o.ToString()!.Contains("No target frameworks discovered")),
+                null,
+                Arg.Any<Func<object, Exception?, string>>());
 
             await _projectDiscovery.DidNotReceive().ParseProjectsAsync(
                 Arg.Any<SolutionParseRequest>(), Arg.Any<CancellationToken>());
@@ -150,9 +152,12 @@ public class DependencyGeneratorFixture
 
             await sut.CreateDiagramsAsync(config, CancellationToken.None);
 
-            _progressReporter.Received(1).Report(
-                Arg.Is<string>(message => message.Contains("Discovered 2 target framework(s)")),
-                Arg.Any<ILogger>());
+            _logger.Received(1).Log(
+                LogLevel.Debug,
+                Arg.Any<EventId>(),
+                Arg.Is<object>(o => o.ToString()!.Contains("Discovered 2 target framework(s)")),
+                null,
+                Arg.Any<Func<object, Exception?, string>>());
         }
 
         [Fact]
@@ -297,14 +302,6 @@ public class DependencyGeneratorFixture
         }
 
         [Fact]
-        public void Should_Expose_Progress_Observable()
-        {
-            var sut = CreateSut();
-
-            sut.OnProgress.ShouldNotBeNull();
-        }
-
-        [Fact]
         public async Task Should_Not_Check_Tools_When_No_Formats_Are_Configured()
         {
             var sut = CreateSut();
@@ -369,7 +366,6 @@ public class DependencyGeneratorFixture
     {
         _loggerFactory.CreateLogger<DependencyGenerator>().Returns(_logger);
 
-        return new DependencyGenerator(_projectDiscovery, _toolDetection, _toolPathResolver,
-            _validationInvoker, _loggerFactory, _progressReporter);
+        return new DependencyGenerator(_projectDiscovery, _toolDetection, _toolPathResolver, _validationInvoker, _loggerFactory);
     }
 }

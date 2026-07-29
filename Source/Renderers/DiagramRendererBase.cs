@@ -24,12 +24,6 @@ internal abstract class DiagramRendererBase : IDiagramRenderer
     /// <summary>The logger used for progress and diagnostics.</summary>
     protected readonly ILogger Logger;
 
-    /// <summary>
-    /// Shared progress reporter. When set, key progress messages are reported
-    /// here alongside normal logging, so callers can stream them to a UI.
-    /// </summary>
-    protected readonly IProgressReporter ProgressReporter;
-
     /// <summary>Resolves tool paths for external CLI invocation.</summary>
     protected readonly IToolPathResolver ToolPathResolver;
 
@@ -38,14 +32,12 @@ internal abstract class DiagramRendererBase : IDiagramRenderer
 
     /// <summary>Initializes a new renderer base instance.</summary>
     /// <param name="options">The diagram options.</param>
-    /// <param name="progressReporter">Shared progress reporter for streaming to callers.</param>
     /// <param name="toolPathResolver">Resolves effective tool paths for external invocation.</param>
     /// <param name="logger">A logger for progress and diagnostics.</param>
-    protected DiagramRendererBase(GeneratorDiagramOptions options, IProgressReporter progressReporter,
+    protected DiagramRendererBase(GeneratorDiagramOptions options,
         IToolPathResolver toolPathResolver, ILogger logger)
     {
         Options = options.WhenNotNull();
-        ProgressReporter = progressReporter.WhenNotNull();
         ToolPathResolver = toolPathResolver.WhenNotNull();
         Logger = logger.WhenNotNull();
     }
@@ -70,13 +62,14 @@ internal abstract class DiagramRendererBase : IDiagramRenderer
         var fileName = Path.Combine(exportPath, $"{baseName}.{FileExtension}");
 
         var relativeFileName = Path.GetFileName(fileName);
-        ProgressReporter.Report($"  {targetFramework}/{FileExtension}: Creating {relativeFileName}", Logger);
+
+        Logger.LogDebug("  {TargetFramework}/{FileExtension}: Creating {RelativeFileName}", targetFramework, FileExtension, relativeFileName);
 
         await File
             .WriteAllTextAsync(fileName, content, cancellationToken)
             .ConfigureAwait(false);
 
-        ProgressReporter.Report($"  {targetFramework}/{FileExtension}: Created {relativeFileName}", Logger);
+        Logger.LogDebug("  {TargetFramework}/{FileExtension}: Created {RelativeFileName}", targetFramework, FileExtension, relativeFileName);
 
         foreach (var format in imageFormats)
         {

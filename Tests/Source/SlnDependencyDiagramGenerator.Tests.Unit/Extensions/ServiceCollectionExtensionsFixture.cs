@@ -90,18 +90,6 @@ public class ServiceCollectionExtensionsFixture
     }
 
     [Fact]
-    public void Should_Register_ProgressReporter_As_Singleton()
-    {
-        var provider = CreateServiceProvider();
-
-        var instance1 = provider.GetRequiredService<IProgressReporter>();
-        var instance2 = provider.GetRequiredService<IProgressReporter>();
-
-        instance1.ShouldNotBeNull();
-        instance1.ShouldBeSameAs(instance2);
-    }
-
-    [Fact]
     public void Should_Register_DiagramRenderers()
     {
         var provider = CreateServiceProvider();

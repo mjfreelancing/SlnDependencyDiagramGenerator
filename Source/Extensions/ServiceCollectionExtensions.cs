@@ -44,7 +44,6 @@ public static class ServiceCollectionExtensions
             services.AddSingleton<ToolPathOverridesProvider>(() => []);
             services.AddScoped<IToolPathResolver, ToolPathResolver>();
             services.AddScoped<IDependencyGenerator, DependencyGenerator>();
-            services.AddSingleton<IProgressReporter, ProgressReporter>();
             services.AddScoped<IDiagramRenderer, D2DiagramRenderer>();
             services.AddScoped<IDiagramRenderer, MermaidDiagramRenderer>();
 
