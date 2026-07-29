@@ -42,7 +42,7 @@ internal static class CliTestHarness
         var root = new CommandLineSetup(CancellationToken.None)
             .AddValidate(validateHandler, code => exitCode = code)
             .AddRun(runHandler, code => exitCode = code)
-            .Build(logger);
+            .Build(logger, out _);
 
         var parseResult = root.Parse(args);
 

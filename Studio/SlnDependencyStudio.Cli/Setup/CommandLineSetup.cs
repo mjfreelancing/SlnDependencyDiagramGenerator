@@ -69,6 +69,7 @@ internal sealed class CommandLineSetup
         {
             var configFilename = parseResult.GetValue(configFileOption)!;
             var exitCode = await handler.HandleAsync(configFilename, _cancellationToken);
+
             setExitCode(exitCode);
         });
 
@@ -79,9 +80,15 @@ internal sealed class CommandLineSetup
 
     /// <summary>Builds the root command with all registered subcommands and the shared config file option.</summary>
     /// <param name="logger">The logger used by the root fallback action when no subcommand is matched.</param>
+    /// <param name="verboseOption">The verbose option registered on all subcommands.</param>
     /// <returns>The configured <see cref="RootCommand"/>.</returns>
-    public RootCommand Build(ILogger logger)
+    public RootCommand Build(ILogger logger, out Option<bool> verboseOption)
     {
+        verboseOption = new Option<bool>("--verbose", "-v")
+        {
+            Description = "Enable verbose logging"
+        };
+
         var root = new RootCommand("SlnDependencyStudio CLI — dependency diagram generation")
         {
             CreateConfigFileOption()
@@ -89,6 +96,7 @@ internal sealed class CommandLineSetup
 
         foreach (var command in _commands)
         {
+            command.Add(verboseOption);
             root.Add(command);
         }
 

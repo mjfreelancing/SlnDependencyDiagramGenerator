@@ -18,7 +18,7 @@ public class CommandLineSetupFixture
         var root = setup
             .AddRun(Substitute.For<ICommandLineRunHandler>(), _ => { })
             .AddValidate(Substitute.For<ICommandLineValidateHandler>(), _ => { })
-            .Build(Substitute.For<ILogger>());
+            .Build(Substitute.For<ILogger>(), out _);
 
         root.Children.Any(child => child is Command cmd && cmd.Name == "validate").ShouldBeTrue();
     }
@@ -31,7 +31,7 @@ public class CommandLineSetupFixture
         var root = setup
             .AddRun(Substitute.For<ICommandLineRunHandler>(), _ => { })
             .AddValidate(Substitute.For<ICommandLineValidateHandler>(), _ => { })
-            .Build(Substitute.For<ILogger>());
+            .Build(Substitute.For<ILogger>(), out _);
 
         root.Children.Any(child => child is Command cmd && cmd.Name == "run").ShouldBeTrue();
     }
@@ -42,7 +42,7 @@ public class CommandLineSetupFixture
         var root = new CommandLineSetup(CancellationToken.None)
             .AddRun(Substitute.For<ICommandLineRunHandler>(), _ => { })
             .AddValidate(Substitute.For<ICommandLineValidateHandler>(), _ => { })
-            .Build(Substitute.For<ILogger>());
+            .Build(Substitute.For<ILogger>(), out _);
 
         // Verify --cf parses at the root level (reachable without a subcommand)
         var parseResult = root.Parse("--cf file.sds");
@@ -60,7 +60,7 @@ public class CommandLineSetupFixture
 
         var root = new CommandLineSetup(CancellationToken.None)
             .AddRun(handler, _ => { })
-            .Build(Substitute.For<ILogger>());
+            .Build(Substitute.For<ILogger>(), out _);
 
         // Verify --cf is recognised under the run subcommand
         var parseResult = root.Parse("run --cf file.sds");
@@ -82,7 +82,7 @@ public class CommandLineSetupFixture
 
         var root = new CommandLineSetup(CancellationToken.None)
             .AddValidate(handler, code => exitCode = code)
-            .Build(Substitute.For<ILogger>());
+            .Build(Substitute.For<ILogger>(), out _);
 
         var parseResult = root.Parse("validate --cf other.sds");
         await parseResult.InvokeAsync();
@@ -103,7 +103,7 @@ public class CommandLineSetupFixture
 
         var root = new CommandLineSetup(CancellationToken.None)
             .AddRun(handler, code => exitCode = code)
-            .Build(Substitute.For<ILogger>());
+            .Build(Substitute.For<ILogger>(), out _);
 
         var parseResult = root.Parse("run --cf test.sds");
         await parseResult.InvokeAsync();
@@ -120,7 +120,7 @@ public class CommandLineSetupFixture
         var root = new CommandLineSetup(CancellationToken.None)
             .AddRun(Substitute.For<ICommandLineRunHandler>(), _ => { })
             .AddValidate(Substitute.For<ICommandLineValidateHandler>(), _ => { })
-            .Build(logger);
+            .Build(logger, out _);
 
         var parseResult = root.Parse("--cf test.sds");
         await parseResult.InvokeAsync();
@@ -131,5 +131,38 @@ public class CommandLineSetupFixture
             Arg.Is<object>(obj => obj.ToString()!.Contains("run")),
             null,
             Arg.Any<Func<object, Exception?, string>>());
+    }
+
+    [Fact]
+    public void Build_Should_Return_VerboseOption()
+    {
+        var root = new CommandLineSetup(CancellationToken.None)
+            .AddRun(Substitute.For<ICommandLineRunHandler>(), _ => { })
+            .Build(Substitute.For<ILogger>(), out var verboseOption);
+
+        verboseOption.ShouldNotBeNull();
+        verboseOption.Aliases.ShouldContain("-v");
+    }
+
+    [Fact]
+    public void Validate_Command_Should_Accept_Verbose_Flag()
+    {
+        var root = new CommandLineSetup(CancellationToken.None)
+            .AddValidate(Substitute.For<ICommandLineValidateHandler>(), _ => { })
+            .Build(Substitute.For<ILogger>(), out _);
+
+        // Short form
+        root.Parse("validate -v --cf file.sds").Errors.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void Run_Command_Should_Accept_Verbose_Flag()
+    {
+        var root = new CommandLineSetup(CancellationToken.None)
+            .AddRun(Substitute.For<ICommandLineRunHandler>(), _ => { })
+            .Build(Substitute.For<ILogger>(), out _);
+
+        // Long form
+        root.Parse("run --verbose --cf file.sds").Errors.ShouldBeEmpty();
     }
 }

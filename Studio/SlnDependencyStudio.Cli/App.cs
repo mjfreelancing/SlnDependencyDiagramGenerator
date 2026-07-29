@@ -36,17 +36,10 @@ internal sealed class App : ConsoleAppBase
     /// <inheritdoc />
     public override async Task StartAsync(CancellationToken cancellationToken)
     {
-        var verboseOption = new Option<bool>("--verbose", "-v")
-        {
-            Description = "Enable verbose logging"
-        };
-
         var root = new CommandLineSetup(cancellationToken)
             .AddValidate(_validateCommandHandler, exitCode => ExitCode = exitCode)
             .AddRun(_runCommandHandler, exitCode => ExitCode = exitCode)
-            .Build(_logger);
-
-        root.Add(verboseOption);
+            .Build(_logger, out var verboseOption);
 
         var parseResult = root.Parse(Environment.GetCommandLineArgs()[1..]);
 
