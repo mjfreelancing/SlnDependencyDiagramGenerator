@@ -164,7 +164,7 @@
             {
             "DefaultLocation" = "8:[ProgramFiles64Folder][Manufacturer]\\[ProductName]"
             "Name" = "8:#1925"
-            "AlwaysCreate" = "11:FALSE"
+            "AlwaysCreate" = "11:TRUE"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Property" = "8:TARGETDIR"
@@ -189,7 +189,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:SlnDependencyStudioUI"
         "ProductCode" = "8:{B713A003-CD18-4A07-9C8E-AB52796D4C3F}"
-        "PackageCode" = "8:{0458B351-0A81-413B-8C41-E9D3CF95F513}"
+        "PackageCode" = "8:{19B1DE41-4470-4F1D-8147-FAEB8F23A54E}"
         "UpgradeCode" = "8:{E07DB3DA-D5D1-4C93-8A2C-7A4EC4B19ADC}"
         "AspNetVersion" = "8:2.0.50727.0"
         "RestartWWWService" = "11:FALSE"
@@ -204,7 +204,7 @@
         "Subject" = "8:"
         "ARPCONTACT" = "8:Malcolm Smith"
         "Keywords" = "8:"
-        "ARPCOMMENTS" = "8:Solution Dependency Diagram Generator"
+        "ARPCOMMENTS" = "8:Solution Dependency Diagram Studio"
         "ARPURLINFOABOUT" = "8:"
         "ARPPRODUCTICON" = "8:_52C4E6C2812F4E72B47DF360F15E0402"
         "ARPIconIndex" = "3:0"
@@ -309,6 +309,34 @@
         }
         "Shortcut"
         {
+            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_1C0EF91B4D9D4596B22C0635C8D330AC"
+            {
+            "Name" = "8:Sln Dependency Studio"
+            "Arguments" = "8:SlnDependencyStudio.Wpf.exe"
+            "Description" = "8:Solution Dependency Diagram Studio"
+            "ShowCmd" = "3:1"
+            "IconIndex" = "3:0"
+            "Transitive" = "11:FALSE"
+            "Target" = "8:_D5F94365C8704E7994243EF7B3521A79"
+            "Folder" = "8:_BA7F43DAC2604D13AE74EF9F39292B41"
+            "WorkingFolder" = "8:_D5F94365C8704E7994243EF7B3521A79"
+            "Icon" = "8:_52C4E6C2812F4E72B47DF360F15E0402"
+            "Feature" = "8:"
+            }
+            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_98E691F7A1534177924AD67C049414FC"
+            {
+            "Name" = "8:Sln Dependency Studio"
+            "Arguments" = "8:SlnDependencyStudio.Wpf.exe"
+            "Description" = "8:Solution Dependency Diagram Studio"
+            "ShowCmd" = "3:1"
+            "IconIndex" = "3:0"
+            "Transitive" = "11:FALSE"
+            "Target" = "8:_D5F94365C8704E7994243EF7B3521A79"
+            "Folder" = "8:_3554630ED41D4D1BBAA991F54175836C"
+            "WorkingFolder" = "8:_D5F94365C8704E7994243EF7B3521A79"
+            "Icon" = "8:_52C4E6C2812F4E72B47DF360F15E0402"
+            "Feature" = "8:"
+            }
         }
         "UserInterface"
         {
