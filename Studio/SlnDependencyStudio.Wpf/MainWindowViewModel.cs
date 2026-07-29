@@ -28,7 +28,7 @@ using System.Reactive.Linq;
 namespace SlnDependencyStudio.Wpf;
 
 /// <summary>View model for the main application shell window.</summary>
-public sealed class MainWindowViewModel : ActivatableViewModel
+public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
 {
     const string StudioFilesFilter = "Studio Project files (*.sds)|*.sds|All files (*.*)|*.*";
 
@@ -47,6 +47,7 @@ public sealed class MainWindowViewModel : ActivatableViewModel
     // OAPHs initialized here with their real observable sources so they are
     // never null. They live for the lifetime of the ViewModel.
     private readonly ObservableAsPropertyHelper<bool> _hasDocument;
+    private readonly ObservableAsPropertyHelper<bool> _hasRecentProjects;
     private readonly ReactiveCommand<Unit, Unit> _cancelOperationCommand;
     private bool _canClose = true;
     private bool _isOperationRunning;
@@ -167,7 +168,7 @@ public sealed class MainWindowViewModel : ActivatableViewModel
     public ObservableCollection<RecentProjectEntry> RecentProjects => _recentProjectsStore.RecentProjects;
 
     /// <summary><see langword="true"/> when at least one recent project exists.</summary>
-    public bool HasRecentProjects => _recentProjectsStore.HasRecentProjects;
+    public bool HasRecentProjects => _hasRecentProjects.Value;
 
     /// <summary>Command that opens a recent project from the list.</summary>
     public ReactiveCommand<string, Unit> OpenRecentProjectCommand { get; }
@@ -201,6 +202,10 @@ public sealed class MainWindowViewModel : ActivatableViewModel
         _hasDocument = _store
             .WhenAnyValue(store => store.HasDocument)
             .ToProperty(this, nameof(HasDocument));
+
+        _hasRecentProjects = _recentProjectsStore
+            .WhenAnyValue(store => store.HasRecentProjects)
+            .ToProperty(this, nameof(HasRecentProjects));
 
         OpenSettingsCommand = ReactiveCommand.Create(() => { });
         OpenProjectCommand = ReactiveCommand.CreateFromTask(OpenProjectAsync);
@@ -783,5 +788,12 @@ public sealed class MainWindowViewModel : ActivatableViewModel
     private void RemoveRecentProject(string filePath)
     {
         _recentProjectsStore.Remove(filePath);
+    }
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        _hasDocument.Dispose();
+        _hasRecentProjects.Dispose();
     }
 }

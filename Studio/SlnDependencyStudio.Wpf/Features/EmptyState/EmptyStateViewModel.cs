@@ -8,13 +8,13 @@ using System.Reactive.Linq;
 namespace SlnDependencyStudio.Wpf.Features.EmptyState;
 
 /// <summary>View model for the empty-state landing page shown when no project is loaded.</summary>
-public sealed class EmptyStateViewModel : ReactiveObject
+public sealed class EmptyStateViewModel : ReactiveObject, IDisposable
 {
     /// <summary>Recently opened project files, most recent first. Shared collection from the store.</summary>
     public ObservableCollection<RecentProjectEntry> RecentProjects { get; }
 
     /// <summary><see langword="true"/> when at least one recent project exists.</summary>
-    public bool HasRecentProjects => _recentProjectsStore.HasRecentProjects;
+    public bool HasRecentProjects => _hasRecentProjects.Value;
 
     /// <summary>Command bound to the "New Project" card.</summary>
     public ReactiveCommand<Unit, Unit> NewProjectCommand { get; }
@@ -38,6 +38,7 @@ public sealed class EmptyStateViewModel : ReactiveObject
     public Interaction<string, Unit> OpenRecentProjectRequested { get; } = new();
 
     private readonly IRecentProjectsStore _recentProjectsStore;
+    private readonly ObservableAsPropertyHelper<bool> _hasRecentProjects;
 
     /// <summary>Initializes a new instance of <see cref="EmptyStateViewModel"/>.</summary>
     /// <param name="recentProjectsStore">The shared store that owns the recent projects collection.</param>
@@ -45,6 +46,10 @@ public sealed class EmptyStateViewModel : ReactiveObject
     {
         _recentProjectsStore = recentProjectsStore;
         RecentProjects = _recentProjectsStore.RecentProjects;
+
+        _hasRecentProjects = _recentProjectsStore
+            .WhenAnyValue(store => store.HasRecentProjects)
+            .ToProperty(this, nameof(HasRecentProjects));
 
         NewProjectCommand = ReactiveCommand.CreateFromTask(
             async () => { await NewProjectRequested.Handle(Unit.Default); });
@@ -59,5 +64,11 @@ public sealed class EmptyStateViewModel : ReactiveObject
         {
             _recentProjectsStore.Remove(filePath);
         });
+    }
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        _hasRecentProjects.Dispose();
     }
 }

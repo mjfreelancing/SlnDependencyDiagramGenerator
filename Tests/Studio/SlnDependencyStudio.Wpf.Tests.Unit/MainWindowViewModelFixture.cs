@@ -19,6 +19,7 @@ using SlnDependencyStudio.Wpf.Features.Pipeline.Services;
 using SlnDependencyStudio.Wpf.Features.Project;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
 using SlnDependencyStudio.Wpf.Features.RecentProjects;
+using SlnDependencyStudio.Wpf.Features.RecentProjects.Models;
 using SlnDependencyStudio.Wpf.Features.Run;
 using SlnDependencyStudio.Wpf.Features.Solution;
 using SlnDependencyStudio.Wpf.Models;
@@ -825,6 +826,37 @@ public class MainWindowViewModelFixture
             await executingTask;
 
             _viewModel.OperationName.ShouldBe(string.Empty);
+        }
+    }
+
+    public class HasRecentProjects : MainWindowViewModelFixture
+    {
+        [Fact]
+        public void Should_Start_False_And_Become_True_When_Project_Is_Added()
+        {
+            // Use the real RecentProjectsStore so PropertyChanged notifications
+            // flow through to the ViewModel's WhenAnyValue subscription.
+            var service = Substitute.For<IRecentProjectsService>();
+            service.GetRecent().Returns([]);
+
+            var realStore = new RecentProjectsStore(service);
+
+            var vm = new MainWindowViewModel(
+                _store, _projectService, realStore, _errorDialog, _viewFactory,
+                _toolStatus, _analysisService, _generationService,
+                Substitute.For<ILogger<MainWindowViewModel>>());
+
+            // Should start false — clean slate, no state.json yet
+            vm.HasRecentProjects.ShouldBeFalse();
+
+            // Simulate the service persisting the entry, then the store adding it
+            service.GetRecent().Returns([
+                new RecentProjectEntry(@"C:\test.sds", "test", true)
+            ]);
+
+            realStore.Add(@"C:\test.sds");
+
+            vm.HasRecentProjects.ShouldBeTrue();
         }
     }
 
