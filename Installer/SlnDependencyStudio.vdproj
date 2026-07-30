@@ -3,7 +3,7 @@
 "VSVersion" = "3:800"
 "ProjectType" = "8:{978C614F-708E-4E1A-B201-565925725DBA}"
 "IsWebType" = "8:FALSE"
-"ProjectName" = "8:SlnDependencyGeneratorUI"
+"ProjectName" = "8:SlnDependencyStudio Installer"
 "LanguageId" = "3:1033"
 "CodePage" = "3:1252"
 "UILanguageId" = "3:1033"
@@ -13,6 +13,12 @@
 "SccProvider" = "8:"
     "Hierarchy"
     {
+        "Entry"
+        {
+        "MsmKey" = "8:_47FC2E54376E449BAA61906F2A2C382D"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
         "Entry"
         {
         "MsmKey" = "8:_52C4E6C2812F4E72B47DF360F15E0402"
@@ -25,6 +31,12 @@
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
+        "Entry"
+        {
+        "MsmKey" = "8:_B76D960C4D4046DBBAE9208D9A0C7CFC"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
     }
     "Configurations"
     {
@@ -33,7 +45,7 @@
         "DisplayName" = "8:Debug"
         "IsDebugOnly" = "11:TRUE"
         "IsReleaseOnly" = "11:FALSE"
-        "OutputFilename" = "8:Debug\\SlnDependencyGeneratorWpf.msi"
+        "OutputFilename" = "8:Debug\\SlnDependencyStudio.msi"
         "PackageFilesAs" = "3:2"
         "PackageFileSize" = "3:-2147483648"
         "CabType" = "3:1"
@@ -60,7 +72,7 @@
         "DisplayName" = "8:Release"
         "IsDebugOnly" = "11:FALSE"
         "IsReleaseOnly" = "11:TRUE"
-        "OutputFilename" = "8:Release\\SlnDependencyStudioUI.msi"
+        "OutputFilename" = "8:Release\\SlnDependencyStudio.msi"
         "PackageFilesAs" = "3:2"
         "PackageFileSize" = "3:-2147483648"
         "CabType" = "3:1"
@@ -114,10 +126,30 @@
         {
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_52C4E6C2812F4E72B47DF360F15E0402"
             {
-            "SourcePath" = "8:..\\..\\Studio\\SlnDependencyStudio.Wpf\\app.ico"
+            "SourcePath" = "8:..\\Studio\\SlnDependencyStudio.Wpf\\app.ico"
             "TargetName" = "8:app.ico"
             "Tag" = "8:"
             "Folder" = "8:_D5F94365C8704E7994243EF7B3521A79"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_B76D960C4D4046DBBAE9208D9A0C7CFC"
+            {
+            "SourcePath" = "8:..\\Studio\\SlnDependencyStudio.Cli\\OpenTerminal.bat"
+            "TargetName" = "8:OpenTerminal.bat"
+            "Tag" = "8:"
+            "Folder" = "8:_E6E1D3D39CCF40FE8EF4EAAF5B1A2F16"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -170,6 +202,28 @@
             "Property" = "8:TARGETDIR"
                 "Folders"
                 {
+                    "{9EF0B969-E518-4E46-987F-47570745A589}:_1D9A89B0B67847E08E083057B3A58495"
+                    {
+                    "Name" = "8:UI"
+                    "AlwaysCreate" = "11:FALSE"
+                    "Condition" = "8:"
+                    "Transitive" = "11:FALSE"
+                    "Property" = "8:_72B2213EB296418C9D2ADF5CC267C9B1"
+                        "Folders"
+                        {
+                        }
+                    }
+                    "{9EF0B969-E518-4E46-987F-47570745A589}:_E6E1D3D39CCF40FE8EF4EAAF5B1A2F16"
+                    {
+                    "Name" = "8:CLI"
+                    "AlwaysCreate" = "11:FALSE"
+                    "Condition" = "8:"
+                    "Transitive" = "11:FALSE"
+                    "Property" = "8:_716A2F3392014082A6557CD5D09F8F13"
+                        "Folders"
+                        {
+                        }
+                    }
                 }
             }
         }
@@ -187,24 +241,24 @@
         "Product"
         {
         "Name" = "8:Microsoft Visual Studio"
-        "ProductName" = "8:SlnDependencyStudioUI"
+        "ProductName" = "8:SlnDependencyStudio"
         "ProductCode" = "8:{B713A003-CD18-4A07-9C8E-AB52796D4C3F}"
-        "PackageCode" = "8:{19B1DE41-4470-4F1D-8147-FAEB8F23A54E}"
+        "PackageCode" = "8:{BD6CE361-D8C9-486D-A95A-7B07CE83B629}"
         "UpgradeCode" = "8:{E07DB3DA-D5D1-4C93-8A2C-7A4EC4B19ADC}"
         "AspNetVersion" = "8:2.0.50727.0"
         "RestartWWWService" = "11:FALSE"
-        "RemovePreviousVersions" = "11:TRUE"
+        "RemovePreviousVersions" = "11:FALSE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:FALSE"
         "ProductVersion" = "8:1.0.0"
         "Manufacturer" = "8:MJ Freelancing"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:"
-        "Title" = "8:Sln Dependency Studio UI"
+        "Title" = "8:Solution Dependency Studio"
         "Subject" = "8:"
         "ARPCONTACT" = "8:Malcolm Smith"
         "Keywords" = "8:"
-        "ARPCOMMENTS" = "8:Solution Dependency Diagram Studio"
+        "ARPCOMMENTS" = "8:Solution Dependency Studio"
         "ARPURLINFOABOUT" = "8:"
         "ARPPRODUCTICON" = "8:_52C4E6C2812F4E72B47DF360F15E0402"
         "ARPIconIndex" = "3:0"
@@ -309,29 +363,57 @@
         }
         "Shortcut"
         {
-            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_1C0EF91B4D9D4596B22C0635C8D330AC"
+            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_1F774CB5643A4CA4A59C98D15FDF021B"
             {
-            "Name" = "8:Sln Dependency Studio"
-            "Arguments" = "8:SlnDependencyStudio.Wpf.exe"
-            "Description" = "8:Solution Dependency Diagram Studio"
+            "Name" = "8:Solution Dependency Studio"
+            "Arguments" = "8:"
+            "Description" = "8:"
             "ShowCmd" = "3:1"
             "IconIndex" = "3:0"
             "Transitive" = "11:FALSE"
-            "Target" = "8:_D5F94365C8704E7994243EF7B3521A79"
+            "Target" = "8:_9944BC1784244B879D8A798DDFB5AACB"
             "Folder" = "8:_BA7F43DAC2604D13AE74EF9F39292B41"
             "WorkingFolder" = "8:_D5F94365C8704E7994243EF7B3521A79"
             "Icon" = "8:_52C4E6C2812F4E72B47DF360F15E0402"
             "Feature" = "8:"
             }
-            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_98E691F7A1534177924AD67C049414FC"
+            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_2EBA5DEB7B1241649E767388B01045ED"
             {
-            "Name" = "8:Sln Dependency Studio"
-            "Arguments" = "8:SlnDependencyStudio.Wpf.exe"
-            "Description" = "8:Solution Dependency Diagram Studio"
+            "Name" = "8:Solution Dependency Studio CLI"
+            "Arguments" = "8:"
+            "Description" = "8:"
             "ShowCmd" = "3:1"
             "IconIndex" = "3:0"
             "Transitive" = "11:FALSE"
-            "Target" = "8:_D5F94365C8704E7994243EF7B3521A79"
+            "Target" = "8:_B76D960C4D4046DBBAE9208D9A0C7CFC"
+            "Folder" = "8:_BA7F43DAC2604D13AE74EF9F39292B41"
+            "WorkingFolder" = "8:_E6E1D3D39CCF40FE8EF4EAAF5B1A2F16"
+            "Icon" = "8:_52C4E6C2812F4E72B47DF360F15E0402"
+            "Feature" = "8:"
+            }
+            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_3D78F90C996D407C85E8FC93ABFF3D17"
+            {
+            "Name" = "8:Solution Dependency Studio CLI"
+            "Arguments" = "8:"
+            "Description" = "8:"
+            "ShowCmd" = "3:1"
+            "IconIndex" = "3:0"
+            "Transitive" = "11:FALSE"
+            "Target" = "8:_B76D960C4D4046DBBAE9208D9A0C7CFC"
+            "Folder" = "8:_3554630ED41D4D1BBAA991F54175836C"
+            "WorkingFolder" = "8:_E6E1D3D39CCF40FE8EF4EAAF5B1A2F16"
+            "Icon" = "8:_52C4E6C2812F4E72B47DF360F15E0402"
+            "Feature" = "8:"
+            }
+            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_5EEE5428DBFE45E6A20DD96366823584"
+            {
+            "Name" = "8:Solution Dependency Studio"
+            "Arguments" = "8:"
+            "Description" = "8:"
+            "ShowCmd" = "3:1"
+            "IconIndex" = "3:0"
+            "Transitive" = "11:FALSE"
+            "Target" = "8:_9944BC1784244B879D8A798DDFB5AACB"
             "Folder" = "8:_3554630ED41D4D1BBAA991F54175836C"
             "WorkingFolder" = "8:_D5F94365C8704E7994243EF7B3521A79"
             "Icon" = "8:_52C4E6C2812F4E72B47DF360F15E0402"
@@ -736,12 +818,40 @@
         }
         "ProjectOutput"
         {
-            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_9944BC1784244B879D8A798DDFB5AACB"
+            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_47FC2E54376E449BAA61906F2A2C382D"
             {
-            "SourcePath" = "8:..\\..\\Studio\\SlnDependencyStudio.Wpf\\obj\\Release\\net10.0-windows10.0.19041\\apphost.exe"
+            "SourcePath" = "8:..\\Studio\\SlnDependencyStudio.Cli\\obj\\Release\\net10.0\\apphost.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
-            "Folder" = "8:_D5F94365C8704E7994243EF7B3521A79"
+            "Folder" = "8:_E6E1D3D39CCF40FE8EF4EAAF5B1A2F16"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            "ProjectOutputGroupRegister" = "3:1"
+            "OutputConfiguration" = "8:Release|Any CPU"
+            "OutputGroupCanonicalName" = "8:PublishItems"
+            "OutputProjectGuid" = "8:{39825BBE-C177-44F0-8CFB-C3788D19FE4E}"
+            "ShowKeyOutput" = "11:TRUE"
+                "ExcludeFilters"
+                {
+                }
+            }
+            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_9944BC1784244B879D8A798DDFB5AACB"
+            {
+            "SourcePath" = "8:..\\Studio\\SlnDependencyStudio.Wpf\\obj\\Release\\net10.0-windows10.0.19041\\apphost.exe"
+            "TargetName" = "8:"
+            "Tag" = "8:"
+            "Folder" = "8:_1D9A89B0B67847E08E083057B3A58495"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
