@@ -58,6 +58,10 @@ internal sealed class App : ConsoleAppBase
             else
             {
                 await parseResult.InvokeAsync(cancellationToken: cancellationToken);
+
+                // If no action ran (e.g. --help) and no handler set an exit code, default to success.
+                // This keeps ExitCode as null when a handler genuinely forgets to set it, so we can detect that bug.
+                ExitCode ??= 0;
             }
         }
         catch (Exception exception)
