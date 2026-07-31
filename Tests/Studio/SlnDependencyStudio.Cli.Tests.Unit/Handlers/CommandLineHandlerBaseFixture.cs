@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Shouldly;
 using SlnDependencyDiagramGenerator.Config;
+using SlnDependencyDiagramGenerator.Tests.Shared;
 using SlnDependencyStudio.Cli.Handlers;
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Shared.Serialization;
@@ -68,45 +69,49 @@ public class CommandLineHandlerBaseFixture
         [Fact]
         public async Task Should_Resolve_WorkingDirectory_To_Absolute()
         {
-            var (handler, tempDir) = CreateHandlerWithTempDir();
+            using var tempDir = new DisposableTempDirectory();
+            var handler = CreateHandler(tempDir.DirectoryPath);
 
-            var document = await handler.LoadDependencyProjectDocumentAsync(Path.Combine(tempDir, "project.sds"), CancellationToken.None);
+            var document = await handler.LoadDependencyProjectDocumentAsync(Path.Combine(tempDir.DirectoryPath, "project.sds"), CancellationToken.None);
 
-            document.PreGeneration.WorkingDirectory.ShouldBe(Path.GetFullPath(Path.Combine(tempDir, "pregen")));
+            document.PreGeneration.WorkingDirectory.ShouldBe(Path.GetFullPath(Path.Combine(tempDir.DirectoryPath, "pregen")));
         }
 
         [Fact]
         public async Task Should_Resolve_SolutionPath_To_Absolute()
         {
-            var (handler, tempDir) = CreateHandlerWithTempDir();
+            using var tempDir = new DisposableTempDirectory();
+            var handler = CreateHandler(tempDir.DirectoryPath);
 
-            var document = await handler.LoadDependencyProjectDocumentAsync(Path.Combine(tempDir, "project.sds"), CancellationToken.None);
+            var document = await handler.LoadDependencyProjectDocumentAsync(Path.Combine(tempDir.DirectoryPath, "project.sds"), CancellationToken.None);
 
-            document.DiagramGenerator.Solution.SolutionPath.ShouldBe(Path.GetFullPath(Path.Combine(tempDir, "MyApp.sln")));
+            document.DiagramGenerator.Solution.SolutionPath.ShouldBe(Path.GetFullPath(Path.Combine(tempDir.DirectoryPath, "MyApp.sln")));
         }
 
         [Fact]
         public async Task Should_Resolve_ExportRootPath_To_Absolute()
         {
-            var (handler, tempDir) = CreateHandlerWithTempDir();
+            using var tempDir = new DisposableTempDirectory();
+            var handler = CreateHandler(tempDir.DirectoryPath);
 
-            var document = await handler.LoadDependencyProjectDocumentAsync(Path.Combine(tempDir, "project.sds"), CancellationToken.None);
+            var document = await handler.LoadDependencyProjectDocumentAsync(Path.Combine(tempDir.DirectoryPath, "project.sds"), CancellationToken.None);
 
-            document.DiagramGenerator.Export.RootPath.ShouldBe(Path.GetFullPath(Path.Combine(tempDir, "output")));
+            document.DiagramGenerator.Export.RootPath.ShouldBe(Path.GetFullPath(Path.Combine(tempDir.DirectoryPath, "output")));
         }
 
         [Fact]
         public async Task Should_Resolve_All_Paths_To_Absolute()
         {
-            var (handler, tempDir) = CreateHandlerWithTempDir();
+            using var tempDir = new DisposableTempDirectory();
+            var handler = CreateHandler(tempDir.DirectoryPath);
 
-            var document = await handler.LoadDependencyProjectDocumentAsync(Path.Combine(tempDir, "project.sds"), CancellationToken.None);
+            var document = await handler.LoadDependencyProjectDocumentAsync(Path.Combine(tempDir.DirectoryPath, "project.sds"), CancellationToken.None);
 
-            document.PreGeneration.WorkingDirectory.ShouldBe(Path.GetFullPath(Path.Combine(tempDir, "pregen")));
+            document.PreGeneration.WorkingDirectory.ShouldBe(Path.GetFullPath(Path.Combine(tempDir.DirectoryPath, "pregen")));
 
-            document.DiagramGenerator.Solution.SolutionPath.ShouldBe(Path.GetFullPath(Path.Combine(tempDir, "MyApp.sln")));
+            document.DiagramGenerator.Solution.SolutionPath.ShouldBe(Path.GetFullPath(Path.Combine(tempDir.DirectoryPath, "MyApp.sln")));
 
-            document.DiagramGenerator.Export.RootPath.ShouldBe(Path.GetFullPath(Path.Combine(tempDir, "output")));
+            document.DiagramGenerator.Export.RootPath.ShouldBe(Path.GetFullPath(Path.Combine(tempDir.DirectoryPath, "output")));
         }
 
         [Fact]
@@ -152,11 +157,8 @@ public class CommandLineHandlerBaseFixture
             document.PreGeneration.WorkingDirectory.ShouldBe(string.Empty);
         }
 
-        private static (TestHandler Handler, string TempDir) CreateHandlerWithTempDir()
+        private static TestHandler CreateHandler(string tempDir)
         {
-            var tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
-            Directory.CreateDirectory(tempDir);
-
             var serializer = Substitute.For<IDependencyProjectSerializer>();
 
             serializer
@@ -167,9 +169,8 @@ public class CommandLineHandlerBaseFixture
                     exportRoot: "output"));
 
             var logger = Substitute.For<ILogger>();
-            var handler = new TestHandler(serializer, logger);
 
-            return (handler, tempDir);
+            return new TestHandler(serializer, logger);
         }
     }
 

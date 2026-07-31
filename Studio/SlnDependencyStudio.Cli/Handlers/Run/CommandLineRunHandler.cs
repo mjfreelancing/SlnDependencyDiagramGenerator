@@ -1,5 +1,5 @@
 ﻿using AllOverIt.Assertion;
-using AllOverIt.Validation;
+using AllOverIt.Extensions;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
 using SlnDependencyDiagramGenerator.Exceptions;
@@ -7,9 +7,11 @@ using SlnDependencyDiagramGenerator.Generator;
 using SlnDependencyStudio.Cli.Enumerations;
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Shared.Config.Extensions;
+using SlnDependencyStudio.Shared.ProcessExecution.PostGeneration;
 using SlnDependencyStudio.Shared.ProcessExecution.PreGeneration;
+using SlnDependencyStudio.Shared.ProcessExecution.RestoreSolution;
 using SlnDependencyStudio.Shared.Serialization;
-using SlnDependencyStudio.Shared.Validators.Contexts;
+using SlnDependencyStudio.Shared.Services;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -19,24 +21,31 @@ namespace SlnDependencyStudio.Cli.Handlers.Run;
 internal sealed class CommandLineRunHandler : CommandLineHandlerBase, ICommandLineRunHandler
 {
     private readonly IDependencyGenerator _generator;
+    private readonly IRestoreSolutionRunner _restoreSolutionRunner;
     private readonly IPreGenerationCommandRunner _preGenerationCommandRunner;
-    private readonly IValidationInvoker _validationInvoker;
+    private readonly IPostGenerationCommandRunner _postGenerationCommandRunner;
+    private readonly IDependencyProjectValidator _projectValidator;
     private readonly ILogger<CommandLineRunHandler> _logger;
 
     /// <summary>Initializes a new instance of <see cref="CommandLineRunHandler"/>.</summary>
     /// <param name="serializer">The dependency project document serializer.</param>
     /// <param name="generator">The dependency diagram generator.</param>
+    /// <param name="restoreSolutionRunner">The solution restore runner.</param>
     /// <param name="preGenerationCommandRunner">The pre-generation command runner.</param>
-    /// <param name="validationInvoker">The validation invoker for model validation.</param>
+    /// <param name="postGenerationCommandRunner">The post-generation command runner.</param>
+    /// <param name="projectValidator">The dependency project document validator.</param>
     /// <param name="logger">The logger instance.</param>
     public CommandLineRunHandler(IDependencyProjectSerializer serializer, IDependencyGenerator generator,
-        IPreGenerationCommandRunner preGenerationCommandRunner, IValidationInvoker validationInvoker,
+        IRestoreSolutionRunner restoreSolutionRunner, IPreGenerationCommandRunner preGenerationCommandRunner,
+        IPostGenerationCommandRunner postGenerationCommandRunner, IDependencyProjectValidator projectValidator,
         ILogger<CommandLineRunHandler> logger)
         : base(serializer, logger)
     {
         _generator = generator.WhenNotNull();
+        _restoreSolutionRunner = restoreSolutionRunner.WhenNotNull();
         _preGenerationCommandRunner = preGenerationCommandRunner.WhenNotNull();
-        _validationInvoker = validationInvoker.WhenNotNull();
+        _postGenerationCommandRunner = postGenerationCommandRunner.WhenNotNull();
+        _projectValidator = projectValidator.WhenNotNull();
         _logger = logger.WhenNotNull();
     }
 
@@ -53,12 +62,14 @@ internal sealed class CommandLineRunHandler : CommandLineHandlerBase, ICommandLi
             // Log the configuration to help with troubleshooting any validation errors.
             document.LogConfiguration(configFilename, _logger);
 
-            // Validate Pre-Generation Command settings.
-            var preGenConfigContext = new PreGenerationConfigContext { ConfigDirectory = configDirectory };
-            _validationInvoker.AssertValidation(document.PreGeneration, preGenConfigContext);
+            // Validate all configuration up front so failures are reported before any command or
+            // generation work begins. The command runners themselves do not perform validation.
+            _projectValidator.Validate(document, configDirectory);
 
-            // Validate the main diagram generator configuration.
-            _generator.ValidateConfiguration(document.DiagramGenerator);
+            if (!await RunRestoreSolutionIfRequiredAsync(document, cancellationToken))
+            {
+                return StudioCliExitCode.DotNetRestoreFailed.Value;
+            }
 
             if (!await RunPreGenerationCommandIfRequiredAsync(document, cancellationToken))
             {
@@ -66,6 +77,8 @@ internal sealed class CommandLineRunHandler : CommandLineHandlerBase, ICommandLi
             }
 
             await GenerateDiagramsAsync(document, cancellationToken);
+
+            await RunPostGenerationCommandIfRequiredAsync(document, cancellationToken);
 
             _logger.LogInformation("Generation complete.");
 
@@ -153,6 +166,82 @@ internal sealed class CommandLineRunHandler : CommandLineHandlerBase, ICommandLi
         }
 
         return true;
+    }
+
+    /// <summary>Restores the solution if enabled. Returns <see langword="false"/> if the restore failed and should abort.</summary>
+    /// <param name="document">The dependency project document.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns><see langword="true"/> if no restore was required or it succeeded; <see langword="false"/> if it failed and should abort.</returns>
+    private async Task<bool> RunRestoreSolutionIfRequiredAsync(DependencyProjectDocument document, CancellationToken cancellationToken)
+    {
+        if (!document.RestoreSolution)
+        {
+            _logger.LogInformation("Solution restore disabled.");
+            return true;
+        }
+
+        var solutionPath = document.DiagramGenerator.Solution.SolutionPath;
+
+        if (solutionPath.IsNullOrEmpty())
+        {
+            _logger.LogError("Solution restore enabled but no solution path is configured. Aborting.");
+            return false;
+        }
+
+        _logger.LogInformation("Restoring solution: {SolutionPath}", solutionPath);
+
+        // Subscribe to stdout/stderr so the output is captured in the CLI's log output.
+        using var stdoutSub = _restoreSolutionRunner.StdOut.Subscribe(line => _logger.LogInformation("{Line}", line));
+        using var stderrSub = _restoreSolutionRunner.StdErr.Subscribe(line => _logger.LogError("{Line}", line));
+
+        var restoreResult = await _restoreSolutionRunner.RunAsync(solutionPath, cancellationToken);
+
+        if (restoreResult.Succeeded)
+        {
+            _logger.LogInformation("Solution restore completed successfully.");
+            return true;
+        }
+
+        _logger.LogError(
+            "Solution restore failed (exit code {ExitCode}, error: {ErrorMessage}).",
+            restoreResult.ExitCode,
+            restoreResult.ErrorMessage);
+
+        return false;
+    }
+
+    /// <summary>Runs the post-generation command if enabled.</summary>
+    /// <param name="document">The dependency project document.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>A task that completes when the post-generation command has finished.</returns>
+    private async Task RunPostGenerationCommandIfRequiredAsync(DependencyProjectDocument document, CancellationToken cancellationToken)
+    {
+        var postGenConfig = document.PostGeneration;
+
+        if (!postGenConfig.Enabled)
+        {
+            _logger.LogInformation("Post-generation command disabled.");
+            return;
+        }
+
+        _logger.LogInformation("Running Post-generation command...");
+
+        // Subscribe to stdout/stderr so the output is captured in the CLI's log output.
+        using var stdoutSub = _postGenerationCommandRunner.StdOut.Subscribe(line => _logger.LogInformation("{Line}", line));
+        using var stderrSub = _postGenerationCommandRunner.StdErr.Subscribe(line => _logger.LogError("{Line}", line));
+
+        var postGenResult = await _postGenerationCommandRunner.RunAsync(postGenConfig, cancellationToken);
+
+        if (postGenResult.Succeeded)
+        {
+            _logger.LogInformation("Post-generation command completed successfully.");
+            return;
+        }
+
+        _logger.LogWarning(
+            "Post-generation command failed (exit code {ExitCode}, error: {ErrorMessage}).",
+            postGenResult.ExitCode,
+            postGenResult.ErrorMessage);
     }
 
     /// <summary>Initiates diagram generation via the dependency generator.</summary>

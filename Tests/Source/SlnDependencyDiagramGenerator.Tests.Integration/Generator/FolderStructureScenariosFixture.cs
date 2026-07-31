@@ -3,6 +3,7 @@ using SlnDependencyDiagramGenerator.Generator;
 using SlnDependencyDiagramGenerator.Generator.Discovery;
 using SlnDependencyDiagramGenerator.Generator.ToolDetection;
 using SlnDependencyDiagramGenerator.Tests.Integration.Support;
+using SlnDependencyDiagramGenerator.Tests.Shared;
 using Shouldly;
 using System.Threading;
 
@@ -74,7 +75,7 @@ public class FolderStructureScenariosFixture
             var options = IntegrationTestHarness.CreateScenarioOptions("Basic", "Basic Group", "basic");
             options.Formats = [DiagramFormat.D2];
 
-            using var tempDirectory = IntegrationTestHarness.CreateTempDirectory("clear-contents");
+            using var tempDirectory = new DisposableTempDirectory("clear-contents");
 
             var solutionPath = IntegrationTestHarness.GetFixtureSolutionPath("Basic", ".slnx");
             var firstRunConfig = IntegrationTestHarness.CreateConfig(solutionPath, tempDirectory.DirectoryPath, options);

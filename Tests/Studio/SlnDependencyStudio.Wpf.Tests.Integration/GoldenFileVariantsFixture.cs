@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
+using SlnDependencyDiagramGenerator.Tests.Shared;
 using SlnDependencyStudio.Shared.Serialization;
 using SlnDependencyStudio.Wpf.Tests.Integration.Support;
 using System.IO;
@@ -50,29 +51,19 @@ public class GoldenFileVariantsFixture
 
         var original = await serializer.DeserializeAsync(goldenFile);
 
-        var tempFile = Path.GetTempFileName() + ".sds";
+        using var tempFile = new DisposableTempFile(".sds");
 
-        try
-        {
-            await serializer.SerializeAsync(original, tempFile);
+        await serializer.SerializeAsync(original, tempFile.FilePath);
 
-            var reloaded = await serializer.DeserializeAsync(tempFile);
+        var reloaded = await serializer.DeserializeAsync(tempFile.FilePath);
 
-            reloaded.ShouldNotBeNull();
-            reloaded.SchemaVersion.ShouldBe(original.SchemaVersion);
-            reloaded.Metadata.ProjectName.ShouldBe(original.Metadata.ProjectName);
-            reloaded.Metadata.Description.ShouldBe(original.Metadata.Description);
-            reloaded.DiagramGenerator.Solution.SolutionPath.ShouldBe(original.DiagramGenerator.Solution.SolutionPath);
-            reloaded.DiagramGenerator.Diagram.Formats.ShouldBe(original.DiagramGenerator.Diagram.Formats, ignoreOrder: true);
-            reloaded.DiagramGenerator.Diagram.Direction.ShouldBe(original.DiagramGenerator.Diagram.Direction);
-            reloaded.PreGeneration.Enabled.ShouldBe(original.PreGeneration.Enabled);
-        }
-        finally
-        {
-            if (File.Exists(tempFile))
-            {
-                File.Delete(tempFile);
-            }
-        }
+        reloaded.ShouldNotBeNull();
+        reloaded.SchemaVersion.ShouldBe(original.SchemaVersion);
+        reloaded.Metadata.ProjectName.ShouldBe(original.Metadata.ProjectName);
+        reloaded.Metadata.Description.ShouldBe(original.Metadata.Description);
+        reloaded.DiagramGenerator.Solution.SolutionPath.ShouldBe(original.DiagramGenerator.Solution.SolutionPath);
+        reloaded.DiagramGenerator.Diagram.Formats.ShouldBe(original.DiagramGenerator.Diagram.Formats, ignoreOrder: true);
+        reloaded.DiagramGenerator.Diagram.Direction.ShouldBe(original.DiagramGenerator.Diagram.Direction);
+        reloaded.PreGeneration.Enabled.ShouldBe(original.PreGeneration.Enabled);
     }
 }

@@ -1,4 +1,5 @@
 using Shouldly;
+using SlnDependencyDiagramGenerator.Tests.Shared;
 using SlnDependencyStudio.Shared.Enumerations;
 using SlnDependencyStudio.Shared.Tests.Integration.Support;
 

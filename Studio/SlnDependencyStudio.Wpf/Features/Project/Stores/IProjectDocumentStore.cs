@@ -90,4 +90,8 @@ public interface IProjectDocumentStore : IStudioSingletonDependency
     /// <summary>Flushes all editor wrappers to the underlying document and returns a
     /// <see cref="DependencyGeneratorConfig"/> snapshot ready for generation.</summary>
     DependencyGeneratorConfig BuildGeneratorConfig();
+
+    /// <summary>Flushes all editor wrappers to the underlying document and returns the full document
+    /// with relative solution/export paths resolved to absolute paths (mirroring <see cref="BuildGeneratorConfig"/>).</summary>
+    DependencyProjectDocument BuildDocument();
 }

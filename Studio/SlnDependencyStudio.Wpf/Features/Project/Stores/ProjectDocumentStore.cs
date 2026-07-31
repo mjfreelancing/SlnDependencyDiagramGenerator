@@ -218,22 +218,26 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
     /// <inheritdoc />
     public DependencyGeneratorConfig BuildGeneratorConfig()
     {
+        return BuildDocument().DiagramGenerator;
+    }
+
+    /// <inheritdoc />
+    public DependencyProjectDocument BuildDocument()
+    {
         Throw<InvalidOperationException>.WhenNull(_document, "No project is loaded");
 
         FlushAllEditors();
 
-        var config = _document.DiagramGenerator;
-
-        // Resolve relative paths against the document directory so the generator
-        // receives absolute paths regardless of the current working directory.
+        // Resolve relative paths against the document directory so downstream consumers
+        // receive absolute paths regardless of the current working directory.
         if (DocumentFilePath is not null)
         {
             var docDir = Path.GetDirectoryName(DocumentFilePath)!;
 
-            config.Solution.SolutionPath = PathUtils.ResolveAsAbsolutePath(config.Solution.SolutionPath, docDir);
-            config.Export.RootPath = PathUtils.ResolveAsAbsolutePath(config.Export.RootPath, docDir);
+            _document.DiagramGenerator.Solution.SolutionPath = PathUtils.ResolveAsAbsolutePath(_document.DiagramGenerator.Solution.SolutionPath, docDir);
+            _document.DiagramGenerator.Export.RootPath = PathUtils.ResolveAsAbsolutePath(_document.DiagramGenerator.Export.RootPath, docDir);
         }
 
-        return config;
+        return _document;
     }
 }

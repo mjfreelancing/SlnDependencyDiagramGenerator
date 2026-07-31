@@ -1,6 +1,7 @@
 ﻿using SlnDependencyDiagramGenerator.Exceptions;
 using SlnDependencyDiagramGenerator.Parser;
 using SlnDependencyDiagramGenerator.Tests.Integration.Support;
+using SlnDependencyDiagramGenerator.Tests.Shared;
 using Shouldly;
 
 namespace SlnDependencyDiagramGenerator.Tests.Integration.Parser;
@@ -515,7 +516,7 @@ public class ParserScenariosFixture
         [Fact]
         public async Task Should_Throw_Clear_Error_For_Malformed_Sln_File()
         {
-            using var tempDirectory = IntegrationTestHarness.CreateTempDirectory("malformed-sln");
+            using var tempDirectory = new DisposableTempDirectory("malformed-sln");
             var malformedSolutionPath = Path.Combine(tempDirectory.DirectoryPath, "Malformed.sln");
 
             await File.WriteAllTextAsync(malformedSolutionPath, "This is not a valid solution file.");
@@ -534,7 +535,7 @@ public class ParserScenariosFixture
         [Fact]
         public async Task Should_Throw_Clear_Error_For_Malformed_Slnx_File()
         {
-            using var tempDirectory = IntegrationTestHarness.CreateTempDirectory("malformed-slnx");
+            using var tempDirectory = new DisposableTempDirectory("malformed-slnx");
             var malformedSolutionPath = Path.Combine(tempDirectory.DirectoryPath, "Malformed.slnx");
 
             await File.WriteAllTextAsync(malformedSolutionPath, "<Solution><Project Path='Broken'");

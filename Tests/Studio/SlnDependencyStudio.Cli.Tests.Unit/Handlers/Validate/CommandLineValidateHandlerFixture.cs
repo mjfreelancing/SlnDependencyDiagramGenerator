@@ -1,15 +1,15 @@
-using AllOverIt.Validation;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 using Shouldly;
 using SlnDependencyDiagramGenerator.Config;
-using SlnDependencyDiagramGenerator.Generator;
+using SlnDependencyDiagramGenerator.Tests.Shared;
 using SlnDependencyStudio.Cli.Enumerations;
 using SlnDependencyStudio.Cli.Handlers.Validate;
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Shared.Serialization;
+using SlnDependencyStudio.Shared.Services;
 using System.Text.Json;
 
 namespace SlnDependencyStudio.Cli.Tests.Unit.Handlers.Validate;
@@ -25,11 +25,10 @@ public class CommandLineValidateHandlerFixture
             .DeserializeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(CreateValidDocument()));
 
-        var dependencyGenerator = Substitute.For<IDependencyGenerator>();
-        var validationInvoker = Substitute.For<IValidationInvoker>();
+        var projectValidator = Substitute.For<IDependencyProjectValidator>();
         var logger = Substitute.For<ILogger<CommandLineValidateHandler>>();
 
-        var handler = new CommandLineValidateHandler(serializer, dependencyGenerator, validationInvoker, logger);
+        var handler = new CommandLineValidateHandler(serializer, projectValidator, logger);
 
         var result = await handler.HandleAsync(Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None);
 
@@ -45,11 +44,10 @@ public class CommandLineValidateHandlerFixture
             .DeserializeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .ThrowsAsync(new FileNotFoundException("File not found"));
 
-        var dependencyGenerator = Substitute.For<IDependencyGenerator>();
-        var validationInvoker = Substitute.For<IValidationInvoker>();
+        var projectValidator = Substitute.For<IDependencyProjectValidator>();
         var logger = Substitute.For<ILogger<CommandLineValidateHandler>>();
 
-        var handler = new CommandLineValidateHandler(serializer, dependencyGenerator, validationInvoker, logger);
+        var handler = new CommandLineValidateHandler(serializer, projectValidator, logger);
 
         var result = await handler.HandleAsync(@"X:\nonexistent\file.sds", CancellationToken.None);
 
@@ -65,11 +63,10 @@ public class CommandLineValidateHandlerFixture
             .DeserializeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .ThrowsAsync(new JsonException("Invalid JSON"));
 
-        var dependencyGenerator = Substitute.For<IDependencyGenerator>();
-        var validationInvoker = Substitute.For<IValidationInvoker>();
+        var projectValidator = Substitute.For<IDependencyProjectValidator>();
         var logger = Substitute.For<ILogger<CommandLineValidateHandler>>();
 
-        var handler = new CommandLineValidateHandler(serializer, dependencyGenerator, validationInvoker, logger);
+        var handler = new CommandLineValidateHandler(serializer, projectValidator, logger);
 
         var result = await handler.HandleAsync(Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None);
 
@@ -79,26 +76,25 @@ public class CommandLineValidateHandlerFixture
     [Fact]
     public async Task Should_Return_ValidateCommandFailed_When_Validation_Fails()
     {
-        using var tempFile = CreateTempConfigFile("{}");
+        using var tempFile = new DisposableTempFile(".sds", "{}");
 
         var serializer = Substitute.For<IDependencyProjectSerializer>();
 
         serializer
-            .DeserializeAsync(tempFile.Path, Arg.Any<CancellationToken>())
+            .DeserializeAsync(tempFile.FilePath, Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(new DependencyProjectDocument()));
 
-        var dependencyGenerator = Substitute.For<IDependencyGenerator>();
+        var projectValidator = Substitute.For<IDependencyProjectValidator>();
 
-        dependencyGenerator
-            .When(generator => generator.ValidateConfiguration(Arg.Any<DependencyGeneratorConfig>()))
+        projectValidator
+            .When(validator => validator.Validate(Arg.Any<DependencyProjectDocument>(), Arg.Any<string>()))
             .Do(_ => throw new ValidationException("Test failure"));
 
-        var validationInvoker = Substitute.For<IValidationInvoker>();
         var logger = Substitute.For<ILogger<CommandLineValidateHandler>>();
 
-        var handler = new CommandLineValidateHandler(serializer, dependencyGenerator, validationInvoker, logger);
+        var handler = new CommandLineValidateHandler(serializer, projectValidator, logger);
 
-        var result = await handler.HandleAsync(tempFile.Path, CancellationToken.None);
+        var result = await handler.HandleAsync(tempFile.FilePath, CancellationToken.None);
 
         result.ShouldBe(StudioCliExitCode.ValidateCommandFailed.Value);
     }
@@ -135,29 +131,5 @@ public class CommandLineValidateHandlerFixture
         };
     }
 
-    private sealed class DisposableTempFile : IDisposable
-    {
-        public string Path { get; }
-
-        public DisposableTempFile(string content)
-        {
-            Path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"{Guid.NewGuid():N}.sds");
-            File.WriteAllText(Path, content);
-        }
-
-        public void Dispose()
-        {
-            if (File.Exists(Path))
-            {
-                File.Delete(Path);
-            }
-        }
-    }
-
-    private static DisposableTempFile CreateTempConfigFile(string content)
-    {
-        return new DisposableTempFile(content);
-    }
 }
-
 

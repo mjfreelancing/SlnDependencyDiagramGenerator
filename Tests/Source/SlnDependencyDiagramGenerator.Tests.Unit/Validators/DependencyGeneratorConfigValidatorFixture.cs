@@ -1,4 +1,5 @@
 using SlnDependencyDiagramGenerator.Config;
+using SlnDependencyDiagramGenerator.Tests.Shared;
 using SlnDependencyDiagramGenerator.Tests.Unit.Support;
 using SlnDependencyDiagramGenerator.Validators;
 using Shouldly;
@@ -14,24 +15,18 @@ public class DependencyGeneratorConfigValidatorFixture
         [Fact]
         public void Should_Return_No_Errors_For_A_Valid_Model()
         {
-            var solutionPath = CreateTempFilePath(".sln");
+            using var tempSolution = new DisposableTempFile(".sln");
+            var solutionPath = tempSolution.FilePath;
 
-            try
-            {
-                var model = new TestConfigBuilder()
-                    .WithSolutionPath(solutionPath)
-                    .Build();
+            var model = new TestConfigBuilder()
+                .WithSolutionPath(solutionPath)
+                .Build();
 
-                var validator = new DependencyGeneratorConfigValidator();
-                var result = validator.Validate(model);
+            var validator = new DependencyGeneratorConfigValidator();
+            var result = validator.Validate(model);
 
-                result.IsValid.ShouldBeTrue();
-                result.Errors.Count.ShouldBe(0);
-            }
-            finally
-            {
-                File.Delete(solutionPath);
-            }
+            result.IsValid.ShouldBeTrue();
+            result.Errors.Count.ShouldBe(0);
         }
 
         [Fact]
@@ -153,12 +148,5 @@ public class DependencyGeneratorConfigValidatorFixture
         };
     }
 
-    private static string CreateTempFilePath(string extension)
-    {
-        var filePath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}{extension}");
-        File.WriteAllText(filePath, string.Empty);
-
-        return filePath;
-    }
 }
 

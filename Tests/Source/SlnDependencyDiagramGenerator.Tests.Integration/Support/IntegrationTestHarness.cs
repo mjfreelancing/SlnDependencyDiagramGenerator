@@ -4,6 +4,7 @@ using SlnDependencyDiagramGenerator.Extensions;
 using SlnDependencyDiagramGenerator.Generator;
 using SlnDependencyDiagramGenerator.Generator.Discovery;
 using SlnDependencyDiagramGenerator.Parser;
+using SlnDependencyDiagramGenerator.Tests.Shared;
 using System.Threading;
 
 namespace SlnDependencyDiagramGenerator.Tests.Integration.Support;
@@ -85,7 +86,7 @@ internal static class IntegrationTestHarness
 
     public static async Task<ScenarioRunResult> RunGeneratorAsync(GeneratorScenarioOptions options)
     {
-        var tempDirectory = CreateTempDirectory(options.FixtureName.ToLowerInvariant());
+        var tempDirectory = new DisposableTempDirectory(options.FixtureName.ToLowerInvariant());
         var solutionPath = GetFixtureSolutionPath(options.FixtureName, options.SolutionExtension);
         var configuration = CreateConfig(solutionPath, tempDirectory.DirectoryPath, options);
 
@@ -268,28 +269,4 @@ internal static class IntegrationTestHarness
         return await discovery.DiscoverProjectsAsync(solutionPath, regexToInclude, regexToExclude, CancellationToken.None);
     }
 
-    public static DisposableTempDirectory CreateTempDirectory(string name)
-    {
-        return new DisposableTempDirectory(name);
-    }
 }
-
-internal sealed class DisposableTempDirectory : IDisposable
-{
-    public DisposableTempDirectory(string name)
-    {
-        DirectoryPath = Path.Combine(Path.GetTempPath(), "SlnDependencyDiagramGenerator.Tests.Integration", name, Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(DirectoryPath);
-    }
-
-    public string DirectoryPath { get; }
-
-    public void Dispose()
-    {
-        if (Directory.Exists(DirectoryPath))
-        {
-            Directory.Delete(DirectoryPath, recursive: true);
-        }
-    }
-}
-

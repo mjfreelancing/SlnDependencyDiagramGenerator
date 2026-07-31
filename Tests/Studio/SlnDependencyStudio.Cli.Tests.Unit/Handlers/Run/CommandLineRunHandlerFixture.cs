@@ -1,4 +1,3 @@
-using AllOverIt.Validation;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
@@ -10,8 +9,11 @@ using SlnDependencyDiagramGenerator.Generator;
 using SlnDependencyStudio.Cli.Enumerations;
 using SlnDependencyStudio.Cli.Handlers.Run;
 using SlnDependencyStudio.Shared.Config;
+using SlnDependencyStudio.Shared.ProcessExecution.PostGeneration;
 using SlnDependencyStudio.Shared.ProcessExecution.PreGeneration;
+using SlnDependencyStudio.Shared.ProcessExecution.RestoreSolution;
 using SlnDependencyStudio.Shared.Serialization;
+using SlnDependencyStudio.Shared.Services;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -28,10 +30,12 @@ public class CommandLineRunHandlerFixture
 
         var dependencyGenerator = Substitute.For<IDependencyGenerator>();
         var preGenRunner = Substitute.For<IPreGenerationCommandRunner>();
-        var validationInvoker = Substitute.For<IValidationInvoker>();
+        var restoreRunner = Substitute.For<IRestoreSolutionRunner>();
+        var postGenRunner = Substitute.For<IPostGenerationCommandRunner>();
+        var projectValidator = Substitute.For<IDependencyProjectValidator>();
         var logger = Substitute.For<ILogger<CommandLineRunHandler>>();
 
-        var handler = new CommandLineRunHandler(serializer, dependencyGenerator, preGenRunner, validationInvoker, logger);
+        var handler = new CommandLineRunHandler(serializer, dependencyGenerator, restoreRunner, preGenRunner, postGenRunner, projectValidator, logger);
 
         var result = await handler.HandleAsync(
             Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None);
@@ -59,10 +63,12 @@ public class CommandLineRunHandlerFixture
                 ExitCode = 0
             }));
 
-        var validationInvoker = Substitute.For<IValidationInvoker>();
+        var restoreRunner = Substitute.For<IRestoreSolutionRunner>();
+        var postGenRunner = Substitute.For<IPostGenerationCommandRunner>();
+        var projectValidator = Substitute.For<IDependencyProjectValidator>();
         var logger = Substitute.For<ILogger<CommandLineRunHandler>>();
 
-        var handler = new CommandLineRunHandler(serializer, dependencyGenerator, preGenRunner, validationInvoker, logger);
+        var handler = new CommandLineRunHandler(serializer, dependencyGenerator, restoreRunner, preGenRunner, postGenRunner, projectValidator, logger);
 
         var result = await handler.HandleAsync(
             Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None);
@@ -92,10 +98,12 @@ public class CommandLineRunHandlerFixture
                 ErrorMessage = "Command failed"
             }));
 
-        var validationInvoker = Substitute.For<IValidationInvoker>();
+        var restoreRunner = Substitute.For<IRestoreSolutionRunner>();
+        var postGenRunner = Substitute.For<IPostGenerationCommandRunner>();
+        var projectValidator = Substitute.For<IDependencyProjectValidator>();
         var logger = Substitute.For<ILogger<CommandLineRunHandler>>();
 
-        var handler = new CommandLineRunHandler(serializer, dependencyGenerator, preGenRunner, validationInvoker, logger);
+        var handler = new CommandLineRunHandler(serializer, dependencyGenerator, restoreRunner, preGenRunner, postGenRunner, projectValidator, logger);
 
         var result = await handler.HandleAsync(
             Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None);
@@ -125,10 +133,12 @@ public class CommandLineRunHandlerFixture
                 ErrorMessage = "Command failed"
             }));
 
-        var validationInvoker = Substitute.For<IValidationInvoker>();
+        var restoreRunner = Substitute.For<IRestoreSolutionRunner>();
+        var postGenRunner = Substitute.For<IPostGenerationCommandRunner>();
+        var projectValidator = Substitute.For<IDependencyProjectValidator>();
         var logger = Substitute.For<ILogger<CommandLineRunHandler>>();
 
-        var handler = new CommandLineRunHandler(serializer, dependencyGenerator, preGenRunner, validationInvoker, logger);
+        var handler = new CommandLineRunHandler(serializer, dependencyGenerator, restoreRunner, preGenRunner, postGenRunner, projectValidator, logger);
 
         var result = await handler.HandleAsync(
             Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None);
@@ -147,10 +157,12 @@ public class CommandLineRunHandlerFixture
 
         var dependencyGenerator = Substitute.For<IDependencyGenerator>();
         var preGenRunner = Substitute.For<IPreGenerationCommandRunner>();
-        var validationInvoker = Substitute.For<IValidationInvoker>();
+        var restoreRunner = Substitute.For<IRestoreSolutionRunner>();
+        var postGenRunner = Substitute.For<IPostGenerationCommandRunner>();
+        var projectValidator = Substitute.For<IDependencyProjectValidator>();
         var logger = Substitute.For<ILogger<CommandLineRunHandler>>();
 
-        var handler = new CommandLineRunHandler(serializer, dependencyGenerator, preGenRunner, validationInvoker, logger);
+        var handler = new CommandLineRunHandler(serializer, dependencyGenerator, restoreRunner, preGenRunner, postGenRunner, projectValidator, logger);
 
         var result = await handler.HandleAsync(
             @"X:\nonexistent\file.sds", CancellationToken.None);
@@ -169,10 +181,12 @@ public class CommandLineRunHandlerFixture
 
         var dependencyGenerator = Substitute.For<IDependencyGenerator>();
         var preGenRunner = Substitute.For<IPreGenerationCommandRunner>();
-        var validationInvoker = Substitute.For<IValidationInvoker>();
+        var restoreRunner = Substitute.For<IRestoreSolutionRunner>();
+        var postGenRunner = Substitute.For<IPostGenerationCommandRunner>();
+        var projectValidator = Substitute.For<IDependencyProjectValidator>();
         var logger = Substitute.For<ILogger<CommandLineRunHandler>>();
 
-        var handler = new CommandLineRunHandler(serializer, dependencyGenerator, preGenRunner, validationInvoker, logger);
+        var handler = new CommandLineRunHandler(serializer, dependencyGenerator, restoreRunner, preGenRunner, postGenRunner, projectValidator, logger);
 
         var result = await handler.HandleAsync(
             Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None);
@@ -190,16 +204,18 @@ public class CommandLineRunHandlerFixture
             .Returns(Task.FromResult(CreateValidDocument(preGenEnabled: false)));
 
         var dependencyGenerator = Substitute.For<IDependencyGenerator>();
+        var preGenRunner = Substitute.For<IPreGenerationCommandRunner>();
+        var restoreRunner = Substitute.For<IRestoreSolutionRunner>();
+        var postGenRunner = Substitute.For<IPostGenerationCommandRunner>();
+        var projectValidator = Substitute.For<IDependencyProjectValidator>();
 
-        dependencyGenerator
-            .When(generator => generator.ValidateConfiguration(Arg.Any<DependencyGeneratorConfig>()))
+        projectValidator
+            .When(validator => validator.Validate(Arg.Any<DependencyProjectDocument>(), Arg.Any<string>()))
             .Do(_ => throw new ValidationException("Test failure"));
 
-        var preGenRunner = Substitute.For<IPreGenerationCommandRunner>();
-        var validationInvoker = Substitute.For<IValidationInvoker>();
         var logger = Substitute.For<ILogger<CommandLineRunHandler>>();
 
-        var handler = new CommandLineRunHandler(serializer, dependencyGenerator, preGenRunner, validationInvoker, logger);
+        var handler = new CommandLineRunHandler(serializer, dependencyGenerator, restoreRunner, preGenRunner, postGenRunner, projectValidator, logger);
 
         var result = await handler.HandleAsync(
             Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None);
@@ -223,10 +239,12 @@ public class CommandLineRunHandlerFixture
             .ThrowsAsync(new DependencyGeneratorException("Generator error"));
 
         var preGenRunner = Substitute.For<IPreGenerationCommandRunner>();
-        var validationInvoker = Substitute.For<IValidationInvoker>();
+        var restoreRunner = Substitute.For<IRestoreSolutionRunner>();
+        var postGenRunner = Substitute.For<IPostGenerationCommandRunner>();
+        var projectValidator = Substitute.For<IDependencyProjectValidator>();
         var logger = Substitute.For<ILogger<CommandLineRunHandler>>();
 
-        var handler = new CommandLineRunHandler(serializer, dependencyGenerator, preGenRunner, validationInvoker, logger);
+        var handler = new CommandLineRunHandler(serializer, dependencyGenerator, restoreRunner, preGenRunner, postGenRunner, projectValidator, logger);
 
         var result = await handler.HandleAsync(
             Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None);
@@ -250,10 +268,12 @@ public class CommandLineRunHandlerFixture
             .ThrowsAsync(new ToolNotFoundException("Required external tools are not available"));
 
         var preGenRunner = Substitute.For<IPreGenerationCommandRunner>();
-        var validationInvoker = Substitute.For<IValidationInvoker>();
+        var restoreRunner = Substitute.For<IRestoreSolutionRunner>();
+        var postGenRunner = Substitute.For<IPostGenerationCommandRunner>();
+        var projectValidator = Substitute.For<IDependencyProjectValidator>();
         var logger = Substitute.For<ILogger<CommandLineRunHandler>>();
 
-        var handler = new CommandLineRunHandler(serializer, dependencyGenerator, preGenRunner, validationInvoker, logger);
+        var handler = new CommandLineRunHandler(serializer, dependencyGenerator, restoreRunner, preGenRunner, postGenRunner, projectValidator, logger);
 
         var result = await handler.HandleAsync(
             Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None);
@@ -277,10 +297,12 @@ public class CommandLineRunHandlerFixture
             .ThrowsAsync(new OperationCanceledException());
 
         var preGenRunner = Substitute.For<IPreGenerationCommandRunner>();
-        var validationInvoker = Substitute.For<IValidationInvoker>();
+        var restoreRunner = Substitute.For<IRestoreSolutionRunner>();
+        var postGenRunner = Substitute.For<IPostGenerationCommandRunner>();
+        var projectValidator = Substitute.For<IDependencyProjectValidator>();
         var logger = Substitute.For<ILogger<CommandLineRunHandler>>();
 
-        var handler = new CommandLineRunHandler(serializer, dependencyGenerator, preGenRunner, validationInvoker, logger);
+        var handler = new CommandLineRunHandler(serializer, dependencyGenerator, restoreRunner, preGenRunner, postGenRunner, projectValidator, logger);
 
         var result = await handler.HandleAsync(
             Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None);
@@ -321,7 +343,8 @@ public class CommandLineRunHandlerFixture
                 Enabled = preGenEnabled,
                 Command = preGenEnabled ? "dotnet" : string.Empty,
                 ContinueOnFailure = continueOnFailure
-            }
+            },
+            RestoreSolution = false
         };
     }
 }

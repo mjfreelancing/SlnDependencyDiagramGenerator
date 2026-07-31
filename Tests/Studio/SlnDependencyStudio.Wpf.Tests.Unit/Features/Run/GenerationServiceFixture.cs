@@ -9,6 +9,7 @@ using SlnDependencyStudio.Shared.Enumerations;
 using SlnDependencyStudio.Shared.ProcessExecution.PostGeneration;
 using SlnDependencyStudio.Shared.ProcessExecution.PreGeneration;
 using SlnDependencyStudio.Shared.ProcessExecution.RestoreSolution;
+using SlnDependencyStudio.Shared.Services;
 using SlnDependencyStudio.Wpf.Controls;
 using SlnDependencyStudio.Wpf.DependencyInjection;
 using SlnDependencyStudio.Wpf.Features.Output;
@@ -29,6 +30,7 @@ public class GenerationServiceFixture
     private readonly IScopedOperationFactory<IPreGenerationCommandRunner> _runnerFactory = Substitute.For<IScopedOperationFactory<IPreGenerationCommandRunner>>();
     private readonly IScopedOperationFactory<IPostGenerationCommandRunner> _postGenRunnerFactory = Substitute.For<IScopedOperationFactory<IPostGenerationCommandRunner>>();
     private readonly IScopedOperationFactory<IDependencyGenerator> _generatorFactory = Substitute.For<IScopedOperationFactory<IDependencyGenerator>>();
+    private readonly IDependencyProjectValidator _projectValidator = Substitute.For<IDependencyProjectValidator>();
     private readonly ILogger<GenerationService> _logger = NullLogger<GenerationService>.Instance;
 
     private readonly TrackableValue<bool> _preGenEnabled = new();
@@ -79,7 +81,7 @@ public class GenerationServiceFixture
         _postGenEditor.WorkingDirectory.Returns(_postGenWorkingDirectory);
         _store.PostGenerationEditor.Returns(_postGenEditor);
 
-        _service = new GenerationService(_store, _restoreRunnerFactory, _runnerFactory, _postGenRunnerFactory, _generatorFactory, _logger);
+        _service = new GenerationService(_store, _projectValidator, _restoreRunnerFactory, _runnerFactory, _postGenRunnerFactory, _generatorFactory, _logger);
     }
 
     public class RunPreGenerationAsync : GenerationServiceFixture

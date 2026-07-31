@@ -1,12 +1,10 @@
 ﻿using AllOverIt.Assertion;
-using AllOverIt.Validation;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
-using SlnDependencyDiagramGenerator.Generator;
 using SlnDependencyStudio.Cli.Enumerations;
 using SlnDependencyStudio.Shared.Config.Extensions;
 using SlnDependencyStudio.Shared.Serialization;
-using SlnDependencyStudio.Shared.Validators.Contexts;
+using SlnDependencyStudio.Shared.Services;
 using System.Text.Json;
 
 namespace SlnDependencyStudio.Cli.Handlers.Validate;
@@ -14,21 +12,18 @@ namespace SlnDependencyStudio.Cli.Handlers.Validate;
 /// <inheritdoc cref="ICommandLineValidateHandler"/>
 internal sealed class CommandLineValidateHandler : CommandLineHandlerBase, ICommandLineValidateHandler
 {
-    private readonly IDependencyGenerator _generator;
-    private readonly IValidationInvoker _validationInvoker;
+    private readonly IDependencyProjectValidator _projectValidator;
     private readonly ILogger<CommandLineValidateHandler> _logger;
 
     /// <summary>Initializes a new instance of <see cref="CommandLineValidateHandler"/>.</summary>
     /// <param name="serializer">The dependency project document serializer.</param>
-    /// <param name="generator">The dependency diagram generator.</param>
-    /// <param name="validationInvoker">The validation invoker for model validation.</param>
+    /// <param name="projectValidator">The dependency project document validator.</param>
     /// <param name="logger">The logger instance.</param>
-    public CommandLineValidateHandler(IDependencyProjectSerializer serializer, IDependencyGenerator generator,
-        IValidationInvoker validationInvoker, ILogger<CommandLineValidateHandler> logger)
+    public CommandLineValidateHandler(IDependencyProjectSerializer serializer,
+        IDependencyProjectValidator projectValidator, ILogger<CommandLineValidateHandler> logger)
         : base(serializer, logger)
     {
-        _generator = generator.WhenNotNull();
-        _validationInvoker = validationInvoker.WhenNotNull();
+        _projectValidator = projectValidator.WhenNotNull();
         _logger = logger.WhenNotNull();
     }
 
@@ -45,12 +40,9 @@ internal sealed class CommandLineValidateHandler : CommandLineHandlerBase, IComm
             // Log the configuration to help with troubleshooting any validation errors.
             document.LogConfiguration(configFilename, _logger);
 
-            // Validate Pre-Generation Command settings.
-            var preGenConfigContext = new PreGenerationConfigContext { ConfigDirectory = configDirectory };
-            _validationInvoker.AssertValidation(document.PreGeneration, preGenConfigContext);
-
-            // Validate the main diagram generator configuration.
-            _generator.ValidateConfiguration(document.DiagramGenerator);
+            // Validate all configuration up front so failures are reported before any command or
+            // generation work begins. The command runners themselves do not perform validation.
+            _projectValidator.Validate(document, configDirectory);
 
             _logger.LogInformation("Configuration is valid.");
 

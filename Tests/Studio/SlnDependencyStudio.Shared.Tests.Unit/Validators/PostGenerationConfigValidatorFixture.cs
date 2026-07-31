@@ -11,13 +11,13 @@ using System;
 
 namespace SlnDependencyStudio.Shared.Tests.Unit.Validators;
 
-public class PreGenerationConfigValidatorFixture
+public class PostGenerationConfigValidatorFixture
 {
     [Fact]
     public void Should_Pass_When_Disabled()
     {
         var invoker = CreateValidationInvoker();
-        var config = new PreGenerationConfig { Enabled = false };
+        var config = new PostGenerationConfig { Enabled = false };
 
         Should.NotThrow(() => invoker.AssertValidation(config));
     }
@@ -26,7 +26,7 @@ public class PreGenerationConfigValidatorFixture
     public void Should_Fail_When_Enabled_And_Command_Is_Empty()
     {
         var invoker = CreateValidationInvoker();
-        var config = new PreGenerationConfig { Enabled = true, Command = string.Empty };
+        var config = new PostGenerationConfig { Enabled = true, Command = string.Empty };
 
         var exception = Should.Throw<ValidationException>(() => invoker.AssertValidation(config));
 
@@ -38,7 +38,7 @@ public class PreGenerationConfigValidatorFixture
     public void Should_Pass_When_Enabled_And_Command_Is_Valid()
     {
         var invoker = CreateValidationInvoker();
-        var config = new PreGenerationConfig { Enabled = true, Command = "dotnet" };
+        var config = new PostGenerationConfig { Enabled = true, Command = "dotnet" };
 
         Should.NotThrow(() => invoker.AssertValidation(config));
     }
@@ -47,14 +47,14 @@ public class PreGenerationConfigValidatorFixture
     public void Should_Fail_When_WorkingDirectory_Does_Not_Exist()
     {
         var invoker = CreateValidationInvoker();
-        var config = new PreGenerationConfig
+        var config = new PostGenerationConfig
         {
             Enabled = true,
             Command = "dotnet",
             WorkingDirectory = @"X:\DoesNotExist\Path"
         };
 
-        var context = new PreGenerationConfigContext
+        var context = new PostGenerationConfigContext
         {
             ConfigDirectory = Environment.CurrentDirectory
         };
@@ -72,14 +72,14 @@ public class PreGenerationConfigValidatorFixture
         using var tempDir = new DisposableTempDirectory();
 
         var invoker = CreateValidationInvoker();
-        var config = new PreGenerationConfig
+        var config = new PostGenerationConfig
         {
             Enabled = true,
             Command = "dotnet",
             WorkingDirectory = tempDir.DirectoryPath
         };
 
-        var context = new PreGenerationConfigContext
+        var context = new PostGenerationConfigContext
         {
             ConfigDirectory = Environment.CurrentDirectory
         };
@@ -91,7 +91,7 @@ public class PreGenerationConfigValidatorFixture
     public void Should_Fail_When_Command_Contains_Invalid_Path_Chars()
     {
         var invoker = CreateValidationInvoker();
-        var config = new PreGenerationConfig
+        var config = new PostGenerationConfig
         {
             Enabled = true,
             Command = "cmd|test"
@@ -107,7 +107,7 @@ public class PreGenerationConfigValidatorFixture
     public void Should_Fail_When_Arguments_Contain_Invalid_Path_Chars()
     {
         var invoker = CreateValidationInvoker();
-        var config = new PreGenerationConfig
+        var config = new PostGenerationConfig
         {
             Enabled = true,
             Command = "dotnet",

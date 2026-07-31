@@ -52,13 +52,19 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SlnDependencyStudio.Wpf.Tes
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Installers", "Installers", "{026EDD64-7583-4D39-B75F-3181EDDBA87A}"
 EndProject
-Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "SlnDependencyStudio WPF Installer", "Installer\SlnDependencyStudio.vdproj", "{EA9FE387-834D-0B73-5DFC-F0A50E993EC5}"
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "SlnDependencyStudio Installer", "Installer\SlnDependencyStudio.vdproj", "{EA9FE387-834D-0B73-5DFC-F0A50E993EC5}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SlnDependencyStudio.Wpf.Tests.Integration", "Tests\Studio\SlnDependencyStudio.Wpf.Tests.Integration\SlnDependencyStudio.Wpf.Tests.Integration.csproj", "{8839DE9D-8A5C-4467-BED9-3C654C3D5EFF}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SlnDependencyStudio.Cli.Tests.Integration", "Tests\Studio\SlnDependencyStudio.Cli.Tests.Integration\SlnDependencyStudio.Cli.Tests.Integration.csproj", "{2F529BAC-2884-4F50-9B80-145EAD2B5C43}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SlnDependencyDiagramGenerator.Tests.Integration", "Tests\Source\SlnDependencyDiagramGenerator.Tests.Integration\SlnDependencyDiagramGenerator.Tests.Integration.csproj", "{3E2DF329-E746-CA07-9926-551A7EFB98B9}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{8CD22FF4-8E84-4233-883F-FEA44C029EFC}"
+	ProjectSection(SolutionItems) = preProject
+		Tests\Shared\DisposableTempDirectory.cs = Tests\Shared\DisposableTempDirectory.cs
+		Tests\Shared\DisposableTempFile.cs = Tests\Shared\DisposableTempFile.cs
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -271,6 +277,7 @@ Global
 		{8839DE9D-8A5C-4467-BED9-3C654C3D5EFF} = {2C920A23-D610-5BCD-25E5-3C62F0764F07}
 		{2F529BAC-2884-4F50-9B80-145EAD2B5C43} = {2C920A23-D610-5BCD-25E5-3C62F0764F07}
 		{3E2DF329-E746-CA07-9926-551A7EFB98B9} = {C0F1DB63-1A70-43EB-9C9C-CFE42853453A}
+		{8CD22FF4-8E84-4233-883F-FEA44C029EFC} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {84E15A70-1B30-4C9C-B34D-E418BF24940C}

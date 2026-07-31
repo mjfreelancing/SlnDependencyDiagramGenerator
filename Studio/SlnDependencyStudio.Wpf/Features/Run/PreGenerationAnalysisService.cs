@@ -1,6 +1,8 @@
 using AllOverIt.Extensions;
+using FluentValidation;
 using Microsoft.Extensions.Logging;
 using SlnDependencyDiagramGenerator.Generator.Discovery;
+using SlnDependencyStudio.Shared.Services;
 using SlnDependencyStudio.Shared.Utils;
 using SlnDependencyStudio.Wpf.DependencyInjection;
 using SlnDependencyStudio.Wpf.Features.Output;
@@ -18,15 +20,18 @@ namespace SlnDependencyStudio.Wpf.Features.Run;
 internal sealed class PreGenerationAnalysisService : IPreGenerationAnalysisService
 {
     private readonly IProjectDocumentStore _store;
+    private readonly IDependencyProjectValidator _projectValidator;
     private readonly IScopedOperationFactory<IProjectDiscoveryService> _projectDiscoveryFactory;
     private readonly IToolStatusService _toolStatus;
     private readonly ILogger<PreGenerationAnalysisService> _logger;
 
     /// <summary>Initializes a new instance of <see cref="PreGenerationAnalysisService"/>.</summary>
-    public PreGenerationAnalysisService(IProjectDocumentStore store, IScopedOperationFactory<IProjectDiscoveryService> projectDiscoveryFactory,
+    public PreGenerationAnalysisService(IProjectDocumentStore store, IDependencyProjectValidator projectValidator,
+        IScopedOperationFactory<IProjectDiscoveryService> projectDiscoveryFactory,
         IToolStatusService toolStatus, ILogger<PreGenerationAnalysisService> logger)
     {
         _store = store;
+        _projectValidator = projectValidator;
         _projectDiscoveryFactory = projectDiscoveryFactory;
         _toolStatus = toolStatus;
         _logger = logger;
@@ -42,6 +47,10 @@ internal sealed class PreGenerationAnalysisService : IPreGenerationAnalysisServi
                 _logger.LogDebug("Starting dry-run analysis");
 
                 observer.OnNext(Info("=== Dry-Run Analysis ==="));
+
+                // Validate all configuration up front so issues are detected early during the dry-run.
+                // The command runners themselves do not perform validation.
+                _projectValidator.Validate(_store.BuildDocument(), _store.DocumentDirectory);
 
                 var solutionPath = _store.SolutionOptionsEditor.SolutionPath.Value;
 
@@ -96,6 +105,12 @@ internal sealed class PreGenerationAnalysisService : IPreGenerationAnalysisServi
             catch (OperationCanceledException)
             {
                 observer.OnNext(Warning("Analysis cancelled"));
+            }
+            catch (ValidationException exception)
+            {
+                _logger.LogWarning("Configuration validation failed");
+
+                observer.OnNext(Error($"Configuration validation failed: {exception.Message}"));
             }
             catch (Exception ex)
             {

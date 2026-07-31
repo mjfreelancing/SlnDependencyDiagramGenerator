@@ -1,6 +1,7 @@
 using Shouldly;
 using SlnDependencyDiagramGenerator.Parser;
 using SlnDependencyDiagramGenerator.Parser.Resolvers;
+using SlnDependencyDiagramGenerator.Tests.Shared;
 using System;
 using System.IO;
 using System.Threading;
@@ -31,82 +32,52 @@ Global
 EndGlobal
 ";
 
-    private static string CreateTempSlnFile(string content)
-    {
-        var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.sln");
-        File.WriteAllText(path, content);
-        return path;
-    }
-
     [Fact]
     public async Task Should_Resolve_KnownToBeMSBuildFormat_Projects()
     {
-        var slnFile = CreateTempSlnFile(SlnContent);
-        try
-        {
-            var resolver = new SlnSolutionProjectResolver();
-            var projects = await resolver.GetProjectsAsync(slnFile, CancellationToken.None);
+        using var slnFile = new DisposableTempFile(".sln", SlnContent);
 
-            projects.ShouldContain(project => project.ProjectName == "MsBuildProject");
-            projects.ShouldContain(project => project.ProjectName == "AnotherBuild");
-        }
-        finally
-        {
-            File.Delete(slnFile);
-        }
+        var resolver = new SlnSolutionProjectResolver();
+        var projects = await resolver.GetProjectsAsync(slnFile.FilePath, CancellationToken.None);
+
+        projects.ShouldContain(project => project.ProjectName == "MsBuildProject");
+        projects.ShouldContain(project => project.ProjectName == "AnotherBuild");
     }
 
     [Fact]
     public async Task Should_Resolve_WebProjects()
     {
-        var slnFile = CreateTempSlnFile(SlnContent);
-        try
-        {
-            var resolver = new SlnSolutionProjectResolver();
-            var projects = await resolver.GetProjectsAsync(slnFile, CancellationToken.None);
+        using var slnFile = new DisposableTempFile(".sln", SlnContent);
 
-            projects.ShouldContain(project => project.ProjectName == "WebProject");
-        }
-        finally
-        {
-            File.Delete(slnFile);
-        }
+        var resolver = new SlnSolutionProjectResolver();
+        var projects = await resolver.GetProjectsAsync(slnFile.FilePath, CancellationToken.None);
+
+        projects.ShouldContain(project => project.ProjectName == "WebProject");
     }
 
     [Fact]
     public async Task Should_Exclude_SolutionFolders()
     {
-        var slnFile = CreateTempSlnFile(SlnContent);
-        try
-        {
-            var resolver = new SlnSolutionProjectResolver();
-            var projects = await resolver.GetProjectsAsync(slnFile, CancellationToken.None);
+        using var slnFile = new DisposableTempFile(".sln", SlnContent);
 
-            projects.ShouldNotContain(project => project.ProjectName == "SolutionItems");
-        }
-        finally
-        {
-            File.Delete(slnFile);
-        }
+        var resolver = new SlnSolutionProjectResolver();
+        var projects = await resolver.GetProjectsAsync(slnFile.FilePath, CancellationToken.None);
+
+        projects.ShouldNotContain(project => project.ProjectName == "SolutionItems");
     }
 
     [Fact]
     public async Task Should_Return_Projects_With_Absolute_Paths()
     {
-        var slnFile = CreateTempSlnFile(SlnContent);
-        try
-        {
-            var resolver = new SlnSolutionProjectResolver();
-            var projects = await resolver.GetProjectsAsync(slnFile, CancellationToken.None);
+        using var slnFile = new DisposableTempFile(".sln", SlnContent);
 
-            foreach (var project in projects)
-            {
-                Path.IsPathRooted(project.AbsolutePath).ShouldBeTrue();
-            }
-        }
-        finally
+        var resolver = new SlnSolutionProjectResolver();
+        var projects = await resolver.GetProjectsAsync(slnFile.FilePath, CancellationToken.None);
+
+        foreach (var project in projects)
         {
-            File.Delete(slnFile);
+            Path.IsPathRooted(project.AbsolutePath).ShouldBeTrue();
         }
     }
+
 }

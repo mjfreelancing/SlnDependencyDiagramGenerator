@@ -1,4 +1,5 @@
 using AllOverIt.Extensions;
+using FluentValidation;
 using Microsoft.Extensions.Logging;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Generator;
@@ -7,6 +8,7 @@ using SlnDependencyStudio.Shared.Enumerations;
 using SlnDependencyStudio.Shared.ProcessExecution.PostGeneration;
 using SlnDependencyStudio.Shared.ProcessExecution.PreGeneration;
 using SlnDependencyStudio.Shared.ProcessExecution.RestoreSolution;
+using SlnDependencyStudio.Shared.Services;
 using SlnDependencyStudio.Shared.Utils;
 using SlnDependencyStudio.Wpf.DependencyInjection;
 using SlnDependencyStudio.Wpf.Features.Output;
@@ -25,6 +27,7 @@ namespace SlnDependencyStudio.Wpf.Features.Run;
 internal sealed class GenerationService : IGenerationService
 {
     private readonly IProjectDocumentStore _store;
+    private readonly IDependencyProjectValidator _projectValidator;
     private readonly IScopedOperationFactory<IRestoreSolutionRunner> _restoreRunnerFactory;
     private readonly IScopedOperationFactory<IPreGenerationCommandRunner> _runnerFactory;
     private readonly IScopedOperationFactory<IPostGenerationCommandRunner> _postGenRunnerFactory;
@@ -32,13 +35,14 @@ internal sealed class GenerationService : IGenerationService
     private readonly ILogger<GenerationService> _logger;
 
     /// <summary>Initializes a new instance of <see cref="GenerationService"/>.</summary>
-    public GenerationService(IProjectDocumentStore store,
+    public GenerationService(IProjectDocumentStore store, IDependencyProjectValidator projectValidator,
         IScopedOperationFactory<IRestoreSolutionRunner> restoreRunnerFactory,
         IScopedOperationFactory<IPreGenerationCommandRunner> runnerFactory,
         IScopedOperationFactory<IPostGenerationCommandRunner> postGenRunnerFactory,
         IScopedOperationFactory<IDependencyGenerator> generatorFactory, ILogger<GenerationService> logger)
     {
         _store = store;
+        _projectValidator = projectValidator;
         _restoreRunnerFactory = restoreRunnerFactory;
         _runnerFactory = runnerFactory;
         _postGenRunnerFactory = postGenRunnerFactory;
@@ -58,6 +62,10 @@ internal sealed class GenerationService : IGenerationService
                 _logger.LogInformation("Generation started");
 
                 observer.OnNext(Info("=== Generation Started ==="));
+
+                // Validate all configuration up front so the pipeline fails fast before any command or
+                // generation work begins. The command runners themselves do not perform validation.
+                _projectValidator.Validate(_store.BuildDocument(), _store.DocumentDirectory);
 
                 var config = _store.BuildGeneratorConfig();
 
@@ -86,6 +94,12 @@ internal sealed class GenerationService : IGenerationService
                 _logger.LogWarning("Generation cancelled");
 
                 observer.OnNext(Warning("Generation cancelled"));
+            }
+            catch (ValidationException exception)
+            {
+                _logger.LogWarning("Configuration validation failed");
+
+                observer.OnNext(Error($"Configuration validation failed: {exception.Message}"));
             }
             catch (TimeoutException ex)
             {

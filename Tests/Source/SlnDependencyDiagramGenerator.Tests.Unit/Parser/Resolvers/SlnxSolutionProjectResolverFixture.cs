@@ -1,6 +1,7 @@
 using Shouldly;
 using SlnDependencyDiagramGenerator.Parser;
 using SlnDependencyDiagramGenerator.Parser.Resolvers;
+using SlnDependencyDiagramGenerator.Tests.Shared;
 using System;
 using System.IO;
 using System.Threading;
@@ -18,30 +19,17 @@ public class SlnxSolutionProjectResolverFixture
         </Solution>
         """;
 
-    private static string CreateTempSlnxFile(string content)
-    {
-        var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.slnx");
-        File.WriteAllText(path, content);
-        return path;
-    }
-
     [Fact]
     public async Task Should_Resolve_Csproj_Projects()
     {
-        var slnxFile = CreateTempSlnxFile(SlnxContent);
-        try
-        {
-            var resolver = new SlnxSolutionProjectResolver();
-            var projects = await resolver.GetProjectsAsync(slnxFile, CancellationToken.None);
+        using var slnxFile = new DisposableTempFile(".slnx", SlnxContent);
 
-            projects.ShouldContain(project => project.ProjectName == "MsBuildProject");
-            projects.ShouldContain(project => project.ProjectName == "AnotherBuild");
-            projects.ShouldContain(project => project.ProjectName == "WebProject");
-        }
-        finally
-        {
-            File.Delete(slnxFile);
-        }
+        var resolver = new SlnxSolutionProjectResolver();
+        var projects = await resolver.GetProjectsAsync(slnxFile.FilePath, CancellationToken.None);
+
+        projects.ShouldContain(project => project.ProjectName == "MsBuildProject");
+        projects.ShouldContain(project => project.ProjectName == "AnotherBuild");
+        projects.ShouldContain(project => project.ProjectName == "WebProject");
     }
 
     [Fact]
@@ -54,39 +42,27 @@ public class SlnxSolutionProjectResolverFixture
                 <Project Path="config\settings.json" Type="{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}" />
             </Solution>
             """;
-        var slnxFile = CreateTempSlnxFile(content);
-        try
-        {
-            var resolver = new SlnxSolutionProjectResolver();
-            var projects = await resolver.GetProjectsAsync(slnxFile, CancellationToken.None);
+        using var slnxFile = new DisposableTempFile(".slnx", content);
 
-            projects.ShouldContain(project => project.ProjectName == "MsBuildProject");
-            projects.ShouldNotContain(project => project.ProjectName == "README");
-            projects.ShouldNotContain(project => project.ProjectName == "settings");
-        }
-        finally
-        {
-            File.Delete(slnxFile);
-        }
+        var resolver = new SlnxSolutionProjectResolver();
+        var projects = await resolver.GetProjectsAsync(slnxFile.FilePath, CancellationToken.None);
+
+        projects.ShouldContain(project => project.ProjectName == "MsBuildProject");
+        projects.ShouldNotContain(project => project.ProjectName == "README");
+        projects.ShouldNotContain(project => project.ProjectName == "settings");
     }
 
     [Fact]
     public async Task Should_Return_Projects_With_Absolute_Paths()
     {
-        var slnxFile = CreateTempSlnxFile(SlnxContent);
-        try
-        {
-            var resolver = new SlnxSolutionProjectResolver();
-            var projects = await resolver.GetProjectsAsync(slnxFile, CancellationToken.None);
+        using var slnxFile = new DisposableTempFile(".slnx", SlnxContent);
 
-            foreach (var project in projects)
-            {
-                Path.IsPathRooted(project.AbsolutePath).ShouldBeTrue();
-            }
-        }
-        finally
+        var resolver = new SlnxSolutionProjectResolver();
+        var projects = await resolver.GetProjectsAsync(slnxFile.FilePath, CancellationToken.None);
+
+        foreach (var project in projects)
         {
-            File.Delete(slnxFile);
+            Path.IsPathRooted(project.AbsolutePath).ShouldBeTrue();
         }
     }
 
@@ -94,18 +70,12 @@ public class SlnxSolutionProjectResolverFixture
     public async Task Should_Return_Empty_When_No_Solution_Projects()
     {
         var content = "<Solution></Solution>";
-        var slnxFile = CreateTempSlnxFile(content);
-        try
-        {
-            var resolver = new SlnxSolutionProjectResolver();
-            var projects = await resolver.GetProjectsAsync(slnxFile, CancellationToken.None);
+        using var slnxFile = new DisposableTempFile(".slnx", content);
 
-            projects.ShouldBeEmpty();
-        }
-        finally
-        {
-            File.Delete(slnxFile);
-        }
+        var resolver = new SlnxSolutionProjectResolver();
+        var projects = await resolver.GetProjectsAsync(slnxFile.FilePath, CancellationToken.None);
+
+        projects.ShouldBeEmpty();
     }
 
     [Fact]
@@ -118,17 +88,11 @@ public class SlnxSolutionProjectResolverFixture
                 <Project Path="src\MyDb.sqlproj" Type="{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}" />
             </Solution>
             """;
-        var slnxFile = CreateTempSlnxFile(content);
-        try
-        {
-            var resolver = new SlnxSolutionProjectResolver();
-            var projects = await resolver.GetProjectsAsync(slnxFile, CancellationToken.None);
+        using var slnxFile = new DisposableTempFile(".slnx", content);
 
-            projects.Count.ShouldBe(3);
-        }
-        finally
-        {
-            File.Delete(slnxFile);
-        }
+        var resolver = new SlnxSolutionProjectResolver();
+        var projects = await resolver.GetProjectsAsync(slnxFile.FilePath, CancellationToken.None);
+
+        projects.Count.ShouldBe(3);
     }
 }

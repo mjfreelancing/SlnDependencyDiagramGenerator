@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using Shouldly;
 using SlnDependencyDiagramGenerator.Generator.Discovery;
+using SlnDependencyStudio.Shared.Services;
 using SlnDependencyStudio.Wpf.DependencyInjection;
 using SlnDependencyStudio.Wpf.Features.Output;
 using SlnDependencyStudio.Wpf.Features.Pipeline.Models;
@@ -25,6 +26,7 @@ public class PreGenerationAnalysisServiceFixture
     private readonly IToolStatusService _toolStatus = Substitute.For<IToolStatusService>();
     private readonly ILogger<PreGenerationAnalysisService> _logger = NullLogger<PreGenerationAnalysisService>.Instance;
     private readonly ISolutionOptionsEditor _solutionEditor = Substitute.For<ISolutionOptionsEditor>();
+    private readonly IDependencyProjectValidator _projectValidator = Substitute.For<IDependencyProjectValidator>();
     private readonly PreGenerationAnalysisService _service;
 
     public PreGenerationAnalysisServiceFixture()
@@ -34,7 +36,7 @@ public class PreGenerationAnalysisServiceFixture
 
         var discoveryFactory = new ScopedOperationFactory<IProjectDiscoveryService>(_scopeFactory);
 
-        _service = new PreGenerationAnalysisService(_store, discoveryFactory, _toolStatus, _logger);
+        _service = new PreGenerationAnalysisService(_store, _projectValidator, discoveryFactory, _toolStatus, _logger);
     }
 
     public class RunAsync : PreGenerationAnalysisServiceFixture

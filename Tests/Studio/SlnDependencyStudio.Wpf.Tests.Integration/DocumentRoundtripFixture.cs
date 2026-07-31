@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
 using SlnDependencyDiagramGenerator.Config;
+using SlnDependencyDiagramGenerator.Tests.Shared;
 using SlnDependencyStudio.Shared.Serialization;
 using SlnDependencyStudio.Wpf.Tests.Integration.Support;
 using System.IO;
@@ -14,93 +15,73 @@ public class DocumentRoundtripFixture
     [Fact]
     public async Task Should_Roundtrip_Basic_Document()
     {
-        var tempFile = Path.GetTempFileName() + ".sds";
+        using var tempFile = new DisposableTempFile(".sds");
 
-        try
-        {
-            var provider = IntegrationTestHarness.CreateServiceProvider();
-            var serializer = provider.GetRequiredService<IDependencyProjectSerializer>();
+        var provider = IntegrationTestHarness.CreateServiceProvider();
+        var serializer = provider.GetRequiredService<IDependencyProjectSerializer>();
 
-            var original = IntegrationTestHarness.CreateDocument(
-                projectName: "Roundtrip Test",
-                solutionPath: @"C:\Projects\test.sln",
-                format: DiagramFormat.D2);
+        var original = IntegrationTestHarness.CreateDocument(
+            projectName: "Roundtrip Test",
+            solutionPath: @"C:\Projects\test.sln",
+            format: DiagramFormat.D2);
 
-            // Serialize to file
-            await serializer.SerializeAsync(original, tempFile);
+        // Serialize to file
+        await serializer.SerializeAsync(original, tempFile.FilePath);
 
-            // Deserialize from file
-            var loaded = await serializer.DeserializeAsync(tempFile);
+        // Deserialize from file
+        var loaded = await serializer.DeserializeAsync(tempFile.FilePath);
 
-            // Verify
-            loaded.ShouldNotBeNull();
-            loaded.SchemaVersion.ShouldBe(1);
-            loaded.Metadata.ProjectName.ShouldBe("Roundtrip Test");
-            loaded.Metadata.Description.ShouldBe("Integration test project");
-            loaded.DiagramGenerator.Solution.SolutionPath.ShouldBe(@"C:\Projects\test.sln");
-            loaded.DiagramGenerator.Diagram.Formats.ShouldContain(DiagramFormat.D2);
-        }
-        finally
-        {
-            if (File.Exists(tempFile))
-            {
-                File.Delete(tempFile);
-            }
-        }
+        // Verify
+        loaded.ShouldNotBeNull();
+        loaded.SchemaVersion.ShouldBe(1);
+        loaded.Metadata.ProjectName.ShouldBe("Roundtrip Test");
+        loaded.Metadata.Description.ShouldBe("Integration test project");
+        loaded.DiagramGenerator.Solution.SolutionPath.ShouldBe(@"C:\Projects\test.sln");
+        loaded.DiagramGenerator.Diagram.Formats.ShouldContain(DiagramFormat.D2);
     }
 
     [Fact]
     public async Task Should_Preserve_ExtensionData_On_Roundtrip()
     {
-        var tempFile = Path.GetTempFileName() + ".sds";
+        using var tempFile = new DisposableTempFile(".sds");
 
-        try
+        var provider = IntegrationTestHarness.CreateServiceProvider();
+        var serializer = provider.GetRequiredService<IDependencyProjectSerializer>();
+
+        // Write a JSON file with an unknown field to test forward compatibility
+        var json = """
         {
-            var provider = IntegrationTestHarness.CreateServiceProvider();
-            var serializer = provider.GetRequiredService<IDependencyProjectSerializer>();
-
-            // Write a JSON file with an unknown field to test forward compatibility
-            var json = """
-            {
-              "schemaVersion": 1,
-              "metadata": {
-                "projectName": "Forward Compat",
-                "description": "Testing unknown fields"
-              },
-              "diagramGenerator": {
-                "solution": { "solutionPath": "test.sln" },
-                "diagram": { "formats": ["Mermaid"], "direction": "LR" },
-                "export": { "rootPath": "%TEMP%\\out", "clearContents": true }
-              },
-              "preGeneration": { "enabled": false, "command": "", "arguments": "", "workingDirectory": "", "continueOnFailure": false },
-              "futureField": "should be preserved",
-              "futureObject": { "nested": "value" }
-            }
-            """;
-
-            await File.WriteAllTextAsync(tempFile, json);
-
-            // Deserialize
-            var loaded = await serializer.DeserializeAsync(tempFile);
-
-            loaded.ShouldNotBeNull();
-            loaded.Metadata.ProjectName.ShouldBe("Forward Compat");
-
-            // Re-serialize
-            var reJson = serializer.Serialize(loaded);
-
-            // Verify the unknown fields are preserved in the output
-            reJson.ShouldContain("futureField");
-            reJson.ShouldContain("futureObject");
-            reJson.ShouldContain("nested");
+          "schemaVersion": 1,
+          "metadata": {
+            "projectName": "Forward Compat",
+            "description": "Testing unknown fields"
+          },
+          "diagramGenerator": {
+            "solution": { "solutionPath": "test.sln" },
+            "diagram": { "formats": ["Mermaid"], "direction": "LR" },
+            "export": { "rootPath": "%TEMP%\\out", "clearContents": true }
+          },
+          "preGeneration": { "enabled": false, "command": "", "arguments": "", "workingDirectory": "", "continueOnFailure": false },
+          "futureField": "should be preserved",
+          "futureObject": { "nested": "value" }
         }
-        finally
-        {
-            if (File.Exists(tempFile))
-            {
-                File.Delete(tempFile);
-            }
-        }
+        """;
+
+        await File.WriteAllTextAsync(tempFile.FilePath, json);
+
+        // Deserialize
+        var loaded = await serializer.DeserializeAsync(tempFile.FilePath);
+
+        loaded.ShouldNotBeNull();
+        loaded.Metadata.ProjectName.ShouldBe("Forward Compat");
+
+        // Re-serialize
+        var reJson = serializer.Serialize(loaded);
+
+        // Verify the unknown fields are preserved in the output
+        reJson.ShouldContain("futureField");
+        reJson.ShouldContain("futureObject");
+        reJson.ShouldContain("nested");
     }
 
     [Fact]

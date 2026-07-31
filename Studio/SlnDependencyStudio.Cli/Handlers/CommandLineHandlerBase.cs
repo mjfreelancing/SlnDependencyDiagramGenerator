@@ -41,6 +41,7 @@ internal abstract class CommandLineHandlerBase
         var configDirectory = GetConfigDirectory(configFilename);
 
         document.PreGeneration.WorkingDirectory = PathUtils.ResolveAsAbsolutePath(document.PreGeneration.WorkingDirectory, configDirectory);
+        document.PostGeneration.WorkingDirectory = PathUtils.ResolveAsAbsolutePath(document.PostGeneration.WorkingDirectory, configDirectory);
 
         document.DiagramGenerator.Solution.SolutionPath = PathUtils.ResolveAsAbsolutePath(document.DiagramGenerator.Solution.SolutionPath, configDirectory);
         document.DiagramGenerator.Export.RootPath = PathUtils.ResolveAsAbsolutePath(document.DiagramGenerator.Export.RootPath, configDirectory);
