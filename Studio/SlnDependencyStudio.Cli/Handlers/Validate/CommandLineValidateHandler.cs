@@ -51,17 +51,17 @@ internal sealed class CommandLineValidateHandler : CommandLineHandlerBase, IComm
         catch (ValidationException exception)
         {
             WriteValidationErrors(exception);
-            return StudioCliExitCode.ValidateCommandFailed.Value;
+            return (int)StudioCliExitCode.ValidateCommandFailed;
         }
         catch (JsonException exception)
         {
             _logger.LogError("Failed to parse configuration file. Error on line {LineNumber} for Path {Path}.", exception.LineNumber + 1, exception.Path);
-            return StudioCliExitCode.CannotLoadConfigFile.Value;
+            return (int)StudioCliExitCode.CannotLoadConfigFile;
         }
         catch (Exception exception) when (exception is DirectoryNotFoundException or FileNotFoundException)
         {
             _logger.LogError("Could not load file: {Message}", exception.Message);
-            return StudioCliExitCode.CannotLoadConfigFile.Value;
+            return (int)StudioCliExitCode.CannotLoadConfigFile;
         }
     }
 }

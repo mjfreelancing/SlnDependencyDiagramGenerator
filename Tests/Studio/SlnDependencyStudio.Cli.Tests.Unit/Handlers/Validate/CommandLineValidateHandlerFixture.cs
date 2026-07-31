@@ -51,7 +51,7 @@ public class CommandLineValidateHandlerFixture
 
         var result = await handler.HandleAsync(@"X:\nonexistent\file.sds", CancellationToken.None);
 
-        result.ShouldBe(StudioCliExitCode.CannotLoadConfigFile.Value);
+        result.ShouldBe((int)StudioCliExitCode.CannotLoadConfigFile);
     }
 
     [Fact]
@@ -70,7 +70,7 @@ public class CommandLineValidateHandlerFixture
 
         var result = await handler.HandleAsync(Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None);
 
-        result.ShouldBe(StudioCliExitCode.CannotLoadConfigFile.Value);
+        result.ShouldBe((int)StudioCliExitCode.CannotLoadConfigFile);
     }
 
     [Fact]
@@ -96,7 +96,7 @@ public class CommandLineValidateHandlerFixture
 
         var result = await handler.HandleAsync(tempFile.FilePath, CancellationToken.None);
 
-        result.ShouldBe(StudioCliExitCode.ValidateCommandFailed.Value);
+        result.ShouldBe((int)StudioCliExitCode.ValidateCommandFailed);
     }
 
     private static DependencyProjectDocument CreateValidDocument()

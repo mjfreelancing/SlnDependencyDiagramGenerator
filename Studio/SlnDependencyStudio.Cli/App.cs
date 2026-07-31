@@ -53,7 +53,7 @@ internal sealed class App : ConsoleAppBase
         {
             if (parseResult.Errors.Count > 0)
             {
-                ExitCode = StudioCliExitCode.CommandLineParseFailed.Value;
+                ExitCode = (int)StudioCliExitCode.CommandLineParseFailed;
             }
             else
             {
@@ -67,7 +67,7 @@ internal sealed class App : ConsoleAppBase
         catch (Exception exception)
         {
             _logger.LogError(exception, "An unexpected CLI failure occurred.");
-            ExitCode = StudioCliExitCode.UnhandledCliFailure.Value;
+            ExitCode = (int)StudioCliExitCode.UnhandledCliFailure;
         }
     }
 }

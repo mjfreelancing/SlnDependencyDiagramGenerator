@@ -68,12 +68,12 @@ internal sealed class CommandLineRunHandler : CommandLineHandlerBase, ICommandLi
 
             if (!await RunRestoreSolutionIfRequiredAsync(document, cancellationToken))
             {
-                return StudioCliExitCode.DotNetRestoreFailed.Value;
+                return (int)StudioCliExitCode.DotNetRestoreFailed;
             }
 
             if (!await RunPreGenerationCommandIfRequiredAsync(document, cancellationToken))
             {
-                return StudioCliExitCode.PreGenerationCommandFailed.Value;
+                return (int)StudioCliExitCode.PreGenerationCommandFailed;
             }
 
             await GenerateDiagramsAsync(document, cancellationToken);
@@ -87,37 +87,37 @@ internal sealed class CommandLineRunHandler : CommandLineHandlerBase, ICommandLi
         catch (ValidationException exception)
         {
             WriteValidationErrors(exception);
-            return StudioCliExitCode.RunCommandFailed.Value;
+            return (int)StudioCliExitCode.RunCommandFailed;
         }
         catch (RegexParseException exception)
         {
             _logger.LogError("Invalid regular expression: {Message}", exception.Message);
-            return StudioCliExitCode.RunCommandFailed.Value;
+            return (int)StudioCliExitCode.RunCommandFailed;
         }
         catch (ToolNotFoundException exception)
         {
             _logger.LogError("Required diagram tool not found: {Message}", exception.Message);
-            return StudioCliExitCode.DiagramToolNotFound.Value;
+            return (int)StudioCliExitCode.DiagramToolNotFound;
         }
         catch (DependencyGeneratorException exception)
         {
             _logger.LogError("Diagram generator failed: {Message}", exception.Message);
-            return StudioCliExitCode.DiagramGeneratorFailed.Value;
+            return (int)StudioCliExitCode.DiagramGeneratorFailed;
         }
         catch (OperationCanceledException)
         {
             _logger.LogWarning("Operation was cancelled.");
-            return StudioCliExitCode.RunCommandFailed.Value;
+            return (int)StudioCliExitCode.RunCommandFailed;
         }
         catch (JsonException exception)
         {
             _logger.LogError("Failed to parse configuration file. Error on line {LineNumber} for Path {Path}.", exception.LineNumber + 1, exception.Path);
-            return StudioCliExitCode.CannotLoadConfigFile.Value;
+            return (int)StudioCliExitCode.CannotLoadConfigFile;
         }
         catch (Exception exception) when (exception is DirectoryNotFoundException or FileNotFoundException)
         {
             _logger.LogError("Could not load file: {Message}", exception.Message);
-            return StudioCliExitCode.CannotLoadConfigFile.Value;
+            return (int)StudioCliExitCode.CannotLoadConfigFile;
         }
     }
 

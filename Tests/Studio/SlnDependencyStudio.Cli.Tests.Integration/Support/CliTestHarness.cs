@@ -48,7 +48,7 @@ internal static class CliTestHarness
 
         if (parseResult.Errors.Count > 0)
         {
-            return 1001; // StudioCliExitCode.CommandLineParseFailed.Value
+            return 1001; // (int)StudioCliExitCode.CommandLineParseFailed
         }
 
         await parseResult.InvokeAsync(cancellationToken: CancellationToken.None);

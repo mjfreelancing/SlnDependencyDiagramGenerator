@@ -108,7 +108,7 @@ public class CommandLineRunHandlerFixture
         var result = await handler.HandleAsync(
             Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None);
 
-        result.ShouldBe(StudioCliExitCode.PreGenerationCommandFailed.Value);
+        result.ShouldBe((int)StudioCliExitCode.PreGenerationCommandFailed);
     }
 
     [Fact]
@@ -167,7 +167,7 @@ public class CommandLineRunHandlerFixture
         var result = await handler.HandleAsync(
             @"X:\nonexistent\file.sds", CancellationToken.None);
 
-        result.ShouldBe(StudioCliExitCode.CannotLoadConfigFile.Value);
+        result.ShouldBe((int)StudioCliExitCode.CannotLoadConfigFile);
     }
 
     [Fact]
@@ -191,7 +191,7 @@ public class CommandLineRunHandlerFixture
         var result = await handler.HandleAsync(
             Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None);
 
-        result.ShouldBe(StudioCliExitCode.CannotLoadConfigFile.Value);
+        result.ShouldBe((int)StudioCliExitCode.CannotLoadConfigFile);
     }
 
     [Fact]
@@ -220,7 +220,7 @@ public class CommandLineRunHandlerFixture
         var result = await handler.HandleAsync(
             Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None);
 
-        result.ShouldBe(StudioCliExitCode.RunCommandFailed.Value);
+        result.ShouldBe((int)StudioCliExitCode.RunCommandFailed);
     }
 
     [Fact]
@@ -249,7 +249,7 @@ public class CommandLineRunHandlerFixture
         var result = await handler.HandleAsync(
             Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None);
 
-        result.ShouldBe(StudioCliExitCode.DiagramGeneratorFailed.Value);
+        result.ShouldBe((int)StudioCliExitCode.DiagramGeneratorFailed);
     }
 
     [Fact]
@@ -278,7 +278,7 @@ public class CommandLineRunHandlerFixture
         var result = await handler.HandleAsync(
             Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None);
 
-        result.ShouldBe(StudioCliExitCode.DiagramToolNotFound.Value);
+        result.ShouldBe((int)StudioCliExitCode.DiagramToolNotFound);
     }
 
     [Fact]
@@ -307,7 +307,7 @@ public class CommandLineRunHandlerFixture
         var result = await handler.HandleAsync(
             Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None);
 
-        result.ShouldBe(StudioCliExitCode.RunCommandFailed.Value);
+        result.ShouldBe((int)StudioCliExitCode.RunCommandFailed);
     }
 
     [Fact]
@@ -371,7 +371,7 @@ public class CommandLineRunHandlerFixture
         var result = await handler.HandleAsync(
             Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None);
 
-        result.ShouldBe(StudioCliExitCode.DotNetRestoreFailed.Value);
+        result.ShouldBe((int)StudioCliExitCode.DotNetRestoreFailed);
         await dependencyGenerator.DidNotReceiveWithAnyArgs().CreateDiagramsAsync(default!, default);
     }
 
@@ -396,7 +396,7 @@ public class CommandLineRunHandlerFixture
         var result = await handler.HandleAsync(
             Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None);
 
-        result.ShouldBe(StudioCliExitCode.DotNetRestoreFailed.Value);
+        result.ShouldBe((int)StudioCliExitCode.DotNetRestoreFailed);
         await restoreRunner.DidNotReceiveWithAnyArgs().RunAsync(default!, default);
     }
 
