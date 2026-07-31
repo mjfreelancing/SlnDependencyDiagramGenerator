@@ -35,9 +35,25 @@
                         Margin="0,2,0,0"
                         FontSize="12"
                         Foreground="{DynamicResource MaterialDesign.Brush.ForegroundLight}"
-                        Text="Pre-generation command and tool status" />
+                        Text="Diagram Generation Processing Pipeline" />
                 </StackPanel>
             </StackPanel>
+
+            <!--  Restore Solution  -->
+            <studioControls:FormField
+                Title="Restore Solution"
+                Margin="0,0,0,24"
+                Description="Run 'dotnet restore' on the solution before generation so project assets are available.">
+                <Border
+                    Padding="16,12"
+                    Background="{DynamicResource MaterialDesign.Brush.Chip.Background}"
+                    CornerRadius="8">
+                    <CheckBox
+                        VerticalAlignment="Center"
+                        Content="Restore Solution"
+                        IsChecked="{Binding RestoreSolution.Value}" />
+                </Border>
+            </studioControls:FormField>
 
             <!--  Pre-Generation Command  -->
             <studioControls:FormField
@@ -82,10 +98,7 @@
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <TextBox
-                                    Grid.Column="0"
-                                    materialDesign:HintAssist.Hint="e.g. dotnet"
-                                    Text="{Binding Command.Value, UpdateSourceTrigger=PropertyChanged}" />
+                                <TextBox Grid.Column="0" Text="{Binding Command.Value, UpdateSourceTrigger=PropertyChanged}" />
                                 <Button
                                     Grid.Column="1"
                                     Command="{Binding BrowseCommandCommand}"
@@ -108,7 +121,6 @@
                             Grid.Row="2"
                             Grid.Column="1"
                             Margin="16,6,0,0"
-                            materialDesign:HintAssist.Hint="e.g. restore MyProject.slnx"
                             IsEnabled="{Binding Enabled.Value}"
                             Text="{Binding Arguments.Value, UpdateSourceTrigger=PropertyChanged}" />
 
@@ -138,7 +150,6 @@
                             <TextBox
                                 Grid.Row="0"
                                 Grid.Column="0"
-                                materialDesign:HintAssist.Hint="e.g. C:\Dev\MyProject"
                                 Text="{Binding WorkingDirectory.Value, UpdateSourceTrigger=PropertyChanged}" />
                             <Button
                                 Grid.Row="0"
@@ -163,6 +174,119 @@
                             Content="Continue on failure"
                             IsChecked="{Binding ContinueOnFailure.Value}"
                             IsEnabled="{Binding Enabled.Value}" />
+                    </Grid>
+                </Border>
+            </studioControls:FormField>
+
+            <!--  Post-Generation Command  -->
+            <studioControls:FormField
+                Title="Post-generation command"
+                Margin="0,0,0,24"
+                Description="An optional command to run after diagram generation completes.">
+                <Border
+                    Padding="16,12"
+                    Background="{DynamicResource MaterialDesign.Brush.Chip.Background}"
+                    CornerRadius="8">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <ToggleButton
+                            Grid.Row="0"
+                            Grid.RowSpan="5"
+                            Grid.Column="0"
+                            VerticalAlignment="Top"
+                            IsChecked="{Binding PostGenEnabled.Value}"
+                            Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+
+                        <!--  Row 0: Command FormField  -->
+                        <studioControls:FormField
+                            Title="Command"
+                            Grid.Row="0"
+                            Grid.Column="1"
+                            Margin="16,0,0,0"
+                            ValidationError="{Binding PostGenError}">
+                            <Grid IsEnabled="{Binding PostGenEnabled.Value}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox Grid.Column="0" Text="{Binding PostGenCommand.Value, UpdateSourceTrigger=PropertyChanged}" />
+                                <Button
+                                    Grid.Column="1"
+                                    Command="{Binding BrowsePostGenCommandCommand}"
+                                    Content="Browse"
+                                    Style="{StaticResource ActionButtonStyle}" />
+                            </Grid>
+                        </studioControls:FormField>
+
+                        <!--  Row 1: Arguments label  -->
+                        <TextBlock
+                            Grid.Row="1"
+                            Grid.Column="1"
+                            Margin="16,24,0,0"
+                            FontWeight="SemiBold"
+                            IsEnabled="{Binding PostGenEnabled.Value}"
+                            Text="Arguments" />
+
+                        <!--  Row 2: Arguments  -->
+                        <TextBox
+                            Grid.Row="2"
+                            Grid.Column="1"
+                            Margin="16,6,0,0"
+                            IsEnabled="{Binding PostGenEnabled.Value}"
+                            Text="{Binding PostGenArguments.Value, UpdateSourceTrigger=PropertyChanged}" />
+
+                        <!--  Row 3: Working directory label  -->
+                        <TextBlock
+                            Grid.Row="3"
+                            Grid.Column="1"
+                            Margin="16,24,0,0"
+                            FontWeight="SemiBold"
+                            IsEnabled="{Binding PostGenEnabled.Value}"
+                            Text="Working directory" />
+
+                        <!--  Row 4: Working Directory + Browse  -->
+                        <Grid
+                            Grid.Row="4"
+                            Grid.Column="1"
+                            Margin="16,6,0,0"
+                            IsEnabled="{Binding PostGenEnabled.Value}">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox
+                                Grid.Row="0"
+                                Grid.Column="0"
+                                Text="{Binding PostGenWorkingDirectory.Value, UpdateSourceTrigger=PropertyChanged}" />
+                            <Button
+                                Grid.Row="0"
+                                Grid.Column="1"
+                                Command="{Binding BrowsePostGenWorkingDirectoryCommand}"
+                                Content="Browse"
+                                Style="{StaticResource ActionButtonStyle}" />
+                            <CheckBox
+                                Grid.Row="1"
+                                Grid.ColumnSpan="2"
+                                Margin="0,6,0,0"
+                                VerticalAlignment="Center"
+                                Content="Use relative path"
+                                IsChecked="{Binding UseRelativePathForPostGenWorkingDirectory.Value}" />
+                        </Grid>
                     </Grid>
                 </Border>
             </studioControls:FormField>
