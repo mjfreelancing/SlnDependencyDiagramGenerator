@@ -7,7 +7,7 @@ using SlnDependencyDiagramGenerator.Generator;
 using SlnDependencyStudio.Cli.Enumerations;
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Shared.Config.Extensions;
-using SlnDependencyStudio.Shared.PreGeneration;
+using SlnDependencyStudio.Shared.ProcessExecution.PreGeneration;
 using SlnDependencyStudio.Shared.Serialization;
 using SlnDependencyStudio.Shared.Validators.Contexts;
 using System.Text.Json;

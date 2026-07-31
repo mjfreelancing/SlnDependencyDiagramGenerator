@@ -1,7 +1,7 @@
-namespace SlnDependencyStudio.Shared.PreGeneration;
+namespace SlnDependencyStudio.Shared.ProcessExecution;
 
-/// <summary>Describes the outcome of a pre-generation command execution attempt.</summary>
-public sealed class PreGenerationCommandResult
+/// <summary>Base class describing the outcome of a pipeline command execution attempt.</summary>
+public abstract class ProcessCommandResult
 {
     /// <summary>Whether the command completed successfully.</summary>
     public bool Succeeded { get; init; }

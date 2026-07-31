@@ -76,10 +76,17 @@
     }
   },
   "preGeneration": {
-    "enabled": true,
-    "command": "dotnet",
-    "arguments": "restore AllOverIt.slnx",
-    "workingDirectory": "..\\..\\..\\AllOverIt",
+    "enabled": false,
+    "command": "",
+    "arguments": "",
+    "workingDirectory": "",
     "continueOnFailure": false
+  },
+  "restoreSolution": true,
+  "postGeneration": {
+    "enabled": false,
+    "command": "",
+    "arguments": "",
+    "workingDirectory": ""
   }
 }

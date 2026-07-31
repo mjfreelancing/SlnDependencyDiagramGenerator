@@ -5,7 +5,7 @@ using SlnDependencyDiagramGenerator.Extensions;
 using SlnDependencyDiagramGenerator.Generator;
 using SlnDependencyStudio.Shared.DependencyInjection;
 using SlnDependencyStudio.Shared.Extensions;
-using SlnDependencyStudio.Shared.PreGeneration;
+using SlnDependencyStudio.Shared.ProcessExecution.PreGeneration;
 using SlnDependencyStudio.Shared.Serialization;
 
 namespace SlnDependencyStudio.Shared.Tests.Unit.Extensions;

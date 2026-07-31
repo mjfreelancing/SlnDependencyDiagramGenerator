@@ -1,7 +1,8 @@
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Shared.DependencyInjection;
+using SlnDependencyStudio.Shared.ProcessExecution;
 
-namespace SlnDependencyStudio.Shared.PreGeneration;
+namespace SlnDependencyStudio.Shared.ProcessExecution.PreGeneration;
 
 /// <summary>Provides the ability to execute an optional pre-generation command before diagram generation starts.</summary>
 public interface IPreGenerationCommandRunner : IStudioScopedDependency

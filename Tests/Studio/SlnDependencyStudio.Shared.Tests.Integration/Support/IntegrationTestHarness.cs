@@ -2,7 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using SlnDependencyDiagramGenerator.Extensions;
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Shared.Extensions;
-using SlnDependencyStudio.Shared.PreGeneration;
+using SlnDependencyStudio.Shared.ProcessExecution.PreGeneration;
 
 namespace SlnDependencyStudio.Shared.Tests.Integration.Support;
 

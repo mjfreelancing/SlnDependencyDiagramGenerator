@@ -19,6 +19,12 @@ public sealed class DependencyProjectDocument
     /// <summary>Optional pre-generation command configuration.</summary>
     public PreGenerationConfig PreGeneration { get; init; } = new();
 
+    /// <summary>Whether the solution should be restored (via <c>dotnet restore</c>) before generation starts.</summary>
+    public bool RestoreSolution { get; set; } = true;
+
+    /// <summary>Optional post-generation command configuration.</summary>
+    public PostGenerationConfig PostGeneration { get; init; } = new();
+
     /// <summary>Captures unknown JSON fields for forward compatibility.
     /// Fields not matching known properties are stored here and re-serialized on save,
     /// so editing a document with a newer schema version does not strip unknown data.</summary>

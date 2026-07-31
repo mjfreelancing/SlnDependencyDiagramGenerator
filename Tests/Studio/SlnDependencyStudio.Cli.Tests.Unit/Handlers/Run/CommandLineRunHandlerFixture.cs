@@ -10,7 +10,7 @@ using SlnDependencyDiagramGenerator.Generator;
 using SlnDependencyStudio.Cli.Enumerations;
 using SlnDependencyStudio.Cli.Handlers.Run;
 using SlnDependencyStudio.Shared.Config;
-using SlnDependencyStudio.Shared.PreGeneration;
+using SlnDependencyStudio.Shared.ProcessExecution.PreGeneration;
 using SlnDependencyStudio.Shared.Serialization;
 using System.Text.Json;
 using System.Text.RegularExpressions;

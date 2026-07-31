@@ -27,6 +27,9 @@ public sealed class StudioCliExitCode : EnrichedEnum<StudioCliExitCode>
     /// <summary>A required external diagram tool (such as d2 or mmdc) was not found.</summary>
     public static readonly StudioCliExitCode DiagramToolNotFound = new(1007);
 
+    /// <summary>The solution restore (via <c>dotnet restore</c>) failed.</summary>
+    public static readonly StudioCliExitCode DotNetRestoreFailed = new(1008);
+
     /// <summary>An unexpected CLI failure occurred.</summary>
     public static readonly StudioCliExitCode UnhandledCliFailure = new(1999);
 

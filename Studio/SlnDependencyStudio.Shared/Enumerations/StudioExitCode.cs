@@ -13,7 +13,19 @@ public sealed class StudioExitCode : EnrichedEnum<StudioExitCode>
     public static readonly StudioExitCode PreGenerationCommandTimeout = new(2);
 
     /// <summary>An unexpected error occurred while executing the pre-generation command.</summary>
-    public static readonly StudioExitCode PreGenerationUnexpectedError = new(999);
+    public static readonly StudioExitCode PreGenerationUnexpectedError = new(3);
+
+    /// <summary>The solution restore (via <c>dotnet restore</c>) failed.</summary>
+    public static readonly StudioExitCode DotNetRestoreFailed = new(4);
+
+    /// <summary>The post-generation command was cancelled before or during execution.</summary>
+    public static readonly StudioExitCode PostGenerationCommandCancelled = new(5);
+
+    /// <summary>The post-generation command did not complete within the configured timeout period.</summary>
+    public static readonly StudioExitCode PostGenerationCommandTimeout = new(6);
+
+    /// <summary>An unexpected error occurred while executing the post-generation command.</summary>
+    public static readonly StudioExitCode PostGenerationCommandUnexpectedError = new(7);
 
     /// <summary>Initializes a new instance of <see cref="StudioExitCode"/>.</summary>
     /// <param name="value">The numeric exit code value.</param>
