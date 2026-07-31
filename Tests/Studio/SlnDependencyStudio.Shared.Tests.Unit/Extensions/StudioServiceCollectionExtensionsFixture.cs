@@ -5,7 +5,9 @@ using SlnDependencyDiagramGenerator.Extensions;
 using SlnDependencyDiagramGenerator.Generator;
 using SlnDependencyStudio.Shared.DependencyInjection;
 using SlnDependencyStudio.Shared.Extensions;
+using SlnDependencyStudio.Shared.ProcessExecution.PostGeneration;
 using SlnDependencyStudio.Shared.ProcessExecution.PreGeneration;
+using SlnDependencyStudio.Shared.ProcessExecution.RestoreSolution;
 using SlnDependencyStudio.Shared.Serialization;
 
 namespace SlnDependencyStudio.Shared.Tests.Unit.Extensions;
@@ -40,6 +42,28 @@ public class StudioServiceCollectionExtensionsFixture
 
         using var scope = provider.CreateScope();
         var runner = scope.ServiceProvider.GetService<IPreGenerationCommandRunner>();
+
+        runner.ShouldNotBeNull();
+    }
+
+    [Fact]
+    public void Should_Register_IRestoreSolutionRunner()
+    {
+        using var provider = CreateServiceProvider();
+
+        using var scope = provider.CreateScope();
+        var runner = scope.ServiceProvider.GetService<IRestoreSolutionRunner>();
+
+        runner.ShouldNotBeNull();
+    }
+
+    [Fact]
+    public void Should_Register_IPostGenerationCommandRunner()
+    {
+        using var provider = CreateServiceProvider();
+
+        using var scope = provider.CreateScope();
+        var runner = scope.ServiceProvider.GetService<IPostGenerationCommandRunner>();
 
         runner.ShouldNotBeNull();
     }

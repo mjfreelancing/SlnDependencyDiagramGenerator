@@ -1,9 +1,11 @@
+using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using Shouldly;
 using SlnDependencyDiagramGenerator.Generator.Discovery;
+using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Shared.Services;
 using SlnDependencyStudio.Wpf.DependencyInjection;
 using SlnDependencyStudio.Wpf.Features.Output;
@@ -144,6 +146,32 @@ public class PreGenerationAnalysisServiceFixture
             var messages = await _service.RunAsync(CancellationToken.None).ToList();
 
             messages.Any(message => message.Text.Contains("Analysis failed")).ShouldBeTrue();
+        }
+
+        [Fact]
+        public async Task Should_Validate_Configuration_At_Start()
+        {
+            _store.SolutionOptionsEditor.Returns(_solutionEditor);
+            _solutionEditor.SolutionPath.Returns(new Wpf.Controls.TrackableValue<string>());
+
+            await _service.RunAsync(CancellationToken.None).ToList();
+
+            _projectValidator.Received(1).Validate(Arg.Any<DependencyProjectDocument>(), Arg.Any<string>());
+        }
+
+        [Fact]
+        public async Task Should_Emit_Validation_Error_When_Validation_Fails()
+        {
+            _store.SolutionOptionsEditor.Returns(_solutionEditor);
+            _solutionEditor.SolutionPath.Returns(new Wpf.Controls.TrackableValue<string>());
+
+            _projectValidator
+                .When(validator => validator.Validate(Arg.Any<DependencyProjectDocument>(), Arg.Any<string>()))
+                .Do(_ => throw new ValidationException("Test validation failure"));
+
+            var messages = await _service.RunAsync(CancellationToken.None).ToList();
+
+            messages.Any(message => message.Text.Contains("Configuration validation failed")).ShouldBeTrue();
         }
     }
 

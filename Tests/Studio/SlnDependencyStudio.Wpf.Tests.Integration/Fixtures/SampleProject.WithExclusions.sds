@@ -33,10 +33,17 @@
     }
   },
   "preGeneration": {
-    "enabled": true,
-    "command": "dotnet",
-    "arguments": "restore",
+    "enabled": false,
+    "command": "",
+    "arguments": "",
     "workingDirectory": "",
-    "continueOnFailure": true
+    "continueOnFailure": false
+  },
+  "restoreSolution": true,
+  "postGeneration": {
+    "enabled": false,
+    "command": "",
+    "arguments": "",
+    "workingDirectory": ""
   }
 }

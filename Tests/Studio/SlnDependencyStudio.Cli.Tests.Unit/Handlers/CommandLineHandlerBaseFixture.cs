@@ -78,6 +78,17 @@ public class CommandLineHandlerBaseFixture
         }
 
         [Fact]
+        public async Task Should_Resolve_PostGeneration_WorkingDirectory_To_Absolute()
+        {
+            using var tempDir = new DisposableTempDirectory();
+            var handler = CreateHandler(tempDir.DirectoryPath);
+
+            var document = await handler.LoadDependencyProjectDocumentAsync(Path.Combine(tempDir.DirectoryPath, "project.sds"), CancellationToken.None);
+
+            document.PostGeneration.WorkingDirectory.ShouldBe(Path.GetFullPath(Path.Combine(tempDir.DirectoryPath, "postgen")));
+        }
+
+        [Fact]
         public async Task Should_Resolve_SolutionPath_To_Absolute()
         {
             using var tempDir = new DisposableTempDirectory();
@@ -109,6 +120,8 @@ public class CommandLineHandlerBaseFixture
 
             document.PreGeneration.WorkingDirectory.ShouldBe(Path.GetFullPath(Path.Combine(tempDir.DirectoryPath, "pregen")));
 
+            document.PostGeneration.WorkingDirectory.ShouldBe(Path.GetFullPath(Path.Combine(tempDir.DirectoryPath, "postgen")));
+
             document.DiagramGenerator.Solution.SolutionPath.ShouldBe(Path.GetFullPath(Path.Combine(tempDir.DirectoryPath, "MyApp.sln")));
 
             document.DiagramGenerator.Export.RootPath.ShouldBe(Path.GetFullPath(Path.Combine(tempDir.DirectoryPath, "output")));
@@ -125,7 +138,8 @@ public class CommandLineHandlerBaseFixture
                 .Returns(CreateDocument(
                     workingDir: @"C:\Tools\pregen",
                     solutionPath: absoluteSlnPath,
-                    exportRoot: @"D:\Output"));
+                    exportRoot: @"D:\Output",
+                    postGenWorkingDir: @"E:\Deploy"));
 
             var logger = Substitute.For<ILogger>();
             var handler = new TestHandler(serializer, logger);
@@ -135,6 +149,7 @@ public class CommandLineHandlerBaseFixture
             document.PreGeneration.WorkingDirectory.ShouldBe(@"C:\Tools\pregen");
             document.DiagramGenerator.Solution.SolutionPath.ShouldBe(absoluteSlnPath);
             document.DiagramGenerator.Export.RootPath.ShouldBe(@"D:\Output");
+            document.PostGeneration.WorkingDirectory.ShouldBe(@"E:\Deploy");
         }
 
         [Fact]
@@ -157,7 +172,7 @@ public class CommandLineHandlerBaseFixture
             document.PreGeneration.WorkingDirectory.ShouldBe(string.Empty);
         }
 
-        private static TestHandler CreateHandler(string tempDir)
+        private static TestHandler CreateHandler(string tempDir, string? postGenWorkingDir = null)
         {
             var serializer = Substitute.For<IDependencyProjectSerializer>();
 
@@ -166,7 +181,8 @@ public class CommandLineHandlerBaseFixture
                 .Returns(CreateDocument(
                     workingDir: "pregen",
                     solutionPath: "MyApp.sln",
-                    exportRoot: "output"));
+                    exportRoot: "output",
+                    postGenWorkingDir: postGenWorkingDir ?? "postgen"));
 
             var logger = Substitute.For<ILogger>();
 
@@ -267,7 +283,7 @@ public class CommandLineHandlerBaseFixture
     }
 
     private static DependencyProjectDocument CreateDocument(
-        string workingDir, string solutionPath, string exportRoot)
+        string workingDir, string solutionPath, string exportRoot, string? postGenWorkingDir = null)
     {
         return new DependencyProjectDocument
         {
@@ -309,6 +325,12 @@ public class CommandLineHandlerBaseFixture
                 Enabled = true,
                 Command = "dotnet",
                 WorkingDirectory = workingDir
+            },
+            PostGeneration = new PostGenerationConfig
+            {
+                Enabled = true,
+                Command = "deploy.cmd",
+                WorkingDirectory = postGenWorkingDir ?? string.Empty
             }
         };
     }

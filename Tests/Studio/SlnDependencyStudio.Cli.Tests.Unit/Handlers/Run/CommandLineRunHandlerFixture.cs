@@ -310,7 +310,166 @@ public class CommandLineRunHandlerFixture
         result.ShouldBe(StudioCliExitCode.RunCommandFailed.Value);
     }
 
-    private static DependencyProjectDocument CreateValidDocument(bool preGenEnabled = false, bool continueOnFailure = false)
+    [Fact]
+    public async Task Should_Return_Zero_When_Restore_Succeeds()
+    {
+        var serializer = Substitute.For<IDependencyProjectSerializer>();
+
+        serializer
+            .DeserializeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(CreateValidDocument(restoreEnabled: true)));
+
+        var dependencyGenerator = Substitute.For<IDependencyGenerator>();
+        var preGenRunner = Substitute.For<IPreGenerationCommandRunner>();
+        var restoreRunner = Substitute.For<IRestoreSolutionRunner>();
+
+        restoreRunner
+            .RunAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(new RestoreSolutionResult { Succeeded = true, ExitCode = 0 }));
+
+        var postGenRunner = Substitute.For<IPostGenerationCommandRunner>();
+        var projectValidator = Substitute.For<IDependencyProjectValidator>();
+        var logger = Substitute.For<ILogger<CommandLineRunHandler>>();
+
+        var handler = new CommandLineRunHandler(serializer, dependencyGenerator, restoreRunner, preGenRunner, postGenRunner, projectValidator, logger);
+
+        var result = await handler.HandleAsync(
+            Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None);
+
+        result.ShouldBe(0);
+        await restoreRunner.Received(1).RunAsync(Path.GetTempPath(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Should_Return_DotNetRestoreFailed_When_Restore_Fails()
+    {
+        var serializer = Substitute.For<IDependencyProjectSerializer>();
+
+        serializer
+            .DeserializeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(CreateValidDocument(restoreEnabled: true)));
+
+        var dependencyGenerator = Substitute.For<IDependencyGenerator>();
+        var preGenRunner = Substitute.For<IPreGenerationCommandRunner>();
+        var restoreRunner = Substitute.For<IRestoreSolutionRunner>();
+
+        restoreRunner
+            .RunAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(new RestoreSolutionResult
+            {
+                Succeeded = false,
+                ExitCode = 1,
+                ErrorMessage = "Restore failed"
+            }));
+
+        var postGenRunner = Substitute.For<IPostGenerationCommandRunner>();
+        var projectValidator = Substitute.For<IDependencyProjectValidator>();
+        var logger = Substitute.For<ILogger<CommandLineRunHandler>>();
+
+        var handler = new CommandLineRunHandler(serializer, dependencyGenerator, restoreRunner, preGenRunner, postGenRunner, projectValidator, logger);
+
+        var result = await handler.HandleAsync(
+            Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None);
+
+        result.ShouldBe(StudioCliExitCode.DotNetRestoreFailed.Value);
+        await dependencyGenerator.DidNotReceiveWithAnyArgs().CreateDiagramsAsync(default!, default);
+    }
+
+    [Fact]
+    public async Task Should_Return_DotNetRestoreFailed_When_Restore_Enabled_But_No_Solution_Path()
+    {
+        var serializer = Substitute.For<IDependencyProjectSerializer>();
+
+        serializer
+            .DeserializeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(CreateValidDocument(restoreEnabled: true, solutionPath: string.Empty)));
+
+        var dependencyGenerator = Substitute.For<IDependencyGenerator>();
+        var preGenRunner = Substitute.For<IPreGenerationCommandRunner>();
+        var restoreRunner = Substitute.For<IRestoreSolutionRunner>();
+        var postGenRunner = Substitute.For<IPostGenerationCommandRunner>();
+        var projectValidator = Substitute.For<IDependencyProjectValidator>();
+        var logger = Substitute.For<ILogger<CommandLineRunHandler>>();
+
+        var handler = new CommandLineRunHandler(serializer, dependencyGenerator, restoreRunner, preGenRunner, postGenRunner, projectValidator, logger);
+
+        var result = await handler.HandleAsync(
+            Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None);
+
+        result.ShouldBe(StudioCliExitCode.DotNetRestoreFailed.Value);
+        await restoreRunner.DidNotReceiveWithAnyArgs().RunAsync(default!, default);
+    }
+
+    [Fact]
+    public async Task Should_Return_Zero_When_PostGeneration_Succeeds()
+    {
+        var serializer = Substitute.For<IDependencyProjectSerializer>();
+
+        serializer
+            .DeserializeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(CreateValidDocument(postGenEnabled: true)));
+
+        var dependencyGenerator = Substitute.For<IDependencyGenerator>();
+        var preGenRunner = Substitute.For<IPreGenerationCommandRunner>();
+        var restoreRunner = Substitute.For<IRestoreSolutionRunner>();
+        var postGenRunner = Substitute.For<IPostGenerationCommandRunner>();
+
+        postGenRunner
+            .RunAsync(Arg.Any<PostGenerationConfig>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(new PostGenerationCommandResult { Succeeded = true, ExitCode = 0 }));
+
+        var projectValidator = Substitute.For<IDependencyProjectValidator>();
+        var logger = Substitute.For<ILogger<CommandLineRunHandler>>();
+
+        var handler = new CommandLineRunHandler(serializer, dependencyGenerator, restoreRunner, preGenRunner, postGenRunner, projectValidator, logger);
+
+        var result = await handler.HandleAsync(
+            Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None);
+
+        result.ShouldBe(0);
+        await postGenRunner.Received(1).RunAsync(Arg.Any<PostGenerationConfig>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Should_Return_Zero_When_PostGeneration_Fails()
+    {
+        var serializer = Substitute.For<IDependencyProjectSerializer>();
+
+        serializer
+            .DeserializeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(CreateValidDocument(postGenEnabled: true)));
+
+        var dependencyGenerator = Substitute.For<IDependencyGenerator>();
+        var preGenRunner = Substitute.For<IPreGenerationCommandRunner>();
+        var restoreRunner = Substitute.For<IRestoreSolutionRunner>();
+        var postGenRunner = Substitute.For<IPostGenerationCommandRunner>();
+
+        postGenRunner
+            .RunAsync(Arg.Any<PostGenerationConfig>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(new PostGenerationCommandResult
+            {
+                Succeeded = false,
+                ExitCode = 6,
+                ErrorMessage = "Deploy failed"
+            }));
+
+        var projectValidator = Substitute.For<IDependencyProjectValidator>();
+        var logger = Substitute.For<ILogger<CommandLineRunHandler>>();
+
+        var handler = new CommandLineRunHandler(serializer, dependencyGenerator, restoreRunner, preGenRunner, postGenRunner, projectValidator, logger);
+
+        var result = await handler.HandleAsync(
+            Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None);
+
+        result.ShouldBe(0);
+    }
+
+    private static DependencyProjectDocument CreateValidDocument(
+        bool preGenEnabled = false,
+        bool continueOnFailure = false,
+        bool restoreEnabled = false,
+        string? solutionPath = null,
+        bool postGenEnabled = false)
     {
         return new DependencyProjectDocument
         {
@@ -320,7 +479,7 @@ public class CommandLineRunHandlerFixture
             {
                 Solution = new GeneratorSolutionOptions
                 {
-                    SolutionPath = Path.GetTempPath(),
+                    SolutionPath = solutionPath ?? Path.GetTempPath(),
                     RegexToInclude = [".*\\.csproj"]
                 },
                 Diagram = new GeneratorDiagramOptions
@@ -344,7 +503,12 @@ public class CommandLineRunHandlerFixture
                 Command = preGenEnabled ? "dotnet" : string.Empty,
                 ContinueOnFailure = continueOnFailure
             },
-            RestoreSolution = false
+            RestoreSolution = restoreEnabled,
+            PostGeneration = new PostGenerationConfig
+            {
+                Enabled = postGenEnabled,
+                Command = postGenEnabled ? "deploy.cmd" : string.Empty
+            }
         };
     }
 }

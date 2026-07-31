@@ -61,6 +61,18 @@ public class ProjectDocumentStoreFixture
         }
 
         [Fact]
+        public void Should_Have_RestoreSolutionEditor_Not_Null()
+        {
+            _store.RestoreSolutionEditor.ShouldNotBeNull();
+        }
+
+        [Fact]
+        public void Should_Have_PostGenerationEditor_Not_Null()
+        {
+            _store.PostGenerationEditor.ShouldNotBeNull();
+        }
+
+        [Fact]
         public void Should_Have_UseRelativePath_True_By_Default()
         {
             _store.SolutionOptionsEditor.UseRelativePath.Value.ShouldBeTrue();
@@ -204,6 +216,70 @@ public class ProjectDocumentStoreFixture
         }
 
         [Fact]
+        public async Task Should_Populate_RestoreSolutionEditor()
+        {
+            var document = CreateDocument("Test", "Desc");
+            document.RestoreSolution = false;
+
+            _projectService
+                .OpenAsync("test.sds", Arg.Any<CancellationToken>())
+                .Returns(document);
+
+            await _store.OpenAsync("test.sds");
+
+            _store.RestoreSolutionEditor.RestoreSolution.Value.ShouldBeFalse();
+        }
+
+        [Fact]
+        public async Task Should_Populate_PostGenerationEditor()
+        {
+            var document = CreateDocument("Test", "Desc");
+            document.PostGeneration.Enabled = true;
+            document.PostGeneration.Command = "deploy.cmd";
+            document.PostGeneration.Arguments = "--prod";
+            document.PostGeneration.WorkingDirectory = "dist";
+
+            _projectService
+                .OpenAsync("test.sds", Arg.Any<CancellationToken>())
+                .Returns(document);
+
+            await _store.OpenAsync("test.sds");
+
+            _store.PostGenerationEditor.Enabled.Value.ShouldBeTrue();
+            _store.PostGenerationEditor.Command.Value.ShouldBe("deploy.cmd");
+            _store.PostGenerationEditor.Arguments.Value.ShouldBe("--prod");
+            _store.PostGenerationEditor.WorkingDirectory.Value.ShouldBe("dist");
+        }
+
+        [Fact]
+        public async Task Should_Track_IsDirty_When_RestoreSolution_Changes()
+        {
+            _projectService
+                .OpenAsync("test.sds", Arg.Any<CancellationToken>())
+                .Returns(CreateDocument("Name", "Desc"));
+
+            await _store.OpenAsync("test.sds");
+
+            _store.RestoreSolutionEditor.RestoreSolution.Value = false;
+
+            _store.IsDirty.ShouldBeTrue();
+        }
+
+        [Fact]
+        public async Task Should_Track_IsDirty_When_PostGeneration_Changes()
+        {
+            _projectService
+                .OpenAsync("test.sds", Arg.Any<CancellationToken>())
+                .Returns(CreateDocument("Name", "Desc"));
+
+            await _store.OpenAsync("test.sds");
+
+            _store.PostGenerationEditor.Command.Value = "deploy.cmd";
+
+            _store.IsDirty.ShouldBeTrue();
+        }
+
+        [Fact]
         public async Task Should_Replace_Previous_Document()
         {
             _projectService
@@ -334,6 +410,27 @@ public class ProjectDocumentStoreFixture
                 Arg.Any<DependencyProjectDocument>(),
                 "test.sds",
                 Arg.Any<CancellationToken>());
+        }
+
+        [Fact]
+        public async Task Should_Flush_RestoreSolution_And_PostGeneration_To_Document()
+        {
+            var document = CreateDocument("Name", "Desc");
+            document.RestoreSolution = true;
+
+            _projectService
+                .OpenAsync("test.sds", Arg.Any<CancellationToken>())
+                .Returns(document);
+
+            await _store.OpenAsync("test.sds");
+
+            _store.RestoreSolutionEditor.RestoreSolution.Value = false;
+            _store.PostGenerationEditor.Command.Value = "deploy.cmd";
+
+            await _store.SaveAsync();
+
+            document.RestoreSolution.ShouldBeFalse();
+            document.PostGeneration.Command.ShouldBe("deploy.cmd");
         }
     }
 
@@ -492,6 +589,69 @@ public class ProjectDocumentStoreFixture
             _store.Close();
 
             _store.DocumentDirectory.ShouldBe(string.Empty);
+        }
+
+        [Fact]
+        public async Task Should_Reset_RestoreSolutionEditor()
+        {
+            var document = CreateDocument("Name", "Desc");
+            document.RestoreSolution = false;
+
+            _projectService
+                .OpenAsync("test.sds", Arg.Any<CancellationToken>())
+                .Returns(document);
+
+            await _store.OpenAsync("test.sds");
+
+            _store.RestoreSolutionEditor.RestoreSolution.Value.ShouldBeFalse();
+
+            _store.Close();
+
+            _store.RestoreSolutionEditor.RestoreSolution.Value.ShouldBeTrue();
+        }
+
+        [Fact]
+        public async Task Should_Reset_PostGenerationEditor()
+        {
+            var document = CreateDocument("Name", "Desc");
+            document.PostGeneration.Enabled = true;
+            document.PostGeneration.Command = "deploy.cmd";
+
+            _projectService
+                .OpenAsync("test.sds", Arg.Any<CancellationToken>())
+                .Returns(document);
+
+            await _store.OpenAsync("test.sds");
+
+            _store.PostGenerationEditor.Enabled.Value.ShouldBeTrue();
+
+            _store.Close();
+
+            _store.PostGenerationEditor.Enabled.Value.ShouldBeFalse();
+        }
+    }
+
+    public class BuildDocument : ProjectDocumentStoreFixture
+    {
+        [Fact]
+        public async Task Should_Flush_RestoreSolution_And_PostGeneration_To_Document()
+        {
+            var document = CreateDocument("Name", "Desc");
+            document.RestoreSolution = true;
+
+            _projectService
+                .OpenAsync("test.sds", Arg.Any<CancellationToken>())
+                .Returns(document);
+
+            await _store.OpenAsync("test.sds");
+
+            _store.RestoreSolutionEditor.RestoreSolution.Value = false;
+            _store.PostGenerationEditor.Command.Value = "deploy.cmd";
+
+            var built = _store.BuildDocument();
+
+            built.RestoreSolution.ShouldBeFalse();
+            built.PostGeneration.Command.ShouldBe("deploy.cmd");
         }
     }
 

@@ -65,5 +65,7 @@ public class GoldenFileVariantsFixture
         reloaded.DiagramGenerator.Diagram.Formats.ShouldBe(original.DiagramGenerator.Diagram.Formats, ignoreOrder: true);
         reloaded.DiagramGenerator.Diagram.Direction.ShouldBe(original.DiagramGenerator.Diagram.Direction);
         reloaded.PreGeneration.Enabled.ShouldBe(original.PreGeneration.Enabled);
+        reloaded.RestoreSolution.ShouldBe(original.RestoreSolution);
+        reloaded.PostGeneration.Enabled.ShouldBe(original.PostGeneration.Enabled);
     }
 }

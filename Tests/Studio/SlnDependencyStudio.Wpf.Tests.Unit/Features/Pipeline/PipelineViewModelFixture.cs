@@ -119,6 +119,49 @@ public class PipelineViewModelFixture
             _viewModel.BrowseCommandCommand.ShouldNotBeNull();
             _viewModel.BrowseWorkingDirectoryCommand.ShouldNotBeNull();
         }
+
+        [Fact]
+        public void Should_Expose_RestoreSolution_From_Store()
+        {
+            _viewModel.RestoreSolution.ShouldBeSameAs(_restoreSolution);
+        }
+
+        [Fact]
+        public void Should_Expose_PostGenEnabled_From_Store()
+        {
+            _viewModel.PostGenEnabled.ShouldBeSameAs(_postGenEnabled);
+        }
+
+        [Fact]
+        public void Should_Expose_PostGenCommand_From_Store()
+        {
+            _viewModel.PostGenCommand.ShouldBeSameAs(_postGenCommand);
+        }
+
+        [Fact]
+        public void Should_Expose_PostGenArguments_From_Store()
+        {
+            _viewModel.PostGenArguments.ShouldBeSameAs(_postGenArguments);
+        }
+
+        [Fact]
+        public void Should_Expose_PostGenWorkingDirectory_From_Store()
+        {
+            _viewModel.PostGenWorkingDirectory.ShouldBeSameAs(_postGenWorkingDirectory);
+        }
+
+        [Fact]
+        public void Should_Seed_UseRelativePathForPostGenWorkingDirectory_Defaults()
+        {
+            _viewModel.UseRelativePathForPostGenWorkingDirectory.Value.ShouldBeTrue();
+        }
+
+        [Fact]
+        public void Should_Have_PostGenBrowseCommands()
+        {
+            _viewModel.BrowsePostGenCommandCommand.ShouldNotBeNull();
+            _viewModel.BrowsePostGenWorkingDirectoryCommand.ShouldNotBeNull();
+        }
     }
 
     public class BrowseCommands : PipelineViewModelFixture
@@ -346,6 +389,191 @@ public class PipelineViewModelFixture
             _enabled.Value = false;
 
             _viewModel.PreGenError.ShouldBeNull();
+        }
+    }
+
+    public class PostGenBrowseCommands : PipelineViewModelFixture
+    {
+        [Fact]
+        public void Should_Set_PostGenCommand_To_Filename_When_Browsed()
+        {
+            _viewModel.BrowseCommandInteraction.RegisterHandler(ctx =>
+            {
+                ctx.SetOutput(@"C:\tools\deploy.cmd");
+            });
+
+            _viewModel.BrowsePostGenCommandCommand.Execute().Subscribe();
+
+            _postGenCommand.Value.ShouldBe("deploy.cmd");
+        }
+
+        [Fact]
+        public void Should_Populate_PostGenWorkingDirectory_When_Empty_And_Command_Browsed()
+        {
+            _postGenWorkingDirectory.Value = string.Empty;
+
+            _viewModel.BrowseCommandInteraction.RegisterHandler(ctx =>
+            {
+                ctx.SetOutput(@"C:\tools\deploy.cmd");
+            });
+
+            _viewModel.BrowsePostGenCommandCommand.Execute().Subscribe();
+
+            _postGenWorkingDirectory.Value.ShouldBe(@"C:\tools");
+        }
+
+        [Fact]
+        public void Should_Not_Overwrite_PostGenWorkingDirectory_When_Command_Browsed()
+        {
+            _postGenWorkingDirectory.Value = @"C:\existing";
+
+            _viewModel.BrowseCommandInteraction.RegisterHandler(ctx =>
+            {
+                ctx.SetOutput(@"C:\tools\deploy.cmd");
+            });
+
+            _viewModel.BrowsePostGenCommandCommand.Execute().Subscribe();
+
+            _postGenWorkingDirectory.Value.ShouldBe(@"C:\existing");
+        }
+
+        [Fact]
+        public void Should_Not_Change_PostGenCommand_When_Browse_Cancelled()
+        {
+            _postGenCommand.Value = "run.bat";
+
+            _viewModel.BrowseCommandInteraction.RegisterHandler(ctx =>
+            {
+                ctx.SetOutput(null);
+            });
+
+            _viewModel.BrowsePostGenCommandCommand.Execute().Subscribe();
+
+            _postGenCommand.Value.ShouldBe("run.bat");
+        }
+
+        [Fact]
+        public void Should_Set_PostGenWorkingDirectory_When_Browsed()
+        {
+            _viewModel.BrowseWorkingDirectoryInteraction.RegisterHandler(ctx =>
+            {
+                ctx.SetOutput(@"C:\work");
+            });
+
+            _viewModel.BrowsePostGenWorkingDirectoryCommand.Execute().Subscribe();
+
+            _postGenWorkingDirectory.Value.ShouldBe(@"C:\work");
+        }
+    }
+
+    public class PostGenRelativePathToggle : PipelineViewModelFixture
+    {
+        [Fact]
+        public void Should_Convert_To_Relative_When_Toggled_On()
+        {
+            _store.DocumentFilePath.Returns(@"C:\projects\test.sds");
+
+            _viewModel.UseRelativePathForPostGenWorkingDirectory.Value = false;
+            _postGenWorkingDirectory.Value = @"C:\projects\src";
+
+            _viewModel.UseRelativePathForPostGenWorkingDirectory.Value = true;
+
+            _postGenWorkingDirectory.Value.ShouldBe("src");
+        }
+
+        [Fact]
+        public void Should_Convert_To_Absolute_When_Toggled_Off()
+        {
+            _store.DocumentFilePath.Returns(@"C:\projects\test.sds");
+
+            _viewModel.UseRelativePathForPostGenWorkingDirectory.Value = true;
+            _postGenWorkingDirectory.Value = "src";
+
+            _viewModel.UseRelativePathForPostGenWorkingDirectory.Value = false;
+
+            _postGenWorkingDirectory.Value.ShouldBe(@"C:\projects\src");
+        }
+
+        [Fact]
+        public void Should_Not_Change_Already_Relative_Path_When_Toggled_On()
+        {
+            _store.DocumentFilePath.Returns(@"C:\projects\test.sds");
+
+            _viewModel.UseRelativePathForPostGenWorkingDirectory.Value = true;
+            _postGenWorkingDirectory.Value = @"..\..\..\AllOverIt";
+
+            _viewModel.UseRelativePathForPostGenWorkingDirectory.Value = true;
+
+            _postGenWorkingDirectory.Value.ShouldBe(@"..\..\..\AllOverIt");
+        }
+
+        [Fact]
+        public void Should_Not_Change_Already_Absolute_Path_When_Toggled_Off()
+        {
+            _store.DocumentFilePath.Returns(@"C:\projects\test.sds");
+
+            _viewModel.UseRelativePathForPostGenWorkingDirectory.Value = false;
+            _postGenWorkingDirectory.Value = @"C:\tools";
+
+            _viewModel.UseRelativePathForPostGenWorkingDirectory.Value = false;
+
+            _postGenWorkingDirectory.Value.ShouldBe(@"C:\tools");
+        }
+    }
+
+    public class PostGenError : PipelineViewModelFixture
+    {
+        [Fact]
+        public void Should_Be_Null_When_Toggle_Off()
+        {
+            _postGenEnabled.Value = false;
+            _postGenCommand.Value = string.Empty;
+
+            _viewModel.PostGenError.ShouldBeNull();
+        }
+
+        [Fact]
+        public void Should_Be_Null_When_Command_Not_Empty()
+        {
+            _postGenEnabled.Value = true;
+            _postGenCommand.Value = "deploy.cmd";
+
+            _viewModel.PostGenError.ShouldBeNull();
+        }
+
+        [Fact]
+        public void Should_Contain_Error_When_Toggle_On_And_Command_Empty()
+        {
+            _postGenEnabled.Value = true;
+            _postGenCommand.Value = string.Empty;
+
+            _viewModel.PostGenError!.ShouldContain("Command must not be empty");
+        }
+
+        [Fact]
+        public void Should_Clear_When_Command_Filled()
+        {
+            _postGenEnabled.Value = true;
+            _postGenCommand.Value = string.Empty;
+
+            _viewModel.PostGenError.ShouldNotBeNull();
+
+            _postGenCommand.Value = "deploy.cmd";
+
+            _viewModel.PostGenError.ShouldBeNull();
+        }
+
+        [Fact]
+        public void Should_Clear_When_Toggle_Turned_Off()
+        {
+            _postGenEnabled.Value = true;
+            _postGenCommand.Value = string.Empty;
+
+            _viewModel.PostGenError.ShouldNotBeNull();
+
+            _postGenEnabled.Value = false;
+
+            _viewModel.PostGenError.ShouldBeNull();
         }
     }
 

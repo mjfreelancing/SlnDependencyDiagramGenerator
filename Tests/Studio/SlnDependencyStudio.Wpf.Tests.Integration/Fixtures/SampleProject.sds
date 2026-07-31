@@ -57,5 +57,12 @@
     "arguments": "",
     "workingDirectory": "",
     "continueOnFailure": false
+  },
+  "restoreSolution": false,
+  "postGeneration": {
+    "enabled": false,
+    "command": "",
+    "arguments": "",
+    "workingDirectory": ""
   }
 }

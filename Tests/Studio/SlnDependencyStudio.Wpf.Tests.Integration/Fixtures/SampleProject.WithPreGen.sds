@@ -38,5 +38,12 @@
     "arguments": "/c echo pre-generation",
     "workingDirectory": "",
     "continueOnFailure": false
+  },
+  "restoreSolution": false,
+  "postGeneration": {
+    "enabled": false,
+    "command": "",
+    "arguments": "",
+    "workingDirectory": ""
   }
 }

@@ -359,14 +359,125 @@ public class GenerationServiceFixture
             _store.Received(1).BuildGeneratorConfig();
         }
 
+        [Fact]
+        public async Task Should_Abort_When_Restore_Fails()
+        {
+            SetupStoreConfig(@"C:\Projects\test.sln");
+
+            _restoreSolution.Value = true;
+            SetupRestoreRunner(new RestoreSolutionResult
+            {
+                Succeeded = false,
+                ExitCode = 4,
+                ErrorMessage = "Restore failed"
+            });
+
+            var messages = await CollectMessagesAsync(CancellationToken.None);
+
+            messages.ShouldContain(message => message.Text == "Solution restore failed: Restore failed"
+                                        && message.Level == OutputMessageLevel.Error);
+            messages.ShouldNotContain(message => message.Text == "Generating diagrams…");
+            _ = _generatorFactory.DidNotReceiveWithAnyArgs().ExecuteAsync(default!, default);
+        }
+
+        [Fact]
+        public async Task Should_Run_Generator_After_Restore_Success()
+        {
+            SetupStoreConfig(@"C:\Projects\test.sln");
+
+            _restoreSolution.Value = true;
+            SetupRestoreRunner(new RestoreSolutionResult { Succeeded = true, ExitCode = 0 });
+            SetupGenerator();
+
+            var messages = await CollectMessagesAsync(CancellationToken.None);
+
+            messages.ShouldContain(message => message.Text == "Solution restore completed successfully");
+            messages.ShouldContain(message => message.Text == "Generating diagrams…");
+            messages.ShouldContain(message => message.Text.StartsWith("=== Generation Completed ("));
+        }
+
+        [Fact]
+        public async Task Should_Run_PostGeneration_After_Generation()
+        {
+            SetupStoreConfig();
+
+            _postGenEnabled.Value = true;
+            _postGenCommand.Value = "deploy.cmd";
+            SetupPostGenRunner(new PostGenerationCommandResult { Succeeded = true, ExitCode = 0 });
+            SetupGenerator();
+
+            var messages = await CollectMessagesAsync(CancellationToken.None);
+
+            messages.ShouldContain(message => message.Text == "Generating diagrams…");
+            messages.ShouldContain(message => message.Text == "Post-generation command completed successfully");
+        }
+
+        [Fact]
+        public async Task Should_Report_PostGeneration_Failure_As_Warning()
+        {
+            SetupStoreConfig();
+
+            _postGenEnabled.Value = true;
+            _postGenCommand.Value = "deploy.cmd";
+            SetupPostGenRunner(new PostGenerationCommandResult
+            {
+                Succeeded = false,
+                ExitCode = 6,
+                ErrorMessage = "Deploy failed"
+            });
+            SetupGenerator();
+
+            var messages = await CollectMessagesAsync(CancellationToken.None);
+
+            messages.ShouldContain(message => message.Text == "Post-generation command failed: Deploy failed"
+                                        && message.Level == OutputMessageLevel.Warning);
+            messages.ShouldContain(message => message.Text.StartsWith("=== Generation Completed ("));
+        }
+
+        [Fact]
+        public async Task Should_Run_Full_Pipeline_In_Order()
+        {
+            SetupStoreConfig(@"C:\Projects\test.sln");
+
+            _restoreSolution.Value = true;
+            _preGenEnabled.Value = true;
+            _preGenCommand.Value = "dotnet build";
+            _postGenEnabled.Value = true;
+            _postGenCommand.Value = "deploy.cmd";
+
+            SetupRestoreRunner(new RestoreSolutionResult { Succeeded = true, ExitCode = 0 });
+            SetupPreGenRunner(new PreGenerationCommandResult { Succeeded = true, ExitCode = 0 });
+            SetupPostGenRunner(new PostGenerationCommandResult { Succeeded = true, ExitCode = 0 });
+            SetupGenerator();
+
+            var messages = await CollectMessagesAsync(CancellationToken.None);
+
+            var messagesList = messages.ToList();
+            var restoreIndex = messagesList.FindIndex(message => message.Text == "Restoring solution…");
+            var preGenIndex = messagesList.FindIndex(message => message.Text == "Running pre-generation command…");
+            var generationIndex = messagesList.FindIndex(message => message.Text == "Generating diagrams…");
+            var postGenIndex = messagesList.FindIndex(message => message.Text == "Running post-generation command…");
+
+            restoreIndex.ShouldBeGreaterThanOrEqualTo(0);
+            preGenIndex.ShouldBeGreaterThan(restoreIndex);
+            generationIndex.ShouldBeGreaterThan(preGenIndex);
+            postGenIndex.ShouldBeGreaterThan(generationIndex);
+        }
+
         private async Task<IList<OutputMessage>> CollectMessagesAsync(CancellationToken cancellationToken)
         {
             return await _service.RunAsync(cancellationToken).ToList();
         }
 
-        private void SetupStoreConfig()
+        private void SetupStoreConfig(string? solutionPath = null)
         {
-            _store.BuildGeneratorConfig().Returns(new DependencyGeneratorConfig());
+            _store.BuildGeneratorConfig().Returns(new DependencyGeneratorConfig
+            {
+                Solution = new GeneratorSolutionOptions
+                {
+                    SolutionPath = solutionPath ?? string.Empty
+                }
+            });
         }
 
         private void SetupGeneratorThatThrows(Exception exception)
@@ -384,6 +495,119 @@ public class GenerationServiceFixture
                     var operation = callInfo.Arg<Func<IDependencyGenerator, CancellationToken, Task>>();
                     return operation(generator, callInfo.ArgAt<CancellationToken>(1));
                 });
+        }
+    }
+
+    public class RunRestoreSolutionAsync : GenerationServiceFixture
+    {
+        [Fact]
+        public async Task Should_Return_True_When_Restore_Disabled()
+        {
+            var observer = CreateObserver();
+
+            var result = await _service.RunRestoreSolutionAsync(observer, @"C:\Projects\test.sln", CancellationToken.None);
+
+            result.ShouldBeTrue();
+            observer.Messages.ShouldBeEmpty();
+        }
+
+        [Fact]
+        public async Task Should_Return_True_When_Restore_Succeeds()
+        {
+            var observer = CreateObserver();
+
+            _restoreSolution.Value = true;
+            SetupRestoreRunner(new RestoreSolutionResult { Succeeded = true, ExitCode = 0 });
+
+            var result = await _service.RunRestoreSolutionAsync(observer, @"C:\Projects\test.sln", CancellationToken.None);
+
+            result.ShouldBeTrue();
+            observer.Messages.ShouldContain(message => message.Text == "Solution restore completed successfully");
+        }
+
+        [Fact]
+        public async Task Should_Return_False_When_No_Solution_Path_Configured()
+        {
+            var observer = CreateObserver();
+
+            _restoreSolution.Value = true;
+
+            var result = await _service.RunRestoreSolutionAsync(observer, string.Empty, CancellationToken.None);
+
+            result.ShouldBeFalse();
+            observer.Messages.ShouldContain(message =>
+                message.Text == "Solution restore failed: no solution path is configured."
+                && message.Level == OutputMessageLevel.Error);
+        }
+
+        [Fact]
+        public async Task Should_Return_False_When_Restore_Fails()
+        {
+            var observer = CreateObserver();
+
+            _restoreSolution.Value = true;
+            SetupRestoreRunner(new RestoreSolutionResult
+            {
+                Succeeded = false,
+                ExitCode = 4,
+                ErrorMessage = "Restore failed"
+            });
+
+            var result = await _service.RunRestoreSolutionAsync(observer, @"C:\Projects\test.sln", CancellationToken.None);
+
+            result.ShouldBeFalse();
+            observer.Messages.ShouldContain(message =>
+                message.Text == "Solution restore failed: Restore failed"
+                && message.Level == OutputMessageLevel.Error);
+        }
+    }
+
+    public class RunPostGenerationAsync : GenerationServiceFixture
+    {
+        [Fact]
+        public async Task Should_Not_Run_When_Disabled()
+        {
+            var observer = CreateObserver();
+
+            await _service.RunPostGenerationAsync(observer, CancellationToken.None);
+
+            observer.Messages.ShouldBeEmpty();
+            await _postGenRunnerFactory.DidNotReceiveWithAnyArgs().ExecuteAsync(default!, default);
+        }
+
+        [Fact]
+        public async Task Should_Report_Success_When_Command_Succeeds()
+        {
+            var observer = CreateObserver();
+
+            _postGenEnabled.Value = true;
+            _postGenCommand.Value = "deploy.cmd";
+            SetupPostGenRunner(new PostGenerationCommandResult { Succeeded = true, ExitCode = 0 });
+
+            await _service.RunPostGenerationAsync(observer, CancellationToken.None);
+
+            observer.Messages.ShouldContain(message => message.Text == "Post-generation command completed successfully");
+        }
+
+        [Fact]
+        public async Task Should_Report_Failure_As_Warning()
+        {
+            var observer = CreateObserver();
+
+            _postGenEnabled.Value = true;
+            _postGenCommand.Value = "deploy.cmd";
+            SetupPostGenRunner(new PostGenerationCommandResult
+            {
+                Succeeded = false,
+                ExitCode = 6,
+                ErrorMessage = "Deploy failed"
+            });
+
+            await _service.RunPostGenerationAsync(observer, CancellationToken.None);
+
+            observer.Messages.ShouldContain(message =>
+                message.Text == "Post-generation command failed: Deploy failed"
+                && message.Level == OutputMessageLevel.Warning);
         }
     }
 
@@ -412,6 +636,44 @@ public class GenerationServiceFixture
                 runner.StdOut.Returns(Observable.Empty<string>());
                 runner.StdErr.Returns(Observable.Empty<string>());
                 runner.RunAsync(Arg.Any<PreGenerationConfig>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult(result));
+
+                return operation(runner, callInfo.ArgAt<CancellationToken>(1));
+            });
+    }
+
+    private void SetupRestoreRunner(RestoreSolutionResult result)
+    {
+        _restoreRunnerFactory
+            .ExecuteAsync(
+                Arg.Any<Func<IRestoreSolutionRunner, CancellationToken, Task<RestoreSolutionResult>>>(),
+                Arg.Any<CancellationToken>())
+            .ReturnsForAnyArgs(callInfo =>
+            {
+                var operation = callInfo.Arg<Func<IRestoreSolutionRunner, CancellationToken, Task<RestoreSolutionResult>>>();
+                var runner = Substitute.For<IRestoreSolutionRunner>();
+
+                runner.StdOut.Returns(Observable.Empty<string>());
+                runner.StdErr.Returns(Observable.Empty<string>());
+                runner.RunAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult(result));
+
+                return operation(runner, callInfo.ArgAt<CancellationToken>(1));
+            });
+    }
+
+    private void SetupPostGenRunner(PostGenerationCommandResult result)
+    {
+        _postGenRunnerFactory
+            .ExecuteAsync(
+                Arg.Any<Func<IPostGenerationCommandRunner, CancellationToken, Task<PostGenerationCommandResult>>>(),
+                Arg.Any<CancellationToken>())
+            .ReturnsForAnyArgs(callInfo =>
+            {
+                var operation = callInfo.Arg<Func<IPostGenerationCommandRunner, CancellationToken, Task<PostGenerationCommandResult>>>();
+                var runner = Substitute.For<IPostGenerationCommandRunner>();
+
+                runner.StdOut.Returns(Observable.Empty<string>());
+                runner.StdErr.Returns(Observable.Empty<string>());
+                runner.RunAsync(Arg.Any<PostGenerationConfig>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult(result));
 
                 return operation(runner, callInfo.ArgAt<CancellationToken>(1));
             });

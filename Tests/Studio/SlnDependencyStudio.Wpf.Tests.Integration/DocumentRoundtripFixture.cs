@@ -38,6 +38,9 @@ public class DocumentRoundtripFixture
         loaded.Metadata.Description.ShouldBe("Integration test project");
         loaded.DiagramGenerator.Solution.SolutionPath.ShouldBe(@"C:\Projects\test.sln");
         loaded.DiagramGenerator.Diagram.Formats.ShouldContain(DiagramFormat.D2);
+        loaded.RestoreSolution.ShouldBeTrue();
+        loaded.PostGeneration.ShouldNotBeNull();
+        loaded.PostGeneration.Enabled.ShouldBeFalse();
     }
 
     [Fact]
@@ -105,5 +108,8 @@ public class DocumentRoundtripFixture
         document.DiagramGenerator.Diagram.Formats.ShouldContain(DiagramFormat.Mermaid);
         document.DiagramGenerator.Diagram.Direction.ShouldBe(GeneratorDiagramOptions.DiagramDirection.LR);
         document.PreGeneration.Enabled.ShouldBeFalse();
+        document.RestoreSolution.ShouldBeFalse();
+        document.PostGeneration.ShouldNotBeNull();
+        document.PostGeneration.Enabled.ShouldBeFalse();
     }
 }

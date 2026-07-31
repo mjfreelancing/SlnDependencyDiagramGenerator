@@ -76,6 +76,43 @@ public class DependencyProjectSerializerFixture
             json.ShouldContain("--config Release");
             json.ShouldContain("continueOnFailure");
         }
+
+        [Fact]
+        public void Should_Include_RestoreSolution()
+        {
+            var serializer = CreateSerializer();
+            var document = new DependencyProjectDocument
+            {
+                RestoreSolution = true
+            };
+
+            var json = serializer.Serialize(document);
+
+            json.ShouldContain("restoreSolution");
+            json.ShouldContain("true");
+        }
+
+        [Fact]
+        public void Should_Include_PostGeneration_Config()
+        {
+            var serializer = CreateSerializer();
+            var document = new DependencyProjectDocument
+            {
+                PostGeneration = new PostGenerationConfig
+                {
+                    Enabled = true,
+                    Command = "deploy.cmd",
+                    Arguments = "--prod",
+                    WorkingDirectory = "./dist"
+                }
+            };
+
+            var json = serializer.Serialize(document);
+
+            json.ShouldContain("postGeneration");
+            json.ShouldContain("deploy.cmd");
+            json.ShouldContain("--prod");
+        }
     }
 
     public class Deserialize : DependencyProjectSerializerFixture
@@ -116,6 +153,52 @@ public class DependencyProjectSerializerFixture
             deserialized.DiagramGenerator.Solution.SolutionPath.ShouldBe(original.DiagramGenerator.Solution.SolutionPath);
             deserialized.PreGeneration.Enabled.ShouldBe(original.PreGeneration.Enabled);
             deserialized.PreGeneration.Command.ShouldBe(original.PreGeneration.Command);
+        }
+
+        [Fact]
+        public void Should_Roundtrip_RestoreSolution_And_PostGeneration()
+        {
+            var serializer = CreateSerializer();
+            var original = new DependencyProjectDocument
+            {
+                RestoreSolution = true,
+                PostGeneration = new PostGenerationConfig
+                {
+                    Enabled = true,
+                    Command = "post.bat",
+                    Arguments = "--cleanup",
+                    WorkingDirectory = "./out"
+                }
+            };
+
+            var json = serializer.Serialize(original);
+            var deserialized = serializer.Deserialize(json);
+
+            deserialized.RestoreSolution.ShouldBe(original.RestoreSolution);
+            deserialized.PostGeneration.ShouldNotBeNull();
+            deserialized.PostGeneration.Enabled.ShouldBe(original.PostGeneration.Enabled);
+            deserialized.PostGeneration.Command.ShouldBe(original.PostGeneration.Command);
+            deserialized.PostGeneration.Arguments.ShouldBe(original.PostGeneration.Arguments);
+            deserialized.PostGeneration.WorkingDirectory.ShouldBe(original.PostGeneration.WorkingDirectory);
+        }
+
+        [Fact]
+        public void Should_Default_RestoreSolution_To_True_And_PostGeneration_To_Disabled()
+        {
+            var serializer = CreateSerializer();
+            var json = """
+                {
+                    "schemaVersion": 1,
+                    "metadata": { "projectName": "Defaults", "description": "" },
+                    "diagramGenerator": {}
+                }
+                """;
+
+            var deserialized = serializer.Deserialize(json);
+
+            deserialized.RestoreSolution.ShouldBeTrue();
+            deserialized.PostGeneration.ShouldNotBeNull();
+            deserialized.PostGeneration.Enabled.ShouldBeFalse();
         }
 
         [Fact]
