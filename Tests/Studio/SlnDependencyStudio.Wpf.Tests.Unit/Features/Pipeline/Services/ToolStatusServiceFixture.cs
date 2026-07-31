@@ -4,7 +4,7 @@ using SlnDependencyDiagramGenerator.Generator.ToolDetection;
 using SlnDependencyStudio.Wpf.Features.Pipeline.Services;
 using System.Reactive.Linq;
 
-namespace SlnDependencyStudio.Wpf.Tests.Unit.Features.Pipeline;
+namespace SlnDependencyStudio.Wpf.Tests.Unit.Features.Pipeline.Services;
 
 [Collection(nameof(ReactiveUIInitializer))]
 public class ToolStatusServiceFixture

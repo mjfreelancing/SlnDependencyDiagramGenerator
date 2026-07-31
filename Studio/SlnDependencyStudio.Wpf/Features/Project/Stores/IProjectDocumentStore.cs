@@ -3,7 +3,9 @@ using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Shared.DependencyInjection;
 using SlnDependencyStudio.Wpf.Features.Diagrams;
 using SlnDependencyStudio.Wpf.Features.Export;
-using SlnDependencyStudio.Wpf.Features.Pipeline;
+using SlnDependencyStudio.Wpf.Features.Pipeline.PostGeneration;
+using SlnDependencyStudio.Wpf.Features.Pipeline.PreGeneration;
+using SlnDependencyStudio.Wpf.Features.Pipeline.RestoreSolution;
 using SlnDependencyStudio.Wpf.Features.Solution;
 
 namespace SlnDependencyStudio.Wpf.Features.Project.Stores;
@@ -43,6 +45,14 @@ public interface IProjectDocumentStore : IStudioSingletonDependency
     /// <summary>The editing wrapper for <see cref="PreGenerationConfig"/>.
     /// Contains <see cref="TrackableValue{T}"/> instances for pre-generation options.</summary>
     IPreGenerationConfigEditor PreGenerationEditor { get; }
+
+    /// <summary>The editing wrapper for the <c>RestoreSolution</c> flag.
+    /// Contains a <see cref="TrackableValue{T}"/> for the restore solution option.</summary>
+    IRestoreSolutionEditor RestoreSolutionEditor { get; }
+
+    /// <summary>The editing wrapper for <see cref="PostGenerationConfig"/>.
+    /// Contains <see cref="TrackableValue{T}"/> instances for post-generation options.</summary>
+    IPostGenerationConfigEditor PostGenerationEditor { get; }
 
     /// <summary><see langword="true"/> when any editor wrapper has unsaved changes.</summary>
     /// <remarks>This property is Observable.</remarks>

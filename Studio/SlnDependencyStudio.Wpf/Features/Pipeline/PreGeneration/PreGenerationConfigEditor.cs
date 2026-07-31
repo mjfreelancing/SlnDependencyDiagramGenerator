@@ -4,7 +4,7 @@ using SlnDependencyStudio.Wpf.Controls;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 
-namespace SlnDependencyStudio.Wpf.Features.Pipeline;
+namespace SlnDependencyStudio.Wpf.Features.Pipeline.PreGeneration;
 
 /// <summary>
 /// Reactive editing wrapper for <see cref="PreGenerationConfig"/>.

@@ -1,8 +1,8 @@
 using Shouldly;
 using SlnDependencyStudio.Shared.Config;
-using SlnDependencyStudio.Wpf.Features.Pipeline;
+using SlnDependencyStudio.Wpf.Features.Pipeline.PreGeneration;
 
-namespace SlnDependencyStudio.Wpf.Tests.Unit.Features.Pipeline;
+namespace SlnDependencyStudio.Wpf.Tests.Unit.Features.Pipeline.PreGeneration;
 
 [Collection(nameof(ReactiveUIInitializer))]
 public class PreGenerationConfigEditorFixture : IDisposable

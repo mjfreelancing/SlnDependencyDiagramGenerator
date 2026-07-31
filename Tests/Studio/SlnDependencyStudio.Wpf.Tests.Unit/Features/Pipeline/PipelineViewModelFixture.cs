@@ -3,6 +3,7 @@ using Shouldly;
 using SlnDependencyStudio.Wpf.Controls;
 using SlnDependencyStudio.Wpf.Features.Pipeline;
 using SlnDependencyStudio.Wpf.Features.Pipeline.Models;
+using SlnDependencyStudio.Wpf.Features.Pipeline.PreGeneration;
 using SlnDependencyStudio.Wpf.Features.Pipeline.Services;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
 using System.Reactive.Linq;

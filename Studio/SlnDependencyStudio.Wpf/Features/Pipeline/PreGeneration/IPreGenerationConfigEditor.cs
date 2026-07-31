@@ -1,6 +1,6 @@
 using SlnDependencyStudio.Wpf.Controls;
 
-namespace SlnDependencyStudio.Wpf.Features.Pipeline;
+namespace SlnDependencyStudio.Wpf.Features.Pipeline.PreGeneration;
 
 /// <summary>
 /// Read-only observable surface of the <see cref="PreGenerationConfig"/> editor wrapper.
