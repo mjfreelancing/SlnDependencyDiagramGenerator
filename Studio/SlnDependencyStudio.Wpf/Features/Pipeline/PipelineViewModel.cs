@@ -40,8 +40,26 @@ public sealed class PipelineViewModel : ReactiveObject, IValidatableViewModel, I
     /// <summary>Whether to continue on failure.</summary>
     public TrackableValue<bool> ContinueOnFailure => _store.PreGenerationEditor.ContinueOnFailure;
 
-    /// <summary>When true, the Browse button stores the working directory relative to the project file.</summary>
-    public TrackableValue<bool> UseRelativePathForWorkingDirectory { get; } = new();
+    /// <summary>When true, the pre-generation Browse button stores the working directory relative to the project file.</summary>
+    public TrackableValue<bool> UseRelativePathForPreGenWorkingDirectory { get; } = new();
+
+    /// <summary>Whether the solution should be restored (via <c>dotnet restore</c>) before generation.</summary>
+    public TrackableValue<bool> RestoreSolution => _store.RestoreSolutionEditor.RestoreSolution;
+
+    /// <summary>Whether the post-generation command is enabled.</summary>
+    public TrackableValue<bool> PostGenEnabled => _store.PostGenerationEditor.Enabled;
+
+    /// <summary>The command or executable path to run.</summary>
+    public TrackableValue<string> PostGenCommand => _store.PostGenerationEditor.Command;
+
+    /// <summary>Command-line arguments.</summary>
+    public TrackableValue<string> PostGenArguments => _store.PostGenerationEditor.Arguments;
+
+    /// <summary>The working directory for the command.</summary>
+    public TrackableValue<string> PostGenWorkingDirectory => _store.PostGenerationEditor.WorkingDirectory;
+
+    /// <summary>When true, the post-generation Browse button stores the working directory relative to the project file.</summary>
+    public TrackableValue<bool> UseRelativePathForPostGenWorkingDirectory { get; } = new();
 
     /// <inheritdoc />
     public IValidationContext ValidationContext { get; } = new ValidationContext();
@@ -62,6 +80,19 @@ public sealed class PipelineViewModel : ReactiveObject, IValidatableViewModel, I
         private set => this.RaiseAndSetIfChanged(ref _preGenError, value);
     }
 
+    private string? _postGenError;
+
+    /// <summary>
+    /// Validation error for the post-generation command, or <see langword="null"/>
+    /// when valid. Only reports an error when the toggle is enabled and the command
+    /// is empty.
+    /// </summary>
+    public string? PostGenError
+    {
+        get => _postGenError;
+        private set => this.RaiseAndSetIfChanged(ref _postGenError, value);
+    }
+
     /// <summary>Interaction for browsing for an executable file.</summary>
     public Interaction<string, string?> BrowseCommandInteraction { get; } = new();
 
@@ -74,6 +105,12 @@ public sealed class PipelineViewModel : ReactiveObject, IValidatableViewModel, I
     /// <summary>Command that opens a folder browser for the working directory.</summary>
     public ReactiveCommand<Unit, Unit> BrowseWorkingDirectoryCommand { get; }
 
+    /// <summary>Command that opens a file browser for the post-generation command path.</summary>
+    public ReactiveCommand<Unit, Unit> BrowsePostGenCommandCommand { get; }
+
+    /// <summary>Command that opens a folder browser for the post-generation working directory.</summary>
+    public ReactiveCommand<Unit, Unit> BrowsePostGenWorkingDirectoryCommand { get; }
+
     /// <summary>Command that triggers a tool re-scan.</summary>
     public ReactiveCommand<Unit, Unit> RescanToolsCommand { get; }
 
@@ -85,18 +122,23 @@ public sealed class PipelineViewModel : ReactiveObject, IValidatableViewModel, I
         _store = store;
         _toolStatus = toolStatus;
 
-        UseRelativePathForWorkingDirectory.SetOriginalValue(true);
+        UseRelativePathForPreGenWorkingDirectory.SetOriginalValue(true);
+        UseRelativePathForPostGenWorkingDirectory.SetOriginalValue(true);
 
         _toolStatusEntries = [];
         ToolStatusEntries = new ReadOnlyObservableCollection<ToolStatusEntry>(_toolStatusEntries);
 
         WirePreGenError();
+        WirePostGenError();
         WireValidation();
         WireToolStatus();
-        WireRelativePathToggle();
+        WirePreGenRelativePathToggle();
+        WirePostGenRelativePathToggle();
 
-        BrowseCommandCommand = CreateBrowseCommandCommand();
-        BrowseWorkingDirectoryCommand = CreateBrowseWorkingDirectoryCommand();
+        BrowseCommandCommand = CreateBrowseCommandCommand(Command, WorkingDirectory);
+        BrowseWorkingDirectoryCommand = CreateBrowseWorkingDirectoryCommand(WorkingDirectory, UseRelativePathForPreGenWorkingDirectory);
+        BrowsePostGenCommandCommand = CreateBrowseCommandCommand(PostGenCommand, PostGenWorkingDirectory);
+        BrowsePostGenWorkingDirectoryCommand = CreateBrowseWorkingDirectoryCommand(PostGenWorkingDirectory, UseRelativePathForPostGenWorkingDirectory);
         RescanToolsCommand = CreateRescanToolsCommand();
     }
 
@@ -113,10 +155,28 @@ public sealed class PipelineViewModel : ReactiveObject, IValidatableViewModel, I
             .DisposeWith(_disposables);
     }
 
+    private void WirePostGenError()
+    {
+        this.WhenAnyValue(
+                vm => vm.PostGenEnabled.Value,
+                vm => vm.PostGenCommand.Value,
+                (enabled, command) =>
+                    enabled && command.IsNullOrEmpty()
+                        ? "Command must not be empty when post-generation is enabled."
+                        : null)
+            .Subscribe(error => PostGenError = error)
+            .DisposeWith(_disposables);
+    }
+
     private void WireValidation()
     {
         this.ValidationRule(
             viewModel => viewModel.PreGenError,
+            error => error is null,
+            error => error ?? string.Empty);
+
+        this.ValidationRule(
+            viewModel => viewModel.PostGenError,
             error => error is null,
             error => error ?? string.Empty);
     }
@@ -137,52 +197,61 @@ public sealed class PipelineViewModel : ReactiveObject, IValidatableViewModel, I
             .DisposeWith(_disposables);
     }
 
-    private void WireRelativePathToggle()
+    private void WirePreGenRelativePathToggle()
     {
-        this.WhenAnyValue(vm => vm.UseRelativePathForWorkingDirectory.Value)
-            .Subscribe(useRelative =>
-            {
-                var path = WorkingDirectory.Value;
-
-                if (string.IsNullOrEmpty(path))
-                {
-                    return;
-                }
-
-                var docPath = _store.DocumentFilePath;
-
-                if (docPath is null)
-                {
-                    return;
-                }
-
-                var docDir = Path.GetDirectoryName(docPath);
-
-                if (docDir is null)
-                {
-                    return;
-                }
-
-                var isCurrentlyRelative = !Path.IsPathFullyQualified(path);
-
-                if (useRelative)
-                {
-                    // Only convert if currently absolute — relative paths are already correct.
-                    if (!isCurrentlyRelative)
-                    {
-                        WorkingDirectory.Value = Path.GetRelativePath(docDir, path);
-                    }
-                }
-                else
-                {
-                    // Only convert if currently relative — absolute paths are already correct.
-                    if (isCurrentlyRelative)
-                    {
-                        WorkingDirectory.Value = Path.GetFullPath(path, docDir);
-                    }
-                }
-            })
+        this.WhenAnyValue(vm => vm.UseRelativePathForPreGenWorkingDirectory.Value)
+            .Subscribe(useRelative => ToggleRelativePath(WorkingDirectory, useRelative))
             .DisposeWith(_disposables);
+    }
+
+    private void WirePostGenRelativePathToggle()
+    {
+        this.WhenAnyValue(vm => vm.UseRelativePathForPostGenWorkingDirectory.Value)
+            .Subscribe(useRelative => ToggleRelativePath(PostGenWorkingDirectory, useRelative))
+            .DisposeWith(_disposables);
+    }
+
+    private void ToggleRelativePath(TrackableValue<string> workingDirectory, bool useRelative)
+    {
+        var path = workingDirectory.Value;
+
+        if (string.IsNullOrEmpty(path))
+        {
+            return;
+        }
+
+        var docPath = _store.DocumentFilePath;
+
+        if (docPath is null)
+        {
+            return;
+        }
+
+        var docDir = Path.GetDirectoryName(docPath);
+
+        if (docDir is null)
+        {
+            return;
+        }
+
+        var isCurrentlyRelative = !Path.IsPathFullyQualified(path);
+
+        if (useRelative)
+        {
+            // Only convert if currently absolute — relative paths are already correct.
+            if (!isCurrentlyRelative)
+            {
+                workingDirectory.Value = Path.GetRelativePath(docDir, path);
+            }
+        }
+        else
+        {
+            // Only convert if currently relative — absolute paths are already correct.
+            if (isCurrentlyRelative)
+            {
+                workingDirectory.Value = Path.GetFullPath(path, docDir);
+            }
+        }
     }
 
     private ReactiveCommand<Unit, Unit> CreateRescanToolsCommand()
@@ -190,12 +259,12 @@ public sealed class PipelineViewModel : ReactiveObject, IValidatableViewModel, I
         return ReactiveCommand.CreateFromTask(_toolStatus.RescanAsync);
     }
 
-    private ReactiveCommand<Unit, Unit> CreateBrowseCommandCommand()
+    private ReactiveCommand<Unit, Unit> CreateBrowseCommandCommand(TrackableValue<string> command, TrackableValue<string> workingDirectory)
     {
         return ReactiveCommand.CreateFromObservable(() =>
         {
             return BrowseCommandInteraction
-                .Handle(Command.Value ?? string.Empty)
+                .Handle(command.Value ?? string.Empty)
                 .Do(fullPath =>
                 {
                     if (fullPath is null)
@@ -203,15 +272,15 @@ public sealed class PipelineViewModel : ReactiveObject, IValidatableViewModel, I
                         return;
                     }
 
-                    Command.Value = Path.GetFileName(fullPath);
+                    command.Value = Path.GetFileName(fullPath);
 
-                    if (WorkingDirectory.Value.IsNullOrEmpty())
+                    if (workingDirectory.Value.IsNullOrEmpty())
                     {
                         var directory = Path.GetDirectoryName(fullPath);
 
                         if (directory is not null)
                         {
-                            WorkingDirectory.Value = directory;
+                            workingDirectory.Value = directory;
                         }
                     }
                 })
@@ -219,11 +288,11 @@ public sealed class PipelineViewModel : ReactiveObject, IValidatableViewModel, I
         });
     }
 
-    private ReactiveCommand<Unit, Unit> CreateBrowseWorkingDirectoryCommand()
+    private ReactiveCommand<Unit, Unit> CreateBrowseWorkingDirectoryCommand(TrackableValue<string> workingDirectory, TrackableValue<bool> useRelativePath)
     {
         return ReactiveCommand.CreateFromObservable(() =>
         {
-            var resolvedPath = PathUtils.ResolveAsAbsolutePath(WorkingDirectory.Value, _store.DocumentDirectory);
+            var resolvedPath = PathUtils.ResolveAsAbsolutePath(workingDirectory.Value, _store.DocumentDirectory);
 
             return BrowseWorkingDirectoryInteraction
                 .Handle(resolvedPath)
@@ -234,25 +303,34 @@ public sealed class PipelineViewModel : ReactiveObject, IValidatableViewModel, I
                         return;
                     }
 
-                    if (UseRelativePathForWorkingDirectory.Value)
-                    {
-                        var docPath = _store.DocumentFilePath;
-
-                        if (docPath is not null)
-                        {
-                            var docDir = Path.GetDirectoryName(docPath);
-
-                            if (docDir is not null)
-                            {
-                                path = Path.GetRelativePath(docDir, path);
-                            }
-                        }
-                    }
-
-                    WorkingDirectory.Value = path;
+                    workingDirectory.Value = ResolveBrowsedWorkingDirectory(path, useRelativePath.Value);
                 })
                 .Select(_ => Unit.Default);
         });
+    }
+
+    private string ResolveBrowsedWorkingDirectory(string path, bool useRelative)
+    {
+        if (!useRelative)
+        {
+            return path;
+        }
+
+        var docPath = _store.DocumentFilePath;
+
+        if (docPath is null)
+        {
+            return path;
+        }
+
+        var docDir = Path.GetDirectoryName(docPath);
+
+        if (docDir is null)
+        {
+            return path;
+        }
+
+        return Path.GetRelativePath(docDir, path);
     }
 
     /// <inheritdoc />

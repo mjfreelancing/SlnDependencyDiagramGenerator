@@ -152,7 +152,7 @@
                                 Margin="0,6,0,0"
                                 VerticalAlignment="Center"
                                 Content="Use relative path"
-                                IsChecked="{Binding UseRelativePathForWorkingDirectory.Value}" />
+                                IsChecked="{Binding UseRelativePathForPreGenWorkingDirectory.Value}" />
                         </Grid>
 
                         <!--  Row 5: Continue on Failure  -->

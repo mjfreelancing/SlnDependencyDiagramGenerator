@@ -3,7 +3,9 @@ using Shouldly;
 using SlnDependencyStudio.Wpf.Controls;
 using SlnDependencyStudio.Wpf.Features.Pipeline;
 using SlnDependencyStudio.Wpf.Features.Pipeline.Models;
+using SlnDependencyStudio.Wpf.Features.Pipeline.PostGeneration;
 using SlnDependencyStudio.Wpf.Features.Pipeline.PreGeneration;
+using SlnDependencyStudio.Wpf.Features.Pipeline.RestoreSolution;
 using SlnDependencyStudio.Wpf.Features.Pipeline.Services;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
 using System.Reactive.Linq;
@@ -22,6 +24,13 @@ public class PipelineViewModelFixture
     private readonly TrackableValue<string> _workingDirectory = new();
     private readonly TrackableValue<bool> _continueOnFailure = new();
     private readonly IPreGenerationConfigEditor _editor = Substitute.For<IPreGenerationConfigEditor>();
+    private readonly TrackableValue<bool> _restoreSolution = new();
+    private readonly IRestoreSolutionEditor _restoreSolutionEditor = Substitute.For<IRestoreSolutionEditor>();
+    private readonly TrackableValue<bool> _postGenEnabled = new();
+    private readonly TrackableValue<string> _postGenCommand = new();
+    private readonly TrackableValue<string> _postGenArguments = new();
+    private readonly TrackableValue<string> _postGenWorkingDirectory = new();
+    private readonly IPostGenerationConfigEditor _postGenEditor = Substitute.For<IPostGenerationConfigEditor>();
     private readonly BehaviorSubject<IReadOnlyList<ToolStatusEntry>> _toolStatusSubject = new(Array.Empty<ToolStatusEntry>());
     private readonly PipelineViewModel _viewModel;
 
@@ -33,12 +42,27 @@ public class PipelineViewModelFixture
         _workingDirectory.SetOriginalValue(string.Empty);
         _continueOnFailure.SetOriginalValue(false);
 
+        _restoreSolution.SetOriginalValue(true);
+        _postGenEnabled.SetOriginalValue(false);
+        _postGenCommand.SetOriginalValue(string.Empty);
+        _postGenArguments.SetOriginalValue(string.Empty);
+        _postGenWorkingDirectory.SetOriginalValue(string.Empty);
+
         _editor.Enabled.Returns(_enabled);
         _editor.Command.Returns(_command);
         _editor.Arguments.Returns(_arguments);
         _editor.WorkingDirectory.Returns(_workingDirectory);
         _editor.ContinueOnFailure.Returns(_continueOnFailure);
         _store.PreGenerationEditor.Returns(_editor);
+
+        _restoreSolutionEditor.RestoreSolution.Returns(_restoreSolution);
+        _store.RestoreSolutionEditor.Returns(_restoreSolutionEditor);
+
+        _postGenEditor.Enabled.Returns(_postGenEnabled);
+        _postGenEditor.Command.Returns(_postGenCommand);
+        _postGenEditor.Arguments.Returns(_postGenArguments);
+        _postGenEditor.WorkingDirectory.Returns(_postGenWorkingDirectory);
+        _store.PostGenerationEditor.Returns(_postGenEditor);
 
         _toolStatus.ToolStatuses.Returns(_toolStatusSubject.AsObservable());
 
@@ -80,7 +104,7 @@ public class PipelineViewModelFixture
         [Fact]
         public void Should_Seed_UseRelativePath_Defaults()
         {
-            _viewModel.UseRelativePathForWorkingDirectory.Value.ShouldBeTrue();
+            _viewModel.UseRelativePathForPreGenWorkingDirectory.Value.ShouldBeTrue();
         }
 
         [Fact]
@@ -179,11 +203,11 @@ public class PipelineViewModelFixture
             _store.DocumentFilePath.Returns(@"C:\projects\test.sds");
 
             // Start with an absolute path, toggle off
-            _viewModel.UseRelativePathForWorkingDirectory.Value = false;
+            _viewModel.UseRelativePathForPreGenWorkingDirectory.Value = false;
             _workingDirectory.Value = @"C:\projects\src";
 
             // Toggle on — should convert to relative
-            _viewModel.UseRelativePathForWorkingDirectory.Value = true;
+            _viewModel.UseRelativePathForPreGenWorkingDirectory.Value = true;
 
             _workingDirectory.Value.ShouldBe("src");
         }
@@ -194,11 +218,11 @@ public class PipelineViewModelFixture
             _store.DocumentFilePath.Returns(@"C:\projects\test.sds");
 
             // Start with a relative path, toggle on
-            _viewModel.UseRelativePathForWorkingDirectory.Value = true;
+            _viewModel.UseRelativePathForPreGenWorkingDirectory.Value = true;
             _workingDirectory.Value = "src";
 
             // Toggle off — should convert to absolute
-            _viewModel.UseRelativePathForWorkingDirectory.Value = false;
+            _viewModel.UseRelativePathForPreGenWorkingDirectory.Value = false;
 
             _workingDirectory.Value.ShouldBe(@"C:\projects\src");
         }
@@ -208,11 +232,11 @@ public class PipelineViewModelFixture
         {
             _store.DocumentFilePath.Returns(@"C:\projects\test.sds");
 
-            _viewModel.UseRelativePathForWorkingDirectory.Value = true;
+            _viewModel.UseRelativePathForPreGenWorkingDirectory.Value = true;
             _workingDirectory.Value = @"..\..\..\AllOverIt";
 
             // Toggle again — should not be re-resolved against process CWD
-            _viewModel.UseRelativePathForWorkingDirectory.Value = true;
+            _viewModel.UseRelativePathForPreGenWorkingDirectory.Value = true;
 
             _workingDirectory.Value.ShouldBe(@"..\..\..\AllOverIt");
         }
@@ -222,11 +246,11 @@ public class PipelineViewModelFixture
         {
             _store.DocumentFilePath.Returns(@"C:\projects\test.sds");
 
-            _viewModel.UseRelativePathForWorkingDirectory.Value = false;
+            _viewModel.UseRelativePathForPreGenWorkingDirectory.Value = false;
             _workingDirectory.Value = @"C:\tools";
 
             // Toggle again — should not be re-converted
-            _viewModel.UseRelativePathForWorkingDirectory.Value = false;
+            _viewModel.UseRelativePathForPreGenWorkingDirectory.Value = false;
 
             _workingDirectory.Value.ShouldBe(@"C:\tools");
         }
