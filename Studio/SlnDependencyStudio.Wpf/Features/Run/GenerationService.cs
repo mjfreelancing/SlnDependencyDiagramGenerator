@@ -4,7 +4,9 @@ using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Generator;
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Shared.Enumerations;
+using SlnDependencyStudio.Shared.ProcessExecution.PostGeneration;
 using SlnDependencyStudio.Shared.ProcessExecution.PreGeneration;
+using SlnDependencyStudio.Shared.ProcessExecution.RestoreSolution;
 using SlnDependencyStudio.Shared.Utils;
 using SlnDependencyStudio.Wpf.DependencyInjection;
 using SlnDependencyStudio.Wpf.Features.Output;
@@ -16,23 +18,30 @@ using System.Text;
 namespace SlnDependencyStudio.Wpf.Features.Run;
 
 /// <summary>
-/// Runs the full generation pipeline: pre-generation command + diagram generation.
+/// Runs the full generation pipeline: restore solution (if enabled), pre-generation command (if enabled),
+/// diagram generation, and post-generation command (if enabled).
 /// Results are streamed as <see cref="OutputMessage"/> events.
 /// </summary>
 internal sealed class GenerationService : IGenerationService
 {
     private readonly IProjectDocumentStore _store;
+    private readonly IScopedOperationFactory<IRestoreSolutionRunner> _restoreRunnerFactory;
     private readonly IScopedOperationFactory<IPreGenerationCommandRunner> _runnerFactory;
+    private readonly IScopedOperationFactory<IPostGenerationCommandRunner> _postGenRunnerFactory;
     private readonly IScopedOperationFactory<IDependencyGenerator> _generatorFactory;
     private readonly ILogger<GenerationService> _logger;
 
     /// <summary>Initializes a new instance of <see cref="GenerationService"/>.</summary>
     public GenerationService(IProjectDocumentStore store,
+        IScopedOperationFactory<IRestoreSolutionRunner> restoreRunnerFactory,
         IScopedOperationFactory<IPreGenerationCommandRunner> runnerFactory,
+        IScopedOperationFactory<IPostGenerationCommandRunner> postGenRunnerFactory,
         IScopedOperationFactory<IDependencyGenerator> generatorFactory, ILogger<GenerationService> logger)
     {
         _store = store;
+        _restoreRunnerFactory = restoreRunnerFactory;
         _runnerFactory = runnerFactory;
+        _postGenRunnerFactory = postGenRunnerFactory;
         _generatorFactory = generatorFactory;
         _logger = logger;
     }
@@ -52,11 +61,18 @@ internal sealed class GenerationService : IGenerationService
 
                 var config = _store.BuildGeneratorConfig();
 
-                var shouldContinue = await RunPreGenerationAsync(observer, cancellationToken).ConfigureAwait(false);
+                var shouldContinue = await RunRestoreSolutionAsync(observer, config.Solution.SolutionPath, cancellationToken).ConfigureAwait(false);
+
+                if (shouldContinue)
+                {
+                    shouldContinue = await RunPreGenerationAsync(observer, cancellationToken).ConfigureAwait(false);
+                }
 
                 if (shouldContinue)
                 {
                     await RunDiagramGenerationAsync(observer, config, cancellationToken).ConfigureAwait(false);
+
+                    await RunPostGenerationAsync(observer, cancellationToken).ConfigureAwait(false);
                 }
 
                 var elapsed = DateTime.UtcNow - startTime;
@@ -88,6 +104,19 @@ internal sealed class GenerationService : IGenerationService
                 observer.OnCompleted();
             }
         });
+    }
+
+    /// <summary>
+    /// Runs the diagram generator, streaming progress to the observer.
+    /// </summary>
+    internal async Task RunDiagramGenerationAsync(IObserver<OutputMessage> observer, DependencyGeneratorConfig config,
+        CancellationToken cancellationToken)
+    {
+        observer.OnNext(Info("Generating diagrams…"));
+
+        await _generatorFactory
+            .ExecuteAsync((generator, token) => generator.CreateDiagramsAsync(config, token), cancellationToken)
+            .ConfigureAwait(false);
     }
 
     /// <summary>
@@ -174,16 +203,99 @@ internal sealed class GenerationService : IGenerationService
     }
 
     /// <summary>
-    /// Runs the diagram generator, streaming progress to the observer.
+    /// Restores the solution (via <c>dotnet restore</c>) if enabled in the store.
     /// </summary>
-    internal async Task RunDiagramGenerationAsync(IObserver<OutputMessage> observer, DependencyGeneratorConfig config,
+    /// <param name="observer">The output observer.</param>
+    /// <param name="solutionPath">The fully-qualified path to the solution to restore.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns><see langword="true"/> when the pipeline should continue; <see langword="false"/> when it should stop.</returns>
+    internal async Task<bool> RunRestoreSolutionAsync(IObserver<OutputMessage> observer, string solutionPath,
         CancellationToken cancellationToken)
     {
-        observer.OnNext(Info("Generating diagrams…"));
+        if (!_store.RestoreSolutionEditor.RestoreSolution.Value)
+        {
+            return true;
+        }
 
-        await _generatorFactory
-            .ExecuteAsync((generator, token) => generator.CreateDiagramsAsync(config, token), cancellationToken)
+        if (solutionPath.IsNullOrEmpty())
+        {
+            observer.OnNext(Error("Solution restore failed: no solution path is configured."));
+
+            return false;
+        }
+
+        observer.OnNext(Info("Restoring solution…"));
+
+        var restoreResult = await _restoreRunnerFactory
+            .ExecuteAsync(async (runner, token) =>
+            {
+                using var stdoutSub = runner.StdOut.Subscribe(line => observer.OnNext(Info(line)));
+                using var stderrSub = runner.StdErr.Subscribe(line => observer.OnNext(Warning(line)));
+
+                return await runner.RunAsync(solutionPath, token);
+            }, cancellationToken)
             .ConfigureAwait(false);
+
+        if (restoreResult.Succeeded)
+        {
+            observer.OnNext(Info("Solution restore completed successfully"));
+
+            return true;
+        }
+
+        observer.OnNext(Error($"Solution restore failed: {restoreResult.ErrorMessage}"));
+
+        return false;
+    }
+
+    /// <summary>
+    /// Runs the post-generation command if enabled in the store.
+    /// </summary>
+    internal async Task RunPostGenerationAsync(IObserver<OutputMessage> observer, CancellationToken cancellationToken)
+    {
+        var postGen = _store.PostGenerationEditor;
+
+        if (!postGen.Enabled.Value || postGen.Command.Value.IsNullOrEmpty())
+        {
+            return;
+        }
+
+        observer.OnNext(Info("Running post-generation command…"));
+
+        var workingDirectory = postGen.WorkingDirectory.Value;
+
+        if (workingDirectory.IsNotNullOrEmpty() && _store.DocumentFilePath is not null)
+        {
+            var projectDir = Path.GetDirectoryName(_store.DocumentFilePath)!;
+            workingDirectory = PathUtils.ResolveAsAbsolutePath(workingDirectory, projectDir);
+        }
+
+        var postGenConfig = new PostGenerationConfig
+        {
+            Enabled = postGen.Enabled.Value,
+            Command = postGen.Command.Value,
+            Arguments = postGen.Arguments.Value,
+            WorkingDirectory = workingDirectory
+        };
+
+        var postGenResult = await _postGenRunnerFactory
+            .ExecuteAsync(async (runner, token) =>
+            {
+                using var stdoutSub = runner.StdOut.Subscribe(line => observer.OnNext(Info(line)));
+                using var stderrSub = runner.StdErr.Subscribe(line => observer.OnNext(Warning(line)));
+
+                return await runner.RunAsync(postGenConfig, token);
+            }, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (postGenResult.Succeeded)
+        {
+            observer.OnNext(Info("Post-generation command completed successfully"));
+
+            return;
+        }
+
+        observer.OnNext(Warning($"Post-generation command failed: {postGenResult.ErrorMessage}"));
     }
 
     private static OutputMessage Info(string text) => new() { Text = text, Level = OutputMessageLevel.Information };

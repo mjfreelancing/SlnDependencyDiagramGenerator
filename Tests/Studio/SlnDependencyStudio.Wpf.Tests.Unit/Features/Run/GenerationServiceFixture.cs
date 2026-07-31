@@ -6,11 +6,15 @@ using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Generator;
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Shared.Enumerations;
+using SlnDependencyStudio.Shared.ProcessExecution.PostGeneration;
 using SlnDependencyStudio.Shared.ProcessExecution.PreGeneration;
+using SlnDependencyStudio.Shared.ProcessExecution.RestoreSolution;
 using SlnDependencyStudio.Wpf.Controls;
 using SlnDependencyStudio.Wpf.DependencyInjection;
 using SlnDependencyStudio.Wpf.Features.Output;
+using SlnDependencyStudio.Wpf.Features.Pipeline.PostGeneration;
 using SlnDependencyStudio.Wpf.Features.Pipeline.PreGeneration;
+using SlnDependencyStudio.Wpf.Features.Pipeline.RestoreSolution;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
 using SlnDependencyStudio.Wpf.Features.Run;
 using System.Reactive.Linq;
@@ -21,7 +25,9 @@ namespace SlnDependencyStudio.Wpf.Tests.Unit.Features.Run;
 public class GenerationServiceFixture
 {
     private readonly IProjectDocumentStore _store = Substitute.For<IProjectDocumentStore>();
+    private readonly IScopedOperationFactory<IRestoreSolutionRunner> _restoreRunnerFactory = Substitute.For<IScopedOperationFactory<IRestoreSolutionRunner>>();
     private readonly IScopedOperationFactory<IPreGenerationCommandRunner> _runnerFactory = Substitute.For<IScopedOperationFactory<IPreGenerationCommandRunner>>();
+    private readonly IScopedOperationFactory<IPostGenerationCommandRunner> _postGenRunnerFactory = Substitute.For<IScopedOperationFactory<IPostGenerationCommandRunner>>();
     private readonly IScopedOperationFactory<IDependencyGenerator> _generatorFactory = Substitute.For<IScopedOperationFactory<IDependencyGenerator>>();
     private readonly ILogger<GenerationService> _logger = NullLogger<GenerationService>.Instance;
 
@@ -31,6 +37,15 @@ public class GenerationServiceFixture
     private readonly TrackableValue<string> _preGenWorkingDirectory = new();
     private readonly TrackableValue<bool> _preGenContinueOnFailure = new();
     private readonly IPreGenerationConfigEditor _preGenEditor = Substitute.For<IPreGenerationConfigEditor>();
+
+    private readonly TrackableValue<bool> _restoreSolution = new();
+    private readonly IRestoreSolutionEditor _restoreSolutionEditor = Substitute.For<IRestoreSolutionEditor>();
+
+    private readonly TrackableValue<bool> _postGenEnabled = new();
+    private readonly TrackableValue<string> _postGenCommand = new();
+    private readonly TrackableValue<string> _postGenArguments = new();
+    private readonly TrackableValue<string> _postGenWorkingDirectory = new();
+    private readonly IPostGenerationConfigEditor _postGenEditor = Substitute.For<IPostGenerationConfigEditor>();
 
     private readonly GenerationService _service;
 
@@ -42,6 +57,12 @@ public class GenerationServiceFixture
         _preGenWorkingDirectory.SetOriginalValue(string.Empty);
         _preGenContinueOnFailure.SetOriginalValue(false);
 
+        _restoreSolution.SetOriginalValue(false);
+        _postGenEnabled.SetOriginalValue(false);
+        _postGenCommand.SetOriginalValue(string.Empty);
+        _postGenArguments.SetOriginalValue(string.Empty);
+        _postGenWorkingDirectory.SetOriginalValue(string.Empty);
+
         _preGenEditor.Enabled.Returns(_preGenEnabled);
         _preGenEditor.Command.Returns(_preGenCommand);
         _preGenEditor.Arguments.Returns(_preGenArguments);
@@ -49,7 +70,16 @@ public class GenerationServiceFixture
         _preGenEditor.ContinueOnFailure.Returns(_preGenContinueOnFailure);
         _store.PreGenerationEditor.Returns(_preGenEditor);
 
-        _service = new GenerationService(_store, _runnerFactory, _generatorFactory, _logger);
+        _restoreSolutionEditor.RestoreSolution.Returns(_restoreSolution);
+        _store.RestoreSolutionEditor.Returns(_restoreSolutionEditor);
+
+        _postGenEditor.Enabled.Returns(_postGenEnabled);
+        _postGenEditor.Command.Returns(_postGenCommand);
+        _postGenEditor.Arguments.Returns(_postGenArguments);
+        _postGenEditor.WorkingDirectory.Returns(_postGenWorkingDirectory);
+        _store.PostGenerationEditor.Returns(_postGenEditor);
+
+        _service = new GenerationService(_store, _restoreRunnerFactory, _runnerFactory, _postGenRunnerFactory, _generatorFactory, _logger);
     }
 
     public class RunPreGenerationAsync : GenerationServiceFixture

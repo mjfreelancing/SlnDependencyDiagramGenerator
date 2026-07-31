@@ -4,9 +4,9 @@ using SlnDependencyStudio.Wpf.Features.Output;
 namespace SlnDependencyStudio.Wpf.Features.Run;
 
 /// <summary>
-/// Runs the full generation pipeline: pre-generation command (if enabled),
-/// then <c>CreateDiagramsAsync</c>. Results are streamed as <see cref="OutputMessage"/>
-/// events via the returned observable.
+/// Runs the full generation pipeline: restore solution (if enabled), pre-generation command (if enabled),
+/// then <c>CreateDiagramsAsync</c>, then post-generation command (if enabled). Results are streamed as
+/// <see cref="OutputMessage"/> events via the returned observable.
 /// </summary>
 public interface IGenerationService : IStudioSingletonDependency
 {
