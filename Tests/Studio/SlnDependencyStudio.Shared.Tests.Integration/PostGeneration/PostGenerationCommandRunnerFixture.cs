@@ -1,6 +1,6 @@
 using Shouldly;
 using SlnDependencyDiagramGenerator.Tests.Shared;
-using SlnDependencyStudio.Shared.Enumerations;
+using SlnDependencyStudio.Shared.ProcessExecution;
 using SlnDependencyStudio.Shared.Tests.Integration.Support;
 
 namespace SlnDependencyStudio.Shared.Tests.Integration.PostGeneration;
@@ -18,6 +18,7 @@ public class PostGenerationCommandRunnerFixture
             var result = await runner.RunAsync(config, CancellationToken.None);
 
             result.Succeeded.ShouldBeTrue();
+            result.ErrorCode.ShouldBe(CommandErrorCode.None);
             result.ExitCode.ShouldBe(0);
         }
     }
@@ -48,8 +49,9 @@ public class PostGenerationCommandRunnerFixture
             var result = await runner.RunAsync(config, CancellationToken.None);
 
             result.Succeeded.ShouldBeFalse();
+            result.ErrorCode.ShouldBe(CommandErrorCode.ProcessExitedWithFailure);
             result.ExitCode.ShouldBe(42);
-            result.ErrorMessage.ShouldNotBeNullOrEmpty();
+            result.ErrorMessage.ShouldBe("Post-generation command exited with code 42.");
         }
     }
 
@@ -67,7 +69,8 @@ public class PostGenerationCommandRunnerFixture
             var result = await runner.RunAsync(config, cts.Token);
 
             result.Succeeded.ShouldBeFalse();
-            result.ExitCode.ShouldBe(StudioExitCode.PostGenerationCommandCancelled.Value);
+            result.ErrorCode.ShouldBe(CommandErrorCode.Cancelled);
+            result.ExitCode.ShouldBeNull();
         }
     }
 

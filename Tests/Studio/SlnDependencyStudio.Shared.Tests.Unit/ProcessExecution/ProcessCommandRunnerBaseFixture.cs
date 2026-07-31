@@ -26,6 +26,7 @@ public class ProcessCommandRunnerBaseFixture
             var result = await runner.RunAsync("cmd.exe", ["/c", "exit 0"], null, CancellationToken.None);
 
             result.Succeeded.ShouldBeTrue();
+            result.ErrorCode.ShouldBe(CommandErrorCode.None);
             result.ExitCode.ShouldBe(0);
             result.ErrorMessage.ShouldBeNull();
         }
@@ -41,15 +42,16 @@ public class ProcessCommandRunnerBaseFixture
             var result = await runner.RunAsync("cmd.exe", ["/c", "exit 42"], null, CancellationToken.None);
 
             result.Succeeded.ShouldBeFalse();
+            result.ErrorCode.ShouldBe(CommandErrorCode.ProcessExitedWithFailure);
             result.ExitCode.ShouldBe(42);
-            result.ErrorMessage.ShouldNotBeNullOrEmpty();
+            result.ErrorMessage.ShouldBe("Test command exited with code 42.");
         }
     }
 
     public class Cancellation : ProcessCommandRunnerBaseFixture
     {
         [Fact]
-        public async Task Should_Report_Cancelled_Exit_Code_When_Token_Is_PreCancelled()
+        public async Task Should_Report_Cancelled_When_Token_Is_PreCancelled()
         {
             using var runner = CreateRunner();
 
@@ -59,7 +61,9 @@ public class ProcessCommandRunnerBaseFixture
             var result = await runner.RunAsync("cmd.exe", ["/c", "echo should not run"], null, cts.Token);
 
             result.Succeeded.ShouldBeFalse();
-            result.ExitCode.ShouldBe(TestExitCodes.Cancelled);
+            result.ErrorCode.ShouldBe(CommandErrorCode.Cancelled);
+            result.ExitCode.ShouldBeNull();
+            result.ErrorMessage.ShouldBe("Test command was cancelled.");
         }
     }
 
@@ -77,7 +81,8 @@ public class ProcessCommandRunnerBaseFixture
                 CancellationToken.None);
 
             result.Succeeded.ShouldBeFalse();
-            result.ExitCode.ShouldBe(TestExitCodes.UnexpectedError);
+            result.ErrorCode.ShouldBe(CommandErrorCode.UnexpectedError);
+            result.ExitCode.ShouldBeNull();
             result.ErrorMessage.ShouldNotBeNullOrEmpty();
         }
     }
@@ -115,20 +120,9 @@ public class ProcessCommandRunnerBaseFixture
         }
     }
 
-    internal static class TestExitCodes
-    {
-        public const int Cancelled = 100;
-        public const int Timeout = 101;
-        public const int UnexpectedError = 102;
-    }
-
     private static TestCommandRunner CreateRunner()
     {
-        return new TestCommandRunner(
-            NullLogger.Instance,
-            TestExitCodes.Cancelled,
-            TestExitCodes.Timeout,
-            TestExitCodes.UnexpectedError);
+        return new TestCommandRunner(NullLogger.Instance);
     }
 
     private static async Task WaitUntilAsync(Func<bool> predicate, TimeSpan? timeout = null)
@@ -147,32 +141,23 @@ public class ProcessCommandRunnerBaseFixture
 
     private sealed class TestCommandRunner : ProcessCommandRunnerBase<TestCommandResult>
     {
-        public TestCommandRunner(ILogger logger, int cancelledExitCode, int timeoutExitCode, int unexpectedErrorExitCode)
+        public TestCommandRunner(ILogger logger)
             : base(logger)
         {
-            CancelledExitCode = cancelledExitCode;
-            TimeoutExitCode = timeoutExitCode;
-            UnexpectedErrorExitCode = unexpectedErrorExitCode;
         }
 
         public new Task<TestCommandResult> RunAsync(string command, IReadOnlyList<string> arguments, string? workingDirectory,
             CancellationToken cancellationToken)
             => base.RunAsync(command, arguments, workingDirectory, cancellationToken);
 
-        protected override TestCommandResult CreateResult(bool succeeded, int exitCode, string? errorMessage)
+        protected override TestCommandResult CreateResult(CommandErrorCode errorCode, int? exitCode, string? errorMessage)
             => new()
             {
-                Succeeded = succeeded,
+                ErrorCode = errorCode,
                 ExitCode = exitCode,
                 ErrorMessage = errorMessage
             };
 
         protected override string OperationName => "Test command";
-
-        protected override int CancelledExitCode { get; }
-
-        protected override int TimeoutExitCode { get; }
-
-        protected override int UnexpectedErrorExitCode { get; }
     }
 }

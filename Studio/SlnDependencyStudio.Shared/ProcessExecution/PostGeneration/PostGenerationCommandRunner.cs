@@ -1,7 +1,6 @@
 using AllOverIt.Extensions;
 using Microsoft.Extensions.Logging;
 using SlnDependencyStudio.Shared.Config;
-using SlnDependencyStudio.Shared.Enumerations;
 
 namespace SlnDependencyStudio.Shared.ProcessExecution.PostGeneration;
 
@@ -9,25 +8,16 @@ namespace SlnDependencyStudio.Shared.ProcessExecution.PostGeneration;
 internal sealed class PostGenerationCommandRunner : ProcessCommandRunnerBase<PostGenerationCommandResult>, IPostGenerationCommandRunner
 {
     /// <inheritdoc />
-    protected override PostGenerationCommandResult CreateResult(bool succeeded, int exitCode, string? errorMessage)
+    protected override PostGenerationCommandResult CreateResult(CommandErrorCode errorCode, int? exitCode, string? errorMessage)
         => new()
         {
-            Succeeded = succeeded,
+            ErrorCode = errorCode,
             ExitCode = exitCode,
             ErrorMessage = errorMessage
         };
 
     /// <inheritdoc />
     protected override string OperationName => "Post-generation command";
-
-    /// <inheritdoc />
-    protected override int CancelledExitCode => StudioExitCode.PostGenerationCommandCancelled.Value;
-
-    /// <inheritdoc />
-    protected override int TimeoutExitCode => StudioExitCode.PostGenerationCommandTimeout.Value;
-
-    /// <inheritdoc />
-    protected override int UnexpectedErrorExitCode => StudioExitCode.PostGenerationCommandUnexpectedError.Value;
 
     /// <summary>Initializes a new instance of <see cref="PostGenerationCommandRunner"/>.</summary>
     /// <param name="logger">The logger instance.</param>
@@ -43,7 +33,6 @@ internal sealed class PostGenerationCommandRunner : ProcessCommandRunnerBase<Pos
         {
             return new PostGenerationCommandResult
             {
-                Succeeded = true,
                 ExitCode = 0
             };
         }

@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Logging;
-using SlnDependencyStudio.Shared.Enumerations;
 
 namespace SlnDependencyStudio.Shared.ProcessExecution.RestoreSolution;
 
@@ -7,25 +6,16 @@ namespace SlnDependencyStudio.Shared.ProcessExecution.RestoreSolution;
 internal sealed class RestoreSolutionRunner : ProcessCommandRunnerBase<RestoreSolutionResult>, IRestoreSolutionRunner
 {
     /// <inheritdoc />
-    protected override RestoreSolutionResult CreateResult(bool succeeded, int exitCode, string? errorMessage)
+    protected override RestoreSolutionResult CreateResult(CommandErrorCode errorCode, int? exitCode, string? errorMessage)
         => new()
         {
-            Succeeded = succeeded,
+            ErrorCode = errorCode,
             ExitCode = exitCode,
             ErrorMessage = errorMessage
         };
 
     /// <inheritdoc />
     protected override string OperationName => "Solution restore";
-
-    /// <inheritdoc />
-    protected override int CancelledExitCode => StudioExitCode.PreGenerationCommandCancelled.Value;
-
-    /// <inheritdoc />
-    protected override int TimeoutExitCode => StudioExitCode.PreGenerationCommandTimeout.Value;
-
-    /// <inheritdoc />
-    protected override int UnexpectedErrorExitCode => StudioExitCode.DotNetRestoreFailed.Value;
 
     /// <summary>Initializes a new instance of <see cref="RestoreSolutionRunner"/>.</summary>
     /// <param name="logger">The logger instance.</param>

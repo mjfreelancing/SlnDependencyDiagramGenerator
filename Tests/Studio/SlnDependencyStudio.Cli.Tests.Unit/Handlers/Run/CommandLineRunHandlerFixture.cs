@@ -9,6 +9,7 @@ using SlnDependencyDiagramGenerator.Generator;
 using SlnDependencyStudio.Cli.Enumerations;
 using SlnDependencyStudio.Cli.Handlers.Run;
 using SlnDependencyStudio.Shared.Config;
+using SlnDependencyStudio.Shared.ProcessExecution;
 using SlnDependencyStudio.Shared.ProcessExecution.PostGeneration;
 using SlnDependencyStudio.Shared.ProcessExecution.PreGeneration;
 using SlnDependencyStudio.Shared.ProcessExecution.RestoreSolution;
@@ -59,7 +60,6 @@ public class CommandLineRunHandlerFixture
             .RunAsync(Arg.Any<PreGenerationConfig>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(new PreGenerationCommandResult
             {
-                Succeeded = true,
                 ExitCode = 0
             }));
 
@@ -93,7 +93,7 @@ public class CommandLineRunHandlerFixture
             .RunAsync(Arg.Any<PreGenerationConfig>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(new PreGenerationCommandResult
             {
-                Succeeded = false,
+                ErrorCode = CommandErrorCode.ProcessExitedWithFailure,
                 ExitCode = 1,
                 ErrorMessage = "Command failed"
             }));
@@ -128,7 +128,7 @@ public class CommandLineRunHandlerFixture
             .RunAsync(Arg.Any<PreGenerationConfig>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(new PreGenerationCommandResult
             {
-                Succeeded = false,
+                ErrorCode = CommandErrorCode.ProcessExitedWithFailure,
                 ExitCode = 1,
                 ErrorMessage = "Command failed"
             }));
@@ -325,7 +325,7 @@ public class CommandLineRunHandlerFixture
 
         restoreRunner
             .RunAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(new RestoreSolutionResult { Succeeded = true, ExitCode = 0 }));
+            .Returns(Task.FromResult(new RestoreSolutionResult { ExitCode = 0 }));
 
         var postGenRunner = Substitute.For<IPostGenerationCommandRunner>();
         var projectValidator = Substitute.For<IDependencyProjectValidator>();
@@ -357,7 +357,7 @@ public class CommandLineRunHandlerFixture
             .RunAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(new RestoreSolutionResult
             {
-                Succeeded = false,
+                ErrorCode = CommandErrorCode.ProcessExitedWithFailure,
                 ExitCode = 1,
                 ErrorMessage = "Restore failed"
             }));
@@ -416,7 +416,7 @@ public class CommandLineRunHandlerFixture
 
         postGenRunner
             .RunAsync(Arg.Any<PostGenerationConfig>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(new PostGenerationCommandResult { Succeeded = true, ExitCode = 0 }));
+            .Returns(Task.FromResult(new PostGenerationCommandResult { ExitCode = 0 }));
 
         var projectValidator = Substitute.For<IDependencyProjectValidator>();
         var logger = Substitute.For<ILogger<CommandLineRunHandler>>();
@@ -448,7 +448,7 @@ public class CommandLineRunHandlerFixture
             .RunAsync(Arg.Any<PostGenerationConfig>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(new PostGenerationCommandResult
             {
-                Succeeded = false,
+                ErrorCode = CommandErrorCode.ProcessExitedWithFailure,
                 ExitCode = 6,
                 ErrorMessage = "Deploy failed"
             }));

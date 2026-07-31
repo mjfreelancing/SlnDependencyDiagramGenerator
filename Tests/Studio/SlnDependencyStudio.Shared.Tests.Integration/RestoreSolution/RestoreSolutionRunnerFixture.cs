@@ -1,6 +1,6 @@
 using Shouldly;
 using SlnDependencyDiagramGenerator.Tests.Shared;
-using SlnDependencyStudio.Shared.Enumerations;
+using SlnDependencyStudio.Shared.ProcessExecution;
 using SlnDependencyStudio.Shared.Tests.Integration.Support;
 
 namespace SlnDependencyStudio.Shared.Tests.Integration.RestoreSolution;
@@ -21,6 +21,7 @@ public class RestoreSolutionRunnerFixture
             var result = await runner.RunAsync(solutionPath, CancellationToken.None);
 
             result.Succeeded.ShouldBeTrue();
+            result.ErrorCode.ShouldBe(CommandErrorCode.None);
             result.ExitCode.ShouldBe(0);
         }
     }
@@ -39,8 +40,9 @@ public class RestoreSolutionRunnerFixture
                 CancellationToken.None);
 
             result.Succeeded.ShouldBeFalse();
-            result.ExitCode.ShouldNotBe(0);
-            result.ErrorMessage.ShouldNotBeNullOrEmpty();
+            result.ErrorCode.ShouldBe(CommandErrorCode.ProcessExitedWithFailure);
+            result.ExitCode.ShouldBe(1);
+            result.ErrorMessage.ShouldBe("Solution restore exited with code 1.");
         }
     }
 
@@ -57,7 +59,8 @@ public class RestoreSolutionRunnerFixture
             var result = await runner.RunAsync(@"C:\whatever\solution.sln", cts.Token);
 
             result.Succeeded.ShouldBeFalse();
-            result.ExitCode.ShouldBe(StudioExitCode.PreGenerationCommandCancelled.Value);
+            result.ErrorCode.ShouldBe(CommandErrorCode.Cancelled);
+            result.ExitCode.ShouldBeNull();
         }
     }
 
@@ -76,10 +79,11 @@ public class RestoreSolutionRunnerFixture
 
             result.Succeeded.ShouldBeFalse();
 
-            // A normal dotnet restore failure surfaces the real (non-zero) process exit code.
-            // The DotNetRestoreFailed code is reserved for unexpected errors (e.g. the process cannot start).
-            result.ExitCode.ShouldNotBe(0);
-            result.ExitCode.ShouldNotBe(StudioExitCode.DotNetRestoreFailed.Value);
+            // A normal dotnet restore failure surfaces the real process exit code (1) and is classified
+            // as ProcessExitedWithFailure — never as an internal cancellation or unexpected-error code.
+            result.ErrorCode.ShouldBe(CommandErrorCode.ProcessExitedWithFailure);
+            result.ExitCode.ShouldBe(1);
+            result.ErrorMessage.ShouldBe("Solution restore exited with code 1.");
         }
     }
 

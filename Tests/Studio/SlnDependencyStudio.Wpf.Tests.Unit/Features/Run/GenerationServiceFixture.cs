@@ -5,7 +5,7 @@ using Shouldly;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Generator;
 using SlnDependencyStudio.Shared.Config;
-using SlnDependencyStudio.Shared.Enumerations;
+using SlnDependencyStudio.Shared.ProcessExecution;
 using SlnDependencyStudio.Shared.ProcessExecution.PostGeneration;
 using SlnDependencyStudio.Shared.ProcessExecution.PreGeneration;
 using SlnDependencyStudio.Shared.ProcessExecution.RestoreSolution;
@@ -120,7 +120,6 @@ public class GenerationServiceFixture
 
             SetupPreGenRunner(new PreGenerationCommandResult
             {
-                Succeeded = true,
                 ExitCode = 0
             });
 
@@ -140,7 +139,7 @@ public class GenerationServiceFixture
 
             SetupPreGenRunner(new PreGenerationCommandResult
             {
-                Succeeded = false,
+                ErrorCode = CommandErrorCode.ProcessExitedWithFailure,
                 ExitCode = 3,
                 ErrorMessage = "Build failed"
             });
@@ -161,7 +160,7 @@ public class GenerationServiceFixture
 
             _preGenContinueOnFailure.Value = true; SetupPreGenRunner(new PreGenerationCommandResult
             {
-                Succeeded = false,
+                ErrorCode = CommandErrorCode.ProcessExitedWithFailure,
                 ExitCode = 3,
                 ErrorMessage = "Build failed"
             });
@@ -181,8 +180,7 @@ public class GenerationServiceFixture
 
             SetupPreGenRunner(new PreGenerationCommandResult
             {
-                Succeeded = false,
-                ExitCode = StudioExitCode.PreGenerationCommandCancelled.Value,
+                ErrorCode = CommandErrorCode.Cancelled,
                 ErrorMessage = "Cancelled"
             });
 
@@ -204,7 +202,6 @@ public class GenerationServiceFixture
 
             SetupPreGenRunner(new PreGenerationCommandResult
             {
-                Succeeded = true,
                 ExitCode = 0
             });
 
@@ -290,7 +287,7 @@ public class GenerationServiceFixture
             _preGenEnabled.Value = true;
             _preGenCommand.Value = "dotnet build";
 
-            SetupPreGenRunner(new PreGenerationCommandResult { Succeeded = true, ExitCode = 0 });
+            SetupPreGenRunner(new PreGenerationCommandResult { ExitCode = 0 });
             SetupGenerator();
 
             var messages = await CollectMessagesAsync(CancellationToken.None);
@@ -310,7 +307,7 @@ public class GenerationServiceFixture
 
             SetupPreGenRunner(new PreGenerationCommandResult
             {
-                Succeeded = false,
+                ErrorCode = CommandErrorCode.ProcessExitedWithFailure,
                 ExitCode = 3,
                 ErrorMessage = "Build failed"
             });
@@ -334,7 +331,7 @@ public class GenerationServiceFixture
 
             SetupPreGenRunner(new PreGenerationCommandResult
             {
-                Succeeded = false,
+                ErrorCode = CommandErrorCode.ProcessExitedWithFailure,
                 ExitCode = 3,
                 ErrorMessage = "Build failed"
             });
@@ -367,7 +364,7 @@ public class GenerationServiceFixture
             _restoreSolution.Value = true;
             SetupRestoreRunner(new RestoreSolutionResult
             {
-                Succeeded = false,
+                ErrorCode = CommandErrorCode.ProcessExitedWithFailure,
                 ExitCode = 4,
                 ErrorMessage = "Restore failed"
             });
@@ -386,7 +383,7 @@ public class GenerationServiceFixture
             SetupStoreConfig(@"C:\Projects\test.sln");
 
             _restoreSolution.Value = true;
-            SetupRestoreRunner(new RestoreSolutionResult { Succeeded = true, ExitCode = 0 });
+            SetupRestoreRunner(new RestoreSolutionResult { ExitCode = 0 });
             SetupGenerator();
 
             var messages = await CollectMessagesAsync(CancellationToken.None);
@@ -403,7 +400,7 @@ public class GenerationServiceFixture
 
             _postGenEnabled.Value = true;
             _postGenCommand.Value = "deploy.cmd";
-            SetupPostGenRunner(new PostGenerationCommandResult { Succeeded = true, ExitCode = 0 });
+            SetupPostGenRunner(new PostGenerationCommandResult { ExitCode = 0 });
             SetupGenerator();
 
             var messages = await CollectMessagesAsync(CancellationToken.None);
@@ -421,7 +418,7 @@ public class GenerationServiceFixture
             _postGenCommand.Value = "deploy.cmd";
             SetupPostGenRunner(new PostGenerationCommandResult
             {
-                Succeeded = false,
+                ErrorCode = CommandErrorCode.ProcessExitedWithFailure,
                 ExitCode = 6,
                 ErrorMessage = "Deploy failed"
             });
@@ -445,9 +442,9 @@ public class GenerationServiceFixture
             _postGenEnabled.Value = true;
             _postGenCommand.Value = "deploy.cmd";
 
-            SetupRestoreRunner(new RestoreSolutionResult { Succeeded = true, ExitCode = 0 });
-            SetupPreGenRunner(new PreGenerationCommandResult { Succeeded = true, ExitCode = 0 });
-            SetupPostGenRunner(new PostGenerationCommandResult { Succeeded = true, ExitCode = 0 });
+            SetupRestoreRunner(new RestoreSolutionResult { ExitCode = 0 });
+            SetupPreGenRunner(new PreGenerationCommandResult { ExitCode = 0 });
+            SetupPostGenRunner(new PostGenerationCommandResult { ExitCode = 0 });
             SetupGenerator();
 
             var messages = await CollectMessagesAsync(CancellationToken.None);
@@ -517,7 +514,7 @@ public class GenerationServiceFixture
             var observer = CreateObserver();
 
             _restoreSolution.Value = true;
-            SetupRestoreRunner(new RestoreSolutionResult { Succeeded = true, ExitCode = 0 });
+            SetupRestoreRunner(new RestoreSolutionResult { ExitCode = 0 });
 
             var result = await _service.RunRestoreSolutionAsync(observer, @"C:\Projects\test.sln", CancellationToken.None);
 
@@ -548,7 +545,7 @@ public class GenerationServiceFixture
             _restoreSolution.Value = true;
             SetupRestoreRunner(new RestoreSolutionResult
             {
-                Succeeded = false,
+                ErrorCode = CommandErrorCode.ProcessExitedWithFailure,
                 ExitCode = 4,
                 ErrorMessage = "Restore failed"
             });
@@ -582,7 +579,7 @@ public class GenerationServiceFixture
 
             _postGenEnabled.Value = true;
             _postGenCommand.Value = "deploy.cmd";
-            SetupPostGenRunner(new PostGenerationCommandResult { Succeeded = true, ExitCode = 0 });
+            SetupPostGenRunner(new PostGenerationCommandResult { ExitCode = 0 });
 
             await _service.RunPostGenerationAsync(observer, CancellationToken.None);
 
@@ -598,7 +595,7 @@ public class GenerationServiceFixture
             _postGenCommand.Value = "deploy.cmd";
             SetupPostGenRunner(new PostGenerationCommandResult
             {
-                Succeeded = false,
+                ErrorCode = CommandErrorCode.ProcessExitedWithFailure,
                 ExitCode = 6,
                 ErrorMessage = "Deploy failed"
             });

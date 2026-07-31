@@ -147,7 +147,8 @@ internal sealed class CommandLineRunHandler : CommandLineHandlerBase, ICommandLi
         if (!preGenResult.Succeeded)
         {
             _logger.LogError(
-                "Pre-generation command failed (exit code {ExitCode}, error: {ErrorMessage}).",
+                "Pre-generation command failed ({ErrorCode}, exit code {ExitCode}, error: {ErrorMessage}).",
+                preGenResult.ErrorCode,
                 preGenResult.ExitCode,
                 preGenResult.ErrorMessage);
 
@@ -203,7 +204,8 @@ internal sealed class CommandLineRunHandler : CommandLineHandlerBase, ICommandLi
         }
 
         _logger.LogError(
-            "Solution restore failed (exit code {ExitCode}, error: {ErrorMessage}).",
+            "Solution restore failed ({ErrorCode}, exit code {ExitCode}, error: {ErrorMessage}).",
+            restoreResult.ErrorCode,
             restoreResult.ExitCode,
             restoreResult.ErrorMessage);
 
@@ -239,7 +241,8 @@ internal sealed class CommandLineRunHandler : CommandLineHandlerBase, ICommandLi
         }
 
         _logger.LogWarning(
-            "Post-generation command failed (exit code {ExitCode}, error: {ErrorMessage}).",
+            "Post-generation command failed ({ErrorCode}, exit code {ExitCode}, error: {ErrorMessage}).",
+            postGenResult.ErrorCode,
             postGenResult.ExitCode,
             postGenResult.ErrorMessage);
     }

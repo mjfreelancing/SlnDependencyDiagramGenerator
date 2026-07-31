@@ -1,7 +1,6 @@
 using AllOverIt.Extensions;
 using Microsoft.Extensions.Logging;
 using SlnDependencyStudio.Shared.Config;
-using SlnDependencyStudio.Shared.Enumerations;
 
 namespace SlnDependencyStudio.Shared.ProcessExecution.PreGeneration;
 
@@ -9,25 +8,16 @@ namespace SlnDependencyStudio.Shared.ProcessExecution.PreGeneration;
 internal sealed class PreGenerationCommandRunner : ProcessCommandRunnerBase<PreGenerationCommandResult>, IPreGenerationCommandRunner
 {
     /// <inheritdoc />
-    protected override PreGenerationCommandResult CreateResult(bool succeeded, int exitCode, string? errorMessage)
+    protected override PreGenerationCommandResult CreateResult(CommandErrorCode errorCode, int? exitCode, string? errorMessage)
         => new()
         {
-            Succeeded = succeeded,
+            ErrorCode = errorCode,
             ExitCode = exitCode,
             ErrorMessage = errorMessage
         };
 
     /// <inheritdoc />
     protected override string OperationName => "Pre-generation command";
-
-    /// <inheritdoc />
-    protected override int CancelledExitCode => StudioExitCode.PreGenerationCommandCancelled.Value;
-
-    /// <inheritdoc />
-    protected override int TimeoutExitCode => StudioExitCode.PreGenerationCommandTimeout.Value;
-
-    /// <inheritdoc />
-    protected override int UnexpectedErrorExitCode => StudioExitCode.PreGenerationUnexpectedError.Value;
 
     /// <summary>Initializes a new instance of <see cref="PreGenerationCommandRunner"/>.</summary>
     /// <param name="logger">The logger instance.</param>
@@ -43,7 +33,6 @@ internal sealed class PreGenerationCommandRunner : ProcessCommandRunnerBase<PreG
         {
             return new PreGenerationCommandResult
             {
-                Succeeded = true,
                 ExitCode = 0
             };
         }

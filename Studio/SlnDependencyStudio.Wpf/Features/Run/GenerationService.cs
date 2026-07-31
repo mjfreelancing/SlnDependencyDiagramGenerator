@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Generator;
 using SlnDependencyStudio.Shared.Config;
-using SlnDependencyStudio.Shared.Enumerations;
+using SlnDependencyStudio.Shared.ProcessExecution;
 using SlnDependencyStudio.Shared.ProcessExecution.PostGeneration;
 using SlnDependencyStudio.Shared.ProcessExecution.PreGeneration;
 using SlnDependencyStudio.Shared.ProcessExecution.RestoreSolution;
@@ -182,7 +182,7 @@ internal sealed class GenerationService : IGenerationService
             return true;
         }
 
-        if (preGenResult.ExitCode == StudioExitCode.PreGenerationCommandCancelled.Value)
+        if (preGenResult.ErrorCode == CommandErrorCode.Cancelled)
         {
             var sb = new StringBuilder();
 

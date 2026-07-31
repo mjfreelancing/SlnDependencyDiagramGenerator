@@ -100,51 +100,38 @@ public abstract class ProcessCommandRunnerBase<TResult> : IDisposable
                     OperationName,
                     result.ExitCode);
 
-                var succeeded = result.ExitCode == 0;
+                if (result.ExitCode == 0)
+                {
+                    return CreateResult(CommandErrorCode.None, result.ExitCode, null);
+                }
 
-                return CreateResult(succeeded, result.ExitCode, succeeded
-                    ? null
-                    : $"{OperationName} exited with code {result.ExitCode}.");
+                return CreateResult(CommandErrorCode.ProcessExitedWithFailure, result.ExitCode,
+                    $"{OperationName} exited with code {result.ExitCode}.");
             }
             catch (OperationCanceledException)
             {
                 Logger.LogWarning("{OperationName} was cancelled.", OperationName);
 
-                return CreateResult(false, CancelledExitCode, $"{OperationName} was cancelled.");
-            }
-            catch (TimeoutException exception)
-            {
-                Logger.LogError(exception, "{OperationName} timed out.", OperationName);
-
-                return CreateResult(false, TimeoutExitCode, $"{OperationName} timed out.");
+                return CreateResult(CommandErrorCode.Cancelled, null, $"{OperationName} was cancelled.");
             }
             catch (Exception exception)
             {
                 Logger.LogError(exception, "{OperationName} failed with an unexpected error.", OperationName);
 
-                return CreateResult(false, UnexpectedErrorExitCode, exception.Message);
+                return CreateResult(CommandErrorCode.UnexpectedError, null, exception.Message);
             }
         }
     }
 
     /// <summary>Creates the concrete result from the process outcome.</summary>
-    /// <param name="succeeded">Whether the command completed successfully.</param>
-    /// <param name="exitCode">The process exit code.</param>
-    /// <param name="errorMessage">An error message when the command failed, otherwise <see langword="null"/>.</param>
+    /// <param name="errorCode">The failure classification; <see cref="CommandErrorCode.None"/> on success.</param>
+    /// <param name="exitCode">The actual process exit code, or <see langword="null"/> when the process did not run to completion.</param>
+    /// <param name="errorMessage">An error message when the command failed or was cancelled, otherwise <see langword="null"/>.</param>
     /// <returns>The concrete result instance.</returns>
-    protected abstract TResult CreateResult(bool succeeded, int exitCode, string? errorMessage);
+    protected abstract TResult CreateResult(CommandErrorCode errorCode, int? exitCode, string? errorMessage);
 
     /// <summary>The user-facing operation name used in log and error messages.</summary>
     protected abstract string OperationName { get; }
-
-    /// <summary>The exit code reported when the command is cancelled.</summary>
-    protected abstract int CancelledExitCode { get; }
-
-    /// <summary>The exit code reported when the command times out.</summary>
-    protected abstract int TimeoutExitCode { get; }
-
-    /// <summary>The exit code reported when an unexpected error occurs.</summary>
-    protected abstract int UnexpectedErrorExitCode { get; }
 
     /// <inheritdoc />
     public void Dispose()
