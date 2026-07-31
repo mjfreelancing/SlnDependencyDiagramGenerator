@@ -8,14 +8,20 @@
     "solution": {
       "solutionPath": "..\\..\\SlnDependencyDiagramGenerator.sln",
       "regexToInclude": [
-        "\\.*\\.csproj"
+        "\\\\.*\\.csproj"
       ],
       "regexToExclude": [
-        "Tests|Studio"
+        ".*Samples*\\.csproj",
+        ".*Tests.*\\.csproj"
       ],
       "packagesToExclude": [
-        "Microsoft.Build",
-        "Microsoft.SourceLink.GitHub"
+        "Microsoft.NET.Test.Sdk",
+        "xunit",
+        "NUnit",
+        "FluentAssertions",
+        "NSubstitute",
+        "Shouldly",
+        "coverlet.collector"
       ],
       "frameworksToExclude": [
         "Microsoft.NETCore.App"
@@ -27,8 +33,8 @@
       },
       "all": {
         "enabled": true,
-        "includeDependencies": true,
-        "transitiveDepth": 1
+        "includeDependencies": false,
+        "transitiveDepth": 0
       }
     },
     "diagram": {
@@ -45,10 +51,10 @@
         "fill": "#FFEC96",
         "opacity": 0.8
       },
-      "groupName": "Dependency Diagram Generator",
+      "groupName": "SlnDependencyDiagram",
       "groupNameAlias": "ddg",
       "grouping": {
-        "enabled": false,
+        "enabled": true,
         "backgroundStyle": {
           "fill": "#E7EBFC",
           "opacity": 1
@@ -63,18 +69,17 @@
       "clearContents": true,
       "rootPath": "..\\..\\Output",
       "imageFormats": [
-        "Png",
         "Svg",
-        "Pdf"
+        "Png"
       ]
     }
   },
   "preGeneration": {
-    "continueOnFailure": false,
     "enabled": false,
     "command": "",
     "arguments": "",
-    "workingDirectory": ""
+    "workingDirectory": "",
+    "continueOnFailure": false
   },
   "restoreSolution": true,
   "postGeneration": {
