@@ -1,6 +1,7 @@
 using AllOverIt.Assertion;
 using AllOverIt.ReactiveUI.Factories;
 using MaterialDesignThemes.Wpf;
+using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
 using ReactiveUI;
 using SlnDependencyStudio.Wpf.Abstractions.IO;
@@ -27,16 +28,18 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     private readonly IFileSystem _fileSystem;
     private readonly IProjectDocumentStore _store;
     private readonly IErrorDialogService _errorDialog;
+    private readonly ILogger<MainWindow> _logger;
     private bool _isClosing;
 
     public MainWindow(MainWindowViewModel viewModel, IViewFactory viewFactory, IApplicationSettingsService settingsService,
-        IFileSystem fileSystem, IProjectDocumentStore store, IErrorDialogService errorDialog)
+        IFileSystem fileSystem, IProjectDocumentStore store, IErrorDialogService errorDialog, ILogger<MainWindow> logger)
     {
         _viewFactory = viewFactory.WhenNotNull();
         _settingsService = settingsService.WhenNotNull();
         _fileSystem = fileSystem.WhenNotNull();
         _store = store.WhenNotNull();
         _errorDialog = errorDialog.WhenNotNull();
+        _logger = logger.WhenNotNull();
 
         ViewModel = viewModel;
         DataContext = viewModel;
@@ -206,6 +209,8 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         // after the first await would be skipped and the window would close prematurely.
         e.Cancel = true;
 
+        _logger.LogDebug("Main window closing");
+
         if (ViewModel is not null && !ViewModel.CanClose)
         {
             var messageDialog = new Views.MessageDialog
@@ -248,6 +253,8 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         _settingsService.CurrentState.WindowPlacement = placement;
         _settingsService.SaveState();
 
+        _logger.LogDebug("Window placement saved ({State})", placement.State);
+
         _isClosing = true;
 
         // Close must be deferred — calling it directly while still inside the Closing
@@ -257,6 +264,8 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 
     private void OpenSettingsDialog()
     {
+        _logger.LogDebug("Opening settings dialog");
+
         var view = (Window)_viewFactory.CreateViewFor<SettingsWindowViewModel>();
         view.Owner = this;
         view.ShowDialog();

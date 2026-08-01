@@ -1,4 +1,5 @@
 using AllOverIt.Assertion;
+using Microsoft.Extensions.Logging;
 using SlnDependencyStudio.Shared.Serialization;
 using SlnDependencyStudio.Wpf.Abstractions.IO;
 using SlnDependencyStudio.Wpf.Features.Application.Models;
@@ -12,6 +13,7 @@ internal sealed class ApplicationSettingsService : IApplicationSettingsService
 {
     private readonly IStudioJsonSerializer _jsonSerializer;
     private readonly IFileSystem _fileSystem;
+    private readonly ILogger<ApplicationSettingsService> _logger;
     private readonly string _settingsDirectory;
     private readonly string _settingsFilePath;
     private readonly string _stateFilePath;
@@ -26,8 +28,10 @@ internal sealed class ApplicationSettingsService : IApplicationSettingsService
     /// with the default <c>%AppData%/SlnDependencyStudio</c> directory.</summary>
     /// <param name="jsonSerializer">The JSON serializer used to persist and load settings.</param>
     /// <param name="fileSystem">The file system abstraction.</param>
-    public ApplicationSettingsService(IStudioJsonSerializer jsonSerializer, IFileSystem fileSystem)
-        : this(jsonSerializer, fileSystem, GetDefaultSettingsDirectory())
+    /// <param name="logger">The logger instance.</param>
+    public ApplicationSettingsService(IStudioJsonSerializer jsonSerializer, IFileSystem fileSystem,
+        ILogger<ApplicationSettingsService> logger)
+        : this(jsonSerializer, fileSystem, GetDefaultSettingsDirectory(), logger)
     {
     }
 
@@ -36,10 +40,13 @@ internal sealed class ApplicationSettingsService : IApplicationSettingsService
     /// <param name="jsonSerializer">The JSON serializer used to persist and load settings.</param>
     /// <param name="fileSystem">The file system abstraction.</param>
     /// <param name="settingsDirectory">The directory to store settings and state files.</param>
-    internal ApplicationSettingsService(IStudioJsonSerializer jsonSerializer, IFileSystem fileSystem, string settingsDirectory)
+    /// <param name="logger">The logger instance.</param>
+    internal ApplicationSettingsService(IStudioJsonSerializer jsonSerializer, IFileSystem fileSystem,
+        string settingsDirectory, ILogger<ApplicationSettingsService> logger)
     {
         _jsonSerializer = jsonSerializer.WhenNotNull();
         _fileSystem = fileSystem.WhenNotNull();
+        _logger = logger.WhenNotNull();
         _settingsDirectory = settingsDirectory.WhenNotNull();
         _settingsFilePath = Path.Combine(_settingsDirectory, "settings.json");
         _stateFilePath = Path.Combine(_settingsDirectory, "state.json");
@@ -60,8 +67,18 @@ internal sealed class ApplicationSettingsService : IApplicationSettingsService
             return;
         }
 
-        await using var stream = _fileSystem.OpenRead(_settingsFilePath);
-        CurrentSettings = (await _jsonSerializer.DeserializeAsync<ApplicationSettings>(stream, cancellationToken))!;
+        _logger.LogDebug("Loading settings from {SettingsFilePath}", _settingsFilePath);
+
+        try
+        {
+            await using var stream = _fileSystem.OpenRead(_settingsFilePath);
+            CurrentSettings = (await _jsonSerializer.DeserializeAsync<ApplicationSettings>(stream, cancellationToken))!;
+        }
+        catch (Exception exception)
+        {
+            _logger.LogWarning(exception, "Failed to load settings from {SettingsFilePath}; falling back to defaults.", _settingsFilePath);
+            CurrentSettings = new ApplicationSettings();
+        }
     }
 
     private async Task LoadStateAsync(CancellationToken cancellationToken)
@@ -72,13 +89,25 @@ internal sealed class ApplicationSettingsService : IApplicationSettingsService
             return;
         }
 
-        await using var stream = _fileSystem.OpenRead(_stateFilePath);
-        CurrentState = (await _jsonSerializer.DeserializeAsync<ApplicationState>(stream, cancellationToken))!;
+        _logger.LogDebug("Loading application state from {StateFilePath}", _stateFilePath);
+
+        try
+        {
+            await using var stream = _fileSystem.OpenRead(_stateFilePath);
+            CurrentState = (await _jsonSerializer.DeserializeAsync<ApplicationState>(stream, cancellationToken))!;
+        }
+        catch (Exception exception)
+        {
+            _logger.LogWarning(exception, "Failed to load application state from {StateFilePath}; falling back to defaults.", _stateFilePath);
+            CurrentState = new ApplicationState();
+        }
     }
 
     /// <inheritdoc />
     public async Task SaveSettingsAsync(CancellationToken cancellationToken = default)
     {
+        _logger.LogDebug("Saving settings to {SettingsFilePath}", _settingsFilePath);
+
         _fileSystem.CreateDirectory(_settingsDirectory);
 
         var tempPath = _settingsFilePath + ".tmp";
@@ -94,6 +123,8 @@ internal sealed class ApplicationSettingsService : IApplicationSettingsService
     /// <inheritdoc />
     public void SaveState()
     {
+        _logger.LogDebug("Saving application state to {StateFilePath}", _stateFilePath);
+
         _fileSystem.CreateDirectory(_settingsDirectory);
 
         var tempPath = _stateFilePath + ".tmp";

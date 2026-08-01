@@ -1,4 +1,5 @@
 using AllOverIt.Assertion;
+using Microsoft.Extensions.Logging;
 using ReactiveUI;
 using SlnDependencyStudio.Wpf.Features.Application;
 using SlnDependencyStudio.Wpf.Features.Theming;
@@ -18,6 +19,7 @@ public sealed class SettingsWindowViewModel : ReactiveObject
 
     private readonly IApplicationSettingsService _settingsService;
     private readonly IThemeService _themeService;
+    private readonly ILogger<SettingsWindowViewModel> _logger;
 
     private readonly RestartSensitiveSettings _originalRestartSettings;
 
@@ -53,10 +55,15 @@ public sealed class SettingsWindowViewModel : ReactiveObject
 
     /// <summary>Initializes a new instance of <see cref="SettingsWindowViewModel"/>.
     /// Captures the original restart-sensitive values for comparison during editing.</summary>
-    public SettingsWindowViewModel(IApplicationSettingsService settingsService, IThemeService themeService)
+    /// <param name="logger">The logger instance.</param>
+    public SettingsWindowViewModel(IApplicationSettingsService settingsService, IThemeService themeService,
+        ILogger<SettingsWindowViewModel> logger)
     {
         _settingsService = settingsService;
         _themeService = themeService;
+        _logger = logger;
+
+        _logger.LogDebug("Settings dialog opened");
 
         _originalRestartSettings = new(settingsService.CurrentSettings.LogRetentionDays);
 
@@ -67,6 +74,8 @@ public sealed class SettingsWindowViewModel : ReactiveObject
         // Revert the live-previewed theme to its original value, then close.
         CancelCommand = ReactiveCommand.Create(() =>
         {
+            _logger.LogDebug("Settings dialog cancelled");
+
             if (SettingsEditorViewModel is not null)
             {
                 var originalTheme = SettingsEditorViewModel.GetOriginalTheme();
@@ -91,6 +100,8 @@ public sealed class SettingsWindowViewModel : ReactiveObject
 
         // ...and persisted to disk.
         await _settingsService.SaveSettingsAsync();
+
+        _logger.LogInformation("Settings saved");
     }
 
     private void BeginRestartTracking()
@@ -109,6 +120,7 @@ public sealed class SettingsWindowViewModel : ReactiveObject
                 /* vm => vm.SettingsEditorViewModel!.SomeOtherProp */
                 (retentionDays /* , string someOtherProp */) => new RestartSensitiveSettings(retentionDays /* , string someOtherProp */))
             .Select(settings => settings != _originalRestartSettings)
+            .Do(restartRequired => _logger.LogDebug("Restart required: {RestartRequired}", restartRequired))
             .BindTo(this, vm => vm.IsRestartRequired);
     }
 }

@@ -1,4 +1,5 @@
 using AllOverIt.Extensions;
+using Microsoft.Extensions.Logging;
 using ReactiveUI;
 using SlnDependencyStudio.Wpf.Features.Application;
 using SlnDependencyStudio.Wpf.Features.Application.Models;
@@ -12,6 +13,7 @@ namespace SlnDependencyStudio.Wpf.Features.Settings;
 /// <summary>View model for the <see cref="SettingsEditor"/> control.</summary>
 public sealed class SettingsEditorViewModel : ReactiveObject
 {
+    private readonly ILogger<SettingsEditorViewModel> _logger;
     private readonly StudioTheme _originalTheme;
 
     private string _defaultProjectFolder = string.Empty;
@@ -82,8 +84,12 @@ public sealed class SettingsEditorViewModel : ReactiveObject
     /// Populates editing properties from the current durable settings.</summary>
     /// <param name="settingsService">The application settings service.</param>
     /// <param name="themeService">The theme service for live preview when the toggle changes.</param>
-    public SettingsEditorViewModel(IApplicationSettingsService settingsService, IThemeService themeService)
+    /// <param name="logger">The logger instance.</param>
+    public SettingsEditorViewModel(IApplicationSettingsService settingsService, IThemeService themeService,
+        ILogger<SettingsEditorViewModel> logger)
     {
+        _logger = logger;
+
         var currentSettings = settingsService.CurrentSettings;
 
         // Capture the original theme so it can be reverted on Cancel.
@@ -103,7 +109,14 @@ public sealed class SettingsEditorViewModel : ReactiveObject
         // Self-referencing — subscription is on 'this', collected with the ViewModel.
         // Also, this VM is a dialog child; no caller disposes it, so IDisposable would be dead code.
         this.WhenAnyValue(vm => vm.IsDarkTheme)
-            .Subscribe(isDark => themeService.ApplyTheme(isDark ? StudioTheme.Dark : StudioTheme.Light));
+            .Subscribe(isDark =>
+            {
+                var theme = isDark ? StudioTheme.Dark : StudioTheme.Light;
+
+                _logger.LogDebug("Theme preview toggled: {Theme}", theme);
+
+                themeService.ApplyTheme(theme);
+            });
 
         BrowseDefaultProjectFolderCommand = ReactiveCommand.CreateFromTask(BrowseDefaultProjectFolderAsync);
         BrowseD2ToolPathCommand = ReactiveCommand.CreateFromTask(BrowseD2ToolPathAsync);
@@ -144,6 +157,7 @@ public sealed class SettingsEditorViewModel : ReactiveObject
 
         if (selectedPath is not null)
         {
+            _logger.LogDebug("Default project folder set to {Folder}", selectedPath);
             DefaultProjectFolder = selectedPath;
         }
     }
@@ -154,6 +168,7 @@ public sealed class SettingsEditorViewModel : ReactiveObject
 
         if (selectedPath is not null)
         {
+            _logger.LogDebug("D2 tool path set to {ToolPath}", selectedPath);
             D2ToolPath = selectedPath;
         }
     }
@@ -164,6 +179,7 @@ public sealed class SettingsEditorViewModel : ReactiveObject
 
         if (selectedPath is not null)
         {
+            _logger.LogDebug("Mmdc tool path set to {ToolPath}", selectedPath);
             MmdcToolPath = selectedPath;
         }
     }

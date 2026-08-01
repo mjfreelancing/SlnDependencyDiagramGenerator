@@ -657,13 +657,13 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
     {
         SelectedNavigationItem = NavigationItems.Single(item => item.ViewModelType == typeof(TViewModel));
 
-        _logger.LogInformation("Selected navigation item: {PageName}", SelectedNavigationItem.DisplayName);
+        _logger.LogDebug("Selected navigation item: {PageName}", SelectedNavigationItem.DisplayName);
     }
 
     /// <summary>Navigates to the workspace page corresponding to the selected navigation item.</summary>
     private void NavigateToPage(NavigationItemViewModel viewModel)
     {
-        _logger.LogInformation("Navigating to page: {PageName}", viewModel.DisplayName);
+        _logger.LogDebug("Navigating to page: {PageName}", viewModel.DisplayName);
 
         if (CurrentPage is IViewFor { ViewModel: IDisposable disposableVm })
         {
@@ -737,7 +737,7 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
 
         CurrentPage = view;
 
-        _logger.LogInformation("Showing empty-state landing page");
+        _logger.LogDebug("Showing empty-state landing page");
     }
 
     internal void RefreshRecentProjects()

@@ -1,5 +1,6 @@
 using AllOverIt.Assertion;
 using AllOverIt.Serilog.Sinks.Observable;
+using Microsoft.Extensions.Logging;
 using ReactiveUI;
 using Serilog.Core;
 using Serilog.Events;
@@ -26,6 +27,7 @@ public sealed class OutputPanelViewModel : ReactiveObject, IStudioScopedDependen
     private readonly IObservableSink _observableSink;
     private readonly IApplicationSettingsService _applicationSettings;
     private readonly IFileSystem _fileSystem;
+    private readonly ILogger<OutputPanelViewModel> _logger;
     private readonly LoggingLevelSwitch _levelSwitch;
     private readonly IDisposable _sinkSubscription;
     private bool _initializing;
@@ -90,6 +92,8 @@ public sealed class OutputPanelViewModel : ReactiveObject, IStudioScopedDependen
                 ? LogEventLevel.Debug
                 : LogEventLevel.Information;
 
+            _logger.LogDebug("Verbose logging {State}", value ? "enabled" : "disabled");
+
             PersistIfNotInitializing();
         }
     }
@@ -127,13 +131,15 @@ public sealed class OutputPanelViewModel : ReactiveObject, IStudioScopedDependen
     /// <param name="levelSwitch">The logging level switch that controls the minimum log level.</param>
     /// <param name="applicationSettings">The application settings service for persisting preferences.</param>
     /// <param name="fileSystem">The file system abstraction for saving output.</param>
-    public OutputPanelViewModel(IObservableSink observableSink, LoggingLevelSwitch levelSwitch,
-        IApplicationSettingsService applicationSettings, IFileSystem fileSystem)
+    /// <param name="logger">The logger instance.</param>
+    public OutputPanelViewModel(IObservableSink observableSink, LoggingLevelSwitch levelSwitch, IApplicationSettingsService applicationSettings,
+        IFileSystem fileSystem, ILogger<OutputPanelViewModel> logger)
     {
         _observableSink = observableSink.WhenNotNull();
         _levelSwitch = levelSwitch.WhenNotNull();
         _applicationSettings = applicationSettings.WhenNotNull();
         _fileSystem = fileSystem.WhenNotNull();
+        _logger = logger.WhenNotNull();
 
         // Self-referencing — Messages is owned by this ViewModel.
         var hasContent = Observable
@@ -143,7 +149,11 @@ public sealed class OutputPanelViewModel : ReactiveObject, IStudioScopedDependen
             .Select(_ => Messages.Count > 0)
             .StartWith(Messages.Count > 0);
 
-        ClearCommand = ReactiveCommand.Create(Messages.Clear, hasContent);
+        ClearCommand = ReactiveCommand.Create(() =>
+        {
+            _logger.LogDebug("Output panel cleared");
+            Messages.Clear();
+        }, hasContent);
 
         var canCancel = this.WhenAnyValue(vm => vm.CanCancel);
         CancelCommand = ReactiveCommand.Create(() => { }, canCancel);
@@ -152,6 +162,8 @@ public sealed class OutputPanelViewModel : ReactiveObject, IStudioScopedDependen
         {
             var text = string.Join(Environment.NewLine, Messages.Select(message => message.Text));
             Clipboard.SetText(text);
+
+            _logger.LogDebug("Output copied to clipboard");
         }, hasContent);
 
         SaveAsCommand = ReactiveCommand.CreateFromTask(async () =>
@@ -162,6 +174,8 @@ public sealed class OutputPanelViewModel : ReactiveObject, IStudioScopedDependen
             {
                 var text = string.Join(Environment.NewLine, Messages.Select(message => message.Text));
                 await _fileSystem.WriteAllTextAsync(filePath, text);
+
+                _logger.LogDebug("Output saved to {FilePath}", filePath);
             }
         }, hasContent);
 
