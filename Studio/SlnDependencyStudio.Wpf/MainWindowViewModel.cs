@@ -108,7 +108,7 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
         private set => this.RaiseAndSetIfChanged(ref _canCancel, value);
     }
 
-    /// <summary>The display name of the currently running operation (e.g. "Operation in progress" or "Cancelling…").</summary>
+    /// <summary>The display name of the currently running operation (e.g. "Operation in progress" or "Cancelling...").</summary>
     public string OperationName
     {
         get => _operationName;
@@ -291,7 +291,7 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
 
         CanCancel = false;
         _outputPanelViewModel.CanCancel = false;
-        OperationName = "Cancelling…";
+        OperationName = "Cancelling...";
 
         // Yield one dispatcher tick so that ReactiveCommand's CanExecute
         // (gated by CanCancel) propagates to the button's IsEnabled before

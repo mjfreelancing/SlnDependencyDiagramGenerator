@@ -217,7 +217,7 @@ The generation pipeline is:
 - Configuration editing controls are disabled (menu items, navigation)
 - A **Cancel button** is available in the output panel header
 - The main window **cannot be closed** while generation is in progress
-- The generation status overlay shows "Operation in progress" or "Cancelling…"
+- The generation status overlay shows "Operation in progress" or "Cancelling..."
 - Once cancelled, the Cancel button is disabled immediately
 
 ### After Generation

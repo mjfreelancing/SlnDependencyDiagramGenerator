@@ -206,7 +206,7 @@ internal sealed class GenerationService : IGenerationService
             return false;
         }
 
-        _logger.LogInformation("Restoring solution…");
+        _logger.LogInformation("Restoring solution...");
 
         var restoreResult = await _restoreRunnerFactory
             .ExecuteAsync(async (runner, token) =>
@@ -241,7 +241,7 @@ internal sealed class GenerationService : IGenerationService
             return;
         }
 
-        _logger.LogInformation("Running post-generation command…");
+        _logger.LogInformation("Running post-generation command...");
 
         var workingDirectory = postGen.WorkingDirectory.Value;
 

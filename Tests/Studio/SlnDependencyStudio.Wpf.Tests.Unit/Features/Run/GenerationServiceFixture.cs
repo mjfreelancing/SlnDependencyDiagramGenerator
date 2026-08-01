@@ -438,10 +438,10 @@ public class GenerationServiceFixture
             await CollectLogsAsync(CancellationToken.None);
 
             var logsList = _logger.Records.ToList();
-            var restoreIndex = logsList.FindIndex(record => record.Message == "Restoring solution…");
+            var restoreIndex = logsList.FindIndex(record => record.Message == "Restoring solution...");
             var preGenIndex = logsList.FindIndex(record => record.Message == "Running pre-generation command...");
             var generationIndex = logsList.FindIndex(record => record.Message == "Generating diagrams...");
-            var postGenIndex = logsList.FindIndex(record => record.Message == "Running post-generation command…");
+            var postGenIndex = logsList.FindIndex(record => record.Message == "Running post-generation command...");
 
             restoreIndex.ShouldBeGreaterThanOrEqualTo(0);
             preGenIndex.ShouldBeGreaterThan(restoreIndex);
