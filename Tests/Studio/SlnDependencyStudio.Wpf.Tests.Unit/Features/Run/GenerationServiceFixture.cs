@@ -228,10 +228,10 @@ public class GenerationServiceFixture
             await CollectLogsAsync(CancellationToken.None);
 
             _logger.Records.ShouldContain(record =>
-                record.Level == LogLevel.Information && record.Message == "=== Generation Started ===");
+                record.Level == LogLevel.Information && record.Message == "Starting generation");
 
             _logger.Records.ShouldContain(record =>
-                record.Level == LogLevel.Information && record.Message.StartsWith("=== Generation Completed ("));
+                record.Level == LogLevel.Information && record.Message.StartsWith("Generation completed ("));
         }
 
         [Fact]
@@ -273,7 +273,7 @@ public class GenerationServiceFixture
 
             _logger.Records.ShouldContain(record => record.Message == "Pre-generation command completed successfully");
             _logger.Records.ShouldContain(record => record.Message == "Generating diagrams...");
-            _logger.Records.ShouldContain(record => record.Message.StartsWith("=== Generation Completed ("));
+            _logger.Records.ShouldContain(record => record.Message.StartsWith("Generation completed ("));
         }
 
         [Fact]
@@ -323,7 +323,7 @@ public class GenerationServiceFixture
 
             _logger.Records.ShouldContain(record => record.Message.Contains("continuing"));
             _logger.Records.ShouldContain(record => record.Message == "Generating diagrams...");
-            _logger.Records.ShouldContain(record => record.Message.StartsWith("=== Generation Completed ("));
+            _logger.Records.ShouldContain(record => record.Message.StartsWith("Generation completed ("));
         }
 
         [Fact]
@@ -334,7 +334,7 @@ public class GenerationServiceFixture
 
             await CollectLogsAsync(CancellationToken.None);
 
-            _store.Received(1).BuildGeneratorConfig();
+            _store.Received(1).BuildDocument();
         }
 
         [Fact]
@@ -374,7 +374,7 @@ public class GenerationServiceFixture
 
             _logger.Records.ShouldContain(record => record.Message == "Solution restore completed successfully");
             _logger.Records.ShouldContain(record => record.Message == "Generating diagrams...");
-            _logger.Records.ShouldContain(record => record.Message.StartsWith("=== Generation Completed ("));
+            _logger.Records.ShouldContain(record => record.Message.StartsWith("Generation completed ("));
         }
 
         [Fact]
@@ -416,7 +416,7 @@ public class GenerationServiceFixture
             _logger.Records.ShouldContain(record =>
                 record.Level == LogLevel.Warning && record.Message == "Post-generation command failed: Deploy failed");
 
-            _logger.Records.ShouldContain(record => record.Message.StartsWith("=== Generation Completed ("));
+            _logger.Records.ShouldContain(record => record.Message.StartsWith("Generation completed ("));
         }
 
         [Fact]
@@ -438,7 +438,7 @@ public class GenerationServiceFixture
             await CollectLogsAsync(CancellationToken.None);
 
             var logsList = _logger.Records.ToList();
-            var restoreIndex = logsList.FindIndex(record => record.Message == "Restoring solution...");
+            var restoreIndex = logsList.FindIndex(record => record.Message.StartsWith("Restoring solution:"));
             var preGenIndex = logsList.FindIndex(record => record.Message == "Running pre-generation command...");
             var generationIndex = logsList.FindIndex(record => record.Message == "Generating diagrams...");
             var postGenIndex = logsList.FindIndex(record => record.Message == "Running post-generation command...");
@@ -456,11 +456,17 @@ public class GenerationServiceFixture
 
         private void SetupStoreConfig(string? solutionPath = null)
         {
-            _store.BuildGeneratorConfig().Returns(new DependencyGeneratorConfig
+            // Generation requires a file-backed document, so the config dump sees a non-null path.
+            _store.DocumentFilePath.Returns(@"C:\Projects\test.sds");
+
+            _store.BuildDocument().Returns(new DependencyProjectDocument
             {
-                Solution = new GeneratorSolutionOptions
+                DiagramGenerator = new DependencyGeneratorConfig
                 {
-                    SolutionPath = solutionPath ?? string.Empty
+                    Solution = new GeneratorSolutionOptions
+                    {
+                        SolutionPath = solutionPath ?? string.Empty
+                    }
                 }
             });
         }

@@ -1,5 +1,5 @@
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
+using NSubstitute;
 using Shouldly;
 using SlnDependencyStudio.Shared.ProcessExecution;
 using System;
@@ -122,7 +122,7 @@ public class ProcessCommandRunnerBaseFixture
 
     private static TestCommandRunner CreateRunner()
     {
-        return new TestCommandRunner(NullLogger.Instance);
+        return new TestCommandRunner(Substitute.For<ILogger>());
     }
 
     private static async Task WaitUntilAsync(Func<bool> predicate, TimeSpan? timeout = null)

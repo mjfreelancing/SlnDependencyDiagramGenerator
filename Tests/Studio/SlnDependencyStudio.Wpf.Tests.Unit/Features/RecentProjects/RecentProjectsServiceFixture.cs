@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Shouldly;
 using SlnDependencyStudio.Wpf.Abstractions.IO;
@@ -17,7 +18,7 @@ public class RecentProjectsServiceFixture
     public RecentProjectsServiceFixture()
     {
         _settingsService.CurrentState.Returns(_state);
-        _service = new RecentProjectsService(_fileSystem, _settingsService);
+        _service = new RecentProjectsService(_fileSystem, _settingsService, Substitute.For<ILogger<RecentProjectsService>>());
     }
 
     public class Add : RecentProjectsServiceFixture

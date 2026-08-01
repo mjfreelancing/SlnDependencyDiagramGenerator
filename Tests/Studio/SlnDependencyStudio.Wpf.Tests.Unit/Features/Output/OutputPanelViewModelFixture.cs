@@ -55,7 +55,7 @@ public class OutputPanelViewModelFixture
         [Fact]
         public void Should_Restore_Defaults_From_Settings()
         {
-            _viewModel.IsVerbose.ShouldBeTrue();
+            _viewModel.IsVerbose.ShouldBeFalse();
             _viewModel.WrapContent.ShouldBeFalse();
         }
 
@@ -162,16 +162,16 @@ public class OutputPanelViewModelFixture
         [Fact]
         public void Should_Update_LevelSwitch_When_Toggled()
         {
-            // Default settings have IsVerboseLogging = true, so the switch starts at Debug.
-            _levelSwitch.MinimumLevel.ShouldBe(LogEventLevel.Debug);
-
-            _viewModel.IsVerbose = false;
-
+            // Default settings have IsVerboseLogging = false, so the switch starts at Information.
             _levelSwitch.MinimumLevel.ShouldBe(LogEventLevel.Information);
 
             _viewModel.IsVerbose = true;
 
             _levelSwitch.MinimumLevel.ShouldBe(LogEventLevel.Debug);
+
+            _viewModel.IsVerbose = false;
+
+            _levelSwitch.MinimumLevel.ShouldBe(LogEventLevel.Information);
         }
 
         private static LogEvent CreateLogEvent(LogEventLevel level, string message)

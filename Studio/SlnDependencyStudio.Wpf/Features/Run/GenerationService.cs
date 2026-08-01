@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Generator;
 using SlnDependencyStudio.Shared.Config;
+using SlnDependencyStudio.Shared.Config.Extensions;
 using SlnDependencyStudio.Shared.ProcessExecution;
 using SlnDependencyStudio.Shared.ProcessExecution.PostGeneration;
 using SlnDependencyStudio.Shared.ProcessExecution.PreGeneration;
@@ -54,13 +55,17 @@ internal sealed class GenerationService : IGenerationService
 
         try
         {
-            _logger.LogInformation("=== Generation Started ===");
+            _logger.LogInformation("Starting generation");
 
             // Validate all configuration up front so the pipeline fails fast before any command or
             // generation work begins. The command runners themselves do not perform validation.
-            _projectValidator.Validate(_store.BuildDocument(), _store.DocumentDirectory);
+            var document = _store.BuildDocument();
 
-            var config = _store.BuildGeneratorConfig();
+            _projectValidator.Validate(document, _store.DocumentDirectory);
+
+            document.LogConfiguration(_store.DocumentFilePath!, _logger);
+
+            var config = document.DiagramGenerator;
 
             var shouldContinue = await RunRestoreSolutionAsync(config.Solution.SolutionPath, cancellationToken).ConfigureAwait(false);
 
@@ -78,7 +83,7 @@ internal sealed class GenerationService : IGenerationService
 
             var elapsed = DateTime.UtcNow - startTime;
 
-            _logger.LogInformation("=== Generation Completed ({Elapsed:F1}s) ===", elapsed.TotalSeconds);
+            _logger.LogInformation("Generation completed ({Elapsed:F1}s)", elapsed.TotalSeconds);
         }
         catch (OperationCanceledException)
         {
@@ -206,7 +211,7 @@ internal sealed class GenerationService : IGenerationService
             return false;
         }
 
-        _logger.LogInformation("Restoring solution...");
+        _logger.LogInformation("Restoring solution: {SolutionPath}", solutionPath);
 
         var restoreResult = await _restoreRunnerFactory
             .ExecuteAsync(async (runner, token) =>

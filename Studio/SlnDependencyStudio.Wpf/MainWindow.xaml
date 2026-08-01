@@ -50,7 +50,7 @@
             Modifiers="Control" />
         <KeyBinding
             Key="F5"
-            Command="{Binding AnalyzeCommand}"
+            Command="{Binding AnalyseCommand}"
             Modifiers="Shift" />
         <KeyBinding Key="F5" Command="{Binding GenerateCommand}" />
     </Window.InputBindings>
@@ -228,7 +228,7 @@
 
                         <MenuItem Header="_Run" IsEnabled="{Binding RunMenuEnabled}">
                             <MenuItem
-                                x:Name="AnalyzeMenuItem"
+                                x:Name="AnalyseMenuItem"
                                 Header="_Analyse"
                                 InputGestureText="Shift+F5" />
                             <MenuItem

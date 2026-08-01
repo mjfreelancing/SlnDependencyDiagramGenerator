@@ -47,7 +47,7 @@ public class SettingsMigrationFixture : IDisposable
         settingsService.CurrentSettings.LogRetentionDays.ShouldBe(31); // DefaultLogRetentionDays
         settingsService.CurrentSettings.ToolPathOverrides.ShouldBeEmpty();
         settingsService.CurrentSettings.Output.WrapContent.ShouldBeFalse();
-        settingsService.CurrentSettings.Output.IsVerboseLogging.ShouldBeTrue();
+        settingsService.CurrentSettings.Output.IsVerboseLogging.ShouldBeFalse();
         settingsService.CurrentSettings.Output.AutoScroll.ShouldBeTrue();
     }
 

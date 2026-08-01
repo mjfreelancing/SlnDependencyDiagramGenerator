@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Shouldly;
 using SlnDependencyDiagramGenerator.Config;
@@ -19,7 +20,7 @@ public class ProjectDocumentStoreFixture
 
     public ProjectDocumentStoreFixture()
     {
-        _store = new ProjectDocumentStore(_projectService, _recentProjects);
+        _store = new ProjectDocumentStore(_projectService, _recentProjects, Substitute.For<ILogger<ProjectDocumentStore>>());
     }
 
     public class Construction : ProjectDocumentStoreFixture

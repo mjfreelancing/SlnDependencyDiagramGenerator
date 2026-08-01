@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Shouldly;
 using SlnDependencyStudio.Shared.Config;
@@ -13,7 +14,7 @@ public class DependencyProjectServiceFixture
 
     public DependencyProjectServiceFixture()
     {
-        _service = new DependencyProjectService(_serializer);
+        _service = new DependencyProjectService(_serializer, Substitute.For<ILogger<DependencyProjectService>>());
     }
 
     public class CreateFromDefaults : DependencyProjectServiceFixture

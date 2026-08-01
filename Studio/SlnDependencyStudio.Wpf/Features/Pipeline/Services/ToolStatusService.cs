@@ -1,3 +1,5 @@
+using AllOverIt.Assertion;
+using Microsoft.Extensions.Logging;
 using SlnDependencyDiagramGenerator.Generator.ToolDetection;
 using SlnDependencyStudio.Wpf.Features.Pipeline.Models;
 using System.Collections.ObjectModel;
@@ -14,6 +16,7 @@ internal sealed class ToolStatusService : IToolStatusService, IDisposable
 {
     private readonly IToolPathResolver _toolPathResolver;
     private readonly IToolDetectionService _toolDetection;
+    private readonly ILogger<ToolStatusService> _logger;
 
     private readonly ObservableCollection<ToolStatusEntry> _entries = [];
     private readonly BehaviorSubject<IReadOnlyList<ToolStatusEntry>> _statusSubject;
@@ -24,10 +27,13 @@ internal sealed class ToolStatusService : IToolStatusService, IDisposable
     /// <summary>Initializes a new instance of <see cref="ToolStatusService"/>.</summary>
     /// <param name="toolPathResolver">Resolves effective tool paths for external CLI tools.</param>
     /// <param name="toolDetection">The tool detection service.</param>
-    public ToolStatusService(IToolPathResolver toolPathResolver, IToolDetectionService toolDetection)
+    /// <param name="logger">The logger instance.</param>
+    public ToolStatusService(IToolPathResolver toolPathResolver, IToolDetectionService toolDetection,
+        ILogger<ToolStatusService> logger)
     {
-        _toolPathResolver = toolPathResolver;
-        _toolDetection = toolDetection;
+        _toolPathResolver = toolPathResolver.WhenNotNull();
+        _toolDetection = toolDetection.WhenNotNull();
+        _logger = logger.WhenNotNull();
 
         _statusSubject = new BehaviorSubject<IReadOnlyList<ToolStatusEntry>>([.. _entries]);
         ToolStatuses = _statusSubject.AsObservable();
@@ -36,6 +42,8 @@ internal sealed class ToolStatusService : IToolStatusService, IDisposable
     /// <inheritdoc />
     public async Task RescanAsync(CancellationToken cancellationToken)
     {
+        _logger.LogInformation("Rescanning tools...");
+
         var now = DateTime.UtcNow;
 
         // Seed or sync entries from the detection service's known tool list.
@@ -67,7 +75,12 @@ internal sealed class ToolStatusService : IToolStatusService, IDisposable
             entry.ResolvedPath = status.ResolvedPath;
             entry.ErrorMessage = status.ErrorMessage;
             entry.LastChecked = now;
+
+            _logger.LogDebug("Tool {ToolName} available: {IsAvailable} (path: {ResolvedPath})",
+                entry.ToolName, entry.IsAvailable, entry.ResolvedPath ?? "<not found>");
         }
+
+        _logger.LogInformation("Tool rescan complete ({ToolCount} tools)", _entries.Count);
 
         _statusSubject.OnNext([.. _entries]);
     }

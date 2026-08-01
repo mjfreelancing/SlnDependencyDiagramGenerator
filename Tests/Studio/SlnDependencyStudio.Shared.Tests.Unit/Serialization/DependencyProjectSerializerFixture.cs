@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+using NSubstitute;
 using Shouldly;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyStudio.Shared.Config;
@@ -244,7 +246,7 @@ public class DependencyProjectSerializerFixture
 
     private static DependencyProjectSerializer CreateSerializer()
     {
-        return new DependencyProjectSerializer(new StudioJsonSerializer());
+        return new DependencyProjectSerializer(new StudioJsonSerializer(), Substitute.For<ILogger<DependencyProjectSerializer>>());
     }
 }
 

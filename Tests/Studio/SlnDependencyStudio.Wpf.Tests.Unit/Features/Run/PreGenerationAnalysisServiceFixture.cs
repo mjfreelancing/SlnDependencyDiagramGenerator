@@ -51,7 +51,7 @@ public class PreGenerationAnalysisServiceFixture
             await RunServiceAsync();
 
             _logger.Records.ShouldContain(record =>
-                record.Level == LogLevel.Information && record.Message == "=== Dry-Run Analysis ===");
+                record.Level == LogLevel.Information && record.Message == "Starting dry-run analysis");
 
             _logger.Records.ShouldContain(record =>
                 record.Level == LogLevel.Error && record.Message == "No solution path configured");

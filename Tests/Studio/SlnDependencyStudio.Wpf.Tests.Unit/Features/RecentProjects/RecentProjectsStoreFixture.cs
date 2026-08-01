@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Shouldly;
 using SlnDependencyStudio.Wpf.Features.RecentProjects;
@@ -13,7 +14,7 @@ public class RecentProjectsStoreFixture
 
     public RecentProjectsStoreFixture()
     {
-        _store = new RecentProjectsStore(_service);
+        _store = new RecentProjectsStore(_service, Substitute.For<ILogger<RecentProjectsStore>>());
     }
 
     public class Construction : RecentProjectsStoreFixture
@@ -43,7 +44,7 @@ public class RecentProjectsStoreFixture
                 new RecentProjectEntry(@"C:\proj.sds", "proj", true)
             ]);
 
-            var store = new RecentProjectsStore(_service);
+            var store = new RecentProjectsStore(_service, Substitute.For<ILogger<RecentProjectsStore>>());
 
             store.HasRecentProjects.ShouldBeTrue();
         }

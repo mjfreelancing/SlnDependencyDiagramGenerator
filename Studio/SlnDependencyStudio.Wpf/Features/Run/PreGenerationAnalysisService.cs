@@ -40,9 +40,7 @@ internal sealed class PreGenerationAnalysisService : IPreGenerationAnalysisServi
     {
         try
         {
-            _logger.LogDebug("Starting dry-run analysis");
-
-            _logger.LogInformation("=== Dry-Run Analysis ===");
+            _logger.LogInformation("Starting dry-run analysis");
 
             // Validate all configuration up front so issues are detected early during the dry-run.
             // The command runners themselves do not perform validation.
@@ -82,8 +80,11 @@ internal sealed class PreGenerationAnalysisService : IPreGenerationAnalysisServi
 
             EmitProjectSection(discoveryResult);
 
-            _logger.LogInformation("=== Tool Readiness ===");
+            _logger.LogInformation("Checking tool readiness");
 
+            // ToolStatuses is a BehaviorSubject-backed observable that replays the current snapshot
+            // on subscription. FirstAsync() takes that snapshot once for the readiness report and
+            // completes, rather than subscribing to the ongoing stream.
             var toolEntries = await _toolStatus.ToolStatuses.FirstAsync();
 
             foreach (var entry in toolEntries)
@@ -109,14 +110,11 @@ internal sealed class PreGenerationAnalysisService : IPreGenerationAnalysisServi
         }
         catch (ValidationException exception)
         {
-            _logger.LogWarning("Configuration validation failed");
-
             _logger.LogError("Configuration validation failed: {Message}", exception.Message);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Analysis failed");
-            _logger.LogError("Analysis failed: {Message}", ex.Message);
         }
     }
 

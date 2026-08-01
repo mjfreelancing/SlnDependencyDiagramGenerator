@@ -650,7 +650,7 @@ public class MainWindowViewModelFixture
         }
     }
 
-    public class AnalyzeCommand : MainWindowViewModelFixture
+    public class AnalyseCommand : MainWindowViewModelFixture
     {
         [Fact]
         public void Should_Be_Disabled_When_No_Document()
@@ -664,7 +664,7 @@ public class MainWindowViewModelFixture
                 store, _projectService, _recentProjects, _errorDialog, _viewFactory,
                 _toolStatus, _analysisService, _generationService, Substitute.For<ILogger<MainWindowViewModel>>());
 
-            var canExecute = vm.AnalyzeCommand.CanExecute.FirstAsync().Wait();
+            var canExecute = vm.AnalyseCommand.CanExecute.FirstAsync().Wait();
 
             canExecute.ShouldBeFalse();
         }
@@ -681,7 +681,7 @@ public class MainWindowViewModelFixture
                 store, _projectService, _recentProjects, _errorDialog, _viewFactory,
                 _toolStatus, _analysisService, _generationService, Substitute.For<ILogger<MainWindowViewModel>>());
 
-            var canExecute = vm.AnalyzeCommand.CanExecute.FirstAsync().Wait();
+            var canExecute = vm.AnalyseCommand.CanExecute.FirstAsync().Wait();
 
             canExecute.ShouldBeTrue();
         }
@@ -693,7 +693,7 @@ public class MainWindowViewModelFixture
                 .RunAsync(Arg.Any<CancellationToken>())
                 .Returns(Task.CompletedTask);
 
-            await _viewModel.AnalyzeCommand.Execute();
+            await _viewModel.AnalyseCommand.Execute();
 
             await _analysisService.Received(1).RunAsync(Arg.Any<CancellationToken>());
         }
@@ -782,7 +782,7 @@ public class MainWindowViewModelFixture
         public void Should_Be_True_By_Default()
         {
             // CanCancel, OperationName, and the cancel execution path go through
-            // private methods (CancelOperationAsync, AnalyzeAsync/GenerateAsync)
+            // private methods (CancelOperationAsync, AnalyseAsync/GenerateAsync)
             // wired in OnActivated — the ReactiveUI activation infrastructure is
             // not triggered in unit tests. These tests verify the public observable
             // contract: initial state and post-operation cleanup.
@@ -791,7 +791,7 @@ public class MainWindowViewModelFixture
         }
 
         [Fact]
-        public async Task Should_Be_True_During_Analyze()
+        public async Task Should_Be_True_During_Analyse()
         {
             var completion = new TaskCompletionSource();
 
@@ -799,9 +799,9 @@ public class MainWindowViewModelFixture
                 .RunAsync(Arg.Any<CancellationToken>())
                 .Returns(completion.Task);
 
-            var executingTask = _viewModel.AnalyzeCommand.Execute();
+            var executingTask = _viewModel.AnalyseCommand.Execute();
 
-            // CanCancel is set inside the async method body (AnalyzeAsync) before
+            // CanCancel is set inside the async method body (AnalyseAsync) before
             // it awaits RunAsync, so it is already set at this point.
             _viewModel.CanCancel.ShouldBeTrue();
 
@@ -818,7 +818,7 @@ public class MainWindowViewModelFixture
                 .RunAsync(Arg.Any<CancellationToken>())
                 .Returns(completion.Task);
 
-            var executingTask = _viewModel.AnalyzeCommand.Execute();
+            var executingTask = _viewModel.AnalyseCommand.Execute();
             completion.SetResult();
             await executingTask;
 
@@ -836,7 +836,7 @@ public class MainWindowViewModelFixture
             var service = Substitute.For<IRecentProjectsService>();
             service.GetRecent().Returns([]);
 
-            var realStore = new RecentProjectsStore(service);
+            var realStore = new RecentProjectsStore(service, Substitute.For<ILogger<RecentProjectsStore>>());
 
             var vm = new MainWindowViewModel(
                 _store, _projectService, realStore, _errorDialog, _viewFactory,

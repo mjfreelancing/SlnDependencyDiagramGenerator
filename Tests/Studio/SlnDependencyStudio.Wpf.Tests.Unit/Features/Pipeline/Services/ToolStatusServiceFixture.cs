@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Shouldly;
 using SlnDependencyDiagramGenerator.Generator.ToolDetection;
@@ -162,6 +163,6 @@ public class ToolStatusServiceFixture
 
     private ToolStatusService CreateSut()
     {
-        return new ToolStatusService(_toolPathResolver, _detectionService);
+        return new ToolStatusService(_toolPathResolver, _detectionService, Substitute.For<ILogger<ToolStatusService>>());
     }
 }

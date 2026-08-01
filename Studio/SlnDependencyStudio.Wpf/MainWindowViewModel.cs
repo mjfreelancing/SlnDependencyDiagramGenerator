@@ -129,7 +129,7 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
     public object OutputPanel { get; }
 
     /// <summary>Command that runs a dry-run analysis.</summary>
-    public ReactiveCommand<Unit, Unit> AnalyzeCommand { get; }
+    public ReactiveCommand<Unit, Unit> AnalyseCommand { get; }
 
     /// <summary>Command that runs generation (Phase 8 placeholder).</summary>
     public ReactiveCommand<Unit, Unit> GenerateCommand { get; }
@@ -219,10 +219,10 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
         OpenRecentProjectCommand = ReactiveCommand.CreateFromTask<string>(OpenRecentProjectAsync);
         RemoveRecentProjectCommand = ReactiveCommand.Create<string>(RemoveRecentProject);
 
-        // Mutual exclusion between Analyze and Generate is handled by RunMenuEnabled
+        // Mutual exclusion between Analyse and Generate is handled by RunMenuEnabled
         // which disables the entire Run menu during either operation.
         GenerateCommand = CreateGenerateCommand();
-        AnalyzeCommand = CreateAnalyzeCommand();
+        AnalyseCommand = CreateAnalyseCommand();
 
         // Populate navigation items. Each page VM receives the store via DI and self-initialises.
         NavigationItems =
@@ -364,9 +364,9 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
         // the global MenuItem style in the view consume this.
         Observable
             .CombineLatest(
-                AnalyzeCommand.IsExecuting,
+                AnalyseCommand.IsExecuting,
                 GenerateCommand.IsExecuting,
-                (analyzing, generating) => analyzing || generating)
+                (analysing, generating) => analysing || generating)
             .Subscribe(running => IsOperationRunning = running)
             .DisposeWith(disposables);
 
@@ -527,6 +527,8 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
             return;
         }
 
+        _logger.LogInformation("Generate started");
+
         // Run generation via IGenerationService.
         using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         _operationCts = linkedCts;
@@ -549,19 +551,21 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
         }
     }
 
-    private ReactiveCommand<Unit, Unit> CreateAnalyzeCommand()
+    private ReactiveCommand<Unit, Unit> CreateAnalyseCommand()
     {
-        var canAnalyze = _store.WhenAnyValue(store => store.HasDocument);
+        var canAnalyse = _store.WhenAnyValue(store => store.HasDocument);
 
-        return ReactiveCommand.CreateFromTask(AnalyzeAsync, canAnalyze);
+        return ReactiveCommand.CreateFromTask(AnalyseAsync, canAnalyse);
     }
 
-    private async Task AnalyzeAsync(CancellationToken cancellationToken)
+    private async Task AnalyseAsync(CancellationToken cancellationToken)
     {
         if (!await SaveIfDirtyAsync(cancellationToken))
         {
             return;
         }
+
+        _logger.LogInformation("Analyse started");
 
         using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         _operationCts = linkedCts;
