@@ -139,7 +139,7 @@ internal sealed class CommandLineRunHandler : CommandLineHandlerBase, ICommandLi
 
         // Subscribe to stdout/stderr so the output is captured in the CLI's log output.
         using var stdoutSub = _preGenerationCommandRunner.StdOut.Subscribe(line => _logger.LogInformation("{Line}", line));
-        using var stderrSub = _preGenerationCommandRunner.StdErr.Subscribe(line => _logger.LogError("{Line}", line));
+        using var stderrSub = _preGenerationCommandRunner.StdErr.Subscribe(line => _logger.LogWarning("{Line}", line));
 
         // Validation ensures the command is set
         var preGenResult = await _preGenerationCommandRunner.RunAsync(preGenConfig, cancellationToken);
@@ -193,7 +193,7 @@ internal sealed class CommandLineRunHandler : CommandLineHandlerBase, ICommandLi
 
         // Subscribe to stdout/stderr so the output is captured in the CLI's log output.
         using var stdoutSub = _restoreSolutionRunner.StdOut.Subscribe(line => _logger.LogInformation("{Line}", line));
-        using var stderrSub = _restoreSolutionRunner.StdErr.Subscribe(line => _logger.LogError("{Line}", line));
+        using var stderrSub = _restoreSolutionRunner.StdErr.Subscribe(line => _logger.LogWarning("{Line}", line));
 
         var restoreResult = await _restoreSolutionRunner.RunAsync(solutionPath, cancellationToken);
 
@@ -230,7 +230,7 @@ internal sealed class CommandLineRunHandler : CommandLineHandlerBase, ICommandLi
 
         // Subscribe to stdout/stderr so the output is captured in the CLI's log output.
         using var stdoutSub = _postGenerationCommandRunner.StdOut.Subscribe(line => _logger.LogInformation("{Line}", line));
-        using var stderrSub = _postGenerationCommandRunner.StdErr.Subscribe(line => _logger.LogError("{Line}", line));
+        using var stderrSub = _postGenerationCommandRunner.StdErr.Subscribe(line => _logger.LogWarning("{Line}", line));
 
         var postGenResult = await _postGenerationCommandRunner.RunAsync(postGenConfig, cancellationToken);
 

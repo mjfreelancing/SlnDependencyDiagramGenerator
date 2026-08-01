@@ -11,6 +11,10 @@ internal sealed class CommandLineSetup
 {
     private readonly CancellationToken _cancellationToken;
     private readonly List<Command> _commands = [];
+    private readonly Option<string> _configFileOption = CreateConfigFileOption();
+
+    /// <summary>The shared <c>--configFile</c>/<c>--cf</c> option used by all subcommands.</summary>
+    public Option<string> ConfigFileOption => _configFileOption;
 
     /// <summary>Initializes a new instance of <see cref="CommandLineSetup"/>.</summary>
     /// <param name="cancellationToken">The cancellation token passed to all handlers.</param>
@@ -33,16 +37,14 @@ internal sealed class CommandLineSetup
     /// <returns>This instance, for chaining.</returns>
     public CommandLineSetup AddValidate(ICommandLineValidateHandler handler, Action<int> setExitCode)
     {
-        var configFileOption = CreateConfigFileOption();
-
         var command = new Command("validate", "Validate a configuration file without running generation")
         {
-            configFileOption
+            _configFileOption
         };
 
         command.SetAction(async parseResult =>
         {
-            var configFilename = parseResult.GetValue(configFileOption)!;
+            var configFilename = parseResult.GetValue(_configFileOption)!;
             var exitCode = await handler.HandleAsync(configFilename, _cancellationToken);
             setExitCode(exitCode);
         });
@@ -58,16 +60,14 @@ internal sealed class CommandLineSetup
     /// <returns>This instance, for chaining.</returns>
     public CommandLineSetup AddRun(ICommandLineRunHandler handler, Action<int> setExitCode)
     {
-        var configFileOption = CreateConfigFileOption();
-
         var command = new Command("run", "Generate dependency diagrams from a configuration file")
         {
-            configFileOption
+            _configFileOption
         };
 
         command.SetAction(async parseResult =>
         {
-            var configFilename = parseResult.GetValue(configFileOption)!;
+            var configFilename = parseResult.GetValue(_configFileOption)!;
             var exitCode = await handler.HandleAsync(configFilename, _cancellationToken);
 
             setExitCode(exitCode);
@@ -91,7 +91,7 @@ internal sealed class CommandLineSetup
 
         var root = new RootCommand("SlnDependencyStudio CLI — dependency diagram generation")
         {
-            CreateConfigFileOption()
+            _configFileOption
         };
 
         foreach (var command in _commands)

@@ -7,7 +7,6 @@ using SlnDependencyStudio.Cli.Enumerations;
 using SlnDependencyStudio.Cli.Handlers.Run;
 using SlnDependencyStudio.Cli.Handlers.Validate;
 using SlnDependencyStudio.Cli.Setup;
-using System.CommandLine;
 
 namespace SlnDependencyStudio.Cli;
 
@@ -38,7 +37,11 @@ internal sealed class App : ConsoleAppBase
     {
         _logger.LogInformation("SlnDependencyStudio CLI started");
 
-        var root = new CommandLineSetup(cancellationToken)
+        // The setup instance builds the command tree and owns the shared options, so it is kept
+        // around to query parsed values (such as ConfigFileOption) once parsing has completed.
+        var setup = new CommandLineSetup(cancellationToken);
+
+        var root = setup
             .AddValidate(_validateCommandHandler, exitCode => ExitCode = exitCode)
             .AddRun(_runCommandHandler, exitCode => ExitCode = exitCode)
             .Build(_logger, out var verboseOption);
@@ -55,6 +58,12 @@ internal sealed class App : ConsoleAppBase
         }
 
         _logger.LogDebug("Verbose logging enabled: {Verbose}", isVerbose);
+
+        // CommandResult gives the invoked command, and ParseResult.GetValue(ConfigFileOption) returns the value
+        // supplied for the --configFile/--cf option on the command line, or null when it was not provided.
+        _logger.LogDebug("Selected command: {Command}, config file: {ConfigFile}",
+            parseResult.CommandResult.Command.Name, parseResult.GetValue(setup.ConfigFileOption) ?? "<none>");
+
         _logger.LogDebug("Command line arguments: {Arguments}", string.Join(' ', args));
 
         try

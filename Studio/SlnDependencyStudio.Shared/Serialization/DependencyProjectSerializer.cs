@@ -1,4 +1,5 @@
 ﻿using AllOverIt.Assertion;
+using Microsoft.Extensions.Logging;
 using SlnDependencyStudio.Shared.Config;
 
 namespace SlnDependencyStudio.Shared.Serialization;
@@ -17,15 +18,18 @@ internal sealed class DependencyProjectSerializer : IDependencyProjectSerializer
     };
 
     private readonly IStudioJsonSerializer _jsonSerializer;
+    private readonly ILogger<DependencyProjectSerializer> _logger;
 
     /// <summary>The current schema version of the document format.</summary>
     public const int CurrentSchemaVersion = 1;
 
     /// <summary>Initializes a new instance of <see cref="DependencyProjectSerializer"/>.</summary>
     /// <param name="jsonSerializer">The JSON serializer to delegate serialization and deserialization to.</param>
-    public DependencyProjectSerializer(IStudioJsonSerializer jsonSerializer)
+    /// <param name="logger">The logger instance.</param>
+    public DependencyProjectSerializer(IStudioJsonSerializer jsonSerializer, ILogger<DependencyProjectSerializer> logger)
     {
         _jsonSerializer = jsonSerializer.WhenNotNull();
+        _logger = logger.WhenNotNull();
     }
 
     /// <summary>Serializes a document to a JSON string.</summary>
@@ -40,10 +44,20 @@ internal sealed class DependencyProjectSerializer : IDependencyProjectSerializer
     /// <param name="document">The document to serialize.</param>
     /// <param name="filePath">The target file path.</param>
     /// <returns>A task that completes when the file has been written.</returns>
-    public Task SerializeAsync(DependencyProjectDocument document, string filePath, CancellationToken cancellationToken = default)
+    public async Task SerializeAsync(DependencyProjectDocument document, string filePath, CancellationToken cancellationToken = default)
     {
-        var json = Serialize(document);
-        return File.WriteAllTextAsync(filePath, json, cancellationToken);
+        _logger.LogDebug("Serializing project to {FilePath}", filePath);
+
+        try
+        {
+            var json = Serialize(document);
+            await File.WriteAllTextAsync(filePath, json, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "Failed to serialize project to {FilePath}", filePath);
+            throw;
+        }
     }
 
     /// <summary>Deserializes a JSON string into a document.</summary>
@@ -71,8 +85,18 @@ internal sealed class DependencyProjectSerializer : IDependencyProjectSerializer
     /// <returns>A task that resolves to the deserialized document.</returns>
     public async Task<DependencyProjectDocument> DeserializeAsync(string configFilename, CancellationToken cancellationToken = default)
     {
-        var json = await File.ReadAllTextAsync(configFilename, cancellationToken).ConfigureAwait(false);
-        return Deserialize(json);
+        _logger.LogDebug("Deserializing project from {ConfigFilename}", configFilename);
+
+        try
+        {
+            var json = await File.ReadAllTextAsync(configFilename, cancellationToken).ConfigureAwait(false);
+            return Deserialize(json);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "Failed to deserialize project from {ConfigFilename}", configFilename);
+            throw;
+        }
     }
 
     private static void MigrateToCurrent(DependencyProjectDocument document)
