@@ -11,10 +11,8 @@ using SlnDependencyStudio.Shared.ProcessExecution.RestoreSolution;
 using SlnDependencyStudio.Shared.Services;
 using SlnDependencyStudio.Shared.Utils;
 using SlnDependencyStudio.Wpf.DependencyInjection;
-using SlnDependencyStudio.Wpf.Features.Output;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
 using System.IO;
-using System.Reactive.Linq;
 using System.Text;
 
 namespace SlnDependencyStudio.Wpf.Features.Run;
@@ -22,7 +20,6 @@ namespace SlnDependencyStudio.Wpf.Features.Run;
 /// <summary>
 /// Runs the full generation pipeline: restore solution (if enabled), pre-generation command (if enabled),
 /// diagram generation, and post-generation command (if enabled).
-/// Results are streamed as <see cref="OutputMessage"/> events.
 /// </summary>
 internal sealed class GenerationService : IGenerationService
 {
@@ -51,93 +48,68 @@ internal sealed class GenerationService : IGenerationService
     }
 
     /// <inheritdoc />
-    public IObservable<OutputMessage> RunAsync(CancellationToken cancellationToken)
+    public async Task RunAsync(CancellationToken cancellationToken)
     {
-        return Observable.Create<OutputMessage>(async observer =>
+        var startTime = DateTime.UtcNow;
+
+        try
         {
-            var startTime = DateTime.UtcNow;
+            _logger.LogInformation("=== Generation Started ===");
 
-            try
+            // Validate all configuration up front so the pipeline fails fast before any command or
+            // generation work begins. The command runners themselves do not perform validation.
+            _projectValidator.Validate(_store.BuildDocument(), _store.DocumentDirectory);
+
+            var config = _store.BuildGeneratorConfig();
+
+            var shouldContinue = await RunRestoreSolutionAsync(config.Solution.SolutionPath, cancellationToken).ConfigureAwait(false);
+
+            if (shouldContinue)
             {
-                _logger.LogInformation("Generation started");
-
-                observer.OnNext(Info("=== Generation Started ==="));
-
-                // Validate all configuration up front so the pipeline fails fast before any command or
-                // generation work begins. The command runners themselves do not perform validation.
-                _projectValidator.Validate(_store.BuildDocument(), _store.DocumentDirectory);
-
-                var config = _store.BuildGeneratorConfig();
-
-                var shouldContinue = await RunRestoreSolutionAsync(observer, config.Solution.SolutionPath, cancellationToken).ConfigureAwait(false);
-
-                if (shouldContinue)
-                {
-                    shouldContinue = await RunPreGenerationAsync(observer, cancellationToken).ConfigureAwait(false);
-                }
-
-                if (shouldContinue)
-                {
-                    await RunDiagramGenerationAsync(observer, config, cancellationToken).ConfigureAwait(false);
-
-                    await RunPostGenerationAsync(observer, cancellationToken).ConfigureAwait(false);
-                }
-
-                var elapsed = DateTime.UtcNow - startTime;
-
-                _logger.LogInformation("Generation completed in {Elapsed:F1}s", elapsed.TotalSeconds);
-
-                observer.OnNext(Info($"=== Generation Completed ({elapsed.TotalSeconds:F1}s) ==="));
+                shouldContinue = await RunPreGenerationAsync(cancellationToken).ConfigureAwait(false);
             }
-            catch (OperationCanceledException)
+
+            if (shouldContinue)
             {
-                _logger.LogWarning("Generation cancelled");
+                await RunDiagramGenerationAsync(config, cancellationToken).ConfigureAwait(false);
 
-                observer.OnNext(Warning("Generation cancelled"));
+                await RunPostGenerationAsync(cancellationToken).ConfigureAwait(false);
             }
-            catch (ValidationException exception)
-            {
-                _logger.LogWarning("Configuration validation failed");
 
-                observer.OnNext(Error($"Configuration validation failed: {exception.Message}"));
-            }
-            catch (TimeoutException ex)
-            {
-                _logger.LogWarning(ex, "Generation timed out");
+            var elapsed = DateTime.UtcNow - startTime;
 
-                observer.OnNext(Error($"Generation timed out: {ex.Message}"));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Generation failed");
-
-                observer.OnNext(Error($"Generation failed: {ex.Message}"));
-            }
-            finally
-            {
-                observer.OnCompleted();
-            }
-        });
+            _logger.LogInformation("=== Generation Completed ({Elapsed:F1}s) ===", elapsed.TotalSeconds);
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogWarning("Generation cancelled");
+        }
+        catch (ValidationException exception)
+        {
+            _logger.LogError("Configuration validation failed: {Message}", exception.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Generation failed");
+        }
     }
 
-    /// <summary>
-    /// Runs the diagram generator, streaming progress to the observer.
-    /// </summary>
-    internal async Task RunDiagramGenerationAsync(IObserver<OutputMessage> observer, DependencyGeneratorConfig config,
-        CancellationToken cancellationToken)
+    /// <summary>Runs the diagram generator.</summary>
+    /// <param name="config">The generator configuration built from the store.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    internal async Task RunDiagramGenerationAsync(DependencyGeneratorConfig config, CancellationToken cancellationToken)
     {
-        observer.OnNext(Info("Generating diagrams…"));
+        _logger.LogInformation("Generating diagrams...");
 
         await _generatorFactory
             .ExecuteAsync((generator, token) => generator.CreateDiagramsAsync(config, token), cancellationToken)
             .ConfigureAwait(false);
     }
 
-    /// <summary>
-    /// Runs the pre-generation command if enabled in the store.
-    /// </summary>
+    /// <summary>Runs the pre-generation command if enabled in the store.</summary>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns><see langword="true"/> when the pipeline should continue; <see langword="false"/> when it should stop.</returns>
-    internal async Task<bool> RunPreGenerationAsync(IObserver<OutputMessage> observer, CancellationToken cancellationToken)
+    internal async Task<bool> RunPreGenerationAsync(CancellationToken cancellationToken)
     {
         var preGen = _store.PreGenerationEditor;
 
@@ -146,7 +118,7 @@ internal sealed class GenerationService : IGenerationService
             return true;
         }
 
-        observer.OnNext(Info("Running pre-generation command…"));
+        _logger.LogInformation("Running pre-generation command...");
 
         var workingDirectory = preGen.WorkingDirectory.Value;
 
@@ -168,8 +140,8 @@ internal sealed class GenerationService : IGenerationService
         var preGenResult = await _runnerFactory
             .ExecuteAsync(async (runner, token) =>
             {
-                using var stdoutSub = runner.StdOut.Subscribe(line => observer.OnNext(Info(line)));
-                using var stderrSub = runner.StdErr.Subscribe(line => observer.OnNext(Warning(line)));
+                using var stdoutSub = runner.StdOut.Subscribe(line => _logger.LogInformation("{Line}", line));
+                using var stderrSub = runner.StdErr.Subscribe(line => _logger.LogWarning("{Line}", line));
 
                 return await runner.RunAsync(preGenConfig, token);
             }, cancellationToken)
@@ -177,7 +149,7 @@ internal sealed class GenerationService : IGenerationService
 
         if (preGenResult.Succeeded)
         {
-            observer.OnNext(Info("Pre-generation command completed successfully"));
+            _logger.LogInformation("Pre-generation command completed successfully");
 
             return true;
         }
@@ -199,32 +171,28 @@ internal sealed class GenerationService : IGenerationService
 
             sb.Append("was cancelled");
 
-            observer.OnNext(Warning(sb.ToString()));
+            _logger.LogWarning("{Message}", sb.ToString());
 
             return false;
         }
 
         if (preGenConfig.ContinueOnFailure)
         {
-            observer.OnNext(Warning($"Pre-generation command failed (continuing): {preGenResult.ErrorMessage}"));
+            _logger.LogWarning("Pre-generation command failed (continuing): {Message}", preGenResult.ErrorMessage);
 
             return true;
         }
 
-        observer.OnNext(Error($"Pre-generation command failed: {preGenResult.ErrorMessage}"));
+        _logger.LogError("Pre-generation command failed: {Message}", preGenResult.ErrorMessage);
 
         return false;
     }
 
-    /// <summary>
-    /// Restores the solution (via <c>dotnet restore</c>) if enabled in the store.
-    /// </summary>
-    /// <param name="observer">The output observer.</param>
+    /// <summary>Restores the solution (via <c>dotnet restore</c>) if enabled in the store.</summary>
     /// <param name="solutionPath">The fully-qualified path to the solution to restore.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns><see langword="true"/> when the pipeline should continue; <see langword="false"/> when it should stop.</returns>
-    internal async Task<bool> RunRestoreSolutionAsync(IObserver<OutputMessage> observer, string solutionPath,
-        CancellationToken cancellationToken)
+    internal async Task<bool> RunRestoreSolutionAsync(string solutionPath, CancellationToken cancellationToken)
     {
         if (!_store.RestoreSolutionEditor.RestoreSolution.Value)
         {
@@ -233,18 +201,18 @@ internal sealed class GenerationService : IGenerationService
 
         if (solutionPath.IsNullOrEmpty())
         {
-            observer.OnNext(Error("Solution restore failed: no solution path is configured."));
+            _logger.LogError("Solution restore failed: no solution path is configured.");
 
             return false;
         }
 
-        observer.OnNext(Info("Restoring solution…"));
+        _logger.LogInformation("Restoring solution…");
 
         var restoreResult = await _restoreRunnerFactory
             .ExecuteAsync(async (runner, token) =>
             {
-                using var stdoutSub = runner.StdOut.Subscribe(line => observer.OnNext(Info(line)));
-                using var stderrSub = runner.StdErr.Subscribe(line => observer.OnNext(Warning(line)));
+                using var stdoutSub = runner.StdOut.Subscribe(line => _logger.LogInformation("{Line}", line));
+                using var stderrSub = runner.StdErr.Subscribe(line => _logger.LogWarning("{Line}", line));
 
                 return await runner.RunAsync(solutionPath, token);
             }, cancellationToken)
@@ -252,20 +220,19 @@ internal sealed class GenerationService : IGenerationService
 
         if (restoreResult.Succeeded)
         {
-            observer.OnNext(Info("Solution restore completed successfully"));
+            _logger.LogInformation("Solution restore completed successfully");
 
             return true;
         }
 
-        observer.OnNext(Error($"Solution restore failed: {restoreResult.ErrorMessage}"));
+        _logger.LogError("Solution restore failed: {Message}", restoreResult.ErrorMessage);
 
         return false;
     }
 
-    /// <summary>
-    /// Runs the post-generation command if enabled in the store.
-    /// </summary>
-    internal async Task RunPostGenerationAsync(IObserver<OutputMessage> observer, CancellationToken cancellationToken)
+    /// <summary>Runs the post-generation command if enabled in the store.</summary>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    internal async Task RunPostGenerationAsync(CancellationToken cancellationToken)
     {
         var postGen = _store.PostGenerationEditor;
 
@@ -274,7 +241,7 @@ internal sealed class GenerationService : IGenerationService
             return;
         }
 
-        observer.OnNext(Info("Running post-generation command…"));
+        _logger.LogInformation("Running post-generation command…");
 
         var workingDirectory = postGen.WorkingDirectory.Value;
 
@@ -295,8 +262,8 @@ internal sealed class GenerationService : IGenerationService
         var postGenResult = await _postGenRunnerFactory
             .ExecuteAsync(async (runner, token) =>
             {
-                using var stdoutSub = runner.StdOut.Subscribe(line => observer.OnNext(Info(line)));
-                using var stderrSub = runner.StdErr.Subscribe(line => observer.OnNext(Warning(line)));
+                using var stdoutSub = runner.StdOut.Subscribe(line => _logger.LogInformation("{Line}", line));
+                using var stderrSub = runner.StdErr.Subscribe(line => _logger.LogWarning("{Line}", line));
 
                 return await runner.RunAsync(postGenConfig, token);
             }, cancellationToken)
@@ -304,15 +271,11 @@ internal sealed class GenerationService : IGenerationService
 
         if (postGenResult.Succeeded)
         {
-            observer.OnNext(Info("Post-generation command completed successfully"));
+            _logger.LogInformation("Post-generation command completed successfully");
 
             return;
         }
 
-        observer.OnNext(Warning($"Post-generation command failed: {postGenResult.ErrorMessage}"));
+        _logger.LogWarning("Post-generation command failed: {Message}", postGenResult.ErrorMessage);
     }
-
-    private static OutputMessage Info(string text) => new() { Text = text, Level = OutputMessageLevel.Information };
-    private static OutputMessage Warning(string text) => new() { Text = text, Level = OutputMessageLevel.Warning };
-    private static OutputMessage Error(string text) => new() { Text = text, Level = OutputMessageLevel.Error };
 }

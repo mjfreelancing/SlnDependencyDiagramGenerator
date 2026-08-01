@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using Shouldly;
 using SlnDependencyDiagramGenerator.Config;
@@ -12,12 +11,12 @@ using SlnDependencyStudio.Shared.ProcessExecution.RestoreSolution;
 using SlnDependencyStudio.Shared.Services;
 using SlnDependencyStudio.Wpf.Controls;
 using SlnDependencyStudio.Wpf.DependencyInjection;
-using SlnDependencyStudio.Wpf.Features.Output;
 using SlnDependencyStudio.Wpf.Features.Pipeline.PostGeneration;
 using SlnDependencyStudio.Wpf.Features.Pipeline.PreGeneration;
 using SlnDependencyStudio.Wpf.Features.Pipeline.RestoreSolution;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
 using SlnDependencyStudio.Wpf.Features.Run;
+using SlnDependencyStudio.Wpf.Tests.Unit.Support;
 using System.Reactive.Linq;
 
 namespace SlnDependencyStudio.Wpf.Tests.Unit.Features.Run;
@@ -31,7 +30,7 @@ public class GenerationServiceFixture
     private readonly IScopedOperationFactory<IPostGenerationCommandRunner> _postGenRunnerFactory = Substitute.For<IScopedOperationFactory<IPostGenerationCommandRunner>>();
     private readonly IScopedOperationFactory<IDependencyGenerator> _generatorFactory = Substitute.For<IScopedOperationFactory<IDependencyGenerator>>();
     private readonly IDependencyProjectValidator _projectValidator = Substitute.For<IDependencyProjectValidator>();
-    private readonly ILogger<GenerationService> _logger = NullLogger<GenerationService>.Instance;
+    private readonly RecordingLogger<GenerationService> _logger = new();
 
     private readonly TrackableValue<bool> _preGenEnabled = new();
     private readonly TrackableValue<string> _preGenCommand = new();
@@ -89,32 +88,26 @@ public class GenerationServiceFixture
         [Fact]
         public async Task Should_Return_True_When_Disabled()
         {
-            var observer = CreateObserver();
-
-            var result = await _service.RunPreGenerationAsync(observer, CancellationToken.None);
+            var result = await _service.RunPreGenerationAsync(CancellationToken.None);
 
             result.ShouldBeTrue();
-            observer.Messages.ShouldBeEmpty();
+            _logger.Records.ShouldBeEmpty();
         }
 
         [Fact]
         public async Task Should_Return_True_When_Command_Is_Empty()
         {
-            var observer = CreateObserver();
-
             _preGenEnabled.Value = true;
 
-            var result = await _service.RunPreGenerationAsync(observer, CancellationToken.None);
+            var result = await _service.RunPreGenerationAsync(CancellationToken.None);
 
             result.ShouldBeTrue();
-            observer.Messages.ShouldBeEmpty();
+            _logger.Records.ShouldBeEmpty();
         }
 
         [Fact]
         public async Task Should_Return_True_On_Success()
         {
-            var observer = CreateObserver();
-
             _preGenEnabled.Value = true;
             _preGenCommand.Value = "dotnet build";
 
@@ -123,17 +116,17 @@ public class GenerationServiceFixture
                 ExitCode = 0
             });
 
-            var result = await _service.RunPreGenerationAsync(observer, CancellationToken.None);
+            var result = await _service.RunPreGenerationAsync(CancellationToken.None);
 
             result.ShouldBeTrue();
-            observer.Messages.ShouldContain(message => message.Text == "Pre-generation command completed successfully");
+
+            _logger.Records.ShouldContain(record =>
+                record.Level == LogLevel.Information && record.Message == "Pre-generation command completed successfully");
         }
 
         [Fact]
         public async Task Should_Return_False_When_ContinueOnFailure_Is_False()
         {
-            var observer = CreateObserver();
-
             _preGenEnabled.Value = true;
             _preGenCommand.Value = "dotnet build";
 
@@ -144,17 +137,14 @@ public class GenerationServiceFixture
                 ErrorMessage = "Build failed"
             });
 
-            var result = await _service.RunPreGenerationAsync(observer, CancellationToken.None);
+            var result = await _service.RunPreGenerationAsync(CancellationToken.None);
 
             result.ShouldBeFalse();
-
         }
 
         [Fact]
         public async Task Should_Return_True_When_ContinueOnFailure_Is_True()
         {
-            var observer = CreateObserver();
-
             _preGenEnabled.Value = true;
             _preGenCommand.Value = "dotnet build";
 
@@ -165,7 +155,7 @@ public class GenerationServiceFixture
                 ErrorMessage = "Build failed"
             });
 
-            var result = await _service.RunPreGenerationAsync(observer, CancellationToken.None);
+            var result = await _service.RunPreGenerationAsync(CancellationToken.None);
 
             result.ShouldBeTrue();
         }
@@ -173,8 +163,6 @@ public class GenerationServiceFixture
         [Fact]
         public async Task Should_Return_False_When_Cancelled()
         {
-            var observer = CreateObserver();
-
             _preGenEnabled.Value = true;
             _preGenCommand.Value = "dotnet build";
 
@@ -184,17 +172,17 @@ public class GenerationServiceFixture
                 ErrorMessage = "Cancelled"
             });
 
-            var result = await _service.RunPreGenerationAsync(observer, CancellationToken.None);
+            var result = await _service.RunPreGenerationAsync(CancellationToken.None);
 
             result.ShouldBeFalse();
-            observer.Messages.ShouldContain(message => message.Text.Contains("cancelled"));
+
+            _logger.Records.ShouldContain(record =>
+                record.Level == LogLevel.Warning && record.Message.Contains("cancelled"));
         }
 
         [Fact]
         public async Task Should_Resolve_Relative_WorkingDirectory()
         {
-            var observer = CreateObserver();
-
             _preGenEnabled.Value = true;
             _preGenCommand.Value = "dotnet build";
             _preGenWorkingDirectory.Value = "build";
@@ -205,7 +193,7 @@ public class GenerationServiceFixture
                 ExitCode = 0
             });
 
-            await _service.RunPreGenerationAsync(observer, CancellationToken.None);
+            await _service.RunPreGenerationAsync(CancellationToken.None);
 
             await _runnerFactory.Received(1).ExecuteAsync(
                 Arg.Any<Func<IPreGenerationCommandRunner, CancellationToken, Task<PreGenerationCommandResult>>>(),
@@ -216,67 +204,58 @@ public class GenerationServiceFixture
     public class RunDiagramGenerationAsync : GenerationServiceFixture
     {
         [Fact]
-        public async Task Should_Emit_Generating_Message()
+        public async Task Should_Log_Generating_Message()
         {
-            var observer = CreateObserver();
-
             SetupGenerator();
 
             var config = new DependencyGeneratorConfig();
 
-            await _service.RunDiagramGenerationAsync(observer, config, CancellationToken.None);
+            await _service.RunDiagramGenerationAsync(config, CancellationToken.None);
 
-            observer.Messages.ShouldContain(message => message.Text == "Generating diagrams…");
+            _logger.Records.ShouldContain(record =>
+                record.Level == LogLevel.Information && record.Message == "Generating diagrams...");
         }
-
     }
 
     public class RunAsync : GenerationServiceFixture
     {
         [Fact]
-        public async Task Should_Emit_Started_And_Completed_When_Successful()
+        public async Task Should_Log_Started_And_Completed_When_Successful()
         {
             SetupStoreConfig();
             SetupGenerator();
 
-            var messages = await CollectMessagesAsync(CancellationToken.None);
+            await CollectLogsAsync(CancellationToken.None);
 
-            messages.ShouldContain(message => message.Text == "=== Generation Started ===");
-            messages.ShouldContain(message => message.Text.StartsWith("=== Generation Completed ("));
-            messages.Last().Level.ShouldBe(OutputMessageLevel.Information);
+            _logger.Records.ShouldContain(record =>
+                record.Level == LogLevel.Information && record.Message == "=== Generation Started ===");
+
+            _logger.Records.ShouldContain(record =>
+                record.Level == LogLevel.Information && record.Message.StartsWith("=== Generation Completed ("));
         }
 
         [Fact]
-        public async Task Should_Emit_Error_When_Generator_Throws()
+        public async Task Should_Log_Error_When_Generator_Throws()
         {
             SetupStoreConfig();
             SetupGeneratorThatThrows(new InvalidOperationException("Something went wrong"));
 
-            var messages = await CollectMessagesAsync(CancellationToken.None);
+            await CollectLogsAsync(CancellationToken.None);
 
-            messages.ShouldContain(message => message.Text == "Generation failed: Something went wrong" && message.Level == OutputMessageLevel.Error);
+            _logger.Records.ShouldContain(record =>
+                record.Level == LogLevel.Error && record.Message == "Generation failed");
         }
 
         [Fact]
-        public async Task Should_Emit_Cancelled_When_OperationCanceledException()
+        public async Task Should_Log_Cancelled_When_OperationCanceledException()
         {
             SetupStoreConfig();
             SetupGeneratorThatThrows(new OperationCanceledException());
 
-            var messages = await CollectMessagesAsync(CancellationToken.None);
+            await CollectLogsAsync(CancellationToken.None);
 
-            messages.ShouldContain(message => message.Text == "Generation cancelled" && message.Level == OutputMessageLevel.Warning);
-        }
-
-        [Fact]
-        public async Task Should_Emit_Timeout_Error_When_TimeoutException()
-        {
-            SetupStoreConfig();
-            SetupGeneratorThatThrows(new TimeoutException("Timed out"));
-
-            var messages = await CollectMessagesAsync(CancellationToken.None);
-
-            messages.ShouldContain(message => message.Text == "Generation timed out: Timed out" && message.Level == OutputMessageLevel.Error);
+            _logger.Records.ShouldContain(record =>
+                record.Level == LogLevel.Warning && record.Message == "Generation cancelled");
         }
 
         [Fact]
@@ -290,11 +269,11 @@ public class GenerationServiceFixture
             SetupPreGenRunner(new PreGenerationCommandResult { ExitCode = 0 });
             SetupGenerator();
 
-            var messages = await CollectMessagesAsync(CancellationToken.None);
+            await CollectLogsAsync(CancellationToken.None);
 
-            messages.ShouldContain(message => message.Text == "Pre-generation command completed successfully");
-            messages.ShouldContain(message => message.Text == "Generating diagrams…");
-            messages.ShouldContain(message => message.Text.StartsWith("=== Generation Completed ("));
+            _logger.Records.ShouldContain(record => record.Message == "Pre-generation command completed successfully");
+            _logger.Records.ShouldContain(record => record.Message == "Generating diagrams...");
+            _logger.Records.ShouldContain(record => record.Message.StartsWith("=== Generation Completed ("));
         }
 
         [Fact]
@@ -312,11 +291,13 @@ public class GenerationServiceFixture
                 ErrorMessage = "Build failed"
             });
 
-            var messages = await CollectMessagesAsync(CancellationToken.None);
+            await CollectLogsAsync(CancellationToken.None);
 
-            messages.ShouldContain(message => message.Text == "Pre-generation command failed: Build failed"
-                                        && message.Level == OutputMessageLevel.Error);
-            messages.ShouldNotContain(message => message.Text == "Generating diagrams…");
+            _logger.Records.ShouldContain(record =>
+                record.Level == LogLevel.Error && record.Message == "Pre-generation command failed: Build failed");
+
+            _logger.Records.ShouldNotContain(record => record.Message == "Generating diagrams...");
+
             _ = _generatorFactory.DidNotReceiveWithAnyArgs().ExecuteAsync(default!, default);
         }
 
@@ -338,11 +319,11 @@ public class GenerationServiceFixture
 
             SetupGenerator();
 
-            var messages = await CollectMessagesAsync(CancellationToken.None);
+            await CollectLogsAsync(CancellationToken.None);
 
-            messages.ShouldContain(message => message.Text.Contains("continuing"));
-            messages.ShouldContain(message => message.Text == "Generating diagrams…");
-            messages.ShouldContain(message => message.Text.StartsWith("=== Generation Completed ("));
+            _logger.Records.ShouldContain(record => record.Message.Contains("continuing"));
+            _logger.Records.ShouldContain(record => record.Message == "Generating diagrams...");
+            _logger.Records.ShouldContain(record => record.Message.StartsWith("=== Generation Completed ("));
         }
 
         [Fact]
@@ -351,7 +332,7 @@ public class GenerationServiceFixture
             SetupStoreConfig();
             SetupGenerator();
 
-            await CollectMessagesAsync(CancellationToken.None);
+            await CollectLogsAsync(CancellationToken.None);
 
             _store.Received(1).BuildGeneratorConfig();
         }
@@ -362,6 +343,7 @@ public class GenerationServiceFixture
             SetupStoreConfig(@"C:\Projects\test.sln");
 
             _restoreSolution.Value = true;
+
             SetupRestoreRunner(new RestoreSolutionResult
             {
                 ErrorCode = CommandErrorCode.ProcessExitedWithFailure,
@@ -369,11 +351,12 @@ public class GenerationServiceFixture
                 ErrorMessage = "Restore failed"
             });
 
-            var messages = await CollectMessagesAsync(CancellationToken.None);
+            await CollectLogsAsync(CancellationToken.None);
 
-            messages.ShouldContain(message => message.Text == "Solution restore failed: Restore failed"
-                                        && message.Level == OutputMessageLevel.Error);
-            messages.ShouldNotContain(message => message.Text == "Generating diagrams…");
+            _logger.Records.ShouldContain(record =>
+                record.Level == LogLevel.Error && record.Message == "Solution restore failed: Restore failed");
+
+            _logger.Records.ShouldNotContain(record => record.Message == "Generating diagrams...");
             _ = _generatorFactory.DidNotReceiveWithAnyArgs().ExecuteAsync(default!, default);
         }
 
@@ -383,14 +366,15 @@ public class GenerationServiceFixture
             SetupStoreConfig(@"C:\Projects\test.sln");
 
             _restoreSolution.Value = true;
+
             SetupRestoreRunner(new RestoreSolutionResult { ExitCode = 0 });
             SetupGenerator();
 
-            var messages = await CollectMessagesAsync(CancellationToken.None);
+            await CollectLogsAsync(CancellationToken.None);
 
-            messages.ShouldContain(message => message.Text == "Solution restore completed successfully");
-            messages.ShouldContain(message => message.Text == "Generating diagrams…");
-            messages.ShouldContain(message => message.Text.StartsWith("=== Generation Completed ("));
+            _logger.Records.ShouldContain(record => record.Message == "Solution restore completed successfully");
+            _logger.Records.ShouldContain(record => record.Message == "Generating diagrams...");
+            _logger.Records.ShouldContain(record => record.Message.StartsWith("=== Generation Completed ("));
         }
 
         [Fact]
@@ -400,13 +384,14 @@ public class GenerationServiceFixture
 
             _postGenEnabled.Value = true;
             _postGenCommand.Value = "deploy.cmd";
+
             SetupPostGenRunner(new PostGenerationCommandResult { ExitCode = 0 });
             SetupGenerator();
 
-            var messages = await CollectMessagesAsync(CancellationToken.None);
+            await CollectLogsAsync(CancellationToken.None);
 
-            messages.ShouldContain(message => message.Text == "Generating diagrams…");
-            messages.ShouldContain(message => message.Text == "Post-generation command completed successfully");
+            _logger.Records.ShouldContain(record => record.Message == "Generating diagrams...");
+            _logger.Records.ShouldContain(record => record.Message == "Post-generation command completed successfully");
         }
 
         [Fact]
@@ -416,19 +401,22 @@ public class GenerationServiceFixture
 
             _postGenEnabled.Value = true;
             _postGenCommand.Value = "deploy.cmd";
+
             SetupPostGenRunner(new PostGenerationCommandResult
             {
                 ErrorCode = CommandErrorCode.ProcessExitedWithFailure,
                 ExitCode = 6,
                 ErrorMessage = "Deploy failed"
             });
+
             SetupGenerator();
 
-            var messages = await CollectMessagesAsync(CancellationToken.None);
+            await CollectLogsAsync(CancellationToken.None);
 
-            messages.ShouldContain(message => message.Text == "Post-generation command failed: Deploy failed"
-                                        && message.Level == OutputMessageLevel.Warning);
-            messages.ShouldContain(message => message.Text.StartsWith("=== Generation Completed ("));
+            _logger.Records.ShouldContain(record =>
+                record.Level == LogLevel.Warning && record.Message == "Post-generation command failed: Deploy failed");
+
+            _logger.Records.ShouldContain(record => record.Message.StartsWith("=== Generation Completed ("));
         }
 
         [Fact]
@@ -447,13 +435,13 @@ public class GenerationServiceFixture
             SetupPostGenRunner(new PostGenerationCommandResult { ExitCode = 0 });
             SetupGenerator();
 
-            var messages = await CollectMessagesAsync(CancellationToken.None);
+            await CollectLogsAsync(CancellationToken.None);
 
-            var messagesList = messages.ToList();
-            var restoreIndex = messagesList.FindIndex(message => message.Text == "Restoring solution…");
-            var preGenIndex = messagesList.FindIndex(message => message.Text == "Running pre-generation command…");
-            var generationIndex = messagesList.FindIndex(message => message.Text == "Generating diagrams…");
-            var postGenIndex = messagesList.FindIndex(message => message.Text == "Running post-generation command…");
+            var logsList = _logger.Records.ToList();
+            var restoreIndex = logsList.FindIndex(record => record.Message == "Restoring solution…");
+            var preGenIndex = logsList.FindIndex(record => record.Message == "Running pre-generation command...");
+            var generationIndex = logsList.FindIndex(record => record.Message == "Generating diagrams...");
+            var postGenIndex = logsList.FindIndex(record => record.Message == "Running post-generation command…");
 
             restoreIndex.ShouldBeGreaterThanOrEqualTo(0);
             preGenIndex.ShouldBeGreaterThan(restoreIndex);
@@ -461,9 +449,9 @@ public class GenerationServiceFixture
             postGenIndex.ShouldBeGreaterThan(generationIndex);
         }
 
-        private async Task<IList<OutputMessage>> CollectMessagesAsync(CancellationToken cancellationToken)
+        private async Task CollectLogsAsync(CancellationToken cancellationToken)
         {
-            return await _service.RunAsync(cancellationToken).ToList();
+            await _service.RunAsync(cancellationToken);
         }
 
         private void SetupStoreConfig(string? solutionPath = null)
@@ -480,6 +468,7 @@ public class GenerationServiceFixture
         private void SetupGeneratorThatThrows(Exception exception)
         {
             var generator = Substitute.For<IDependencyGenerator>();
+
             generator.CreateDiagramsAsync(Arg.Any<DependencyGeneratorConfig>(), Arg.Any<CancellationToken>())
                 .Returns(Task.FromException(exception));
 
@@ -500,49 +489,46 @@ public class GenerationServiceFixture
         [Fact]
         public async Task Should_Return_True_When_Restore_Disabled()
         {
-            var observer = CreateObserver();
-
-            var result = await _service.RunRestoreSolutionAsync(observer, @"C:\Projects\test.sln", CancellationToken.None);
+            var result = await _service.RunRestoreSolutionAsync(@"C:\Projects\test.sln", CancellationToken.None);
 
             result.ShouldBeTrue();
-            observer.Messages.ShouldBeEmpty();
+
+            _logger.Records.ShouldBeEmpty();
         }
 
         [Fact]
         public async Task Should_Return_True_When_Restore_Succeeds()
         {
-            var observer = CreateObserver();
-
             _restoreSolution.Value = true;
+
             SetupRestoreRunner(new RestoreSolutionResult { ExitCode = 0 });
 
-            var result = await _service.RunRestoreSolutionAsync(observer, @"C:\Projects\test.sln", CancellationToken.None);
+            var result = await _service.RunRestoreSolutionAsync(@"C:\Projects\test.sln", CancellationToken.None);
 
             result.ShouldBeTrue();
-            observer.Messages.ShouldContain(message => message.Text == "Solution restore completed successfully");
+
+            _logger.Records.ShouldContain(record =>
+                record.Level == LogLevel.Information && record.Message == "Solution restore completed successfully");
         }
 
         [Fact]
         public async Task Should_Return_False_When_No_Solution_Path_Configured()
         {
-            var observer = CreateObserver();
-
             _restoreSolution.Value = true;
 
-            var result = await _service.RunRestoreSolutionAsync(observer, string.Empty, CancellationToken.None);
+            var result = await _service.RunRestoreSolutionAsync(string.Empty, CancellationToken.None);
 
             result.ShouldBeFalse();
-            observer.Messages.ShouldContain(message =>
-                message.Text == "Solution restore failed: no solution path is configured."
-                && message.Level == OutputMessageLevel.Error);
+
+            _logger.Records.ShouldContain(record =>
+                record.Level == LogLevel.Error && record.Message == "Solution restore failed: no solution path is configured.");
         }
 
         [Fact]
         public async Task Should_Return_False_When_Restore_Fails()
         {
-            var observer = CreateObserver();
-
             _restoreSolution.Value = true;
+
             SetupRestoreRunner(new RestoreSolutionResult
             {
                 ErrorCode = CommandErrorCode.ProcessExitedWithFailure,
@@ -550,12 +536,12 @@ public class GenerationServiceFixture
                 ErrorMessage = "Restore failed"
             });
 
-            var result = await _service.RunRestoreSolutionAsync(observer, @"C:\Projects\test.sln", CancellationToken.None);
+            var result = await _service.RunRestoreSolutionAsync(@"C:\Projects\test.sln", CancellationToken.None);
 
             result.ShouldBeFalse();
-            observer.Messages.ShouldContain(message =>
-                message.Text == "Solution restore failed: Restore failed"
-                && message.Level == OutputMessageLevel.Error);
+
+            _logger.Records.ShouldContain(record =>
+                record.Level == LogLevel.Error && record.Message == "Solution restore failed: Restore failed");
         }
     }
 
@@ -564,35 +550,33 @@ public class GenerationServiceFixture
         [Fact]
         public async Task Should_Not_Run_When_Disabled()
         {
-            var observer = CreateObserver();
+            await _service.RunPostGenerationAsync(CancellationToken.None);
 
-            await _service.RunPostGenerationAsync(observer, CancellationToken.None);
+            _logger.Records.ShouldBeEmpty();
 
-            observer.Messages.ShouldBeEmpty();
             await _postGenRunnerFactory.DidNotReceiveWithAnyArgs().ExecuteAsync(default!, default);
         }
 
         [Fact]
         public async Task Should_Report_Success_When_Command_Succeeds()
         {
-            var observer = CreateObserver();
-
             _postGenEnabled.Value = true;
             _postGenCommand.Value = "deploy.cmd";
+
             SetupPostGenRunner(new PostGenerationCommandResult { ExitCode = 0 });
 
-            await _service.RunPostGenerationAsync(observer, CancellationToken.None);
+            await _service.RunPostGenerationAsync(CancellationToken.None);
 
-            observer.Messages.ShouldContain(message => message.Text == "Post-generation command completed successfully");
+            _logger.Records.ShouldContain(record =>
+                record.Level == LogLevel.Information && record.Message == "Post-generation command completed successfully");
         }
 
         [Fact]
         public async Task Should_Report_Failure_As_Warning()
         {
-            var observer = CreateObserver();
-
             _postGenEnabled.Value = true;
             _postGenCommand.Value = "deploy.cmd";
+
             SetupPostGenRunner(new PostGenerationCommandResult
             {
                 ErrorCode = CommandErrorCode.ProcessExitedWithFailure,
@@ -600,23 +584,11 @@ public class GenerationServiceFixture
                 ErrorMessage = "Deploy failed"
             });
 
-            await _service.RunPostGenerationAsync(observer, CancellationToken.None);
+            await _service.RunPostGenerationAsync(CancellationToken.None);
 
-            observer.Messages.ShouldContain(message =>
-                message.Text == "Post-generation command failed: Deploy failed"
-                && message.Level == OutputMessageLevel.Warning);
+            _logger.Records.ShouldContain(record =>
+                record.Level == LogLevel.Warning && record.Message == "Post-generation command failed: Deploy failed");
         }
-    }
-
-    private static TestObserver CreateObserver() => new();
-
-    private sealed class TestObserver : IObserver<OutputMessage>
-    {
-        public List<OutputMessage> Messages { get; } = [];
-
-        public void OnNext(OutputMessage value) => Messages.Add(value);
-        public void OnCompleted() { }
-        public void OnError(Exception error) { }
     }
 
     private void SetupPreGenRunner(PreGenerationCommandResult result)

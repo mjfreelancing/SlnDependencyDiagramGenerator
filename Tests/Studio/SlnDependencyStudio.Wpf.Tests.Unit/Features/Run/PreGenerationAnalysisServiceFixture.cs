@@ -1,19 +1,18 @@
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using Shouldly;
 using SlnDependencyDiagramGenerator.Generator.Discovery;
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Shared.Services;
 using SlnDependencyStudio.Wpf.DependencyInjection;
-using SlnDependencyStudio.Wpf.Features.Output;
 using SlnDependencyStudio.Wpf.Features.Pipeline.Models;
 using SlnDependencyStudio.Wpf.Features.Pipeline.Services;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
 using SlnDependencyStudio.Wpf.Features.Run;
 using SlnDependencyStudio.Wpf.Features.Solution;
+using SlnDependencyStudio.Wpf.Tests.Unit.Support;
 using System.Reactive.Linq;
 
 namespace SlnDependencyStudio.Wpf.Tests.Unit.Features.Run;
@@ -26,7 +25,7 @@ public class PreGenerationAnalysisServiceFixture
     private readonly IServiceScopeFactory _scopeFactory = Substitute.For<IServiceScopeFactory>();
     private readonly IServiceScope _scope = Substitute.For<IServiceScope>();
     private readonly IToolStatusService _toolStatus = Substitute.For<IToolStatusService>();
-    private readonly ILogger<PreGenerationAnalysisService> _logger = NullLogger<PreGenerationAnalysisService>.Instance;
+    private readonly RecordingLogger<PreGenerationAnalysisService> _logger = new();
     private readonly ISolutionOptionsEditor _solutionEditor = Substitute.For<ISolutionOptionsEditor>();
     private readonly IDependencyProjectValidator _projectValidator = Substitute.For<IDependencyProjectValidator>();
     private readonly PreGenerationAnalysisService _service;
@@ -44,28 +43,30 @@ public class PreGenerationAnalysisServiceFixture
     public class RunAsync : PreGenerationAnalysisServiceFixture
     {
         [Fact]
-        public async Task Should_Emit_Error_When_SolutionPath_Empty()
+        public async Task Should_Log_Error_When_SolutionPath_Empty()
         {
             _store.SolutionOptionsEditor.Returns(_solutionEditor);
             _solutionEditor.SolutionPath.Returns(new Wpf.Controls.TrackableValue<string>());
 
-            var messages = await _service.RunAsync(CancellationToken.None).ToList();
+            await RunServiceAsync();
 
-            messages.Count.ShouldBe(2);
-            messages[0].Text.ShouldBe("=== Dry-Run Analysis ===");
-            messages[1].Text.ShouldBe("No solution path configured");
-            messages[1].Level.ShouldBe(OutputMessageLevel.Error);
+            _logger.Records.ShouldContain(record =>
+                record.Level == LogLevel.Information && record.Message == "=== Dry-Run Analysis ===");
+
+            _logger.Records.ShouldContain(record =>
+                record.Level == LogLevel.Error && record.Message == "No solution path configured");
         }
 
         [Fact]
-        public async Task Should_Emit_Project_Sections_On_Success()
+        public async Task Should_Log_Project_Sections_On_Success()
         {
             SetupValidConfiguration(@"C:\path\to\solution.sln");
             SetupDiscoveryResult();
 
-            var messages = await _service.RunAsync(CancellationToken.None).ToList();
+            await RunServiceAsync();
 
-            messages.Any(message => message.Text.StartsWith("Projects Discovered:")).ShouldBeTrue();
+            _logger.Records.ShouldContain(record =>
+                record.Level == LogLevel.Information && record.Message.StartsWith("Projects Discovered:"));
         }
 
         [Fact]
@@ -76,7 +77,7 @@ public class PreGenerationAnalysisServiceFixture
             SetupDiscoveryResult();
             SetupToolStatus();
 
-            await _service.RunAsync(CancellationToken.None);
+            await RunServiceAsync();
 
             await _discoveryService.Received(1).DiscoverProjectsAsync(
                 @"C:\solution.sln",
@@ -92,7 +93,7 @@ public class PreGenerationAnalysisServiceFixture
             SetupDiscoveryResult();
             SetupToolStatus();
 
-            await _service.RunAsync(CancellationToken.None);
+            await RunServiceAsync();
 
             await _discoveryService.Received(1).DiscoverProjectsAsync(
                 @"C:\absolute\solution.sln",
@@ -107,7 +108,7 @@ public class PreGenerationAnalysisServiceFixture
             SetupValidConfiguration(@"C:\path\to\solution.sln");
             SetupDiscoveryResult();
 
-            await _service.RunAsync(CancellationToken.None);
+            await RunServiceAsync();
 
             var expectedRegex = new[] { ".*\\.csproj" };
 
@@ -121,7 +122,7 @@ public class PreGenerationAnalysisServiceFixture
         }
 
         [Fact]
-        public async Task Should_Emit_Cancellation_When_Cancelled()
+        public async Task Should_Log_Cancellation_When_Cancelled()
         {
             SetupValidConfiguration(@"C:\path\to\solution.sln");
 
@@ -129,13 +130,14 @@ public class PreGenerationAnalysisServiceFixture
                 .DiscoverProjectsAsync(Arg.Any<string>(), Arg.Any<string[]>(), Arg.Any<string[]>(), Arg.Any<CancellationToken>())
                 .Returns(_ => Task.FromException<ProjectDiscoveryResult>(new OperationCanceledException()));
 
-            var messages = await _service.RunAsync(CancellationToken.None).ToList();
+            await RunServiceAsync();
 
-            messages.Any(message => message.Text == "Analysis cancelled").ShouldBeTrue();
+            _logger.Records.ShouldContain(record =>
+                record.Level == LogLevel.Warning && record.Message == "Analysis cancelled");
         }
 
         [Fact]
-        public async Task Should_Emit_Error_When_Discovery_Throws()
+        public async Task Should_Log_Error_When_Discovery_Throws()
         {
             SetupValidConfiguration(@"C:\path\to\solution.sln");
 
@@ -143,9 +145,10 @@ public class PreGenerationAnalysisServiceFixture
                 .DiscoverProjectsAsync(Arg.Any<string>(), Arg.Any<string[]>(), Arg.Any<string[]>(), Arg.Any<CancellationToken>())
                 .Returns(_ => Task.FromException<ProjectDiscoveryResult>(new InvalidOperationException("Test failure")));
 
-            var messages = await _service.RunAsync(CancellationToken.None).ToList();
+            await RunServiceAsync();
 
-            messages.Any(message => message.Text.Contains("Analysis failed")).ShouldBeTrue();
+            _logger.Records.ShouldContain(record =>
+                record.Level == LogLevel.Error && record.Message.Contains("Analysis failed"));
         }
 
         [Fact]
@@ -154,13 +157,13 @@ public class PreGenerationAnalysisServiceFixture
             _store.SolutionOptionsEditor.Returns(_solutionEditor);
             _solutionEditor.SolutionPath.Returns(new Wpf.Controls.TrackableValue<string>());
 
-            await _service.RunAsync(CancellationToken.None).ToList();
+            await RunServiceAsync();
 
             _projectValidator.Received(1).Validate(Arg.Any<DependencyProjectDocument>(), Arg.Any<string>());
         }
 
         [Fact]
-        public async Task Should_Emit_Validation_Error_When_Validation_Fails()
+        public async Task Should_Log_Validation_Error_When_Validation_Fails()
         {
             _store.SolutionOptionsEditor.Returns(_solutionEditor);
             _solutionEditor.SolutionPath.Returns(new Wpf.Controls.TrackableValue<string>());
@@ -169,9 +172,15 @@ public class PreGenerationAnalysisServiceFixture
                 .When(validator => validator.Validate(Arg.Any<DependencyProjectDocument>(), Arg.Any<string>()))
                 .Do(_ => throw new ValidationException("Test validation failure"));
 
-            var messages = await _service.RunAsync(CancellationToken.None).ToList();
+            await RunServiceAsync();
 
-            messages.Any(message => message.Text.Contains("Configuration validation failed")).ShouldBeTrue();
+            _logger.Records.ShouldContain(record =>
+                record.Level == LogLevel.Error && record.Message.Contains("Configuration validation failed"));
+        }
+
+        private Task RunServiceAsync()
+        {
+            return _service.RunAsync(CancellationToken.None);
         }
     }
 
@@ -210,7 +219,7 @@ public class PreGenerationAnalysisServiceFixture
     private void SetupToolStatus()
     {
         _toolStatus.ToolStatuses.Returns(
-            System.Reactive.Linq.Observable.Return(
+            Observable.Return(
                 new List<ToolStatusEntry>
                 {
                     new() { ToolName = "d2", IsAvailable = true, ResolvedPath = "/usr/bin/d2" },

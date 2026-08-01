@@ -24,7 +24,6 @@ using SlnDependencyStudio.Wpf.Features.Run;
 using SlnDependencyStudio.Wpf.Features.Solution;
 using SlnDependencyStudio.Wpf.Models;
 using System.Reactive.Linq;
-using System.Reactive.Subjects;
 
 namespace SlnDependencyStudio.Wpf.Tests.Unit;
 
@@ -692,8 +691,7 @@ public class MainWindowViewModelFixture
         {
             _analysisService
                 .RunAsync(Arg.Any<CancellationToken>())
-                .Returns(System.Reactive.Linq.Observable.Return(
-                    new OutputMessage { Text = "test", Level = OutputMessageLevel.Information }));
+                .Returns(Task.CompletedTask);
 
             await _viewModel.AnalyzeCommand.Execute();
 
@@ -760,17 +758,17 @@ public class MainWindowViewModelFixture
         [Fact]
         public async Task Should_Invoke_GenerationService_On_Execute()
         {
-            var subject = new Subject<OutputMessage>();
+            var completion = new TaskCompletionSource();
 
             _generationService
                 .RunAsync(Arg.Any<CancellationToken>())
-                .Returns(subject);
+                .Returns(completion.Task);
 
             // Execute and wait briefly for the command to start
             var executeTask = _viewModel.GenerateCommand.Execute();
 
             // Complete the generation
-            subject.OnCompleted();
+            completion.SetResult();
 
             await executeTask;
 
@@ -795,34 +793,33 @@ public class MainWindowViewModelFixture
         [Fact]
         public async Task Should_Be_True_During_Analyze()
         {
-            var subject = new Subject<OutputMessage>();
+            var completion = new TaskCompletionSource();
 
             _analysisService
                 .RunAsync(Arg.Any<CancellationToken>())
-                .Returns(subject);
+                .Returns(completion.Task);
 
             var executingTask = _viewModel.AnalyzeCommand.Execute();
 
-            // CanCancel is set inside the async method body (AnalyzeAsync).
-            // With ImmediateScheduler, the method runs synchronously up to the
-            // first truly async await point, so CanCancel is already set.
+            // CanCancel is set inside the async method body (AnalyzeAsync) before
+            // it awaits RunAsync, so it is already set at this point.
             _viewModel.CanCancel.ShouldBeTrue();
 
-            subject.OnCompleted();
+            completion.SetResult();
             await executingTask;
         }
 
         [Fact]
         public async Task OperationName_Should_Reset_To_Empty_After_Operation_Completes()
         {
-            var subject = new Subject<OutputMessage>();
+            var completion = new TaskCompletionSource();
 
             _analysisService
                 .RunAsync(Arg.Any<CancellationToken>())
-                .Returns(subject);
+                .Returns(completion.Task);
 
             var executingTask = _viewModel.AnalyzeCommand.Execute();
-            subject.OnCompleted();
+            completion.SetResult();
             await executingTask;
 
             _viewModel.OperationName.ShouldBe(string.Empty);

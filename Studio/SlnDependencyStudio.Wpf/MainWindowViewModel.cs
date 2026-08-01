@@ -536,17 +536,8 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
 
         try
         {
-            var tcs = new TaskCompletionSource();
-
-            _generationService
-                .RunAsync(linkedCts.Token)
-                .ObserveOn(RxSchedulers.MainThreadScheduler)
-                .Subscribe(
-                    onNext: message => _outputPanelViewModel.Messages.Add(message),
-                    onError: ex => tcs.TrySetException(ex),
-                    onCompleted: () => tcs.TrySetResult());
-
-            await tcs.Task;
+            // Output is streamed to the output panel via the shared Serilog sink.
+            await _generationService.RunAsync(linkedCts.Token);
         }
         finally
         {
@@ -580,17 +571,8 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
 
         try
         {
-            var tcs = new TaskCompletionSource();
-
-            _analysisService
-                .RunAsync(linkedCts.Token)
-                .ObserveOn(RxSchedulers.MainThreadScheduler)
-                .Subscribe(
-                    onNext: message => _outputPanelViewModel.Messages.Add(message),
-                    onError: ex => tcs.TrySetException(ex),
-                    onCompleted: () => tcs.TrySetResult());
-
-            await tcs.Task;
+            // Output is streamed to the output panel via the shared Serilog sink.
+            await _analysisService.RunAsync(linkedCts.Token);
         }
         finally
         {
