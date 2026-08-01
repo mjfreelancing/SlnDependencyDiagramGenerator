@@ -174,7 +174,7 @@
                     Margin="0,12,0,8"
                     VerticalAlignment="Center"
                     FontSize="12"
-                    Foreground="{DynamicResource MaterialDesign.Brush.ForegroundLight}"
+                    Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
                     Text="{Binding LogRetentionDays, StringFormat={}{0} days}" />
 
                 <!--  Theme  -->

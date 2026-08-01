@@ -77,7 +77,7 @@ public sealed class OutputPanelViewModel : ReactiveObject, IStudioScopedDependen
     /// <summary>
     /// When <see langword="true"/>, the <see cref="LoggingLevelSwitch"/> minimum level
     /// is lowered to <see cref="LogEventLevel.Debug"/> so more verbose log events appear
-    /// in the output panel. Defaults to <see langword="true"/>.
+    /// in the output panel. Defaults to <see langword="false"/>.
     /// </summary>
     public bool IsVerbose
     {

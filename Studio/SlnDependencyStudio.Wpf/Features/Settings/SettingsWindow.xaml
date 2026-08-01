@@ -61,13 +61,13 @@
                     Height="16"
                     Margin="0,0,6,0"
                     VerticalAlignment="Center"
-                    Foreground="{DynamicResource MaterialDesign.Brush.ForegroundLight}"
+                    Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
                     Kind="Restart" />
 
                 <TextBlock
                     VerticalAlignment="Center"
                     FontSize="11"
-                    Foreground="{DynamicResource MaterialDesign.Brush.ForegroundLight}"
+                    Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
                     Text="Restart required for log retention change" />
             </StackPanel>
 
