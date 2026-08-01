@@ -36,18 +36,26 @@ internal sealed class App : ConsoleAppBase
     /// <inheritdoc />
     public override async Task StartAsync(CancellationToken cancellationToken)
     {
+        _logger.LogInformation("SlnDependencyStudio CLI started");
+
         var root = new CommandLineSetup(cancellationToken)
             .AddValidate(_validateCommandHandler, exitCode => ExitCode = exitCode)
             .AddRun(_runCommandHandler, exitCode => ExitCode = exitCode)
             .Build(_logger, out var verboseOption);
 
-        var parseResult = root.Parse(Environment.GetCommandLineArgs()[1..]);
+        var args = Environment.GetCommandLineArgs()[1..];
+        var parseResult = root.Parse(args);
 
         // Set the logging level as early as possible, before any handler runs.
-        if (parseResult.GetValue(verboseOption))
+        var isVerbose = parseResult.GetValue(verboseOption);
+
+        if (isVerbose)
         {
             _levelSwitch.MinimumLevel = LogEventLevel.Debug;
         }
+
+        _logger.LogDebug("Verbose logging enabled: {Verbose}", isVerbose);
+        _logger.LogDebug("Command line arguments: {Arguments}", string.Join(' ', args));
 
         try
         {
@@ -69,5 +77,7 @@ internal sealed class App : ConsoleAppBase
             _logger.LogError(exception, "An unexpected CLI failure occurred.");
             ExitCode = (int)StudioCliExitCode.UnhandledCliFailure;
         }
+
+        _logger.LogInformation("SlnDependencyStudio CLI completed with exit code {ExitCode}.", ExitCode);
     }
 }

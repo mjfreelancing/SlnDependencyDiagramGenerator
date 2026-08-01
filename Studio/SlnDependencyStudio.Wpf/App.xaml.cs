@@ -2,6 +2,7 @@ using AllOverIt.Serilog.Extensions;
 using AllOverIt.Serilog.Sinks.Observable;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using ReactiveUI.Builder;
 using SlnDependencyDiagramGenerator.Extensions;
 using SlnDependencyStudio.Shared.Extensions;
@@ -59,9 +60,33 @@ public partial class App : Application
 
     private async void Application_Startup(object sender, StartupEventArgs e)
     {
-        await _host.StartAsync();
+        var logger = _host.Services.GetRequiredService<ILogger<App>>();
 
-        var bootstrapper = _host.Services.GetRequiredService<SlnDependencyWpfAppBootstrapper>();
-        await bootstrapper.RunAsync();
+        try
+        {
+            logger.LogInformation("SlnDependencyStudio is starting");
+
+            await _host.StartAsync();
+
+            var bootstrapper = _host.Services.GetRequiredService<SlnDependencyWpfAppBootstrapper>();
+            await bootstrapper.RunAsync();
+
+            logger.LogInformation("SlnDependencyStudio startup initialised");
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(exception, "Application startup failed");
+
+            throw;
+        }
+    }
+
+    /// <inheritdoc />
+    protected override void OnExit(ExitEventArgs e)
+    {
+        var logger = _host.Services.GetRequiredService<ILogger<App>>();
+        logger.LogInformation("SlnDependencyStudio exiting");
+
+        base.OnExit(e);
     }
 }

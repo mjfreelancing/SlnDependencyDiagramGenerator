@@ -1,4 +1,5 @@
 using AllOverIt.ReactiveUI.Factories;
+using Microsoft.Extensions.Logging;
 using SlnDependencyStudio.Wpf.Features.Application;
 using SlnDependencyStudio.Wpf.Features.Theming;
 using System.Windows;
@@ -10,31 +11,48 @@ internal sealed class SlnDependencyWpfAppBootstrapper
     private readonly IApplicationSettingsService _applicationSettingsService;
     private readonly IThemeService _themeService;
     private readonly IViewFactory _viewFactory;
+    private readonly ILogger<SlnDependencyWpfAppBootstrapper> _logger;
 
     public SlnDependencyWpfAppBootstrapper(IApplicationSettingsService applicationSettingsService,
-        IThemeService themeService, IViewFactory viewFactory)
+        IThemeService themeService, IViewFactory viewFactory, ILogger<SlnDependencyWpfAppBootstrapper> logger)
     {
         _applicationSettingsService = applicationSettingsService;
         _themeService = themeService;
         _viewFactory = viewFactory;
+        _logger = logger;
     }
 
     public async Task RunAsync()
     {
         try
         {
+            _logger.LogInformation("Loading application settings");
+
             // Load durable application settings before showing the main window.
             await _applicationSettingsService.LoadAsync();
 
+            var settings = _applicationSettingsService.CurrentSettings;
+
+            _logger.LogInformation("Application settings loaded");
+
+            _logger.LogDebug("Settings: DefaultProjectFolder={Folder}, LogRetentionDays={RetentionDays}, Theme={Theme}",
+                settings.DefaultProjectFolder, settings.LogRetentionDays, settings.Theme);
+
             // Apply the persisted theme preference.
-            _themeService.ApplyTheme(_applicationSettingsService.CurrentSettings.Theme);
+            _themeService.ApplyTheme(settings.Theme);
+
+            _logger.LogDebug("Applied theme: {Theme}", settings.Theme);
 
             var mainWindow = (MainWindow)_viewFactory.CreateViewFor<MainWindowViewModel>();
             mainWindow.Show();
+
+            _logger.LogInformation("Main window shown");
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
-            MessageBox.Show(ex.Message, "Startup Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            _logger.LogError(exception, "Failed to start the application shell");
+
+            MessageBox.Show(exception.Message, "Startup Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 }
