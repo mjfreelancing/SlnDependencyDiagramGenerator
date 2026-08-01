@@ -11,11 +11,8 @@ namespace SlnDependencyStudio.Wpf.Tests.Integration;
 /// new fields receive documented defaults, and the file is upgraded on save.</summary>
 public class SettingsMigrationFixture : IDisposable
 {
-    // The WPF app uses this location, so using the same here - it's a windows only app so keep it simplew for now
-    private static readonly string SettingsDir = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "SlnDependencyStudio");
-
+    // Isolated scratch location — integration tests must never touch the real AppData settings files.
+    private static readonly string SettingsDir = IntegrationTestHarness.SettingsDirectory;
     private static readonly string SettingsFile = Path.Combine(SettingsDir, "settings.json");
 
     public SettingsMigrationFixture()
@@ -92,6 +89,11 @@ public class SettingsMigrationFixture : IDisposable
             if (File.Exists(SettingsFile))
             {
                 File.Delete(SettingsFile);
+            }
+
+            if (Directory.Exists(SettingsDir))
+            {
+                Directory.Delete(SettingsDir, true);
             }
         }
         catch

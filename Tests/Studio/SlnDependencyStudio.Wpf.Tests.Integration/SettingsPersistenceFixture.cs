@@ -11,11 +11,8 @@ namespace SlnDependencyStudio.Wpf.Tests.Integration;
 /// Exercises the full file I/O path that cannot be unit tested.</summary>
 public class SettingsPersistenceFixture : IDisposable
 {
-    // The WPF app uses this location, so using the same here - it's a windows only app so keep it simplew for now
-    private static readonly string SettingsDir = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "SlnDependencyStudio");
-
+    // Isolated scratch location — integration tests must never touch the real AppData settings/state files.
+    private static readonly string SettingsDir = IntegrationTestHarness.SettingsDirectory;
     private static readonly string SettingsFile = Path.Combine(SettingsDir, "settings.json");
     private static readonly string StateFile = Path.Combine(SettingsDir, "state.json");
 
@@ -133,6 +130,11 @@ public class SettingsPersistenceFixture : IDisposable
             if (File.Exists(StateFile))
             {
                 File.Delete(StateFile);
+            }
+
+            if (Directory.Exists(SettingsDir))
+            {
+                Directory.Delete(SettingsDir, true);
             }
         }
         catch
