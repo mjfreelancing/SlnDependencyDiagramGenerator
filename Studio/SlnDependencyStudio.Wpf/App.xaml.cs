@@ -3,10 +3,10 @@ using AllOverIt.Serilog.Sinks.Observable;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using ReactiveUI.Builder;
-using Serilog;
 using SlnDependencyDiagramGenerator.Extensions;
 using SlnDependencyStudio.Shared.Extensions;
 using SlnDependencyStudio.Wpf.Extensions;
+using SlnDependencyStudio.Wpf.Features.Application;
 using System.IO;
 using System.Windows;
 
@@ -47,10 +47,13 @@ public partial class App : Application
                 // WPF-specific services.
                 services.AddWpfDependencies();
             })
-            .UseStudioSerilog((_, configuration) =>
-            {
-                configuration.WriteTo.Observable(observableSink);
-            }, logDirectory: DefaultLogDirectory)
+            .UseStudioSerilog(
+                (_, configuration) =>
+                {
+                    configuration.WriteTo.Observable(observableSink);
+                },
+                logDirectory: DefaultLogDirectory,
+                retentionDays: ApplicationSettingsStartupReader.ReadLogRetentionDays())
             .Build();
     }
 

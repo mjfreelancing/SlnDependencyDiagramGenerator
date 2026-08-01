@@ -103,7 +103,7 @@ internal sealed class ApplicationSettingsService : IApplicationSettingsService
         _fileSystem.MoveFile(tempPath, _stateFilePath, overwrite: true);
     }
 
-    private static string GetDefaultSettingsDirectory()
+    internal static string GetDefaultSettingsDirectory()
     {
         return Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),

@@ -25,8 +25,8 @@ public static class HostBuilderExtensions
         /// <list type="bullet">
         ///   <item><description><b>CLI:</b> The log file is written to a <c>logs</c> subfolder next to the config file
         ///   being processed (read from <c>configuration["configFile"]</c> or <c>configuration["cf"]</c>),
-        ///   named <c>{configFileBaseName}-{Date}.txt</c>. If no config file path is available, it falls back
-        ///   to <c>studio-{Date}.txt</c> under <see cref="AppContext.BaseDirectory"/>.</description></item>
+        ///   named <c>{configFileBaseName}-yyyyMMdd.txt</c>. If no config file path is available, it falls back
+        ///   to <c>studio-yyyyMMdd.txt</c> under <see cref="AppContext.BaseDirectory"/>.</description></item>
         ///   <item><description><b>WPF:</b> Passes <paramref name="logDirectory"/> explicitly because there is no
         ///   single config file — projects are opened/closed from arbitrary locations over a session. The WPF
         ///   frontend uses <c>%AppData%/SlnDependencyStudio/Logs</c> as the fixed log directory.</description></item>
@@ -37,9 +37,11 @@ public static class HostBuilderExtensions
         /// enrichers, or filters (for example, a console sink for CLI, or a circular-buffer sink for WPF).</param>
         /// <param name="logDirectory">When specified (WPF), overrides the auto-resolved log directory.
         /// When not specified (CLI), the directory is resolved relative to the config file path.</param>
+        /// <param name="retentionDays">The number of days of rolling log files to retain (one file is written
+        /// per day). When not specified, Serilog's default retention applies.</param>
         /// <returns>The host builder for chaining.</returns>
         public IHostBuilder UseStudioSerilog(Action<IServiceProvider, LoggerConfiguration>? configure = null,
-            string? logDirectory = null)
+            string? logDirectory = null, int? retentionDays = null)
         {
             var levelSwitch = new LoggingLevelSwitch(LogEventLevel.Information);
 
@@ -69,9 +71,11 @@ public static class HostBuilderExtensions
                     (resolvedBaseName, resolvedLogDirectory) = ResolveLogNaming(hostContext.Configuration);
                 }
 
-                var rollingFileName = Path.Combine(resolvedLogDirectory, $"{resolvedBaseName}-{{Date}}.txt");
+                var rollingFileName = Path.Combine(resolvedLogDirectory, $"{resolvedBaseName}-.txt");
 
-                configuration.WriteTo.RollingFile(rollingFileName, retainedFileCountLimit: 31);
+                // Daily rolling writes one file per day, so Serilog's retainedFileCountLimit effectively retains
+                // the most recent `retentionDays` days of logs (Serilog's default is 31).
+                configuration.WriteTo.File(rollingFileName, rollingInterval: RollingInterval.Day, retainedFileCountLimit: retentionDays);
             });
         }
     }
