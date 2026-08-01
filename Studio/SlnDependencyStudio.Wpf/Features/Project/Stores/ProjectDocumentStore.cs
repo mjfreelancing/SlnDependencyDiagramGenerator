@@ -1,4 +1,5 @@
 using AllOverIt.Assertion;
+using Microsoft.Extensions.Logging;
 using ReactiveUI;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyStudio.Shared.Config;
@@ -23,6 +24,7 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
 {
     private readonly IDependencyProjectService _projectService;
     private readonly IRecentProjectsStore _recentProjects;
+    private readonly ILogger<ProjectDocumentStore> _logger;
     private readonly ProjectMetadataEditor _metadataEditor;
     private readonly SolutionOptionsEditor _solutionOptionsEditor;
     private readonly ExportOptionsEditor _exportOptionsEditor;
@@ -87,10 +89,13 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
     /// <summary>Initializes a new instance of the store.</summary>
     /// <param name="projectService">The project serialization service.</param>
     /// <param name="recentProjects">The recent projects store for MRU tracking.</param>
-    public ProjectDocumentStore(IDependencyProjectService projectService, IRecentProjectsStore recentProjects)
+    /// <param name="logger">The logger instance.</param>
+    public ProjectDocumentStore(IDependencyProjectService projectService, IRecentProjectsStore recentProjects,
+        ILogger<ProjectDocumentStore> logger)
     {
         _projectService = projectService.WhenNotNull();
         _recentProjects = recentProjects.WhenNotNull();
+        _logger = logger.WhenNotNull();
 
         _metadataEditor = new ProjectMetadataEditor();
         _solutionOptionsEditor = new SolutionOptionsEditor();
@@ -120,6 +125,8 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
     {
         filePath.WhenNotNull();
 
+        _logger.LogInformation("Opening project: {FilePath}", filePath);
+
         IsTransitioning = true;
 
         _document = await _projectService.OpenAsync(filePath, cancellationToken);
@@ -146,6 +153,8 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
         Throw<InvalidOperationException>.WhenNull(_document, "No project is loaded");
         Throw<InvalidOperationException>.WhenNull(DocumentFilePath, "No document file path");
 
+        _logger.LogInformation("Saving project: {FilePath}", DocumentFilePath);
+
         FlushAllEditors();
 
         await _projectService.SaveAsync(_document, DocumentFilePath, cancellationToken);
@@ -158,6 +167,8 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
     {
         Throw<InvalidOperationException>.WhenNull(_document, "No project is loaded");
         filePath.WhenNotNull();
+
+        _logger.LogInformation("Saving project as: {FilePath}", filePath);
 
         FlushAllEditors();
 
@@ -173,6 +184,8 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
     /// <inheritdoc />
     public void Close()
     {
+        _logger.LogInformation("Closing project: {FilePath}", DocumentFilePath);
+
         IsTransitioning = true;
 
         _document = null;
@@ -194,6 +207,8 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
     /// <summary>Flushes all editor wrappers to the underlying document.</summary>
     private void FlushAllEditors()
     {
+        _logger.LogDebug("Flushing editor values to the document");
+
         _metadataEditor.FlushTo(_document!.Metadata);
         _solutionOptionsEditor.FlushTo(_document!.DiagramGenerator.Solution);
         _exportOptionsEditor.FlushTo(_document!.DiagramGenerator.Export);
@@ -225,6 +240,8 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
     public DependencyProjectDocument BuildDocument()
     {
         Throw<InvalidOperationException>.WhenNull(_document, "No project is loaded");
+
+        _logger.LogDebug("Building document from current editor state");
 
         FlushAllEditors();
 

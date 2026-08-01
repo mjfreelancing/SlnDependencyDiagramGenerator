@@ -1,4 +1,5 @@
 using AllOverIt.Assertion;
+using Microsoft.Extensions.Logging;
 using SlnDependencyStudio.Wpf.Abstractions.IO;
 using SlnDependencyStudio.Wpf.Features.Application;
 using SlnDependencyStudio.Wpf.Features.RecentProjects.Models;
@@ -12,17 +13,22 @@ internal sealed class RecentProjectsService : IRecentProjectsService
 
     private readonly IFileSystem _fileSystem;
     private readonly IApplicationSettingsService _settingsService;
+    private readonly ILogger<RecentProjectsService> _logger;
 
-    public RecentProjectsService(IFileSystem fileSystem, IApplicationSettingsService settingsService)
+    public RecentProjectsService(IFileSystem fileSystem, IApplicationSettingsService settingsService,
+        ILogger<RecentProjectsService> logger)
     {
         _fileSystem = fileSystem.WhenNotNull();
         _settingsService = settingsService.WhenNotNull();
+        _logger = logger.WhenNotNull();
     }
 
     /// <inheritdoc />
     public void Add(string filePath)
     {
         filePath.WhenNotNull();
+
+        _logger.LogDebug("Adding recent project: {FilePath}", filePath);
 
         var recentProjects = _settingsService.CurrentState.RecentProjects;
 
@@ -52,6 +58,8 @@ internal sealed class RecentProjectsService : IRecentProjectsService
     public void Remove(string filePath)
     {
         filePath.WhenNotNull();
+
+        _logger.LogDebug("Removing recent project: {FilePath}", filePath);
 
         _settingsService.CurrentState.RecentProjects.Remove(filePath);
         _settingsService.SaveState();

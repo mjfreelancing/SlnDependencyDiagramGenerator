@@ -287,6 +287,8 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
 
     private async Task CancelOperationAsync(CancellationToken cancellationToken)
     {
+        _logger.LogInformation("Cancellation requested");
+
         _operationCts?.Cancel();
 
         CanCancel = false;
@@ -339,11 +341,11 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
             {
                 if (isDirty)
                 {
-                    _logger.LogInformation("Current project has unsaved changes");
+                    _logger.LogDebug("Current project has unsaved changes");
                 }
                 else
                 {
-                    _logger.LogInformation("Current project is clean (no unsaved changes)");
+                    _logger.LogDebug("Current project is clean (no unsaved changes)");
                 }
             })
             .DisposeWith(disposables);
