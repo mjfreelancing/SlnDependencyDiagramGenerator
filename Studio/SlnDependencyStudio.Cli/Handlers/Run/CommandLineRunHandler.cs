@@ -1,5 +1,4 @@
-﻿using AllOverIt.Assertion;
-using AllOverIt.Extensions;
+﻿using AllOverIt.Extensions;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
 using SlnDependencyDiagramGenerator.Exceptions;
@@ -41,12 +40,12 @@ internal sealed class CommandLineRunHandler : CommandLineHandlerBase, ICommandLi
         ILogger<CommandLineRunHandler> logger)
         : base(serializer, logger)
     {
-        _generator = generator.WhenNotNull();
-        _restoreSolutionRunner = restoreSolutionRunner.WhenNotNull();
-        _preGenerationCommandRunner = preGenerationCommandRunner.WhenNotNull();
-        _postGenerationCommandRunner = postGenerationCommandRunner.WhenNotNull();
-        _projectValidator = projectValidator.WhenNotNull();
-        _logger = logger.WhenNotNull();
+        _generator = generator;
+        _restoreSolutionRunner = restoreSolutionRunner;
+        _preGenerationCommandRunner = preGenerationCommandRunner;
+        _postGenerationCommandRunner = postGenerationCommandRunner;
+        _projectValidator = projectValidator;
+        _logger = logger;
     }
 
     /// <inheritdoc />

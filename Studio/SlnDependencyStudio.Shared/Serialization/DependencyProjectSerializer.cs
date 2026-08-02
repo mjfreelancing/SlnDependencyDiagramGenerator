@@ -1,5 +1,4 @@
-﻿using AllOverIt.Assertion;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using SlnDependencyStudio.Shared.Config;
 
 namespace SlnDependencyStudio.Shared.Serialization;
@@ -28,8 +27,8 @@ internal sealed class DependencyProjectSerializer : IDependencyProjectSerializer
     /// <param name="logger">The logger instance.</param>
     public DependencyProjectSerializer(IStudioJsonSerializer jsonSerializer, ILogger<DependencyProjectSerializer> logger)
     {
-        _jsonSerializer = jsonSerializer.WhenNotNull();
-        _logger = logger.WhenNotNull();
+        _jsonSerializer = jsonSerializer;
+        _logger = logger;
     }
 
     /// <summary>Serializes a document to a JSON string.</summary>

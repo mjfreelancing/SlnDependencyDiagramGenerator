@@ -1,4 +1,3 @@
-using AllOverIt.Assertion;
 using AllOverIt.Extensions;
 using AllOverIt.IO;
 using AllOverIt.Patterns.Specification.Extensions;
@@ -56,11 +55,11 @@ public sealed class DependencyGenerator : IDependencyGenerator
     public DependencyGenerator(IProjectDiscoveryService projectDiscovery, IToolDetectionService toolDetection,
         IToolPathResolver toolPathResolver, IValidationInvoker validationInvoker, ILoggerFactory loggerFactory)
     {
-        _projectDiscovery = projectDiscovery.WhenNotNull();
-        _toolDetection = toolDetection.WhenNotNull();
-        _toolPathResolver = toolPathResolver.WhenNotNull();
-        _loggerFactory = loggerFactory.WhenNotNull();
-        _validationInvoker = validationInvoker.WhenNotNull();
+        _projectDiscovery = projectDiscovery;
+        _toolDetection = toolDetection;
+        _toolPathResolver = toolPathResolver;
+        _loggerFactory = loggerFactory;
+        _validationInvoker = validationInvoker;
         _logger = loggerFactory.CreateLogger<DependencyGenerator>();
     }
 

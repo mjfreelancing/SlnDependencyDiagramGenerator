@@ -1,4 +1,3 @@
-using AllOverIt.Assertion;
 using Microsoft.Extensions.Logging;
 using SlnDependencyStudio.Shared.Serialization;
 using SlnDependencyStudio.Wpf.Abstractions.IO;
@@ -44,10 +43,10 @@ internal sealed class ApplicationSettingsService : IApplicationSettingsService
     internal ApplicationSettingsService(IStudioJsonSerializer jsonSerializer, IFileSystem fileSystem,
         string settingsDirectory, ILogger<ApplicationSettingsService> logger)
     {
-        _jsonSerializer = jsonSerializer.WhenNotNull();
-        _fileSystem = fileSystem.WhenNotNull();
-        _logger = logger.WhenNotNull();
-        _settingsDirectory = settingsDirectory.WhenNotNull();
+        _jsonSerializer = jsonSerializer;
+        _fileSystem = fileSystem;
+        _logger = logger;
+        _settingsDirectory = settingsDirectory;
         _settingsFilePath = Path.Combine(_settingsDirectory, "settings.json");
         _stateFilePath = Path.Combine(_settingsDirectory, "state.json");
     }

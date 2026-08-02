@@ -1,5 +1,4 @@
-﻿using AllOverIt.Assertion;
-using FluentValidation;
+﻿using FluentValidation;
 using Microsoft.Extensions.Logging;
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Shared.Serialization;
@@ -18,8 +17,8 @@ internal abstract class CommandLineHandlerBase
     /// <param name="logger">The logger instance.</param>
     public CommandLineHandlerBase(IDependencyProjectSerializer serializer, ILogger logger)
     {
-        _serializer = serializer.WhenNotNull();
-        _logger = logger.WhenNotNull();
+        _serializer = serializer;
+        _logger = logger;
     }
 
     /// <summary>Handles the command with the given configuration file and cancellation token.</summary>

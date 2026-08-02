@@ -1,5 +1,4 @@
-﻿using AllOverIt.Assertion;
-using SlnDependencyDiagramGenerator.Parser;
+﻿using SlnDependencyDiagramGenerator.Parser;
 using System;
 using System.IO;
 using System.Linq;
@@ -19,7 +18,7 @@ internal sealed class ProjectDiscoveryService : IProjectDiscoveryService
     /// <param name="solutionParser">The parser used to discover and parse solution projects.</param>
     public ProjectDiscoveryService(ISolutionParser solutionParser)
     {
-        _solutionParser = solutionParser.WhenNotNull();
+        _solutionParser = solutionParser;
     }
 
     // For use with integration tests.

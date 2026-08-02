@@ -1,4 +1,3 @@
-using AllOverIt.Assertion;
 using AllOverIt.Extensions;
 using AllOverIt.Process;
 using AllOverIt.Process.Extensions;
@@ -36,7 +35,7 @@ public abstract class ProcessCommandRunnerBase<TResult> : IDisposable
     /// <param name="logger">The logger instance.</param>
     protected ProcessCommandRunnerBase(ILogger logger)
     {
-        _logger = logger.WhenNotNull();
+        _logger = logger;
     }
 
     /// <summary>Executes the specified command, streaming output and mapping the outcome to a typed result.</summary>

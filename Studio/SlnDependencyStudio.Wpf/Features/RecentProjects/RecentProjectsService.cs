@@ -18,9 +18,9 @@ internal sealed class RecentProjectsService : IRecentProjectsService
     public RecentProjectsService(IFileSystem fileSystem, IApplicationSettingsService settingsService,
         ILogger<RecentProjectsService> logger)
     {
-        _fileSystem = fileSystem.WhenNotNull();
-        _settingsService = settingsService.WhenNotNull();
-        _logger = logger.WhenNotNull();
+        _fileSystem = fileSystem;
+        _settingsService = settingsService;
+        _logger = logger;
     }
 
     /// <inheritdoc />

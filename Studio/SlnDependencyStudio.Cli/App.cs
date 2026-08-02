@@ -1,5 +1,4 @@
-﻿using AllOverIt.Assertion;
-using AllOverIt.GenericHost;
+﻿using AllOverIt.GenericHost;
 using Microsoft.Extensions.Logging;
 using Serilog.Core;
 using Serilog.Events;
@@ -26,10 +25,10 @@ internal sealed class App : ConsoleAppBase
     public App(ICommandLineValidateHandler validateCommandHandler, ICommandLineRunHandler runCommandHandler,
         LoggingLevelSwitch levelSwitch, ILogger<App> logger)
     {
-        _validateCommandHandler = validateCommandHandler.WhenNotNull();
-        _runCommandHandler = runCommandHandler.WhenNotNull();
-        _levelSwitch = levelSwitch.WhenNotNull();
-        _logger = logger.WhenNotNull();
+        _validateCommandHandler = validateCommandHandler;
+        _runCommandHandler = runCommandHandler;
+        _levelSwitch = levelSwitch;
+        _logger = logger;
     }
 
     /// <inheritdoc />

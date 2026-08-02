@@ -93,9 +93,9 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
     public ProjectDocumentStore(IDependencyProjectService projectService, IRecentProjectsStore recentProjects,
         ILogger<ProjectDocumentStore> logger)
     {
-        _projectService = projectService.WhenNotNull();
-        _recentProjects = recentProjects.WhenNotNull();
-        _logger = logger.WhenNotNull();
+        _projectService = projectService;
+        _recentProjects = recentProjects;
+        _logger = logger;
 
         _metadataEditor = new ProjectMetadataEditor();
         _solutionOptionsEditor = new SolutionOptionsEditor();

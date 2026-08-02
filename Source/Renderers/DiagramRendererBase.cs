@@ -1,5 +1,4 @@
-﻿using AllOverIt.Assertion;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Generator;
 using SlnDependencyDiagramGenerator.Generator.IntermediateRepresentation;
@@ -37,9 +36,9 @@ internal abstract class DiagramRendererBase : IDiagramRenderer
     protected DiagramRendererBase(GeneratorDiagramOptions options,
         IToolPathResolver toolPathResolver, ILogger logger)
     {
-        Options = options.WhenNotNull();
-        ToolPathResolver = toolPathResolver.WhenNotNull();
-        Logger = logger.WhenNotNull();
+        Options = options;
+        ToolPathResolver = toolPathResolver;
+        Logger = logger;
     }
 
     /// <inheritdoc />

@@ -1,4 +1,3 @@
-using AllOverIt.Assertion;
 using AllOverIt.ReactiveUI.Factories;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.Logging;
@@ -34,12 +33,12 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     public MainWindow(MainWindowViewModel viewModel, IViewFactory viewFactory, IApplicationSettingsService settingsService,
         IFileSystem fileSystem, IProjectDocumentStore store, IErrorDialogService errorDialog, ILogger<MainWindow> logger)
     {
-        _viewFactory = viewFactory.WhenNotNull();
-        _settingsService = settingsService.WhenNotNull();
-        _fileSystem = fileSystem.WhenNotNull();
-        _store = store.WhenNotNull();
-        _errorDialog = errorDialog.WhenNotNull();
-        _logger = logger.WhenNotNull();
+        _viewFactory = viewFactory;
+        _settingsService = settingsService;
+        _fileSystem = fileSystem;
+        _store = store;
+        _errorDialog = errorDialog;
+        _logger = logger;
 
         ViewModel = viewModel;
         DataContext = viewModel;

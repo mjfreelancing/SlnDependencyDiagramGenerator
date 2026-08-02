@@ -1,4 +1,3 @@
-using AllOverIt.Assertion;
 using Microsoft.Extensions.Logging;
 using SlnDependencyDiagramGenerator.Generator.ToolDetection;
 using SlnDependencyStudio.Wpf.Features.Pipeline.Models;
@@ -31,9 +30,9 @@ internal sealed class ToolStatusService : IToolStatusService, IDisposable
     public ToolStatusService(IToolPathResolver toolPathResolver, IToolDetectionService toolDetection,
         ILogger<ToolStatusService> logger)
     {
-        _toolPathResolver = toolPathResolver.WhenNotNull();
-        _toolDetection = toolDetection.WhenNotNull();
-        _logger = logger.WhenNotNull();
+        _toolPathResolver = toolPathResolver;
+        _toolDetection = toolDetection;
+        _logger = logger;
 
         _statusSubject = new BehaviorSubject<IReadOnlyList<ToolStatusEntry>>([.. _entries]);
         ToolStatuses = _statusSubject.AsObservable();

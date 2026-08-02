@@ -1,5 +1,4 @@
-﻿using AllOverIt.Assertion;
-using AllOverIt.Extensions;
+﻿using AllOverIt.Extensions;
 using AllOverIt.Process;
 using AllOverIt.Process.Extensions;
 using Microsoft.Extensions.Logging;
@@ -25,8 +24,8 @@ internal sealed class ToolDetectionService : IToolDetectionService
 
     public ToolDetectionService(IToolPathResolver toolPathResolver, ILogger<ToolDetectionService> logger)
     {
-        _toolPathResolver = toolPathResolver.WhenNotNull();
-        _logger = logger.WhenNotNull();
+        _toolPathResolver = toolPathResolver;
+        _logger = logger;
     }
 
     /// <inheritdoc />

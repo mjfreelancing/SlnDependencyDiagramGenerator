@@ -12,8 +12,8 @@ internal sealed class DependencyProjectService : IDependencyProjectService
 
     public DependencyProjectService(IDependencyProjectSerializer serializer, ILogger<DependencyProjectService> logger)
     {
-        _serializer = serializer.WhenNotNull();
-        _logger = logger.WhenNotNull();
+        _serializer = serializer;
+        _logger = logger;
     }
 
     /// <inheritdoc />

@@ -1,4 +1,3 @@
-using AllOverIt.Assertion;
 using DynamicData.Binding;
 using Microsoft.Extensions.Logging;
 using ReactiveUI;
@@ -28,8 +27,8 @@ internal sealed class RecentProjectsStore : ReactiveObject, IRecentProjectsStore
     /// <summary>Initializes a new instance of <see cref="RecentProjectsStore"/>.</summary>
     public RecentProjectsStore(IRecentProjectsService service, ILogger<RecentProjectsStore> logger)
     {
-        _service = service.WhenNotNull();
-        _logger = logger.WhenNotNull();
+        _service = service;
+        _logger = logger;
 
         _hasRecentProjects = Observable
             .FromEventPattern<NotifyCollectionChangedEventHandler, NotifyCollectionChangedEventArgs>(

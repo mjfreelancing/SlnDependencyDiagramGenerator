@@ -1,4 +1,3 @@
-using AllOverIt.Assertion;
 using AllOverIt.Serilog.Sinks.Observable;
 using Microsoft.Extensions.Logging;
 using ReactiveUI;
@@ -135,11 +134,11 @@ public sealed class OutputPanelViewModel : ReactiveObject, IStudioScopedDependen
     public OutputPanelViewModel(IObservableSink observableSink, LoggingLevelSwitch levelSwitch, IApplicationSettingsService applicationSettings,
         IFileSystem fileSystem, ILogger<OutputPanelViewModel> logger)
     {
-        _observableSink = observableSink.WhenNotNull();
-        _levelSwitch = levelSwitch.WhenNotNull();
-        _applicationSettings = applicationSettings.WhenNotNull();
-        _fileSystem = fileSystem.WhenNotNull();
-        _logger = logger.WhenNotNull();
+        _observableSink = observableSink;
+        _levelSwitch = levelSwitch;
+        _applicationSettings = applicationSettings;
+        _fileSystem = fileSystem;
+        _logger = logger;
 
         // Self-referencing — Messages is owned by this ViewModel.
         var hasContent = Observable

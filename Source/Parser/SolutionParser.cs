@@ -1,5 +1,4 @@
-﻿using AllOverIt.Assertion;
-using AllOverIt.Extensions;
+﻿using AllOverIt.Extensions;
 using Microsoft.Build.Evaluation;
 using SlnDependencyDiagramGenerator.Exceptions;
 using SlnDependencyDiagramGenerator.Parser.Resolvers;
@@ -31,8 +30,7 @@ internal sealed partial class SolutionParser : ISolutionParser
     /// <param name="solutionProjectResolvers">The set of solution project resolvers, keyed by file extension.</param>
     public SolutionParser(IProjectAssetReader assetReader, IEnumerable<ISolutionProjectResolver> solutionProjectResolvers)
     {
-        _assetReader = assetReader.WhenNotNull();
-        _ = solutionProjectResolvers.WhenNotNull();
+        _assetReader = assetReader;
 
         // SDK-style project evaluation requires a registered MSBuild instance so SDK resolvers
         // can locate Microsoft.NET.Sdk and related toolset components.

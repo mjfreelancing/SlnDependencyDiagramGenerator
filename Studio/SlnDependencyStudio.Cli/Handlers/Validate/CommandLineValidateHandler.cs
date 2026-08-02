@@ -1,5 +1,4 @@
-﻿using AllOverIt.Assertion;
-using FluentValidation;
+﻿using FluentValidation;
 using Microsoft.Extensions.Logging;
 using SlnDependencyStudio.Cli.Enumerations;
 using SlnDependencyStudio.Shared.Config.Extensions;
@@ -23,8 +22,8 @@ internal sealed class CommandLineValidateHandler : CommandLineHandlerBase, IComm
         IDependencyProjectValidator projectValidator, ILogger<CommandLineValidateHandler> logger)
         : base(serializer, logger)
     {
-        _projectValidator = projectValidator.WhenNotNull();
-        _logger = logger.WhenNotNull();
+        _projectValidator = projectValidator;
+        _logger = logger;
     }
 
     /// <inheritdoc />

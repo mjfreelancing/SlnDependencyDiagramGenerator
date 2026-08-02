@@ -1,4 +1,3 @@
-using AllOverIt.Assertion;
 using AllOverIt.Validation;
 using Microsoft.Extensions.Logging;
 using SlnDependencyStudio.Shared.Config;
@@ -16,8 +15,8 @@ internal sealed class DependencyProjectValidator : IDependencyProjectValidator
     /// <param name="logger">The logger instance.</param>
     public DependencyProjectValidator(IValidationInvoker validationInvoker, ILogger<DependencyProjectValidator> logger)
     {
-        _validationInvoker = validationInvoker.WhenNotNull();
-        _logger = logger.WhenNotNull();
+        _validationInvoker = validationInvoker;
+        _logger = logger;
     }
 
     /// <inheritdoc />
