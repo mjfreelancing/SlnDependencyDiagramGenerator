@@ -34,15 +34,17 @@ if (!string.IsNullOrWhiteSpace(value))
 
 ### Null Argument Guards
 
-Prefer `WhenNotNull()` over manual `ArgumentNullException` throws.
+Use `WhenNotNull()` when guarding values that can legitimately be `null` at runtime — for example, method arguments supplied by callers. Prefer it over manual `ArgumentNullException` throws.
 
 ```csharp
-// CORRECT
-_field = value.WhenNotNull();
+// CORRECT — guards a runtime method argument
+filePath.WhenNotNull();
 
-// WRONG
-_field = value ?? throw new ArgumentNullException(nameof(value));
+// WRONG — manual throw
+if (filePath is null) throw new ArgumentNullException(nameof(filePath));
 ```
+
+Constructor injection parameters do **not** need null guards — the DI container resolves every dependency and throws if one cannot be resolved, so a `null` is never injected (see the Constructor Arguments section below).
 
 ## AllOverIt.Validation Patterns
 
@@ -70,20 +72,22 @@ internal sealed class MyValidator : ValidatorBase<MyModel>
 
 ## Precondition Checks with `Throw<>`
 
-The `AllOverIt.Assertion` package provides two precondition mechanisms with different intended uses:
+The `AllOverIt.Assertion` package provides `WhenNotNull()` and `Throw<TException>` with different intended uses:
 
-### Constructor Argument Guards (`Guard` / `WhenNotNull()`)
+### Constructor Arguments (DI-injected)
 
-Use `WhenNotNull()` to guard constructor parameters. It returns the non-null value so you can assign it inline.
+Constructor injection parameters do **not** require null guards. The DI container resolves every dependency from registered services and throws if a service cannot be resolved, so a `null` can never be injected.
 
 ```csharp
-// CORRECT — guards constructor injection parameters, ILogger<T> is the last parameter
+// CORRECT — DI resolves all dependencies; no guards needed. ILogger<T> is the last parameter.
 public MyService(IDependency dependency, ILogger<MyService> logger)
 {
-    _dependency = dependency.WhenNotNull();
-    _logger = logger.WhenNotNull();
+    _dependency = dependency;
+    _logger = logger;
 }
 ```
+
+Keep a `WhenNotNull()` guard on a constructor parameter only when the class is created outside the container by a factory method that may pass `null`.
 
 ### Dependent-State Checks (`Throw<TException>`)
 
