@@ -8,6 +8,7 @@ using SlnDependencyStudio.Wpf.Features.Pipeline.PreGeneration;
 using SlnDependencyStudio.Wpf.Features.Pipeline.RestoreSolution;
 using SlnDependencyStudio.Wpf.Features.Pipeline.Services;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
+using System.IO;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 
@@ -574,6 +575,226 @@ public class PipelineViewModelFixture
             _postGenEnabled.Value = false;
 
             _viewModel.PostGenError.ShouldBeNull();
+        }
+    }
+
+    public class PreGenWorkingDirectoryError : PipelineViewModelFixture
+    {
+        [Fact]
+        public void Should_Be_Null_When_Toggle_Off()
+        {
+            _store.DocumentFilePath.Returns(@"C:\projects\test.sds");
+
+            _enabled.Value = false;
+            _workingDirectory.Value = @"X:\DoesNotExist\Path";
+
+            _viewModel.PreGenWorkingDirectoryError.ShouldBeNull();
+        }
+
+        [Fact]
+        public void Should_Be_Null_When_WorkingDirectory_Empty()
+        {
+            _store.DocumentFilePath.Returns(@"C:\projects\test.sds");
+
+            _enabled.Value = true;
+            _workingDirectory.Value = string.Empty;
+
+            _viewModel.PreGenWorkingDirectoryError.ShouldBeNull();
+        }
+
+        [Fact]
+        public void Should_Be_Null_When_Directory_Exists()
+        {
+            _store.DocumentFilePath.Returns(@"C:\projects\test.sds");
+
+            _enabled.Value = true;
+            _workingDirectory.Value = Path.GetTempPath();
+
+            _viewModel.PreGenWorkingDirectoryError.ShouldBeNull();
+        }
+
+        [Fact]
+        public void Should_Contain_Error_When_Directory_Does_Not_Exist()
+        {
+            _store.DocumentFilePath.Returns(@"C:\projects\test.sds");
+
+            _enabled.Value = true;
+            _workingDirectory.Value = @"X:\DoesNotExist\Path";
+
+            _viewModel.PreGenWorkingDirectoryError!.ShouldContain("Working directory was not found");
+        }
+
+        [Fact]
+        public void Should_Resolve_Relative_Path_Against_Project_Directory()
+        {
+            _store.DocumentDirectory.Returns(@"C:\projects");
+
+            _enabled.Value = true;
+            _workingDirectory.Value = @"missing\sub";
+
+            _viewModel.PreGenWorkingDirectoryError!.ShouldBe(@"Working directory was not found: C:\projects\missing\sub");
+        }
+
+        [Fact]
+        public void Should_Not_Resolve_Relative_To_Project_When_Relative_Path_Disabled()
+        {
+            _store.DocumentDirectory.Returns(@"C:\projects");
+
+            _viewModel.UseRelativePathForPreGenWorkingDirectory.Value = false;
+            _enabled.Value = true;
+            _workingDirectory.Value = @"not-a-real-working-directory";
+
+            _viewModel.PreGenWorkingDirectoryError.ShouldBe("Working directory was not found: not-a-real-working-directory");
+        }
+
+        [Fact]
+        public void Should_Validate_Absolute_Path_When_Relative_Path_Disabled()
+        {
+            _viewModel.UseRelativePathForPreGenWorkingDirectory.Value = false;
+            _enabled.Value = true;
+            _workingDirectory.Value = Path.GetTempPath();
+
+            _viewModel.PreGenWorkingDirectoryError.ShouldBeNull();
+        }
+
+        [Fact]
+        public void Should_Clear_When_Directory_Fixed()
+        {
+            _store.DocumentFilePath.Returns(@"C:\projects\test.sds");
+
+            _enabled.Value = true;
+            _workingDirectory.Value = @"X:\DoesNotExist\Path";
+
+            _viewModel.PreGenWorkingDirectoryError.ShouldNotBeNull();
+
+            _workingDirectory.Value = Path.GetTempPath();
+
+            _viewModel.PreGenWorkingDirectoryError.ShouldBeNull();
+        }
+
+        [Fact]
+        public void Should_Clear_When_Toggle_Turned_Off()
+        {
+            _store.DocumentFilePath.Returns(@"C:\projects\test.sds");
+
+            _enabled.Value = true;
+            _workingDirectory.Value = @"X:\DoesNotExist\Path";
+
+            _viewModel.PreGenWorkingDirectoryError.ShouldNotBeNull();
+
+            _enabled.Value = false;
+
+            _viewModel.PreGenWorkingDirectoryError.ShouldBeNull();
+        }
+    }
+
+    public class PostGenWorkingDirectoryError : PipelineViewModelFixture
+    {
+        [Fact]
+        public void Should_Be_Null_When_Toggle_Off()
+        {
+            _store.DocumentFilePath.Returns(@"C:\projects\test.sds");
+
+            _postGenEnabled.Value = false;
+            _postGenWorkingDirectory.Value = @"X:\DoesNotExist\Path";
+
+            _viewModel.PostGenWorkingDirectoryError.ShouldBeNull();
+        }
+
+        [Fact]
+        public void Should_Be_Null_When_WorkingDirectory_Empty()
+        {
+            _store.DocumentFilePath.Returns(@"C:\projects\test.sds");
+
+            _postGenEnabled.Value = true;
+            _postGenWorkingDirectory.Value = string.Empty;
+
+            _viewModel.PostGenWorkingDirectoryError.ShouldBeNull();
+        }
+
+        [Fact]
+        public void Should_Be_Null_When_Directory_Exists()
+        {
+            _store.DocumentFilePath.Returns(@"C:\projects\test.sds");
+
+            _postGenEnabled.Value = true;
+            _postGenWorkingDirectory.Value = Path.GetTempPath();
+
+            _viewModel.PostGenWorkingDirectoryError.ShouldBeNull();
+        }
+
+        [Fact]
+        public void Should_Contain_Error_When_Directory_Does_Not_Exist()
+        {
+            _store.DocumentFilePath.Returns(@"C:\projects\test.sds");
+
+            _postGenEnabled.Value = true;
+            _postGenWorkingDirectory.Value = @"X:\DoesNotExist\Path";
+
+            _viewModel.PostGenWorkingDirectoryError!.ShouldContain("Working directory was not found");
+        }
+
+        [Fact]
+        public void Should_Resolve_Relative_Path_Against_Project_Directory()
+        {
+            _store.DocumentDirectory.Returns(@"C:\projects");
+
+            _postGenEnabled.Value = true;
+            _postGenWorkingDirectory.Value = @"missing\sub";
+
+            _viewModel.PostGenWorkingDirectoryError!.ShouldBe(@"Working directory was not found: C:\projects\missing\sub");
+        }
+
+        [Fact]
+        public void Should_Not_Resolve_Relative_To_Project_When_Relative_Path_Disabled()
+        {
+            _store.DocumentDirectory.Returns(@"C:\projects");
+
+            _viewModel.UseRelativePathForPostGenWorkingDirectory.Value = false;
+            _postGenEnabled.Value = true;
+            _postGenWorkingDirectory.Value = @"not-a-real-working-directory";
+
+            _viewModel.PostGenWorkingDirectoryError.ShouldBe("Working directory was not found: not-a-real-working-directory");
+        }
+
+        [Fact]
+        public void Should_Validate_Absolute_Path_When_Relative_Path_Disabled()
+        {
+            _viewModel.UseRelativePathForPostGenWorkingDirectory.Value = false;
+            _postGenEnabled.Value = true;
+            _postGenWorkingDirectory.Value = Path.GetTempPath();
+
+            _viewModel.PostGenWorkingDirectoryError.ShouldBeNull();
+        }
+
+        [Fact]
+        public void Should_Clear_When_Directory_Fixed()
+        {
+            _store.DocumentFilePath.Returns(@"C:\projects\test.sds");
+
+            _postGenEnabled.Value = true;
+            _postGenWorkingDirectory.Value = @"X:\DoesNotExist\Path";
+
+            _viewModel.PostGenWorkingDirectoryError.ShouldNotBeNull();
+
+            _postGenWorkingDirectory.Value = Path.GetTempPath();
+
+            _viewModel.PostGenWorkingDirectoryError.ShouldBeNull();
+        }
+
+        [Fact]
+        public void Should_Clear_When_Toggle_Turned_Off()
+        {
+            _store.DocumentFilePath.Returns(@"C:\projects\test.sds");
+
+            _postGenEnabled.Value = true;
+            _postGenWorkingDirectory.Value = @"X:\DoesNotExist\Path";
+
+            _viewModel.PostGenWorkingDirectoryError.ShouldNotBeNull();
+
+            _postGenEnabled.Value = false;
+
+            _viewModel.PostGenWorkingDirectoryError.ShouldBeNull();
         }
     }
 

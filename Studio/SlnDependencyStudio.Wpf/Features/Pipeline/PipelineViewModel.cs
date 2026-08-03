@@ -20,6 +20,9 @@ namespace SlnDependencyStudio.Wpf.Features.Pipeline;
 /// <summary>View model for the "Pipeline" navigation page.</summary>
 public sealed class PipelineViewModel : ReactiveObject, IValidatableViewModel, IDisposable
 {
+    /// <summary>The debounce delay applied to real-time working-directory validation while typing.</summary>
+    private static readonly TimeSpan WorkingDirectoryValidationDelay = TimeSpan.FromMilliseconds(300);
+
     private readonly IProjectDocumentStore _store;
     private readonly IToolStatusService _toolStatus;
     private readonly ObservableCollection<ToolStatusEntry> _toolStatusEntries;
@@ -93,6 +96,32 @@ public sealed class PipelineViewModel : ReactiveObject, IValidatableViewModel, I
         private set => this.RaiseAndSetIfChanged(ref _postGenError, value);
     }
 
+    private string? _preGenWorkingDirectoryError;
+
+    /// <summary>
+    /// Validation error for the pre-generation working directory, or <see langword="null"/>
+    /// when valid. Only reports an error when the toggle is enabled, the directory is
+    /// non-empty, and the resolved directory does not exist.
+    /// </summary>
+    public string? PreGenWorkingDirectoryError
+    {
+        get => _preGenWorkingDirectoryError;
+        private set => this.RaiseAndSetIfChanged(ref _preGenWorkingDirectoryError, value);
+    }
+
+    private string? _postGenWorkingDirectoryError;
+
+    /// <summary>
+    /// Validation error for the post-generation working directory, or <see langword="null"/>
+    /// when valid. Only reports an error when the toggle is enabled, the directory is
+    /// non-empty, and the resolved directory does not exist.
+    /// </summary>
+    public string? PostGenWorkingDirectoryError
+    {
+        get => _postGenWorkingDirectoryError;
+        private set => this.RaiseAndSetIfChanged(ref _postGenWorkingDirectoryError, value);
+    }
+
     /// <summary>Interaction for browsing for an executable file.</summary>
     public Interaction<string, string?> BrowseCommandInteraction { get; } = new();
 
@@ -130,6 +159,8 @@ public sealed class PipelineViewModel : ReactiveObject, IValidatableViewModel, I
 
         WirePreGenError();
         WirePostGenError();
+        WirePreGenWorkingDirectoryError();
+        WirePostGenWorkingDirectoryError();
         WireValidation();
         WireToolStatus();
         WirePreGenRelativePathToggle();
@@ -168,6 +199,54 @@ public sealed class PipelineViewModel : ReactiveObject, IValidatableViewModel, I
             .DisposeWith(_disposables);
     }
 
+    private void WirePreGenWorkingDirectoryError()
+    {
+        this.WhenAnyValue(
+                vm => vm.Enabled.Value,
+                vm => vm.WorkingDirectory.Value,
+                vm => vm.UseRelativePathForPreGenWorkingDirectory.Value,
+                (enabled, workingDirectory, useRelativePath) => new { enabled, workingDirectory, useRelativePath })
+            .Throttle(WorkingDirectoryValidationDelay, RxSchedulers.MainThreadScheduler)
+            .Select(item => ValidateWorkingDirectory(item.enabled, item.useRelativePath, item.workingDirectory, _store.DocumentDirectory))
+            .Subscribe(error => PreGenWorkingDirectoryError = error)
+            .DisposeWith(_disposables);
+    }
+
+    private void WirePostGenWorkingDirectoryError()
+    {
+        this.WhenAnyValue(
+                vm => vm.PostGenEnabled.Value,
+                vm => vm.PostGenWorkingDirectory.Value,
+                vm => vm.UseRelativePathForPostGenWorkingDirectory.Value,
+                (enabled, workingDirectory, useRelativePath) => new { enabled, workingDirectory, useRelativePath })
+            .Throttle(WorkingDirectoryValidationDelay, RxSchedulers.MainThreadScheduler)
+            .Select(item => ValidateWorkingDirectory(item.enabled, item.useRelativePath, item.workingDirectory, _store.DocumentDirectory))
+            .Subscribe(error => PostGenWorkingDirectoryError = error)
+            .DisposeWith(_disposables);
+    }
+
+    private static string? ValidateWorkingDirectory(bool enabled, bool useRelativePath, string? workingDirectory, string documentDirectory)
+    {
+        if (!enabled || workingDirectory.IsNullOrEmpty())
+        {
+            return null;
+        }
+
+        if (useRelativePath)
+        {
+            var resolvedPath = PathUtils.ResolveAsAbsolutePath(workingDirectory, documentDirectory);
+
+            return Directory.Exists(resolvedPath)
+                ? null
+                : $"Working directory was not found: {resolvedPath}";
+        }
+
+        // Absolute mode — the value is validated as-is, without resolving against the project directory.
+        return Directory.Exists(workingDirectory)
+            ? null
+            : $"Working directory was not found: {workingDirectory}";
+    }
+
     private void WireValidation()
     {
         this.ValidationRule(
@@ -177,6 +256,16 @@ public sealed class PipelineViewModel : ReactiveObject, IValidatableViewModel, I
 
         this.ValidationRule(
             viewModel => viewModel.PostGenError,
+            error => error is null,
+            error => error ?? string.Empty);
+
+        this.ValidationRule(
+            viewModel => viewModel.PreGenWorkingDirectoryError,
+            error => error is null,
+            error => error ?? string.Empty);
+
+        this.ValidationRule(
+            viewModel => viewModel.PostGenWorkingDirectoryError,
             error => error is null,
             error => error ?? string.Empty);
     }

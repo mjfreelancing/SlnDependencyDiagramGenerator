@@ -110,7 +110,12 @@ internal sealed class PreGenerationAnalysisService : IPreGenerationAnalysisServi
         }
         catch (ValidationException exception)
         {
-            _logger.LogError("Configuration validation failed: {Message}", exception.Message);
+            _logger.LogError("Configuration validation failed:");
+
+            foreach (var error in exception.Errors)
+            {
+                _logger.LogError("  - {ErrorMessage}", error.ErrorMessage);
+            }
         }
         catch (Exception ex)
         {

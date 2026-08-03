@@ -1,4 +1,5 @@
 using FluentValidation;
+using FluentValidation.Results;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
@@ -176,6 +177,34 @@ public class PreGenerationAnalysisServiceFixture
 
             _logger.Records.ShouldContain(record =>
                 record.Level == LogLevel.Error && record.Message.Contains("Configuration validation failed"));
+        }
+
+        [Fact]
+        public async Task Should_Log_All_Validation_Errors_When_Validation_Fails()
+        {
+            _store.SolutionOptionsEditor.Returns(_solutionEditor);
+            _solutionEditor.SolutionPath.Returns(new Wpf.Controls.TrackableValue<string>());
+
+            var failures = new[]
+            {
+                new ValidationFailure(nameof(DependencyProjectDocument.PreGeneration), "Pre-generation configuration error"),
+                new ValidationFailure(nameof(DependencyProjectDocument.PostGeneration), "Post-generation configuration error")
+            };
+
+            _projectValidator
+                .When(validator => validator.Validate(Arg.Any<DependencyProjectDocument>(), Arg.Any<string>()))
+                .Do(_ => throw new ValidationException(failures));
+
+            await RunServiceAsync();
+
+            _logger.Records.ShouldContain(record =>
+                record.Level == LogLevel.Error && record.Message == "Configuration validation failed:");
+
+            _logger.Records.ShouldContain(record =>
+                record.Level == LogLevel.Error && record.Message == "  - Pre-generation configuration error");
+
+            _logger.Records.ShouldContain(record =>
+                record.Level == LogLevel.Error && record.Message == "  - Post-generation configuration error");
         }
 
         private Task RunServiceAsync()

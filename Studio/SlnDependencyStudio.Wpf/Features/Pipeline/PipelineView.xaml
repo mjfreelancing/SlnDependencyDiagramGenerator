@@ -124,47 +124,42 @@
                             IsEnabled="{Binding Enabled.Value}"
                             Text="{Binding Arguments.Value, UpdateSourceTrigger=PropertyChanged}" />
 
-                        <!--  Row 3: Working directory label  -->
-                        <TextBlock
+                        <!--  Rows 3-4: Working directory  -->
+                        <studioControls:FormField
+                            Title="Working directory"
                             Grid.Row="3"
+                            Grid.RowSpan="2"
                             Grid.Column="1"
                             Margin="16,24,0,0"
-                            FontWeight="SemiBold"
-                            IsEnabled="{Binding Enabled.Value}"
-                            Text="Working directory" />
-
-                        <!--  Row 4: Working Directory + Browse  -->
-                        <Grid
-                            Grid.Row="4"
-                            Grid.Column="1"
-                            Margin="16,6,0,0"
-                            IsEnabled="{Binding Enabled.Value}">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBox
-                                Grid.Row="0"
-                                Grid.Column="0"
-                                Text="{Binding WorkingDirectory.Value, UpdateSourceTrigger=PropertyChanged}" />
-                            <Button
-                                Grid.Row="0"
-                                Grid.Column="1"
-                                Command="{Binding BrowseWorkingDirectoryCommand}"
-                                Content="Browse"
-                                Style="{StaticResource ActionButtonStyle}" />
-                            <CheckBox
-                                Grid.Row="1"
-                                Grid.ColumnSpan="2"
-                                Margin="0,6,0,0"
-                                VerticalAlignment="Center"
-                                Content="Use relative path"
-                                IsChecked="{Binding UseRelativePathForPreGenWorkingDirectory.Value}" />
-                        </Grid>
+                            ValidationError="{Binding PreGenWorkingDirectoryError}">
+                            <Grid Margin="0,6,0,0" IsEnabled="{Binding Enabled.Value}">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox
+                                    Grid.Row="0"
+                                    Grid.Column="0"
+                                    Text="{Binding WorkingDirectory.Value, UpdateSourceTrigger=PropertyChanged}" />
+                                <Button
+                                    Grid.Row="0"
+                                    Grid.Column="1"
+                                    Command="{Binding BrowseWorkingDirectoryCommand}"
+                                    Content="Browse"
+                                    Style="{StaticResource ActionButtonStyle}" />
+                                <CheckBox
+                                    Grid.Row="1"
+                                    Grid.ColumnSpan="2"
+                                    Margin="0,6,0,0"
+                                    VerticalAlignment="Center"
+                                    Content="Use relative path"
+                                    IsChecked="{Binding UseRelativePathForPreGenWorkingDirectory.Value}" />
+                            </Grid>
+                        </studioControls:FormField>
 
                         <!--  Row 5: Continue on Failure  -->
                         <CheckBox
@@ -246,47 +241,42 @@
                             IsEnabled="{Binding PostGenEnabled.Value}"
                             Text="{Binding PostGenArguments.Value, UpdateSourceTrigger=PropertyChanged}" />
 
-                        <!--  Row 3: Working directory label  -->
-                        <TextBlock
+                        <!--  Rows 3-4: Working directory  -->
+                        <studioControls:FormField
+                            Title="Working directory"
                             Grid.Row="3"
+                            Grid.RowSpan="2"
                             Grid.Column="1"
                             Margin="16,24,0,0"
-                            FontWeight="SemiBold"
-                            IsEnabled="{Binding PostGenEnabled.Value}"
-                            Text="Working directory" />
-
-                        <!--  Row 4: Working Directory + Browse  -->
-                        <Grid
-                            Grid.Row="4"
-                            Grid.Column="1"
-                            Margin="16,6,0,0"
-                            IsEnabled="{Binding PostGenEnabled.Value}">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBox
-                                Grid.Row="0"
-                                Grid.Column="0"
-                                Text="{Binding PostGenWorkingDirectory.Value, UpdateSourceTrigger=PropertyChanged}" />
-                            <Button
-                                Grid.Row="0"
-                                Grid.Column="1"
-                                Command="{Binding BrowsePostGenWorkingDirectoryCommand}"
-                                Content="Browse"
-                                Style="{StaticResource ActionButtonStyle}" />
-                            <CheckBox
-                                Grid.Row="1"
-                                Grid.ColumnSpan="2"
-                                Margin="0,6,0,0"
-                                VerticalAlignment="Center"
-                                Content="Use relative path"
-                                IsChecked="{Binding UseRelativePathForPostGenWorkingDirectory.Value}" />
-                        </Grid>
+                            ValidationError="{Binding PostGenWorkingDirectoryError}">
+                            <Grid Margin="0,6,0,0" IsEnabled="{Binding PostGenEnabled.Value}">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox
+                                    Grid.Row="0"
+                                    Grid.Column="0"
+                                    Text="{Binding PostGenWorkingDirectory.Value, UpdateSourceTrigger=PropertyChanged}" />
+                                <Button
+                                    Grid.Row="0"
+                                    Grid.Column="1"
+                                    Command="{Binding BrowsePostGenWorkingDirectoryCommand}"
+                                    Content="Browse"
+                                    Style="{StaticResource ActionButtonStyle}" />
+                                <CheckBox
+                                    Grid.Row="1"
+                                    Grid.ColumnSpan="2"
+                                    Margin="0,6,0,0"
+                                    VerticalAlignment="Center"
+                                    Content="Use relative path"
+                                    IsChecked="{Binding UseRelativePathForPostGenWorkingDirectory.Value}" />
+                            </Grid>
+                        </studioControls:FormField>
                     </Grid>
                 </Border>
             </studioControls:FormField>

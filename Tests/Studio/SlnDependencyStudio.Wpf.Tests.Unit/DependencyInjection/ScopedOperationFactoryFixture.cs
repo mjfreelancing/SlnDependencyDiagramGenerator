@@ -55,7 +55,8 @@ public class ScopedOperationFactoryFixture
         [Fact]
         public async Task Should_Resolve_Service_And_Return_Result()
         {
-            _testService.GetValueAsync(Arg.Any<CancellationToken>())
+            _testService
+                .GetValueAsync(Arg.Any<CancellationToken>())
                 .Returns(Task.FromResult(99));
 
             var factory = new ScopedOperationFactory<ITestService>(_scopeFactory);
@@ -97,7 +98,8 @@ public class ScopedOperationFactoryFixture
         [Fact]
         public async Task Should_Dispose_Scope_When_Operation_Throws()
         {
-            _testService.GetValueAsync(Arg.Any<CancellationToken>())
+            _testService
+                .GetValueAsync(Arg.Any<CancellationToken>())
                 .Returns(Task.FromException<int>(new InvalidOperationException("fail")));
 
             var factory = new ScopedOperationFactory<ITestService>(_scopeFactory);

@@ -1,3 +1,5 @@
+using FluentValidation;
+using FluentValidation.Results;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Shouldly;
@@ -256,6 +258,33 @@ public class GenerationServiceFixture
 
             _logger.Records.ShouldContain(record =>
                 record.Level == LogLevel.Warning && record.Message == "Generation cancelled");
+        }
+
+        [Fact]
+        public async Task Should_Log_All_Validation_Errors_When_Validation_Fails()
+        {
+            SetupStoreConfig();
+
+            var failures = new[]
+            {
+                new ValidationFailure(nameof(PreGenerationConfig.WorkingDirectory), "Pre-generation working directory not found"),
+                new ValidationFailure(nameof(PostGenerationConfig.Command), "Post-generation command must not be empty")
+            };
+
+            _projectValidator
+                .When(validator => validator.Validate(Arg.Any<DependencyProjectDocument>(), Arg.Any<string>()))
+                .Do(_ => throw new ValidationException(failures));
+
+            await CollectLogsAsync(CancellationToken.None);
+
+            _logger.Records.ShouldContain(record =>
+                record.Level == LogLevel.Error && record.Message == "Configuration validation failed:");
+
+            _logger.Records.ShouldContain(record =>
+                record.Level == LogLevel.Error && record.Message == "  - Pre-generation working directory not found");
+
+            _logger.Records.ShouldContain(record =>
+                record.Level == LogLevel.Error && record.Message == "  - Post-generation command must not be empty");
         }
 
         [Fact]
