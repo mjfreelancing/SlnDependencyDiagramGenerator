@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Shouldly;
 using SlnDependencyStudio.Wpf.Features.Application;
@@ -13,13 +14,14 @@ public class SettingsEditorViewModelFixture
 {
     private readonly IApplicationSettingsService _settingsService = Substitute.For<IApplicationSettingsService>();
     private readonly IThemeService _themeService = Substitute.For<IThemeService>();
+    private readonly ILogger<SettingsEditorViewModel> _logger = Substitute.For<ILogger<SettingsEditorViewModel>>();
     private readonly ApplicationSettings _settings = new();
     private readonly SettingsEditorViewModel _viewModel;
 
     public SettingsEditorViewModelFixture()
     {
         _settingsService.CurrentSettings.Returns(_settings);
-        _viewModel = new SettingsEditorViewModel(_settingsService, _themeService);
+        _viewModel = new SettingsEditorViewModel(_settingsService, _themeService, _logger);
     }
 
     public class Construction : SettingsEditorViewModelFixture
@@ -29,7 +31,7 @@ public class SettingsEditorViewModelFixture
         {
             _settings.DefaultProjectFolder = @"C:\Projects";
 
-            var vm = new SettingsEditorViewModel(_settingsService, _themeService);
+            var vm = new SettingsEditorViewModel(_settingsService, _themeService, _logger);
 
             vm.DefaultProjectFolder.ShouldBe(@"C:\Projects");
         }
@@ -39,7 +41,7 @@ public class SettingsEditorViewModelFixture
         {
             _settings.LogRetentionDays = 14;
 
-            var vm = new SettingsEditorViewModel(_settingsService, _themeService);
+            var vm = new SettingsEditorViewModel(_settingsService, _themeService, _logger);
 
             vm.LogRetentionDays.ShouldBe(14);
         }
@@ -55,7 +57,7 @@ public class SettingsEditorViewModelFixture
         {
             _settings.Theme = StudioTheme.Dark;
 
-            var vm = new SettingsEditorViewModel(_settingsService, _themeService);
+            var vm = new SettingsEditorViewModel(_settingsService, _themeService, _logger);
 
             vm.IsDarkTheme.ShouldBeTrue();
         }

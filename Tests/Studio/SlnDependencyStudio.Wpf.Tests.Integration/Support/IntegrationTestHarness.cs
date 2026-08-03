@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Extensions;
 using SlnDependencyStudio.Shared.Config;
@@ -34,7 +35,8 @@ internal static class IntegrationTestHarness
             new ApplicationSettingsService(
                 provider.GetRequiredService<IStudioJsonSerializer>(),
                 provider.GetRequiredService<IFileSystem>(),
-                SettingsDirectory));
+                SettingsDirectory,
+                provider.GetRequiredService<ILogger<ApplicationSettingsService>>()));
 
         return services.BuildServiceProvider();
     }

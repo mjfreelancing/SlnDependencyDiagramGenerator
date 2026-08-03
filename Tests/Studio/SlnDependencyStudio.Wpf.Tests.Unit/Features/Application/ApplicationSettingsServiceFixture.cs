@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Shouldly;
 using SlnDependencyStudio.Shared.Serialization;
@@ -7,6 +8,7 @@ using SlnDependencyStudio.Wpf.Features.Application.Models;
 using SlnDependencyStudio.Wpf.Models;
 using System.IO;
 using System.Text;
+using System.Text.Json;
 
 namespace SlnDependencyStudio.Wpf.Tests.Unit.Features.Application;
 
@@ -104,6 +106,51 @@ public class ApplicationSettingsServiceFixture
             service.CurrentSettings.Theme.ShouldBe(StudioTheme.Dark);
             service.CurrentState.RecentProjects.ShouldBe(["project1.sds", "project2.sds"]);
         }
+
+        [Fact]
+        public async Task Should_Fallback_To_Defaults_When_Settings_File_Cannot_Be_Deserialized()
+        {
+            var fileSystem = Substitute.For<IFileSystem>();
+            var serializer = Substitute.For<IStudioJsonSerializer>();
+
+            fileSystem.FileExists(SettingsFilePath).Returns(true);
+            fileSystem.OpenRead(SettingsFilePath).Returns(new MemoryStream(Encoding.UTF8.GetBytes("{}")));
+
+            serializer
+                .DeserializeAsync<ApplicationSettings>(Arg.Any<Stream>(), Arg.Any<CancellationToken>())
+                .Returns(ValueTask.FromException<ApplicationSettings?>(new JsonException("Corrupt JSON")));
+
+            var service = CreateService(serializer, fileSystem);
+
+            await service.LoadAsync();
+
+            // Falls back to defaults instead of throwing.
+            service.CurrentSettings.DefaultProjectFolder.ShouldBe(string.Empty);
+            service.CurrentSettings.LogRetentionDays.ShouldBe(ApplicationSettings.DefaultLogRetentionDays);
+        }
+
+        [Fact]
+        public async Task Should_Fallback_To_Defaults_When_State_File_Cannot_Be_Deserialized()
+        {
+            var fileSystem = Substitute.For<IFileSystem>();
+            var serializer = Substitute.For<IStudioJsonSerializer>();
+
+            fileSystem.FileExists(SettingsFilePath).Returns(false);
+            fileSystem.FileExists(StateFilePath).Returns(true);
+            fileSystem.OpenRead(StateFilePath).Returns(new MemoryStream(Encoding.UTF8.GetBytes("{}")));
+
+            serializer
+                .DeserializeAsync<ApplicationState>(Arg.Any<Stream>(), Arg.Any<CancellationToken>())
+                .Returns(ValueTask.FromException<ApplicationState?>(new JsonException("Corrupt JSON")));
+
+            var service = CreateService(serializer, fileSystem);
+
+            await service.LoadAsync();
+
+            // Falls back to defaults instead of throwing.
+            service.CurrentState.RecentProjects.ShouldBeEmpty();
+            service.CurrentState.WindowPlacement.ShouldBeNull();
+        }
     }
 
     public class SaveSettingsAsync : ApplicationSettingsServiceFixture
@@ -186,11 +233,11 @@ public class ApplicationSettingsServiceFixture
     private static ApplicationSettingsService CreateService(IFileSystem fileSystem)
     {
         var serializer = Substitute.For<IStudioJsonSerializer>();
-        return new ApplicationSettingsService(serializer, fileSystem, TestDir);
+        return new ApplicationSettingsService(serializer, fileSystem, TestDir, Substitute.For<ILogger<ApplicationSettingsService>>());
     }
 
     private static ApplicationSettingsService CreateService(IStudioJsonSerializer serializer, IFileSystem fileSystem)
     {
-        return new ApplicationSettingsService(serializer, fileSystem, TestDir);
+        return new ApplicationSettingsService(serializer, fileSystem, TestDir, Substitute.For<ILogger<ApplicationSettingsService>>());
     }
 }

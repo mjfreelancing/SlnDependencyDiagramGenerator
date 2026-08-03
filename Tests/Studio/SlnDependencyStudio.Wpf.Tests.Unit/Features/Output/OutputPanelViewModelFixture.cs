@@ -1,4 +1,5 @@
 using AllOverIt.Serilog.Sinks.Observable;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Serilog.Core;
 using Serilog.Events;
@@ -19,6 +20,7 @@ public class OutputPanelViewModelFixture
     private readonly IObservableSink _observableSink = Substitute.For<IObservableSink>();
     private readonly IApplicationSettingsService _appSettings = Substitute.For<IApplicationSettingsService>();
     private readonly IFileSystem _fileSystem = Substitute.For<IFileSystem>();
+    private readonly ILogger<OutputPanelViewModel> _logger = Substitute.For<ILogger<OutputPanelViewModel>>();
     private readonly LoggingLevelSwitch _levelSwitch = new(LogEventLevel.Information);
     private readonly ApplicationSettings _settings = new();
     private readonly Subject<LogEvent> _sinkSubject = new();
@@ -35,7 +37,7 @@ public class OutputPanelViewModelFixture
             .Returns(Disposable.Empty)
             .AndDoes(callInfo => _sinkSubject.Subscribe(callInfo.Arg<IObserver<LogEvent>>()));
 
-        _viewModel = new OutputPanelViewModel(_observableSink, _levelSwitch, _appSettings, _fileSystem);
+        _viewModel = new OutputPanelViewModel(_observableSink, _levelSwitch, _appSettings, _fileSystem, _logger);
     }
 
     public class Construction : OutputPanelViewModelFixture
@@ -64,7 +66,7 @@ public class OutputPanelViewModelFixture
         {
             _settings.Output.WrapContent = true;
 
-            var vm = new OutputPanelViewModel(_observableSink, _levelSwitch, _appSettings, _fileSystem);
+            var vm = new OutputPanelViewModel(_observableSink, _levelSwitch, _appSettings, _fileSystem, _logger);
 
             vm.WrapContent.ShouldBeTrue();
         }
@@ -74,7 +76,7 @@ public class OutputPanelViewModelFixture
         {
             _settings.Output.IsVerboseLogging = false;
 
-            var vm = new OutputPanelViewModel(_observableSink, _levelSwitch, _appSettings, _fileSystem);
+            var vm = new OutputPanelViewModel(_observableSink, _levelSwitch, _appSettings, _fileSystem, _logger);
 
             vm.IsVerbose.ShouldBeFalse();
         }

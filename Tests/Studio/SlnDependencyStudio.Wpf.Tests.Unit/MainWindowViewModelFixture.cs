@@ -62,7 +62,8 @@ public class MainWindowViewModelFixture
             Substitute.For<AllOverIt.Serilog.Sinks.Observable.IObservableSink>(),
             new Serilog.Core.LoggingLevelSwitch(Serilog.Events.LogEventLevel.Information),
             appSettings,
-            Substitute.For<IFileSystem>());
+            Substitute.For<IFileSystem>(),
+            Substitute.For<ILogger<OutputPanelViewModel>>());
 
         var outputPanelView = Substitute.For<IViewFor<OutputPanelViewModel>>();
         outputPanelView.ViewModel.Returns(outputPanelViewModel);
