@@ -71,6 +71,42 @@ public class DependencyProjectValidatorFixture
             error.PropertyName.Contains("SolutionPath", System.StringComparison.OrdinalIgnoreCase));
     }
 
+    [Fact]
+    public void Should_Throw_When_PreGeneration_WorkingDirectory_Does_Not_Exist()
+    {
+        using var solutionFile = new DisposableTempFile(".sln");
+
+        var validator = CreateValidator();
+        var document = CreateValidDocument(solutionFile.FilePath);
+
+        document.PreGeneration.Enabled = true;
+        document.PreGeneration.Command = "dotnet";
+        document.PreGeneration.WorkingDirectory = @"X:\DoesNotExist\Path";
+
+        var exception = Should.Throw<ValidationException>(() => validator.Validate(document, Environment.CurrentDirectory));
+
+        exception.Errors.ShouldContain(error =>
+            error.PropertyName.Contains("WorkingDirectory", System.StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void Should_Throw_When_PostGeneration_WorkingDirectory_Does_Not_Exist()
+    {
+        using var solutionFile = new DisposableTempFile(".sln");
+
+        var validator = CreateValidator();
+        var document = CreateValidDocument(solutionFile.FilePath);
+
+        document.PostGeneration.Enabled = true;
+        document.PostGeneration.Command = "dotnet";
+        document.PostGeneration.WorkingDirectory = @"X:\DoesNotExist\Path";
+
+        var exception = Should.Throw<ValidationException>(() => validator.Validate(document, Environment.CurrentDirectory));
+
+        exception.Errors.ShouldContain(error =>
+            error.PropertyName.Contains("WorkingDirectory", System.StringComparison.OrdinalIgnoreCase));
+    }
+
     private static IDependencyProjectValidator CreateValidator()
     {
         var services = new ServiceCollection();

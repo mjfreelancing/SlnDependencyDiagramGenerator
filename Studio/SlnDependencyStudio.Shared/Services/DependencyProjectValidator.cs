@@ -1,6 +1,7 @@
 using AllOverIt.Validation;
 using Microsoft.Extensions.Logging;
 using SlnDependencyStudio.Shared.Config;
+using SlnDependencyStudio.Shared.Validators.Contexts;
 
 namespace SlnDependencyStudio.Shared.Services;
 
@@ -25,9 +26,19 @@ internal sealed class DependencyProjectValidator : IDependencyProjectValidator
         // All configuration is validated up front so failures are reported before any command or
         // generation work begins. The command runners themselves do not perform validation.
 
-        Validate("Pre-generation", document.PreGeneration);
+        // Pre/post-generation working directories may be relative to the configuration file, so the
+        // config directory is supplied as validation context to resolve and verify them.
+        Validate(
+            "Pre-generation",
+            document.PreGeneration,
+            new PreGenerationConfigContext { ConfigDirectory = configDirectory });
+
         Validate("Diagram generator", document.DiagramGenerator);
-        Validate("Post-generation", document.PostGeneration);
+
+        Validate(
+            "Post-generation",
+            document.PostGeneration,
+            new PostGenerationConfigContext { ConfigDirectory = configDirectory });
     }
 
     private void Validate<TConfig>(string configType, TConfig config)
@@ -35,6 +46,15 @@ internal sealed class DependencyProjectValidator : IDependencyProjectValidator
         _logger.LogDebug("Validating {ConfigType} configuration", configType);
 
         _validationInvoker.AssertValidation(config);
+
+        _logger.LogInformation("{ConfigType} configuration is valid", configType);
+    }
+
+    private void Validate<TConfig, TContext>(string configType, TConfig config, TContext context)
+    {
+        _logger.LogDebug("Validating {ConfigType} configuration", configType);
+
+        _validationInvoker.AssertValidation(config, context);
 
         _logger.LogInformation("{ConfigType} configuration is valid", configType);
     }
