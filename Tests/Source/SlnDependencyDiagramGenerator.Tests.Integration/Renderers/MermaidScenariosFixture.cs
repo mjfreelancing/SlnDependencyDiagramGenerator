@@ -4,7 +4,7 @@ using Shouldly;
 
 namespace SlnDependencyDiagramGenerator.Tests.Integration.Renderers;
 
-public class MermaidScenariosFixture
+public class MermaidScenariosFixture : FixtureCollectionTestBase
 {
     public class MermaidOutput : MermaidScenariosFixture
     {

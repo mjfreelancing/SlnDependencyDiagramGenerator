@@ -3,7 +3,7 @@ using Shouldly;
 
 namespace SlnDependencyDiagramGenerator.Tests.Integration.Generator;
 
-public class SummaryScenariosFixture
+public class SummaryScenariosFixture : FixtureCollectionTestBase
 {
     public class SummaryOutput : SummaryScenariosFixture
     {

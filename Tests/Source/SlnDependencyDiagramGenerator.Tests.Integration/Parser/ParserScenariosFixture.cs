@@ -6,7 +6,7 @@ using Shouldly;
 
 namespace SlnDependencyDiagramGenerator.Tests.Integration.Parser;
 
-public class ParserScenariosFixture
+public class ParserScenariosFixture : FixtureCollectionTestBase
 {
     public class DiscoverProjects : ParserScenariosFixture
     {

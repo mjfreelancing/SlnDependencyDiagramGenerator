@@ -9,7 +9,7 @@ using System.Threading;
 
 namespace SlnDependencyDiagramGenerator.Tests.Integration.Generator;
 
-public class FolderStructureScenariosFixture
+public class FolderStructureScenariosFixture : FixtureCollectionTestBase
 {
     public class OutputStructure : FolderStructureScenariosFixture
     {

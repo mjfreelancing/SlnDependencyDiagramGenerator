@@ -2,7 +2,7 @@ using SlnDependencyDiagramGenerator.Tests.Integration.Support;
 
 namespace SlnDependencyDiagramGenerator.Tests.Integration;
 
-public class SnapshotApprovalScenariosFixture
+public class SnapshotApprovalScenariosFixture : FixtureCollectionTestBase
 {
     public class OutputSnapshots : SnapshotApprovalScenariosFixture
     {

@@ -4,7 +4,7 @@ using Shouldly;
 
 namespace SlnDependencyDiagramGenerator.Tests.Integration.Generator;
 
-public class IntegrationCombinationScenariosFixture
+public class IntegrationCombinationScenariosFixture : FixtureCollectionTestBase
 {
     public class CombinedOutputModes : IntegrationCombinationScenariosFixture
     {

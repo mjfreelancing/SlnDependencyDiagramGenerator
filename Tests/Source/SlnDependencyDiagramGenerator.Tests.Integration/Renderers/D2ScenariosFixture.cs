@@ -4,7 +4,7 @@ using Shouldly;
 
 namespace SlnDependencyDiagramGenerator.Tests.Integration.Renderers;
 
-public class D2ScenariosFixture
+public class D2ScenariosFixture : FixtureCollectionTestBase
 {
     public class D2Output : D2ScenariosFixture
     {

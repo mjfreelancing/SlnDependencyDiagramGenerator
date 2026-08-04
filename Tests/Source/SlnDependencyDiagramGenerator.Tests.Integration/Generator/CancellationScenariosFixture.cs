@@ -11,7 +11,7 @@ using System.Threading;
 
 namespace SlnDependencyDiagramGenerator.Tests.Integration.Generator;
 
-public class CancellationScenariosFixture
+public class CancellationScenariosFixture : FixtureCollectionTestBase
 {
     public class GeneratorCancellation : CancellationScenariosFixture
     {
