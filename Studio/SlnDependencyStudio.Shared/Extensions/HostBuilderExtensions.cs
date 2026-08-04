@@ -31,10 +31,13 @@ public static class HostBuilderExtensions
         ///   single config file — projects are opened/closed from arbitrary locations over a session. The WPF
         ///   frontend uses <c>%AppData%/SlnDependencyStudio/Logs</c> as the fixed log directory.</description></item>
         /// </list>
+        /// <para>The rolling file sink always writes at <see cref="LogEventLevel.Debug"/>. A
+        /// <see cref="LoggingLevelSwitch"/> is registered so a frontend can attach an interactive sink
+        /// (for example, the CLI console) whose verbosity it controls independently of the file.</para>
         /// </remarks>
         /// <param name="configure">An optional callback that receives the <see cref="IServiceProvider"/>
         /// and the <see cref="LoggerConfiguration"/> so the caller can add frontend-specific sinks,
-        /// enrichers, or filters (for example, a console sink for CLI, or a circular-buffer sink for WPF).</param>
+        /// enrichers, or filters (for example, a console sink for CLI, or the WPF log-buffer sink).</param>
         /// <param name="logDirectory">When specified (WPF), overrides the auto-resolved log directory.
         /// When not specified (CLI), the directory is resolved relative to the config file path.</param>
         /// <param name="retentionDays">The number of days of rolling log files to retain (one file is written
@@ -43,6 +46,8 @@ public static class HostBuilderExtensions
         public IHostBuilder UseStudioSerilog(Action<IServiceProvider, LoggerConfiguration>? configure = null,
             string? logDirectory = null, int? retentionDays = null)
         {
+            // Registered for frontend use (for example, the CLI's --verbose toggle). The file sink
+            // is not controlled by this switch — it always writes at Debug.
             var levelSwitch = new LoggingLevelSwitch(LogEventLevel.Information);
 
             hostBuilder.ConfigureServices((_, services) =>
@@ -52,7 +57,10 @@ public static class HostBuilderExtensions
 
             return hostBuilder.UseSerilog((hostContext, services, configuration) =>
             {
-                configuration.MinimumLevel.ControlledBy(levelSwitch);
+                // The file sink always captures at Debug. Frontends may attach interactive sinks
+                // (for example, the CLI console) to the registered LoggingLevelSwitch to control
+                // their own verbosity independently of the file.
+                configuration.MinimumLevel.Debug();
 
                 configure?.Invoke(services, configuration);
 

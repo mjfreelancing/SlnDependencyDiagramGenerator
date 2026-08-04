@@ -1,29 +1,25 @@
-using AllOverIt.Serilog.Sinks.Observable;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
-using Serilog.Core;
 using Serilog.Events;
 using Shouldly;
+using SlnDependencyStudio.Shared.Logging;
 using SlnDependencyStudio.Wpf.Abstractions.IO;
 using SlnDependencyStudio.Wpf.Features.Application;
 using SlnDependencyStudio.Wpf.Features.Application.Models;
 using SlnDependencyStudio.Wpf.Features.Output;
-using System.Reactive.Disposables;
+using System.Globalization;
 using System.Reactive.Linq;
-using System.Reactive.Subjects;
 
 namespace SlnDependencyStudio.Wpf.Tests.Unit.Features.Output;
 
 [Collection(nameof(ReactiveUIInitializer))]
 public class OutputPanelViewModelFixture
 {
-    private readonly IObservableSink _observableSink = Substitute.For<IObservableSink>();
     private readonly IApplicationSettingsService _appSettings = Substitute.For<IApplicationSettingsService>();
     private readonly IFileSystem _fileSystem = Substitute.For<IFileSystem>();
     private readonly ILogger<OutputPanelViewModel> _logger = Substitute.For<ILogger<OutputPanelViewModel>>();
-    private readonly LoggingLevelSwitch _levelSwitch = new(LogEventLevel.Information);
     private readonly ApplicationSettings _settings = new();
-    private readonly Subject<LogEvent> _sinkSubject = new();
+    private readonly StudioLogBuffer _logBuffer = new();
     private readonly OutputPanelViewModel _viewModel;
 
     public OutputPanelViewModelFixture()
@@ -31,13 +27,7 @@ public class OutputPanelViewModelFixture
         _appSettings.CurrentSettings.Returns(_settings);
         _appSettings.CurrentState.Returns(new ApplicationState());
 
-        // Wire the mock observable sink to the subject so tests can push events.
-        _observableSink
-            .Subscribe(Arg.Any<IObserver<LogEvent>>())
-            .Returns(Disposable.Empty)
-            .AndDoes(callInfo => _sinkSubject.Subscribe(callInfo.Arg<IObserver<LogEvent>>()));
-
-        _viewModel = new OutputPanelViewModel(_observableSink, _levelSwitch, _appSettings, _fileSystem, _logger);
+        _viewModel = new OutputPanelViewModel(_logBuffer, _appSettings, _fileSystem, _logger);
     }
 
     public class Construction : OutputPanelViewModelFixture
@@ -66,7 +56,7 @@ public class OutputPanelViewModelFixture
         {
             _settings.Output.WrapContent = true;
 
-            var vm = new OutputPanelViewModel(_observableSink, _levelSwitch, _appSettings, _fileSystem, _logger);
+            var vm = new OutputPanelViewModel(_logBuffer, _appSettings, _fileSystem, _logger);
 
             vm.WrapContent.ShouldBeTrue();
         }
@@ -76,7 +66,7 @@ public class OutputPanelViewModelFixture
         {
             _settings.Output.IsVerboseLogging = false;
 
-            var vm = new OutputPanelViewModel(_observableSink, _levelSwitch, _appSettings, _fileSystem, _logger);
+            var vm = new OutputPanelViewModel(_logBuffer, _appSettings, _fileSystem, _logger);
 
             vm.IsVerbose.ShouldBeFalse();
         }
@@ -128,25 +118,47 @@ public class OutputPanelViewModelFixture
         }
     }
 
-    public class VerboseSubscription : OutputPanelViewModelFixture
+    public class LogBufferSubscription : OutputPanelViewModelFixture
     {
         [Fact]
-        public void Should_Add_Messages_When_Events_Emitted()
+        public void Should_Add_Live_Events()
         {
-            var logEvent = CreateLogEvent(LogEventLevel.Information, "Test message");
-
-            _sinkSubject.OnNext(logEvent);
+            _logBuffer.Add(CreateEntry(LogEventLevel.Information, "Test message"));
 
             _viewModel.Messages.Count.ShouldBe(1);
-            _viewModel.Messages[0].Text.ShouldBe("Test message");
+            _viewModel.Messages[0].Text.ShouldEndWith("Test message");
+        }
+
+        [Fact]
+        public void Should_Replay_Backlog_From_Before_Subscription()
+        {
+            var logBuffer = new StudioLogBuffer();
+            logBuffer.Add(CreateEntry(LogEventLevel.Information, "early message"));
+
+            var vm = new OutputPanelViewModel(logBuffer, _appSettings, _fileSystem, _logger);
+
+            vm.Messages.Count.ShouldBe(1);
+            vm.Messages[0].Text.ShouldEndWith("early message");
+        }
+
+        [Fact]
+        public void Should_Filter_Snapshot_By_Persisted_Verbose_Preference()
+        {
+            _settings.Output.IsVerboseLogging = true;
+
+            var logBuffer = new StudioLogBuffer();
+            logBuffer.Add(CreateEntry(LogEventLevel.Debug, "debug message"));
+
+            var vm = new OutputPanelViewModel(logBuffer, _appSettings, _fileSystem, _logger);
+
+            vm.Messages.Count.ShouldBe(1);
+            vm.Messages[0].Text.ShouldEndWith("debug message");
         }
 
         [Fact]
         public void Should_Color_Errors_As_Error()
         {
-            var logEvent = CreateLogEvent(LogEventLevel.Error, "Error message");
-
-            _sinkSubject.OnNext(logEvent);
+            _logBuffer.Add(CreateEntry(LogEventLevel.Error, "Error message"));
 
             _viewModel.Messages[0].Level.ShouldBe(OutputMessageLevel.Error);
         }
@@ -154,33 +166,95 @@ public class OutputPanelViewModelFixture
         [Fact]
         public void Should_Color_Warnings_As_Warning()
         {
-            var logEvent = CreateLogEvent(LogEventLevel.Warning, "Warning message");
-
-            _sinkSubject.OnNext(logEvent);
+            _logBuffer.Add(CreateEntry(LogEventLevel.Warning, "Warning message"));
 
             _viewModel.Messages[0].Level.ShouldBe(OutputMessageLevel.Warning);
         }
 
         [Fact]
-        public void Should_Update_LevelSwitch_When_Toggled()
+        public void Should_Hide_Debug_When_Verbose_Off()
         {
-            // Default settings have IsVerboseLogging = false, so the switch starts at Information.
-            _levelSwitch.MinimumLevel.ShouldBe(LogEventLevel.Information);
+            _logBuffer.Add(CreateEntry(LogEventLevel.Debug, "Debug message"));
+
+            _viewModel.Messages.ShouldBeEmpty();
+        }
+
+        [Fact]
+        public void Should_Show_Debug_When_Verbose_On()
+        {
+            _viewModel.IsVerbose = true;
+
+            _logBuffer.Add(CreateEntry(LogEventLevel.Debug, "Debug message"));
+
+            _viewModel.Messages.Count.ShouldBe(1);
+            _viewModel.Messages[0].Text.ShouldEndWith("Debug message");
+        }
+
+        [Fact]
+        public void Should_Not_Refilter_Existing_Messages_When_Toggled()
+        {
+            _logBuffer.Add(CreateEntry(LogEventLevel.Information, "info message"));
+
+            _viewModel.Messages.Count.ShouldBe(1);
 
             _viewModel.IsVerbose = true;
 
-            _levelSwitch.MinimumLevel.ShouldBe(LogEventLevel.Debug);
+            // Existing messages are not re-filtered or removed.
+            _viewModel.Messages.Count.ShouldBe(1);
+            _viewModel.Messages[0].Text.ShouldEndWith("info message");
 
             _viewModel.IsVerbose = false;
 
-            _levelSwitch.MinimumLevel.ShouldBe(LogEventLevel.Information);
+            // Existing messages remain even after verbose is disabled.
+            _viewModel.Messages.Count.ShouldBe(1);
         }
 
-        private static LogEvent CreateLogEvent(LogEventLevel level, string message)
+        [Fact]
+        public void Should_Filter_Only_New_Entries_When_Toggled()
         {
-            var template = new Serilog.Parsing.MessageTemplateParser().Parse(message);
+            _viewModel.IsVerbose = true;
 
-            return new LogEvent(DateTimeOffset.Now, level, null, template, []);
+            _logBuffer.Add(CreateEntry(LogEventLevel.Debug, "debug message"));
+
+            _viewModel.Messages.Count.ShouldBe(1);
+
+            _viewModel.IsVerbose = false;
+
+            // A debug entry added while verbose was on remains; new debug entries are filtered.
+            _viewModel.Messages.Count.ShouldBe(1);
+
+            _logBuffer.Add(CreateEntry(LogEventLevel.Debug, "new debug message"));
+
+            _viewModel.Messages.Count.ShouldBe(1);
+        }
+
+        [Fact]
+        public void Should_Prefix_Timestamp_With_File_Format()
+        {
+            var originalCulture = CultureInfo.CurrentCulture;
+
+            try
+            {
+                // Force a known culture so the expected output is deterministic regardless of
+                // the machine's current culture.
+                CultureInfo.CurrentCulture = new CultureInfo("en-AU");
+
+                var timestamp = new DateTimeOffset(2026, 8, 4, 11, 19, 56, TimeSpan.Zero);
+
+                _logBuffer.Add(new StudioLogEntry(timestamp, LogEventLevel.Information, "Test message", null));
+
+                // Matches the file sink's timestamp format (yyyy-MM-dd HH:mm:ss.fff zzz).
+                _viewModel.Messages[0].Text.ShouldStartWith("2026-08-04 11:19:56.000 +00:00 Test message");
+            }
+            finally
+            {
+                CultureInfo.CurrentCulture = originalCulture;
+            }
+        }
+
+        private static StudioLogEntry CreateEntry(LogEventLevel level, string message)
+        {
+            return new StudioLogEntry(DateTimeOffset.Now, level, message, null);
         }
     }
 }

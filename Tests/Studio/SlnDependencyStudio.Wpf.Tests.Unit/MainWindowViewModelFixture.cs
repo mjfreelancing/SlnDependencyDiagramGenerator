@@ -5,6 +5,7 @@ using NSubstitute.ExceptionExtensions;
 using ReactiveUI;
 using Shouldly;
 using SlnDependencyStudio.Shared.Config;
+using SlnDependencyStudio.Shared.Logging;
 using SlnDependencyStudio.Wpf.Abstractions.IO;
 using SlnDependencyStudio.Wpf.Controls;
 using SlnDependencyStudio.Wpf.Features.Application;
@@ -59,8 +60,7 @@ public class MainWindowViewModelFixture
         appSettings.CurrentState.Returns(new ApplicationState());
 
         var outputPanelViewModel = new OutputPanelViewModel(
-            Substitute.For<AllOverIt.Serilog.Sinks.Observable.IObservableSink>(),
-            new Serilog.Core.LoggingLevelSwitch(Serilog.Events.LogEventLevel.Information),
+            new StudioLogBuffer(),
             appSettings,
             Substitute.For<IFileSystem>(),
             Substitute.For<ILogger<OutputPanelViewModel>>());

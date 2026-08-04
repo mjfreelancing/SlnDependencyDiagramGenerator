@@ -123,10 +123,13 @@ The CLI returns deterministic exit codes suitable for script automation.
 - Logs are written to a `logs` subfolder relative to the `.sds` file being processed.
 - File naming pattern: `{configFileBaseName}-{Date}.txt` (e.g. `sample-2026-07-25.txt`).
 - This provides a persistent record for troubleshooting past runs.
+- Rolling file logs always capture **all log levels (Debug and above)**; the `--verbose` flag does not change what is written to the file.
 
 ### Verbosity
 
 The generator and renderers emit informational messages about project discovery, framework processing, and diagram creation, all of which appear in both the console and rolling file logs.
+
+The console shows **Information level and above** by default; passing `--verbose` / `-v` lowers the console level to **Debug**. Rolling file logs always capture Debug level and above regardless of the `--verbose` flag.
 
 ---
 

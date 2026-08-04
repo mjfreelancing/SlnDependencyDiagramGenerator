@@ -239,7 +239,7 @@ The output panel is docked at the bottom of the main window. It displays all non
 | -------------------------- | -------------------------------------------------------------------------------------------------------------------- |
 | **Real-time streaming**    | Messages appear as they are produced during analysis and generation.                                                 |
 | **Log level coloring**     | Error (red), Warning (yellow), Information (white), Debug (gray).                                                    |
-| **Verbose logging toggle** | When enabled, all application log events (Information level and above) also appear in the output panel. Default: on. |
+| **Verbose logging toggle** | When enabled, Debug-level application log events are also shown in the output panel; when disabled, only Information level and above are shown. This is a display filter only — it does not change what is written to the rolling log file. Default: off. |
 | **Auto-scroll**            | Automatically scrolls to the bottom when new messages arrive. Default: on.                                           |
 | **Word wrap**              | Toggle to wrap long lines (default: off).                                                                            |
 | **Clear**                  | Clears all messages from the panel.                                                                                  |
@@ -272,6 +272,8 @@ Choose between **Light** and **Dark** themes using MaterialDesignThemes' Bundled
 ### Log Retention
 
 Number of days to retain rolling log files (default: 30 days). Logs are written to `%APPDATA%\SlnDependencyStudio\Logs\` with the naming pattern `{projectFileBaseName}-{Date}.txt`.
+
+Rolling log files always capture **all log levels (Debug and above)**, independent of the output panel's Verbose toggle. The toggle only controls which levels are displayed in the output panel; it does not affect what is written to disk.
 
 ### State Persistence
 

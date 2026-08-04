@@ -1,11 +1,10 @@
-using AllOverIt.Serilog.Extensions;
-using AllOverIt.Serilog.Sinks.Observable;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using ReactiveUI.Builder;
 using SlnDependencyDiagramGenerator.Extensions;
 using SlnDependencyStudio.Shared.Extensions;
+using SlnDependencyStudio.Shared.Logging;
 using SlnDependencyStudio.Wpf.Extensions;
 using SlnDependencyStudio.Wpf.Features.Application;
 using System.IO;
@@ -30,14 +29,15 @@ public partial class App : Application
             .WithWpf()
             .BuildApp();
 
-        // Create sink instances that must live for the application lifetime.
-        // ObservableSink: streams log events to subscribers (OutputPanelViewModel).
-        var observableSink = new ObservableSink();
+        // Create the log buffer that captures events emitted before the output panel subscribes.
+        // StudioLogBuffer: queues entries until the OutputPanelViewModel subscribes (during
+        // main-window construction), then relays live events. Rooted for the app lifetime.
+        var logBuffer = new StudioLogBuffer();
 
         _host = new HostBuilder()
             .ConfigureServices((context, services) =>
             {
-                services.AddSingleton<IObservableSink>(observableSink);
+                services.AddSingleton<IStudioLogBuffer>(logBuffer);
 
                 // Dependency diagram generator services from the core library.
                 var (_, validationRegistry) = services.AddSlnDependencyGenerator();
@@ -51,7 +51,7 @@ public partial class App : Application
             .UseStudioSerilog(
                 (_, configuration) =>
                 {
-                    configuration.WriteTo.Observable(observableSink);
+                    configuration.WriteTo.Sink(new StudioLogSink(logBuffer));
                 },
                 logDirectory: DefaultLogDirectory,
                 retentionDays: ApplicationSettingsStartupReader.ReadLogRetentionDays())
