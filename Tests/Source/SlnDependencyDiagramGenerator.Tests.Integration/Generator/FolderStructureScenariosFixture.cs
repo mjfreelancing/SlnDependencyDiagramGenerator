@@ -1,11 +1,8 @@
-﻿using SlnDependencyDiagramGenerator.Config;
+﻿using Shouldly;
+using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Generator;
-using SlnDependencyDiagramGenerator.Generator.Discovery;
-using SlnDependencyDiagramGenerator.Generator.ToolDetection;
 using SlnDependencyDiagramGenerator.Tests.Integration.Support;
 using SlnDependencyDiagramGenerator.Tests.Shared;
-using Shouldly;
-using System.Threading;
 
 namespace SlnDependencyDiagramGenerator.Tests.Integration.Generator;
 
@@ -84,12 +81,12 @@ public class FolderStructureScenariosFixture : FixtureCollectionTestBase
             await firstRunGenerator.CreateDiagramsAsync(firstRunConfig, CancellationToken.None);
 
             var staleFilePath = Path.Combine(tempDirectory.DirectoryPath, "net10.0", "stale.tmp");
-            await File.WriteAllTextAsync(staleFilePath, "stale");
+            await File.WriteAllTextAsync(staleFilePath, "stale", TestContext.Current.CancellationToken);
 
             var secondRunConfig = IntegrationTestHarness.CreateConfig(solutionPath, tempDirectory.DirectoryPath, options);
             var secondRunGenerator = IntegrationTestHarness.CreateGenerator();
 
-            await secondRunGenerator.CreateDiagramsAsync(secondRunConfig, CancellationToken.None);
+            await secondRunGenerator.CreateDiagramsAsync(secondRunConfig, TestContext.Current.CancellationToken);
 
             File.Exists(staleFilePath).ShouldBeFalse();
         }

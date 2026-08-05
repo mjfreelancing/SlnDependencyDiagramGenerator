@@ -66,7 +66,7 @@ public class CommandLineSetupFixture
         var parseResult = root.Parse("run --cf file.sds");
         parseResult.Errors.ShouldBeEmpty();
 
-        await parseResult.InvokeAsync();
+        await parseResult.InvokeAsync(cancellationToken: TestContext.Current.CancellationToken);
         await handler.Received(1).HandleAsync("file.sds", Arg.Any<CancellationToken>());
     }
 
@@ -85,7 +85,7 @@ public class CommandLineSetupFixture
             .Build(Substitute.For<ILogger>(), out _);
 
         var parseResult = root.Parse("validate --cf other.sds");
-        await parseResult.InvokeAsync();
+        await parseResult.InvokeAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         await handler.Received(1).HandleAsync("other.sds", Arg.Any<CancellationToken>());
         exitCode.ShouldBe(99);
@@ -106,7 +106,7 @@ public class CommandLineSetupFixture
             .Build(Substitute.For<ILogger>(), out _);
 
         var parseResult = root.Parse("run --cf test.sds");
-        await parseResult.InvokeAsync();
+        await parseResult.InvokeAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         await handler.Received(1).HandleAsync("test.sds", Arg.Any<CancellationToken>());
         exitCode.ShouldBe(42);
@@ -123,7 +123,7 @@ public class CommandLineSetupFixture
             .Build(logger, out _);
 
         var parseResult = root.Parse("--cf test.sds");
-        await parseResult.InvokeAsync();
+        await parseResult.InvokeAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         logger.Received(1).Log(
             Arg.Is<LogLevel>(level => level == LogLevel.Error),

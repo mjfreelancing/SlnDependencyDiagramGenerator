@@ -3,8 +3,6 @@ using NSubstitute;
 using Shouldly;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyStudio.Shared.Config;
-using SlnDependencyStudio.Wpf.Features.Diagrams;
-using SlnDependencyStudio.Wpf.Features.Export;
 using SlnDependencyStudio.Wpf.Features.Project;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
 using SlnDependencyStudio.Wpf.Features.RecentProjects;
@@ -96,7 +94,7 @@ public class ProjectDocumentStoreFixture
                 .OpenAsync("test.sds", Arg.Any<CancellationToken>())
                 .Returns(CreateDocument("Test", "Desc"));
 
-            await _store.OpenAsync("test.sds");
+            await _store.OpenAsync("test.sds", TestContext.Current.CancellationToken);
 
             _store.HasDocument.ShouldBeTrue();
             _store.DocumentFilePath.ShouldBe("test.sds");
@@ -109,7 +107,7 @@ public class ProjectDocumentStoreFixture
                 .OpenAsync(@"C:\Projects\test.sds", Arg.Any<CancellationToken>())
                 .Returns(CreateDocument("Test", "Desc"));
 
-            await _store.OpenAsync(@"C:\Projects\test.sds");
+            await _store.OpenAsync(@"C:\Projects\test.sds", TestContext.Current.CancellationToken);
 
             _store.DocumentDirectory.ShouldBe(@"C:\Projects");
         }
@@ -124,7 +122,7 @@ public class ProjectDocumentStoreFixture
                 .OpenAsync(@"C:\Projects\test.sds", Arg.Any<CancellationToken>())
                 .Returns(document);
 
-            await _store.OpenAsync(@"C:\Projects\test.sds");
+            await _store.OpenAsync(@"C:\Projects\test.sds", TestContext.Current.CancellationToken);
 
             _store.SolutionOptionsEditor.SolutionPath.Value.ShouldBe(@"..\MySolution.sln");
         }
@@ -139,7 +137,7 @@ public class ProjectDocumentStoreFixture
                 .OpenAsync(@"C:\Projects\test.sds", Arg.Any<CancellationToken>())
                 .Returns(document);
 
-            await _store.OpenAsync(@"C:\Projects\test.sds");
+            await _store.OpenAsync(@"C:\Projects\test.sds", TestContext.Current.CancellationToken);
 
             _store.ExportOptionsEditor.RootPath.Value.ShouldBe(@"..\Output");
         }
@@ -154,7 +152,7 @@ public class ProjectDocumentStoreFixture
                 .OpenAsync(@"C:\Projects\test.sds", Arg.Any<CancellationToken>())
                 .Returns(document);
 
-            await _store.OpenAsync(@"C:\Projects\test.sds");
+            await _store.OpenAsync(@"C:\Projects\test.sds", TestContext.Current.CancellationToken);
 
             _store.ExportOptionsEditor.ClearContents.Value.ShouldBeTrue();
         }
@@ -169,7 +167,7 @@ public class ProjectDocumentStoreFixture
                 .OpenAsync(@"C:\Projects\test.sds", Arg.Any<CancellationToken>())
                 .Returns(document);
 
-            await _store.OpenAsync(@"C:\Projects\test.sds");
+            await _store.OpenAsync(@"C:\Projects\test.sds", TestContext.Current.CancellationToken);
 
             _store.ExportOptionsEditor.ImageFormats.Items.ShouldContain(DiagramImageFormat.Png);
             _store.ExportOptionsEditor.ImageFormats.Items.ShouldContain(DiagramImageFormat.Svg);
@@ -185,7 +183,7 @@ public class ProjectDocumentStoreFixture
                 .OpenAsync(@"C:\Projects\test.sds", Arg.Any<CancellationToken>())
                 .Returns(document);
 
-            await _store.OpenAsync(@"C:\Projects\test.sds");
+            await _store.OpenAsync(@"C:\Projects\test.sds", TestContext.Current.CancellationToken);
 
             _store.DiagramOptionsEditor.Formats.Items.ShouldContain(DiagramFormat.Mermaid);
             _store.DiagramOptionsEditor.Formats.Items.Count.ShouldBe(1);
@@ -198,7 +196,7 @@ public class ProjectDocumentStoreFixture
                 .OpenAsync("test.sds", Arg.Any<CancellationToken>())
                 .Returns(CreateDocument("Test Project", "A description"));
 
-            await _store.OpenAsync("test.sds");
+            await _store.OpenAsync("test.sds", TestContext.Current.CancellationToken);
 
             _store.MetadataEditor.ProjectName.Value.ShouldBe("Test Project");
             _store.MetadataEditor.Description.Value.ShouldBe("A description");
@@ -211,7 +209,7 @@ public class ProjectDocumentStoreFixture
                 .OpenAsync("test.sds", Arg.Any<CancellationToken>())
                 .Returns(CreateDocument("Name", "Desc"));
 
-            await _store.OpenAsync("test.sds");
+            await _store.OpenAsync("test.sds", TestContext.Current.CancellationToken);
 
             _store.IsDirty.ShouldBeFalse();
         }
@@ -226,7 +224,7 @@ public class ProjectDocumentStoreFixture
                 .OpenAsync("test.sds", Arg.Any<CancellationToken>())
                 .Returns(document);
 
-            await _store.OpenAsync("test.sds");
+            await _store.OpenAsync("test.sds", TestContext.Current.CancellationToken);
 
             _store.RestoreSolutionEditor.RestoreSolution.Value.ShouldBeFalse();
         }
@@ -244,7 +242,7 @@ public class ProjectDocumentStoreFixture
                 .OpenAsync("test.sds", Arg.Any<CancellationToken>())
                 .Returns(document);
 
-            await _store.OpenAsync("test.sds");
+            await _store.OpenAsync("test.sds", TestContext.Current.CancellationToken);
 
             _store.PostGenerationEditor.Enabled.Value.ShouldBeTrue();
             _store.PostGenerationEditor.Command.Value.ShouldBe("deploy.cmd");
@@ -259,7 +257,7 @@ public class ProjectDocumentStoreFixture
                 .OpenAsync("test.sds", Arg.Any<CancellationToken>())
                 .Returns(CreateDocument("Name", "Desc"));
 
-            await _store.OpenAsync("test.sds");
+            await _store.OpenAsync("test.sds", TestContext.Current.CancellationToken);
 
             _store.RestoreSolutionEditor.RestoreSolution.Value = false;
 
@@ -273,7 +271,7 @@ public class ProjectDocumentStoreFixture
                 .OpenAsync("test.sds", Arg.Any<CancellationToken>())
                 .Returns(CreateDocument("Name", "Desc"));
 
-            await _store.OpenAsync("test.sds");
+            await _store.OpenAsync("test.sds", TestContext.Current.CancellationToken);
 
             _store.PostGenerationEditor.Command.Value = "deploy.cmd";
 
@@ -291,8 +289,8 @@ public class ProjectDocumentStoreFixture
                 .OpenAsync("second.sds", Arg.Any<CancellationToken>())
                 .Returns(CreateDocument("Second", "SecondDesc"));
 
-            await _store.OpenAsync("first.sds");
-            await _store.OpenAsync("second.sds");
+            await _store.OpenAsync("first.sds", TestContext.Current.CancellationToken);
+            await _store.OpenAsync("second.sds", TestContext.Current.CancellationToken);
 
             _store.DocumentFilePath.ShouldBe("second.sds");
             _store.MetadataEditor.ProjectName.Value.ShouldBe("Second");
@@ -306,7 +304,7 @@ public class ProjectDocumentStoreFixture
                 .OpenAsync("test.sds", Arg.Any<CancellationToken>())
                 .Returns(CreateDocument("Name", "Desc"));
 
-            await _store.OpenAsync("test.sds");
+            await _store.OpenAsync("test.sds", TestContext.Current.CancellationToken);
 
             _recentProjects.Received(1).Add("test.sds");
         }
@@ -322,13 +320,13 @@ public class ProjectDocumentStoreFixture
                 .OpenAsync("second.sds", Arg.Any<CancellationToken>())
                 .Returns(CreateDocument("Second", "Desc"));
 
-            await _store.OpenAsync("first.sds");
+            await _store.OpenAsync("first.sds", TestContext.Current.CancellationToken);
             _store.MetadataEditor.ProjectName.Value = "Changed";
 
             _store.IsDirty.ShouldBeTrue();
 
             // Opening a different file discards changes — should be clean.
-            await _store.OpenAsync("second.sds");
+            await _store.OpenAsync("second.sds", TestContext.Current.CancellationToken);
 
             _store.IsDirty.ShouldBeFalse();
         }
@@ -340,7 +338,7 @@ public class ProjectDocumentStoreFixture
                 .OpenAsync("test.sds", Arg.Any<CancellationToken>())
                 .Returns(CreateDocument("Name", "Desc"));
 
-            await _store.OpenAsync("test.sds");
+            await _store.OpenAsync("test.sds", TestContext.Current.CancellationToken);
 
             _store.SolutionOptionsEditor.SolutionPath.Value = @"C:\New\path.sln";
 
@@ -354,7 +352,7 @@ public class ProjectDocumentStoreFixture
                 .OpenAsync("test.sds", Arg.Any<CancellationToken>())
                 .Returns(CreateDocument("Name", "Desc"));
 
-            await _store.OpenAsync("test.sds");
+            await _store.OpenAsync("test.sds", TestContext.Current.CancellationToken);
 
             _store.ExportOptionsEditor.RootPath.Value = @"C:\New\Output";
 
@@ -368,7 +366,7 @@ public class ProjectDocumentStoreFixture
                 .OpenAsync("test.sds", Arg.Any<CancellationToken>())
                 .Returns(CreateDocument("Name", "Desc"));
 
-            await _store.OpenAsync("test.sds");
+            await _store.OpenAsync("test.sds", TestContext.Current.CancellationToken);
 
             _store.DiagramOptionsEditor.Formats.Items.Add(DiagramFormat.D2);
 
@@ -385,13 +383,13 @@ public class ProjectDocumentStoreFixture
                 .OpenAsync("test.sds", Arg.Any<CancellationToken>())
                 .Returns(CreateDocument("Name", "Desc"));
 
-            await _store.OpenAsync("test.sds");
+            await _store.OpenAsync("test.sds", TestContext.Current.CancellationToken);
 
             _store.MetadataEditor.ProjectName.Value = "Changed";
 
             _store.IsDirty.ShouldBeTrue();
 
-            await _store.SaveAsync();
+            await _store.SaveAsync(TestContext.Current.CancellationToken);
 
             _store.IsDirty.ShouldBeFalse();
         }
@@ -403,9 +401,9 @@ public class ProjectDocumentStoreFixture
                 .OpenAsync("test.sds", Arg.Any<CancellationToken>())
                 .Returns(CreateDocument("Name", "Desc"));
 
-            await _store.OpenAsync("test.sds");
+            await _store.OpenAsync("test.sds", TestContext.Current.CancellationToken);
 
-            await _store.SaveAsync();
+            await _store.SaveAsync(TestContext.Current.CancellationToken);
 
             await _projectService.Received(1).SaveAsync(
                 Arg.Any<DependencyProjectDocument>(),
@@ -423,12 +421,12 @@ public class ProjectDocumentStoreFixture
                 .OpenAsync("test.sds", Arg.Any<CancellationToken>())
                 .Returns(document);
 
-            await _store.OpenAsync("test.sds");
+            await _store.OpenAsync("test.sds", TestContext.Current.CancellationToken);
 
             _store.RestoreSolutionEditor.RestoreSolution.Value = false;
             _store.PostGenerationEditor.Command.Value = "deploy.cmd";
 
-            await _store.SaveAsync();
+            await _store.SaveAsync(TestContext.Current.CancellationToken);
 
             document.RestoreSolution.ShouldBeFalse();
             document.PostGeneration.Command.ShouldBe("deploy.cmd");
@@ -444,11 +442,11 @@ public class ProjectDocumentStoreFixture
                 .OpenAsync("old.sds", Arg.Any<CancellationToken>())
                 .Returns(CreateDocument("Name", "Desc"));
 
-            await _store.OpenAsync("old.sds");
+            await _store.OpenAsync("old.sds", TestContext.Current.CancellationToken);
 
             _store.MetadataEditor.ProjectName.Value = "Changed";
 
-            await _store.SaveAsAsync("new.sds");
+            await _store.SaveAsAsync("new.sds", TestContext.Current.CancellationToken);
 
             _store.DocumentFilePath.ShouldBe("new.sds");
             _store.IsDirty.ShouldBeFalse();
@@ -461,8 +459,8 @@ public class ProjectDocumentStoreFixture
                 .OpenAsync("old.sds", Arg.Any<CancellationToken>())
                 .Returns(CreateDocument("Name", "Desc"));
 
-            await _store.OpenAsync("old.sds");
-            await _store.SaveAsAsync("new.sds");
+            await _store.OpenAsync("old.sds", TestContext.Current.CancellationToken);
+            await _store.SaveAsAsync("new.sds", TestContext.Current.CancellationToken);
 
             _recentProjects.Received(1).Add("new.sds");
         }
@@ -487,7 +485,7 @@ public class ProjectDocumentStoreFixture
                 .OpenAsync("test.sds", Arg.Any<CancellationToken>())
                 .Returns(CreateDocument("Name", "Desc"));
 
-            await _store.OpenAsync("test.sds");
+            await _store.OpenAsync("test.sds", TestContext.Current.CancellationToken);
 
             _store.MetadataEditor.ProjectName.Value = "Changed";
 
@@ -509,10 +507,10 @@ public class ProjectDocumentStoreFixture
                 .OpenAsync("second.sds", Arg.Any<CancellationToken>())
                 .Returns(CreateDocument("Second", "Desc"));
 
-            await _store.OpenAsync("first.sds");
+            await _store.OpenAsync("first.sds", TestContext.Current.CancellationToken);
             _store.Close();
 
-            await _store.OpenAsync("second.sds");
+            await _store.OpenAsync("second.sds", TestContext.Current.CancellationToken);
 
             _store.HasDocument.ShouldBeTrue();
             _store.DocumentFilePath.ShouldBe("second.sds");
@@ -529,7 +527,7 @@ public class ProjectDocumentStoreFixture
                 .OpenAsync("test.sds", Arg.Any<CancellationToken>())
                 .Returns(document);
 
-            await _store.OpenAsync("test.sds");
+            await _store.OpenAsync("test.sds", TestContext.Current.CancellationToken);
 
             _store.SolutionOptionsEditor.SolutionPath.Value.ShouldBe(@"C:\MySolution.sln");
 
@@ -548,7 +546,7 @@ public class ProjectDocumentStoreFixture
                 .OpenAsync("test.sds", Arg.Any<CancellationToken>())
                 .Returns(document);
 
-            await _store.OpenAsync("test.sds");
+            await _store.OpenAsync("test.sds", TestContext.Current.CancellationToken);
 
             _store.ExportOptionsEditor.RootPath.Value.ShouldBe(@"C:\Output");
 
@@ -567,7 +565,7 @@ public class ProjectDocumentStoreFixture
                 .OpenAsync("test.sds", Arg.Any<CancellationToken>())
                 .Returns(document);
 
-            await _store.OpenAsync("test.sds");
+            await _store.OpenAsync("test.sds", TestContext.Current.CancellationToken);
 
             _store.DiagramOptionsEditor.Formats.Items.ShouldContain(DiagramFormat.D2);
 
@@ -583,7 +581,7 @@ public class ProjectDocumentStoreFixture
                 .OpenAsync(@"C:\Projects\test.sds", Arg.Any<CancellationToken>())
                 .Returns(CreateDocument("Name", "Desc"));
 
-            await _store.OpenAsync(@"C:\Projects\test.sds");
+            await _store.OpenAsync(@"C:\Projects\test.sds", TestContext.Current.CancellationToken);
 
             _store.DocumentDirectory.ShouldBe(@"C:\Projects");
 
@@ -602,7 +600,7 @@ public class ProjectDocumentStoreFixture
                 .OpenAsync("test.sds", Arg.Any<CancellationToken>())
                 .Returns(document);
 
-            await _store.OpenAsync("test.sds");
+            await _store.OpenAsync("test.sds", TestContext.Current.CancellationToken);
 
             _store.RestoreSolutionEditor.RestoreSolution.Value.ShouldBeFalse();
 
@@ -622,7 +620,7 @@ public class ProjectDocumentStoreFixture
                 .OpenAsync("test.sds", Arg.Any<CancellationToken>())
                 .Returns(document);
 
-            await _store.OpenAsync("test.sds");
+            await _store.OpenAsync("test.sds", TestContext.Current.CancellationToken);
 
             _store.PostGenerationEditor.Enabled.Value.ShouldBeTrue();
 
@@ -644,7 +642,7 @@ public class ProjectDocumentStoreFixture
                 .OpenAsync("test.sds", Arg.Any<CancellationToken>())
                 .Returns(document);
 
-            await _store.OpenAsync("test.sds");
+            await _store.OpenAsync("test.sds", TestContext.Current.CancellationToken);
 
             _store.RestoreSolutionEditor.RestoreSolution.Value = false;
             _store.PostGenerationEditor.Command.Value = "deploy.cmd";
@@ -667,13 +665,13 @@ public class ProjectDocumentStoreFixture
 
             _store.HasDocument.ShouldBeFalse();
 
-            await _store.OpenAsync("test.sds");
+            await _store.OpenAsync("test.sds", TestContext.Current.CancellationToken);
             _store.HasDocument.ShouldBeTrue();
 
             _store.Close();
             _store.HasDocument.ShouldBeFalse();
 
-            await _store.OpenAsync("test.sds");
+            await _store.OpenAsync("test.sds", TestContext.Current.CancellationToken);
             _store.HasDocument.ShouldBeTrue();
         }
     }
@@ -693,7 +691,7 @@ public class ProjectDocumentStoreFixture
                 .OpenAsync("test.sds", Arg.Any<CancellationToken>())
                 .Returns(CreateDocument("Name", "Desc"));
 
-            await _store.OpenAsync("test.sds");
+            await _store.OpenAsync("test.sds", TestContext.Current.CancellationToken);
 
             _store.IsTransitioning.ShouldBeFalse();
         }

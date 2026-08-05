@@ -28,13 +28,13 @@ public class SettingsMigrationFixture : IDisposable
 
         Directory.CreateDirectory(SettingsDir);
 
-        await File.WriteAllTextAsync(SettingsFile, legacyJson);
+        await File.WriteAllTextAsync(SettingsFile, legacyJson, TestContext.Current.CancellationToken);
 
         var provider = IntegrationTestHarness.CreateServiceProvider();
         await using var scope = provider.CreateAsyncScope();
         var settingsService = scope.ServiceProvider.GetRequiredService<IApplicationSettingsService>();
 
-        await settingsService.LoadAsync();
+        await settingsService.LoadAsync(TestContext.Current.CancellationToken);
 
         // Legacy field loads correctly
         settingsService.CurrentSettings.DefaultProjectFolder.ShouldBe(@"C:\Legacy");
@@ -54,20 +54,20 @@ public class SettingsMigrationFixture : IDisposable
         var legacyJson = """{"defaultProjectFolder": "C:\\Upgrade"}""";
 
         Directory.CreateDirectory(SettingsDir);
-        await File.WriteAllTextAsync(SettingsFile, legacyJson);
+        await File.WriteAllTextAsync(SettingsFile, legacyJson, TestContext.Current.CancellationToken);
 
         var provider = IntegrationTestHarness.CreateServiceProvider();
         await using var scope = provider.CreateAsyncScope();
         var settingsService = scope.ServiceProvider.GetRequiredService<IApplicationSettingsService>();
 
-        await settingsService.LoadAsync();
+        await settingsService.LoadAsync(TestContext.Current.CancellationToken);
 
         // Modify and save
         settingsService.CurrentSettings.DefaultProjectFolder = @"C:\Upgraded";
-        await settingsService.SaveSettingsAsync();
+        await settingsService.SaveSettingsAsync(TestContext.Current.CancellationToken);
 
         // Re-read the raw file — verify it contains the current schema
-        var rawJson = await File.ReadAllTextAsync(SettingsFile);
+        var rawJson = await File.ReadAllTextAsync(SettingsFile, TestContext.Current.CancellationToken);
         rawJson.ShouldContain("logRetentionDays");
         rawJson.ShouldContain("toolPathOverrides");
         rawJson.ShouldContain("output");

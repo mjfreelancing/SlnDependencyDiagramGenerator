@@ -93,7 +93,9 @@ public class OutputPanelViewModelFixture
             _viewModel.IsVerbose = false;
 
             _settings.Output.IsVerboseLogging.ShouldBeFalse();
-            _appSettings.Received(1).SaveSettingsAsync();
+
+            // The view model explicitly passes CancellationToken.None to SaveSettingsAsync.
+            _appSettings.Received(1).SaveSettingsAsync(CancellationToken.None);
         }
 
         [Fact]
@@ -102,7 +104,7 @@ public class OutputPanelViewModelFixture
             // Persistence is not called during construction because _initializing is true.
             // This is verified indirectly: the constructor does not throw and
             // _appSettings.SaveSettingsAsync is not called.
-            _appSettings.DidNotReceive().SaveSettingsAsync();
+            _appSettings.DidNotReceive().SaveSettingsAsync(Arg.Any<CancellationToken>());
         }
     }
 
@@ -114,7 +116,9 @@ public class OutputPanelViewModelFixture
             _viewModel.WrapContent = true;
 
             _settings.Output.WrapContent.ShouldBeTrue();
-            _appSettings.Received(1).SaveSettingsAsync();
+
+            // The view model explicitly passes CancellationToken.None to SaveSettingsAsync.
+            _appSettings.Received(1).SaveSettingsAsync(CancellationToken.None);
         }
     }
 

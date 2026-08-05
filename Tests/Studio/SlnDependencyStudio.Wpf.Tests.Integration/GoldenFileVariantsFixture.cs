@@ -27,7 +27,7 @@ public class GoldenFileVariantsFixture
         var provider = IntegrationTestHarness.CreateServiceProvider();
         var serializer = provider.GetRequiredService<IDependencyProjectSerializer>();
 
-        var document = await serializer.DeserializeAsync(goldenFile);
+        var document = await serializer.DeserializeAsync(goldenFile, TestContext.Current.CancellationToken);
 
         document.ShouldNotBeNull();
         document.SchemaVersion.ShouldBe(1);
@@ -49,13 +49,13 @@ public class GoldenFileVariantsFixture
         var provider = IntegrationTestHarness.CreateServiceProvider();
         var serializer = provider.GetRequiredService<IDependencyProjectSerializer>();
 
-        var original = await serializer.DeserializeAsync(goldenFile);
+        var original = await serializer.DeserializeAsync(goldenFile, TestContext.Current.CancellationToken);
 
         using var tempFile = new DisposableTempFile(".sds");
 
-        await serializer.SerializeAsync(original, tempFile.FilePath);
+        await serializer.SerializeAsync(original, tempFile.FilePath, TestContext.Current.CancellationToken);
 
-        var reloaded = await serializer.DeserializeAsync(tempFile.FilePath);
+        var reloaded = await serializer.DeserializeAsync(tempFile.FilePath, TestContext.Current.CancellationToken);
 
         reloaded.ShouldNotBeNull();
         reloaded.SchemaVersion.ShouldBe(original.SchemaVersion);

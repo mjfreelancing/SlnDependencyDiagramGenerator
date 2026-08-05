@@ -1,8 +1,8 @@
-﻿using SlnDependencyDiagramGenerator.Exceptions;
+﻿using Shouldly;
+using SlnDependencyDiagramGenerator.Exceptions;
 using SlnDependencyDiagramGenerator.Parser;
 using SlnDependencyDiagramGenerator.Tests.Integration.Support;
 using SlnDependencyDiagramGenerator.Tests.Shared;
-using Shouldly;
 
 namespace SlnDependencyDiagramGenerator.Tests.Integration.Parser;
 
@@ -519,7 +519,7 @@ public class ParserScenariosFixture : FixtureCollectionTestBase
             using var tempDirectory = new DisposableTempDirectory("malformed-sln");
             var malformedSolutionPath = Path.Combine(tempDirectory.DirectoryPath, "Malformed.sln");
 
-            await File.WriteAllTextAsync(malformedSolutionPath, "This is not a valid solution file.");
+            await File.WriteAllTextAsync(malformedSolutionPath, "This is not a valid solution file.", TestContext.Current.CancellationToken);
 
             var parser = new SolutionParser();
             string[] includeRegex = [@"^.*\.csproj$"];
@@ -538,7 +538,7 @@ public class ParserScenariosFixture : FixtureCollectionTestBase
             using var tempDirectory = new DisposableTempDirectory("malformed-slnx");
             var malformedSolutionPath = Path.Combine(tempDirectory.DirectoryPath, "Malformed.slnx");
 
-            await File.WriteAllTextAsync(malformedSolutionPath, "<Solution><Project Path='Broken'");
+            await File.WriteAllTextAsync(malformedSolutionPath, "<Solution><Project Path='Broken'", TestContext.Current.CancellationToken);
 
             var parser = new SolutionParser();
             string[] includeRegex = [@"^.*\.csproj$"];

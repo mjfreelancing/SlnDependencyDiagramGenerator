@@ -327,7 +327,7 @@ public class GenerationServiceFixture
 
             _logger.Records.ShouldNotContain(record => record.Message == "Generating diagrams...");
 
-            _ = _generatorFactory.DidNotReceiveWithAnyArgs().ExecuteAsync(default!, default);
+            _ = _generatorFactory.DidNotReceiveWithAnyArgs().ExecuteAsync(default!, TestContext.Current.CancellationToken);
         }
 
         [Fact]
@@ -386,7 +386,7 @@ public class GenerationServiceFixture
                 record.Level == LogLevel.Error && record.Message == "Solution restore failed: Restore failed");
 
             _logger.Records.ShouldNotContain(record => record.Message == "Generating diagrams...");
-            _ = _generatorFactory.DidNotReceiveWithAnyArgs().ExecuteAsync(default!, default);
+            _ = _generatorFactory.DidNotReceiveWithAnyArgs().ExecuteAsync(default!, TestContext.Current.CancellationToken);
         }
 
         [Fact]
@@ -589,7 +589,7 @@ public class GenerationServiceFixture
 
             _logger.Records.ShouldBeEmpty();
 
-            await _postGenRunnerFactory.DidNotReceiveWithAnyArgs().ExecuteAsync(default!, default);
+            await _postGenRunnerFactory.DidNotReceiveWithAnyArgs().ExecuteAsync(default!, TestContext.Current.CancellationToken);
         }
 
         [Fact]

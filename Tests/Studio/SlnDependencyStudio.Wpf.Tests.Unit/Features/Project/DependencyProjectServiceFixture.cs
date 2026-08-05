@@ -47,11 +47,11 @@ public class DependencyProjectServiceFixture
 
             _serializer.DeserializeAsync(filePath, Arg.Any<CancellationToken>()).Returns(expected);
 
-            var result = await _service.OpenAsync(filePath);
+            var result = await _service.OpenAsync(filePath, TestContext.Current.CancellationToken);
 
             result.ShouldBeSameAs(expected);
 
-            await _serializer.Received(1).DeserializeAsync(filePath, Arg.Any<CancellationToken>());
+            await _serializer.Received(1).DeserializeAsync(filePath, TestContext.Current.CancellationToken);
         }
 
         [Fact]
@@ -77,9 +77,9 @@ public class DependencyProjectServiceFixture
             var document = new DependencyProjectDocument();
             var filePath = @"C:\Projects\test.sds";
 
-            await _service.SaveAsync(document, filePath);
+            await _service.SaveAsync(document, filePath, TestContext.Current.CancellationToken);
 
-            await _serializer.Received(1).SerializeAsync(document, filePath, Arg.Any<CancellationToken>());
+            await _serializer.Received(1).SerializeAsync(document, filePath, TestContext.Current.CancellationToken);
         }
 
         [Fact]

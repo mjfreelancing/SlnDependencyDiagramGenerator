@@ -35,7 +35,7 @@ public class SettingsPersistenceFixture : IDisposable
 
         var settingsService = scope.ServiceProvider.GetRequiredService<IApplicationSettingsService>();
 
-        await settingsService.LoadAsync();
+        await settingsService.LoadAsync(TestContext.Current.CancellationToken);
 
         settingsService.CurrentSettings.DefaultProjectFolder.ShouldBe(string.Empty);
         settingsService.CurrentSettings.LogRetentionDays.ShouldBe(31); // ApplicationSettings.DefaultLogRetentionDays
@@ -52,14 +52,14 @@ public class SettingsPersistenceFixture : IDisposable
 
         var settingsService = scope.ServiceProvider.GetRequiredService<IApplicationSettingsService>();
 
-        await settingsService.LoadAsync();
+        await settingsService.LoadAsync(TestContext.Current.CancellationToken);
 
         // Modify settings
         settingsService.CurrentSettings.DefaultProjectFolder = @"C:\TestProjects";
         settingsService.CurrentSettings.LogRetentionDays = 14;
 
         // Persist
-        await settingsService.SaveSettingsAsync();
+        await settingsService.SaveSettingsAsync(TestContext.Current.CancellationToken);
 
         // Verify file was created
         File.Exists(SettingsFile).ShouldBeTrue();
@@ -71,7 +71,7 @@ public class SettingsPersistenceFixture : IDisposable
 
         var settingsService2 = scope2.ServiceProvider.GetRequiredService<IApplicationSettingsService>();
 
-        await settingsService2.LoadAsync();
+        await settingsService2.LoadAsync(TestContext.Current.CancellationToken);
 
         settingsService2.CurrentSettings.DefaultProjectFolder.ShouldBe(@"C:\TestProjects");
         settingsService2.CurrentSettings.LogRetentionDays.ShouldBe(14);
@@ -86,7 +86,7 @@ public class SettingsPersistenceFixture : IDisposable
 
         var settingsService = scope.ServiceProvider.GetRequiredService<IApplicationSettingsService>();
 
-        await settingsService.LoadAsync();
+        await settingsService.LoadAsync(TestContext.Current.CancellationToken);
 
         // Modify state
         settingsService.CurrentState.RecentProjects.Add(@"C:\Recent\project1.sds");
@@ -105,7 +105,7 @@ public class SettingsPersistenceFixture : IDisposable
 
         var settingsService2 = scope2.ServiceProvider.GetRequiredService<IApplicationSettingsService>();
 
-        await settingsService2.LoadAsync();
+        await settingsService2.LoadAsync(TestContext.Current.CancellationToken);
 
         settingsService2.CurrentState.RecentProjects.Count.ShouldBe(2);
         settingsService2.CurrentState.RecentProjects.ShouldContain(@"C:\Recent\project1.sds");

@@ -28,7 +28,7 @@ public class ApplicationSettingsServiceFixture
 
             var service = CreateService(fileSystem);
 
-            await service.LoadAsync();
+            await service.LoadAsync(TestContext.Current.CancellationToken);
 
             service.CurrentSettings.DefaultProjectFolder.ShouldBe(string.Empty);
             service.CurrentSettings.LogRetentionDays.ShouldBe(31);
@@ -62,7 +62,7 @@ public class ApplicationSettingsServiceFixture
 
             var service = CreateService(serializer, fileSystem);
 
-            await service.LoadAsync();
+            await service.LoadAsync(TestContext.Current.CancellationToken);
 
             service.CurrentSettings.DefaultProjectFolder.ShouldBe(@"C:\Projects");
             service.CurrentSettings.LogRetentionDays.ShouldBe(14);
@@ -100,7 +100,7 @@ public class ApplicationSettingsServiceFixture
 
             var service = CreateService(serializer, fileSystem);
 
-            await service.LoadAsync();
+            await service.LoadAsync(TestContext.Current.CancellationToken);
 
             service.CurrentSettings.DefaultProjectFolder.ShouldBe(@"C:\Projects");
             service.CurrentSettings.Theme.ShouldBe(StudioTheme.Dark);
@@ -122,7 +122,7 @@ public class ApplicationSettingsServiceFixture
 
             var service = CreateService(serializer, fileSystem);
 
-            await service.LoadAsync();
+            await service.LoadAsync(TestContext.Current.CancellationToken);
 
             // Falls back to defaults instead of throwing.
             service.CurrentSettings.DefaultProjectFolder.ShouldBe(string.Empty);
@@ -145,7 +145,7 @@ public class ApplicationSettingsServiceFixture
 
             var service = CreateService(serializer, fileSystem);
 
-            await service.LoadAsync();
+            await service.LoadAsync(TestContext.Current.CancellationToken);
 
             // Falls back to defaults instead of throwing.
             service.CurrentState.RecentProjects.ShouldBeEmpty();
@@ -167,7 +167,7 @@ public class ApplicationSettingsServiceFixture
 
             fileSystem.OpenWrite(tempPath).Returns(writeStream);
 
-            await service.SaveSettingsAsync();
+            await service.SaveSettingsAsync(TestContext.Current.CancellationToken);
 
             // Verify directory was created
             fileSystem.Received(1).CreateDirectory(TestDir);
@@ -192,7 +192,7 @@ public class ApplicationSettingsServiceFixture
 
             fileSystem.OpenWrite(Arg.Any<string>()).Returns(new MemoryStream());
 
-            await service.SaveSettingsAsync();
+            await service.SaveSettingsAsync(TestContext.Current.CancellationToken);
 
             // Verify the serializer received the CurrentSettings instance with our modified values
             await serializer.Received(1).SerializeAsync(

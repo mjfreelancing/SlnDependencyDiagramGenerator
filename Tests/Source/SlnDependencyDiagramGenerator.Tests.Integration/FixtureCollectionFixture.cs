@@ -9,14 +9,14 @@ namespace SlnDependencyDiagramGenerator.Tests.Integration;
 public sealed class FixtureCollectionFixture : IAsyncLifetime
 {
     /// <inheritdoc />
-    public Task InitializeAsync()
+    public ValueTask InitializeAsync()
     {
-        return FixtureRestorer.RestoreAllAsync();
+        return new ValueTask(FixtureRestorer.RestoreAllAsync());
     }
 
     /// <inheritdoc />
-    public Task DisposeAsync()
+    public ValueTask DisposeAsync()
     {
-        return Task.CompletedTask;
+        return ValueTask.CompletedTask;
     }
 }

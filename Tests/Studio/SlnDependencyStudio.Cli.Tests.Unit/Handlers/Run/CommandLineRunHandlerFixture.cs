@@ -16,7 +16,6 @@ using SlnDependencyStudio.Shared.ProcessExecution.RestoreSolution;
 using SlnDependencyStudio.Shared.Serialization;
 using SlnDependencyStudio.Shared.Services;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 
 public class CommandLineRunHandlerFixture
 {
@@ -372,7 +371,7 @@ public class CommandLineRunHandlerFixture
             Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None);
 
         result.ShouldBe((int)StudioCliExitCode.DotNetRestoreFailed);
-        await dependencyGenerator.DidNotReceiveWithAnyArgs().CreateDiagramsAsync(default!, default);
+        await dependencyGenerator.DidNotReceiveWithAnyArgs().CreateDiagramsAsync(default!, TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -397,7 +396,7 @@ public class CommandLineRunHandlerFixture
             Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None);
 
         result.ShouldBe((int)StudioCliExitCode.DotNetRestoreFailed);
-        await restoreRunner.DidNotReceiveWithAnyArgs().RunAsync(default!, default);
+        await restoreRunner.DidNotReceiveWithAnyArgs().RunAsync(default!, TestContext.Current.CancellationToken);
     }
 
     [Fact]

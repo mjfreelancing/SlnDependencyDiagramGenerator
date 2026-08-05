@@ -26,10 +26,10 @@ public class DocumentRoundtripFixture
             format: DiagramFormat.D2);
 
         // Serialize to file
-        await serializer.SerializeAsync(original, tempFile.FilePath);
+        await serializer.SerializeAsync(original, tempFile.FilePath, TestContext.Current.CancellationToken);
 
         // Deserialize from file
-        var loaded = await serializer.DeserializeAsync(tempFile.FilePath);
+        var loaded = await serializer.DeserializeAsync(tempFile.FilePath, TestContext.Current.CancellationToken);
 
         // Verify
         loaded.ShouldNotBeNull();
@@ -70,10 +70,10 @@ public class DocumentRoundtripFixture
         }
         """;
 
-        await File.WriteAllTextAsync(tempFile.FilePath, json);
+        await File.WriteAllTextAsync(tempFile.FilePath, json, TestContext.Current.CancellationToken);
 
         // Deserialize
-        var loaded = await serializer.DeserializeAsync(tempFile.FilePath);
+        var loaded = await serializer.DeserializeAsync(tempFile.FilePath, TestContext.Current.CancellationToken);
 
         loaded.ShouldNotBeNull();
         loaded.Metadata.ProjectName.ShouldBe("Forward Compat");
@@ -98,7 +98,7 @@ public class DocumentRoundtripFixture
         var provider = IntegrationTestHarness.CreateServiceProvider();
         var serializer = provider.GetRequiredService<IDependencyProjectSerializer>();
 
-        var document = await serializer.DeserializeAsync(goldenFile);
+        var document = await serializer.DeserializeAsync(goldenFile, TestContext.Current.CancellationToken);
 
         document.ShouldNotBeNull();
         document.SchemaVersion.ShouldBe(1);

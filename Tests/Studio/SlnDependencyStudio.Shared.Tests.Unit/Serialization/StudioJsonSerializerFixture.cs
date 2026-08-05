@@ -94,11 +94,11 @@ public class StudioJsonSerializerFixture
             var value = new TestRecord { Id = 99, Name = "AsyncTest" };
 
             await using var stream = new MemoryStream();
-            await serializer.SerializeAsync(stream, value);
+            await serializer.SerializeAsync(stream, value, TestContext.Current.CancellationToken);
 
             stream.Position = 0;
             using var reader = new StreamReader(stream);
-            var json = await reader.ReadToEndAsync();
+            var json = await reader.ReadToEndAsync(TestContext.Current.CancellationToken);
 
             json.ShouldContain("\"id\": 99");
             json.ShouldContain("\"name\": \"AsyncTest\"");
@@ -163,7 +163,7 @@ public class StudioJsonSerializerFixture
             var bytes = Encoding.UTF8.GetBytes(json);
 
             using var stream = new MemoryStream(bytes);
-            var result = await serializer.DeserializeAsync<TestRecord>(stream);
+            var result = await serializer.DeserializeAsync<TestRecord>(stream, TestContext.Current.CancellationToken);
 
             result.ShouldNotBeNull();
             result!.Id.ShouldBe(10);
@@ -196,10 +196,10 @@ public class StudioJsonSerializerFixture
             var original = new TestRecord { Id = 200, Name = "StreamRoundtrip", Description = "via stream" };
 
             await using var stream = new MemoryStream();
-            await serializer.SerializeAsync(stream, original);
+            await serializer.SerializeAsync(stream, original, TestContext.Current.CancellationToken);
 
             stream.Position = 0;
-            var deserialized = await serializer.DeserializeAsync<TestRecord>(stream);
+            var deserialized = await serializer.DeserializeAsync<TestRecord>(stream, TestContext.Current.CancellationToken);
 
             deserialized.ShouldNotBeNull();
             deserialized!.Id.ShouldBe(original.Id);
