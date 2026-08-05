@@ -1,4 +1,4 @@
-using AllOverIt.ReactiveUI.Factories;
+﻿using AllOverIt.ReactiveUI.Factories;
 using Microsoft.Extensions.Logging;
 using SlnDependencyStudio.Wpf.Features.Application;
 using SlnDependencyStudio.Wpf.Features.Theming;
@@ -41,12 +41,15 @@ internal sealed class SlnDependencyWpfAppBootstrapper
             // Apply the persisted theme preference.
             _themeService.ApplyTheme(settings.Theme);
 
-            _logger.LogDebug("Applied theme: {Theme}", settings.Theme);
+            _logger.LogDebug("Creating main view");
 
             var mainWindow = (MainWindow)_viewFactory.CreateViewFor<MainWindowViewModel>();
+
+            _logger.LogDebug("Showing Main window");
+
             mainWindow.Show();
 
-            _logger.LogInformation("Main window shown");
+            _logger.LogDebug("Main window shown");
         }
         catch (Exception exception)
         {

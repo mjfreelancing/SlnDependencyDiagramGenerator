@@ -1,3 +1,4 @@
+﻿using Microsoft.Extensions.Logging;
 using ReactiveUI;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyStudio.Wpf.Controls;
@@ -13,6 +14,7 @@ internal sealed class ExportOptionsEditor : ReactiveObject, IExportOptionsEditor
 {
     private readonly CompositeDisposable _disposables = [];
     private readonly ObservableAsPropertyHelper<bool> _isDirty;
+    private readonly ILogger<ExportOptionsEditor> _logger;
 
     /// <inheritdoc />
     public TrackableValue<string> RootPath { get; } = new();
@@ -30,8 +32,10 @@ internal sealed class ExportOptionsEditor : ReactiveObject, IExportOptionsEditor
     public bool IsDirty => _isDirty.Value;
 
     /// <summary>Initializes a new instance of <see cref="ExportOptionsEditor"/>.</summary>
-    public ExportOptionsEditor()
+    public ExportOptionsEditor(ILogger<ExportOptionsEditor> logger)
     {
+        _logger = logger;
+
         InitializeTrackable(RootPath, string.Empty);
         InitializeTrackable(UseRelativePath, true);
         InitializeTrackable(ClearContents, false);
@@ -51,6 +55,8 @@ internal sealed class ExportOptionsEditor : ReactiveObject, IExportOptionsEditor
     /// <param name="source">The export options to load.</param>
     public void SetOriginalValues(GeneratorExportOptions source)
     {
+        _logger.LogDebug("Resetting {Editor}", nameof(ExportOptionsEditor));
+
         RootPath.SetOriginalValue(source.RootPath);
         ClearContents.SetOriginalValue(source.ClearContents);
         ImageFormats.SetOriginalItems(source.ImageFormats);

@@ -1,4 +1,4 @@
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using ReactiveUI.Builder;
@@ -71,7 +71,7 @@ public partial class App : Application
             var bootstrapper = _host.Services.GetRequiredService<SlnDependencyWpfAppBootstrapper>();
             await bootstrapper.RunAsync();
 
-            logger.LogInformation("SlnDependencyStudio startup initialised");
+            logger.LogInformation("SlnDependencyStudio bootstrapper initialised");
         }
         catch (Exception exception)
         {

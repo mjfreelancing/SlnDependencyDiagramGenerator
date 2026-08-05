@@ -1,3 +1,4 @@
+﻿using Microsoft.Extensions.Logging;
 using ReactiveUI;
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Wpf.Controls;
@@ -12,6 +13,7 @@ internal sealed class ProjectMetadataEditor : ReactiveObject, IProjectMetadataEd
 {
     private readonly CompositeDisposable _disposables = [];
     private readonly ObservableAsPropertyHelper<bool> _isDirty;
+    private readonly ILogger<ProjectMetadataEditor> _logger;
 
     /// <inheritdoc />
     public TrackableValue<string> ProjectName { get; } = new();
@@ -23,8 +25,10 @@ internal sealed class ProjectMetadataEditor : ReactiveObject, IProjectMetadataEd
     public bool IsDirty => _isDirty.Value;
 
     /// <summary>Initializes a new instance of <see cref="ProjectMetadataEditor"/>.</summary>
-    public ProjectMetadataEditor()
+    public ProjectMetadataEditor(ILogger<ProjectMetadataEditor> logger)
     {
+        _logger = logger;
+
         InitializeTrackable(ProjectName, string.Empty);
         InitializeTrackable(Description, string.Empty);
 
@@ -39,6 +43,8 @@ internal sealed class ProjectMetadataEditor : ReactiveObject, IProjectMetadataEd
     /// <param name="source">The document metadata to load.</param>
     public void SetOriginalValues(DependencyProjectMetadata source)
     {
+        _logger.LogDebug("Resetting {Editor}", nameof(ProjectMetadataEditor));
+
         ProjectName.SetOriginalValue(source.ProjectName);
         Description.SetOriginalValue(source.Description);
     }

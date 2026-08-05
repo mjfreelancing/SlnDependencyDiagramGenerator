@@ -1,11 +1,14 @@
+using SlnDependencyStudio.Shared.Config;
+using SlnDependencyStudio.Shared.DependencyInjection;
 using SlnDependencyStudio.Wpf.Controls;
+using SlnDependencyStudio.Wpf.Editors;
 
 namespace SlnDependencyStudio.Wpf.Features.Pipeline.PostGeneration;
 
 /// <summary>
-/// Read-only observable surface of the <see cref="SlnDependencyStudio.Shared.Config.PostGenerationConfig"/> editor wrapper.
+/// Observable editing surface of the <see cref="SlnDependencyStudio.Shared.Config.PostGenerationConfig"/> editor wrapper.
 /// </summary>
-public interface IPostGenerationConfigEditor
+public interface IPostGenerationConfigEditor : IStudioEditor, IStudioSingletonDependency
 {
     /// <summary><see langword="true"/> when any tracked value has diverged from its most recent baseline.</summary>
     bool IsDirty { get; }
@@ -21,4 +24,12 @@ public interface IPostGenerationConfigEditor
 
     /// <summary>The working directory for the command.</summary>
     TrackableValue<string> WorkingDirectory { get; }
+
+    /// <summary>Populates all TrackableValues from the given config and establishes a clean baseline.</summary>
+    /// <param name="source">The post-generation config to load.</param>
+    void SetOriginalValues(PostGenerationConfig source);
+
+    /// <summary>Writes current TrackableValue contents back to the given config instance.</summary>
+    /// <param name="target">The post-generation config to mutate.</param>
+    void FlushTo(PostGenerationConfig target);
 }

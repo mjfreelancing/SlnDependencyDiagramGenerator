@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+using NSubstitute;
 using Shouldly;
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Wpf.Features.Pipeline.PostGeneration;
@@ -7,7 +9,7 @@ namespace SlnDependencyStudio.Wpf.Tests.Unit.Features.Pipeline.PostGeneration;
 [Collection(nameof(ReactiveUIInitializer))]
 public class PostGenerationConfigEditorFixture : IDisposable
 {
-    private readonly PostGenerationConfigEditor _editor = new();
+    private readonly PostGenerationConfigEditor _editor = new(Substitute.For<ILogger<PostGenerationConfigEditor>>());
 
     public class Construction : PostGenerationConfigEditorFixture
     {

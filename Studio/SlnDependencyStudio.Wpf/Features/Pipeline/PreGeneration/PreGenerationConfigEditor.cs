@@ -1,3 +1,4 @@
+﻿using Microsoft.Extensions.Logging;
 using ReactiveUI;
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Wpf.Controls;
@@ -12,6 +13,7 @@ namespace SlnDependencyStudio.Wpf.Features.Pipeline.PreGeneration;
 internal sealed class PreGenerationConfigEditor : ReactiveObject, IPreGenerationConfigEditor, IDisposable
 {
     private readonly CompositeDisposable _disposables = [];
+    private readonly ILogger<PreGenerationConfigEditor> _logger;
     private bool _isDirty;
 
     /// <inheritdoc />
@@ -33,8 +35,10 @@ internal sealed class PreGenerationConfigEditor : ReactiveObject, IPreGeneration
     public bool IsDirty => _isDirty;
 
     /// <summary>Initializes a new instance with empty defaults.</summary>
-    public PreGenerationConfigEditor()
+    public PreGenerationConfigEditor(ILogger<PreGenerationConfigEditor> logger)
     {
+        _logger = logger;
+
         InitializeTrackable(Enabled, false);
         InitializeTrackable(Command, string.Empty);
         InitializeTrackable(Arguments, string.Empty);
@@ -60,6 +64,8 @@ internal sealed class PreGenerationConfigEditor : ReactiveObject, IPreGeneration
     /// <inheritdoc />
     public void SetOriginalValues(PreGenerationConfig source)
     {
+        _logger.LogDebug("Resetting {Editor}", nameof(PreGenerationConfigEditor));
+
         Enabled.SetOriginalValue(source.Enabled);
         Command.SetOriginalValue(source.Command);
         Arguments.SetOriginalValue(source.Arguments);

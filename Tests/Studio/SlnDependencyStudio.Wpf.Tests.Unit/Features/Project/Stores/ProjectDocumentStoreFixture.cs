@@ -1,11 +1,18 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Shouldly;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyStudio.Shared.Config;
+using SlnDependencyStudio.Wpf.Editors;
+using SlnDependencyStudio.Wpf.Features.Diagrams;
+using SlnDependencyStudio.Wpf.Features.Export;
+using SlnDependencyStudio.Wpf.Features.Pipeline.PostGeneration;
+using SlnDependencyStudio.Wpf.Features.Pipeline.PreGeneration;
+using SlnDependencyStudio.Wpf.Features.Pipeline.RestoreSolution;
 using SlnDependencyStudio.Wpf.Features.Project;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
 using SlnDependencyStudio.Wpf.Features.RecentProjects;
+using SlnDependencyStudio.Wpf.Features.Solution;
 
 namespace SlnDependencyStudio.Wpf.Tests.Unit.Features.Project.Stores;
 
@@ -18,7 +25,7 @@ public class ProjectDocumentStoreFixture
 
     public ProjectDocumentStoreFixture()
     {
-        _store = new ProjectDocumentStore(_projectService, _recentProjects, Substitute.For<ILogger<ProjectDocumentStore>>());
+        _store = new ProjectDocumentStore(_projectService, _recentProjects, CreateEditorFactory(), Substitute.For<ILogger<ProjectDocumentStore>>());
     }
 
     public class Construction : ProjectDocumentStoreFixture
@@ -703,6 +710,26 @@ public class ProjectDocumentStoreFixture
 
             _store.IsTransitioning.ShouldBeFalse();
         }
+    }
+
+    private static IStudioEditorFactory CreateEditorFactory()
+    {
+        var factory = Substitute.For<IStudioEditorFactory>();
+
+        // The store tests depend on the real editor wrappers, not substitutes: they assert that tracked
+        // values are populated from the document on open (SetOriginalValues), that edits flip the store's
+        // IsDirty via the editors' ReactiveUI observables, and that changes are flushed back on save
+        // (FlushTo). Substitutes would be no-ops on all three, so the factory must return the real
+        // concrete editor classes.
+        factory.CreateEditor<IProjectMetadataEditor>().Returns(new ProjectMetadataEditor(Substitute.For<ILogger<ProjectMetadataEditor>>()));
+        factory.CreateEditor<ISolutionOptionsEditor>().Returns(new SolutionOptionsEditor(Substitute.For<ILogger<SolutionOptionsEditor>>()));
+        factory.CreateEditor<IExportOptionsEditor>().Returns(new ExportOptionsEditor(Substitute.For<ILogger<ExportOptionsEditor>>()));
+        factory.CreateEditor<IDiagramOptionsEditor>().Returns(new DiagramOptionsEditor(Substitute.For<ILogger<DiagramOptionsEditor>>()));
+        factory.CreateEditor<IPreGenerationConfigEditor>().Returns(new PreGenerationConfigEditor(Substitute.For<ILogger<PreGenerationConfigEditor>>()));
+        factory.CreateEditor<IRestoreSolutionEditor>().Returns(new RestoreSolutionEditor(Substitute.For<ILogger<RestoreSolutionEditor>>()));
+        factory.CreateEditor<IPostGenerationConfigEditor>().Returns(new PostGenerationConfigEditor(Substitute.For<ILogger<PostGenerationConfigEditor>>()));
+
+        return factory;
     }
 
     private static DependencyProjectDocument CreateDocument(string name, string description)

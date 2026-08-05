@@ -1,9 +1,10 @@
-using AllOverIt.Assertion;
+﻿using AllOverIt.Assertion;
 using Microsoft.Extensions.Logging;
 using ReactiveUI;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Shared.Utils;
+using SlnDependencyStudio.Wpf.Editors;
 using SlnDependencyStudio.Wpf.Features.Diagrams;
 using SlnDependencyStudio.Wpf.Features.Export;
 using SlnDependencyStudio.Wpf.Features.Pipeline.PostGeneration;
@@ -24,14 +25,15 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
 {
     private readonly IDependencyProjectService _projectService;
     private readonly IRecentProjectsStore _recentProjects;
+    private readonly IStudioEditorFactory _editorFactory;
     private readonly ILogger<ProjectDocumentStore> _logger;
-    private readonly ProjectMetadataEditor _metadataEditor;
-    private readonly SolutionOptionsEditor _solutionOptionsEditor;
-    private readonly ExportOptionsEditor _exportOptionsEditor;
-    private readonly DiagramOptionsEditor _diagramOptionsEditor;
-    private readonly PreGenerationConfigEditor _preGenerationEditor;
-    private readonly RestoreSolutionEditor _restoreSolutionEditor;
-    private readonly PostGenerationConfigEditor _postGenerationEditor;
+    private readonly IProjectMetadataEditor _metadataEditor;
+    private readonly ISolutionOptionsEditor _solutionOptionsEditor;
+    private readonly IExportOptionsEditor _exportOptionsEditor;
+    private readonly IDiagramOptionsEditor _diagramOptionsEditor;
+    private readonly IPreGenerationConfigEditor _preGenerationEditor;
+    private readonly IRestoreSolutionEditor _restoreSolutionEditor;
+    private readonly IPostGenerationConfigEditor _postGenerationEditor;
     private readonly ObservableAsPropertyHelper<bool> _isDirty;
     private DependencyProjectDocument? _document;
     private string? _currentFilePath;
@@ -89,21 +91,23 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
     /// <summary>Initializes a new instance of the store.</summary>
     /// <param name="projectService">The project serialization service.</param>
     /// <param name="recentProjects">The recent projects store for MRU tracking.</param>
+    /// <param name="editorFactory">The factory used to resolve document editor wrappers.</param>
     /// <param name="logger">The logger instance.</param>
     public ProjectDocumentStore(IDependencyProjectService projectService, IRecentProjectsStore recentProjects,
-        ILogger<ProjectDocumentStore> logger)
+        IStudioEditorFactory editorFactory, ILogger<ProjectDocumentStore> logger)
     {
         _projectService = projectService;
         _recentProjects = recentProjects;
+        _editorFactory = editorFactory;
         _logger = logger;
 
-        _metadataEditor = new ProjectMetadataEditor();
-        _solutionOptionsEditor = new SolutionOptionsEditor();
-        _exportOptionsEditor = new ExportOptionsEditor();
-        _diagramOptionsEditor = new DiagramOptionsEditor();
-        _preGenerationEditor = new PreGenerationConfigEditor();
-        _restoreSolutionEditor = new RestoreSolutionEditor();
-        _postGenerationEditor = new PostGenerationConfigEditor();
+        _metadataEditor = _editorFactory.CreateEditor<IProjectMetadataEditor>();
+        _solutionOptionsEditor = _editorFactory.CreateEditor<ISolutionOptionsEditor>();
+        _exportOptionsEditor = _editorFactory.CreateEditor<IExportOptionsEditor>();
+        _diagramOptionsEditor = _editorFactory.CreateEditor<IDiagramOptionsEditor>();
+        _preGenerationEditor = _editorFactory.CreateEditor<IPreGenerationConfigEditor>();
+        _restoreSolutionEditor = _editorFactory.CreateEditor<IRestoreSolutionEditor>();
+        _postGenerationEditor = _editorFactory.CreateEditor<IPostGenerationConfigEditor>();
 
         // Global dirty state is derived from all editor wrappers.
         _isDirty = Observable
@@ -221,6 +225,8 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
     /// <summary>Marks all editor wrappers as clean after a successful save.</summary>
     private void MarkAllEditorsClean()
     {
+        _logger.LogDebug("Marking all editors as clean");
+
         _metadataEditor.SetOriginalValues(_document!.Metadata);
         _solutionOptionsEditor.SetOriginalValues(_document!.DiagramGenerator.Solution);
         _exportOptionsEditor.SetOriginalValues(_document!.DiagramGenerator.Export);
@@ -228,6 +234,8 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
         _preGenerationEditor.SetOriginalValues(_document!.PreGeneration);
         _restoreSolutionEditor.SetOriginalValues(_document!.RestoreSolution);
         _postGenerationEditor.SetOriginalValues(_document!.PostGeneration);
+
+        _logger.LogDebug("All editors are reset");
     }
 
     /// <inheritdoc />

@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+using NSubstitute;
 using Shouldly;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyStudio.Wpf.Features.Solution;
@@ -7,7 +9,7 @@ namespace SlnDependencyStudio.Wpf.Tests.Unit.Features.Solution;
 [Collection(nameof(ReactiveUIInitializer))]
 public class SolutionOptionsEditorFixture : IDisposable
 {
-    private readonly SolutionOptionsEditor _editor = new();
+    private readonly SolutionOptionsEditor _editor = new(Substitute.For<ILogger<SolutionOptionsEditor>>());
 
     public class Construction : SolutionOptionsEditorFixture
     {

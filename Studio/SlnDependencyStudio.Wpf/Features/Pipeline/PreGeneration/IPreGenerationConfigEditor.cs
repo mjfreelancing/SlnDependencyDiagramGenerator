@@ -1,11 +1,14 @@
+using SlnDependencyStudio.Shared.Config;
+using SlnDependencyStudio.Shared.DependencyInjection;
 using SlnDependencyStudio.Wpf.Controls;
+using SlnDependencyStudio.Wpf.Editors;
 
 namespace SlnDependencyStudio.Wpf.Features.Pipeline.PreGeneration;
 
 /// <summary>
-/// Read-only observable surface of the <see cref="PreGenerationConfig"/> editor wrapper.
+/// Observable editing surface of the <see cref="PreGenerationConfig"/> editor wrapper.
 /// </summary>
-public interface IPreGenerationConfigEditor
+public interface IPreGenerationConfigEditor : IStudioEditor, IStudioSingletonDependency
 {
     /// <summary><see langword="true"/> when any tracked value has diverged from its most recent baseline.</summary>
     bool IsDirty { get; }
@@ -24,4 +27,12 @@ public interface IPreGenerationConfigEditor
 
     /// <summary>Whether to continue on failure.</summary>
     TrackableValue<bool> ContinueOnFailure { get; }
+
+    /// <summary>Populates all TrackableValues from the given config and establishes a clean baseline.</summary>
+    /// <param name="source">The pre-generation config to load.</param>
+    void SetOriginalValues(PreGenerationConfig source);
+
+    /// <summary>Writes current TrackableValue contents back to the given config instance.</summary>
+    /// <param name="target">The pre-generation config to mutate.</param>
+    void FlushTo(PreGenerationConfig target);
 }

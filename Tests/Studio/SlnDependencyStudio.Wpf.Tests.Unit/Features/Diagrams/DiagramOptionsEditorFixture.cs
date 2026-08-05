@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+using NSubstitute;
 using Shouldly;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyStudio.Wpf.Features.Diagrams;
@@ -7,7 +9,7 @@ namespace SlnDependencyStudio.Wpf.Tests.Unit.Features.Diagrams;
 [Collection(nameof(ReactiveUIInitializer))]
 public class DiagramOptionsEditorFixture : IDisposable
 {
-    private readonly DiagramOptionsEditor _editor = new();
+    private readonly DiagramOptionsEditor _editor = new(Substitute.For<ILogger<DiagramOptionsEditor>>());
 
     public class Construction : DiagramOptionsEditorFixture
     {

@@ -1,12 +1,15 @@
+using SlnDependencyDiagramGenerator.Config;
+using SlnDependencyStudio.Shared.DependencyInjection;
 using SlnDependencyStudio.Wpf.Controls;
+using SlnDependencyStudio.Wpf.Editors;
 
 namespace SlnDependencyStudio.Wpf.Features.Solution;
 
 /// <summary>
-/// Read-only observable surface of the <see cref="GeneratorSolutionOptions"/> editor wrapper.
+/// Observable editing surface of the <see cref="GeneratorSolutionOptions"/> editor wrapper.
 /// Exposes TrackableValue properties for XAML binding.
 /// </summary>
-public interface ISolutionOptionsEditor
+public interface ISolutionOptionsEditor : IStudioEditor, IStudioSingletonDependency
 {
     /// <summary><see langword="true"/> when the solution path has diverged from its most recent baseline.</summary>
     /// <remarks>This property is Observable.</remarks>
@@ -49,4 +52,12 @@ public interface ISolutionOptionsEditor
 
     /// <summary>Transitive depth for all-projects scope (0 = none).</summary>
     TrackableValue<int> AllTransitiveDepth { get; }
+
+    /// <summary>Populates all TrackableValues from the given options and establishes a clean baseline.</summary>
+    /// <param name="source">The solution options to load.</param>
+    void SetOriginalValues(GeneratorSolutionOptions source);
+
+    /// <summary>Writes current TrackableValue contents back to the given options instance.</summary>
+    /// <param name="target">The solution options to mutate.</param>
+    void FlushTo(GeneratorSolutionOptions target);
 }

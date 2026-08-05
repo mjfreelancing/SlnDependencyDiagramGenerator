@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+using NSubstitute;
 using Shouldly;
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Wpf.Features.Pipeline.PreGeneration;
@@ -7,7 +9,7 @@ namespace SlnDependencyStudio.Wpf.Tests.Unit.Features.Pipeline.PreGeneration;
 [Collection(nameof(ReactiveUIInitializer))]
 public class PreGenerationConfigEditorFixture : IDisposable
 {
-    private readonly PreGenerationConfigEditor _editor = new();
+    private readonly PreGenerationConfigEditor _editor = new(Substitute.For<ILogger<PreGenerationConfigEditor>>());
 
     public class Construction : PreGenerationConfigEditorFixture
     {

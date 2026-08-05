@@ -1,4 +1,4 @@
-using DynamicData.Binding;
+﻿using Microsoft.Extensions.Logging;
 using ReactiveUI;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyStudio.Wpf.Controls;
@@ -13,6 +13,7 @@ namespace SlnDependencyStudio.Wpf.Features.Solution;
 internal sealed class SolutionOptionsEditor : ReactiveObject, ISolutionOptionsEditor, IDisposable
 {
     private readonly CompositeDisposable _disposables = [];
+    private readonly ILogger<SolutionOptionsEditor> _logger;
     private bool _isDirty;
 
     /// <inheritdoc />
@@ -55,8 +56,10 @@ internal sealed class SolutionOptionsEditor : ReactiveObject, ISolutionOptionsEd
     public bool IsDirty => _isDirty;
 
     /// <summary>Initializes a new instance of <see cref="SolutionOptionsEditor"/>.</summary>
-    public SolutionOptionsEditor()
+    public SolutionOptionsEditor(ILogger<SolutionOptionsEditor> logger)
     {
+        _logger = logger;
+
         InitializeTrackable(SolutionPath, string.Empty);
         InitializeTrackable(UseRelativePath, true);
         InitializeTrackable(IndividualEnabled, false);
@@ -101,6 +104,8 @@ internal sealed class SolutionOptionsEditor : ReactiveObject, ISolutionOptionsEd
     /// <param name="source">The solution options to load.</param>
     public void SetOriginalValues(GeneratorSolutionOptions source)
     {
+        _logger.LogDebug("Resetting {Editor}", nameof(SolutionOptionsEditor));
+
         SolutionPath.SetOriginalValue(source.SolutionPath);
 
         RegexToInclude.SetOriginalItems(source.RegexToInclude);

@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+using NSubstitute;
 using Shouldly;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyStudio.Wpf.Features.Export;
@@ -7,7 +9,7 @@ namespace SlnDependencyStudio.Wpf.Tests.Unit.Features.Export;
 [Collection(nameof(ReactiveUIInitializer))]
 public class ExportOptionsEditorFixture : IDisposable
 {
-    private readonly ExportOptionsEditor _editor = new();
+    private readonly ExportOptionsEditor _editor = new(Substitute.For<ILogger<ExportOptionsEditor>>());
 
     public class Construction : ExportOptionsEditorFixture
     {

@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+using NSubstitute;
 using Shouldly;
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Wpf.Features.Project;
@@ -7,7 +9,7 @@ namespace SlnDependencyStudio.Wpf.Tests.Unit.Features.Project;
 [Collection(nameof(ReactiveUIInitializer))]
 public class ProjectMetadataEditorFixture : IDisposable
 {
-    private readonly ProjectMetadataEditor _editor = new();
+    private readonly ProjectMetadataEditor _editor = new(Substitute.For<ILogger<ProjectMetadataEditor>>());
 
     public class Construction : ProjectMetadataEditorFixture
     {

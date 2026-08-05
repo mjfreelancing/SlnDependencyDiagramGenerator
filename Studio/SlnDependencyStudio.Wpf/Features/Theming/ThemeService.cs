@@ -1,4 +1,4 @@
-using MaterialDesignThemes.Wpf;
+﻿using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.Logging;
 using SlnDependencyStudio.Wpf.Models;
 
@@ -20,7 +20,7 @@ internal sealed class ThemeService : IThemeService
     /// <inheritdoc/>
     public void ApplyTheme(StudioTheme theme)
     {
-        _logger.LogDebug("Theme applied: {Theme}", theme);
+        _logger.LogDebug("Applying theme: {Theme}", theme);
 
         var paletteHelper = new PaletteHelper();
         var currentTheme = paletteHelper.GetTheme();
@@ -28,5 +28,7 @@ internal sealed class ThemeService : IThemeService
         currentTheme.SetBaseTheme(theme == StudioTheme.Light ? BaseTheme.Light : BaseTheme.Dark);
 
         paletteHelper.SetTheme(currentTheme);
+
+        _logger.LogDebug("Theme applied: {Theme}", theme);
     }
 }

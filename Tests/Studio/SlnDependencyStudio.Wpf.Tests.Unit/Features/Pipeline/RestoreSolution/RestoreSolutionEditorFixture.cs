@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+using NSubstitute;
 using Shouldly;
 using SlnDependencyStudio.Wpf.Features.Pipeline.RestoreSolution;
 
@@ -6,7 +8,7 @@ namespace SlnDependencyStudio.Wpf.Tests.Unit.Features.Pipeline.RestoreSolution;
 [Collection(nameof(ReactiveUIInitializer))]
 public class RestoreSolutionEditorFixture : IDisposable
 {
-    private readonly RestoreSolutionEditor _editor = new();
+    private readonly RestoreSolutionEditor _editor = new(Substitute.For<ILogger<RestoreSolutionEditor>>());
 
     public class Construction : RestoreSolutionEditorFixture
     {

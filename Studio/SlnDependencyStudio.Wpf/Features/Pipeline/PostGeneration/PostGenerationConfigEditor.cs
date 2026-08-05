@@ -1,3 +1,4 @@
+﻿using Microsoft.Extensions.Logging;
 using ReactiveUI;
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Wpf.Controls;
@@ -12,6 +13,7 @@ namespace SlnDependencyStudio.Wpf.Features.Pipeline.PostGeneration;
 internal sealed class PostGenerationConfigEditor : ReactiveObject, IPostGenerationConfigEditor, IDisposable
 {
     private readonly CompositeDisposable _disposables = [];
+    private readonly ILogger<PostGenerationConfigEditor> _logger;
     private bool _isDirty;
 
     /// <inheritdoc />
@@ -30,8 +32,10 @@ internal sealed class PostGenerationConfigEditor : ReactiveObject, IPostGenerati
     public bool IsDirty => _isDirty;
 
     /// <summary>Initializes a new instance with empty defaults.</summary>
-    public PostGenerationConfigEditor()
+    public PostGenerationConfigEditor(ILogger<PostGenerationConfigEditor> logger)
     {
+        _logger = logger;
+
         InitializeTrackable(Enabled, false);
         InitializeTrackable(Command, string.Empty);
         InitializeTrackable(Arguments, string.Empty);
@@ -55,6 +59,8 @@ internal sealed class PostGenerationConfigEditor : ReactiveObject, IPostGenerati
     /// <inheritdoc />
     public void SetOriginalValues(PostGenerationConfig source)
     {
+        _logger.LogDebug("Resetting {Editor}", nameof(PostGenerationConfigEditor));
+
         Enabled.SetOriginalValue(source.Enabled);
         Command.SetOriginalValue(source.Command);
         Arguments.SetOriginalValue(source.Arguments);

@@ -1,4 +1,4 @@
-using AllOverIt.Extensions;   // IsNotNullOrEmpty
+﻿using AllOverIt.Extensions;
 using AllOverIt.ReactiveUI;
 using AllOverIt.ReactiveUI.Factories;
 using Microsoft.Extensions.Logging;
@@ -325,11 +325,11 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
             {
                 if (filePath is null)
                 {
-                    _logger.LogInformation("No project is currently loaded");
+                    _logger.LogDebug("No project is currently loaded");
                 }
                 else
                 {
-                    _logger.LogInformation("Current project: {FilePath}", filePath);
+                    _logger.LogDebug("Current project: {FilePath}", filePath);
                 }
             })
             .DisposeWith(disposables);

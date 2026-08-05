@@ -1,3 +1,4 @@
+﻿using Microsoft.Extensions.Logging;
 using ReactiveUI;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyStudio.Wpf.Controls;
@@ -12,6 +13,7 @@ namespace SlnDependencyStudio.Wpf.Features.Diagrams;
 internal sealed class DiagramOptionsEditor : ReactiveObject, IDiagramOptionsEditor, IDisposable
 {
     private readonly CompositeDisposable _disposables = [];
+    private readonly ILogger<DiagramOptionsEditor> _logger;
     private bool _isDirty;
 
     /// <inheritdoc />
@@ -57,8 +59,10 @@ internal sealed class DiagramOptionsEditor : ReactiveObject, IDiagramOptionsEdit
     public bool IsDirty => _isDirty;
 
     /// <summary>Initializes a new instance with empty defaults.</summary>
-    public DiagramOptionsEditor()
+    public DiagramOptionsEditor(ILogger<DiagramOptionsEditor> logger)
     {
+        _logger = logger;
+
         _disposables.Add(Formats);
 
         InitializeTrackable(Direction, GeneratorDiagramOptions.DiagramDirection.LR);
@@ -101,6 +105,8 @@ internal sealed class DiagramOptionsEditor : ReactiveObject, IDiagramOptionsEdit
     /// <inheritdoc />
     public void SetOriginalValues(GeneratorDiagramOptions source)
     {
+        _logger.LogDebug("Resetting {Editor}", nameof(DiagramOptionsEditor));
+
         Formats.SetOriginalItems(source.Formats);
 
         Direction.SetOriginalValue(source.Direction);
