@@ -37,6 +37,12 @@ public class ProjectDocumentStoreFixture
         }
 
         [Fact]
+        public void Should_Have_DocumentEpoch_Zero()
+        {
+            _store.DocumentEpoch.ShouldBe(0);
+        }
+
+        [Fact]
         public void Should_Have_CurrentFilePath_Null()
         {
             _store.DocumentFilePath.ShouldBeNull();
@@ -105,6 +111,35 @@ public class ProjectDocumentStoreFixture
 
             _store.HasDocument.ShouldBeTrue();
             _store.DocumentFilePath.ShouldBe("test.sds");
+        }
+
+        [Fact]
+        public async Task Should_Increment_DocumentEpoch()
+        {
+            _projectService
+                .OpenAsync("test.sds", Arg.Any<CancellationToken>())
+                .Returns(CreateDocument("Test", "Desc"));
+
+            await _store.OpenAsync("test.sds", TestContext.Current.CancellationToken);
+
+            _store.DocumentEpoch.ShouldBe(1);
+        }
+
+        [Fact]
+        public async Task Should_Increment_DocumentEpoch_When_Document_Replaced()
+        {
+            _projectService
+                .OpenAsync("first.sds", Arg.Any<CancellationToken>())
+                .Returns(CreateDocument("First", "Desc"));
+
+            _projectService
+                .OpenAsync("second.sds", Arg.Any<CancellationToken>())
+                .Returns(CreateDocument("Second", "Desc"));
+
+            await _store.OpenAsync("first.sds", TestContext.Current.CancellationToken);
+            await _store.OpenAsync("second.sds", TestContext.Current.CancellationToken);
+
+            _store.DocumentEpoch.ShouldBe(2);
         }
 
         [Fact]
@@ -460,6 +495,22 @@ public class ProjectDocumentStoreFixture
         }
 
         [Fact]
+        public async Task Should_Not_Change_DocumentEpoch()
+        {
+            _projectService
+                .OpenAsync("old.sds", Arg.Any<CancellationToken>())
+                .Returns(CreateDocument("Name", "Desc"));
+
+            await _store.OpenAsync("old.sds", TestContext.Current.CancellationToken);
+
+            var epochBeforeSaveAs = _store.DocumentEpoch;
+
+            await _store.SaveAsAsync("new.sds", TestContext.Current.CancellationToken);
+
+            _store.DocumentEpoch.ShouldBe(epochBeforeSaveAs);
+        }
+
+        [Fact]
         public async Task Should_Add_To_Recent_Projects()
         {
             _projectService
@@ -501,6 +552,27 @@ public class ProjectDocumentStoreFixture
             _store.HasDocument.ShouldBeFalse();
             _store.DocumentFilePath.ShouldBeNull();
             _store.IsDirty.ShouldBeFalse();
+        }
+
+        [Fact]
+        public async Task Should_Reset_DocumentEpoch()
+        {
+            _projectService
+                .OpenAsync("first.sds", Arg.Any<CancellationToken>())
+                .Returns(CreateDocument("First", "Desc"));
+
+            _projectService
+                .OpenAsync("second.sds", Arg.Any<CancellationToken>())
+                .Returns(CreateDocument("Second", "Desc"));
+
+            await _store.OpenAsync("first.sds", TestContext.Current.CancellationToken);
+            await _store.OpenAsync("second.sds", TestContext.Current.CancellationToken);
+
+            _store.DocumentEpoch.ShouldBe(2);
+
+            _store.Close();
+
+            _store.DocumentEpoch.ShouldBe(0);
         }
 
         [Fact]

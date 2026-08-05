@@ -1,4 +1,4 @@
-using SlnDependencyDiagramGenerator.Config;
+﻿using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Shared.DependencyInjection;
 using SlnDependencyStudio.Wpf.Features.Diagrams;
@@ -7,6 +7,7 @@ using SlnDependencyStudio.Wpf.Features.Pipeline.PostGeneration;
 using SlnDependencyStudio.Wpf.Features.Pipeline.PreGeneration;
 using SlnDependencyStudio.Wpf.Features.Pipeline.RestoreSolution;
 using SlnDependencyStudio.Wpf.Features.Solution;
+using System.ComponentModel;
 
 namespace SlnDependencyStudio.Wpf.Features.Project.Stores;
 
@@ -15,7 +16,13 @@ namespace SlnDependencyStudio.Wpf.Features.Project.Stores;
 /// Holds the deserialized document snapshot, editor wrappers for each editable sub-object,
 /// and derives global dirty state across all editing surfaces.
 /// </summary>
-public interface IProjectDocumentStore : IStudioSingletonDependency
+/// <remarks>
+/// Declares <see cref="INotifyPropertyChanged"/> so that the members documented as
+/// "Observable" form an enforceable contract rather than a documentation convention,
+/// and so observers (such as the shell's navigation pipeline) can rely on change
+/// notifications regardless of the concrete store implementation.
+/// </remarks>
+public interface IProjectDocumentStore : IStudioSingletonDependency, INotifyPropertyChanged
 {
     /// <summary>The file path from which the document was loaded.
     /// <see langword="null"/> for new or unsaved documents.</summary>
@@ -66,6 +73,39 @@ public interface IProjectDocumentStore : IStudioSingletonDependency
     /// and editor wrappers are being populated or reset.</summary>
     /// <remarks>This property is Observable.</remarks>
     bool IsTransitioning { get; }
+
+    // This property is the canonical signal for "a document was loaded". The shell keys
+    // its single navigation pipeline off it so that page selection can be derived from
+    // document state rather than commanded imperatively from each operation that loads a
+    // document.
+    //
+    // Neither HasDocument nor DocumentFilePath can serve this role on their own:
+    //
+    // - HasDocument only changes when the first document is loaded (false → true) and when
+    //   it is closed (true → false). Opening a second document while one is already open
+    //   leaves it true, so no change notification is raised and a subscriber keyed on it
+    //   would never fire — yet the UI still needs to land on the Project page in that case.
+    //
+    // - DocumentFilePath also changes on SaveAsAsync — but saving under a new name must not
+    //   trigger navigation (the user stays on the page they are editing). Subscribing to the
+    //   path would therefore fire navigation on an action that must leave the current page
+    //   untouched.
+    //
+    // DocumentEpoch changes on exactly the right occasions: every successful open (first or
+    // subsequent), and never on save or save-as. The shell's single navigation pipeline keys
+    // off this counter and uses HasDocument only to decide the direction of the resulting
+    // transition — showing the Project page when a document is loaded, or the empty state
+    // when it is not.
+    //
+    /// <summary>
+    /// A monotonically increasing counter that is incremented each time a document is
+    /// successfully opened via <see cref="OpenAsync"/>, including when one open document
+    /// is replaced by another, and reset to <c>0</c> when the document is closed.
+    /// </summary>
+    /// <remarks>
+    /// This property is Observable.
+    /// </remarks>
+    int DocumentEpoch { get; }
 
     /// <summary>Opens and deserializes a dependency project from the specified file path,
     /// populating all editor wrappers from the document.</summary>

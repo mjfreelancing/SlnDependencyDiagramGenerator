@@ -38,6 +38,7 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
     private DependencyProjectDocument? _document;
     private string? _currentFilePath;
     private bool _hasDocument;
+    private int _documentEpoch;
     private bool _isTransitioning;
 
     /// <inheritdoc />
@@ -79,6 +80,13 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
     {
         get => _hasDocument;
         set => this.RaiseAndSetIfChanged(ref _hasDocument, value);
+    }
+
+    /// <inheritdoc />
+    public int DocumentEpoch
+    {
+        get => _documentEpoch;
+        private set => this.RaiseAndSetIfChanged(ref _documentEpoch, value);
     }
 
     /// <inheritdoc />
@@ -137,6 +145,7 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
 
         HasDocument = true;
         DocumentFilePath = filePath;
+        DocumentEpoch++;
 
         _metadataEditor.SetOriginalValues(_document.Metadata);
         _solutionOptionsEditor.SetOriginalValues(_document.DiagramGenerator.Solution);
@@ -195,6 +204,7 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
         _document = null;
         HasDocument = false;
         DocumentFilePath = null;
+        DocumentEpoch = 0;
 
         // Reset editors to empty defaults so IsDirty returns to false.
         _metadataEditor.SetOriginalValues(new DependencyProjectMetadata());

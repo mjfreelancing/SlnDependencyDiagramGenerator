@@ -8,6 +8,7 @@ using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Shared.Logging;
 using SlnDependencyStudio.Wpf.Abstractions.IO;
 using SlnDependencyStudio.Wpf.Controls;
+using SlnDependencyStudio.Wpf.Editors;
 using SlnDependencyStudio.Wpf.Features.Application;
 using SlnDependencyStudio.Wpf.Features.Application.Models;
 using SlnDependencyStudio.Wpf.Features.Diagrams;
@@ -16,6 +17,9 @@ using SlnDependencyStudio.Wpf.Features.ErrorDialog;
 using SlnDependencyStudio.Wpf.Features.Export;
 using SlnDependencyStudio.Wpf.Features.Output;
 using SlnDependencyStudio.Wpf.Features.Pipeline;
+using SlnDependencyStudio.Wpf.Features.Pipeline.PostGeneration;
+using SlnDependencyStudio.Wpf.Features.Pipeline.PreGeneration;
+using SlnDependencyStudio.Wpf.Features.Pipeline.RestoreSolution;
 using SlnDependencyStudio.Wpf.Features.Pipeline.Services;
 using SlnDependencyStudio.Wpf.Features.Project;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
@@ -202,7 +206,7 @@ public class MainWindowViewModelFixture
     public class OpenProjectAsync : MainWindowViewModelFixture
     {
         [Fact]
-        public async Task Should_Open_File_And_Select_Navigation()
+        public async Task Should_Open_File()
         {
             _store.IsDirty.Returns(false);
 
@@ -230,7 +234,6 @@ public class MainWindowViewModelFixture
 
             await _projectService.Received(1).SaveAsync(document, "new.sds", Arg.Any<CancellationToken>());
             await _store.Received(1).OpenAsync("new.sds", Arg.Any<CancellationToken>());
-            _viewModel.SelectedNavigationItem!.ViewModelType.ShouldBe(typeof(ProjectViewModel));
         }
 
         [Fact]
@@ -329,7 +332,6 @@ public class MainWindowViewModelFixture
             await _projectService.Received(1).OpenAsync("source.sds", Arg.Any<CancellationToken>());
             await _projectService.Received(1).SaveAsync(document, "dest.sds", Arg.Any<CancellationToken>());
             await _store.Received(1).OpenAsync("dest.sds", Arg.Any<CancellationToken>());
-            _viewModel.SelectedNavigationItem!.ViewModelType.ShouldBe(typeof(ProjectViewModel));
         }
 
         [Fact]
@@ -427,14 +429,13 @@ public class MainWindowViewModelFixture
     public class OpenRecentProjectAsync : MainWindowViewModelFixture
     {
         [Fact]
-        public async Task Should_Open_File_And_Select_Navigation()
+        public async Task Should_Open_File()
         {
             _store.IsDirty.Returns(false);
 
             await _viewModel.OpenRecentProjectCommand.Execute("recent.sds");
 
             await _store.Received(1).OpenAsync("recent.sds", Arg.Any<CancellationToken>());
-            _viewModel.SelectedNavigationItem!.ViewModelType.ShouldBe(typeof(ProjectViewModel));
         }
 
         [Fact]
@@ -856,6 +857,136 @@ public class MainWindowViewModelFixture
 
             vm.HasRecentProjects.ShouldBeTrue();
         }
+    }
+
+    /// <summary>
+    /// Verifies that page selection is derived from document state via the store's
+    /// <see cref="IProjectDocumentStore.DocumentEpoch"/> signal, rather than commanded
+    /// imperatively from each operation. Uses a real <see cref="ProjectDocumentStore"/>
+    /// (so ReactiveUI change notifications reach the shell's subscription) and an
+    /// activated ViewModel.
+    /// </summary>
+    public class DocumentNavigation : MainWindowViewModelFixture
+    {
+        private readonly ProjectDocumentStore _realStore;
+        private readonly MainWindowViewModel _shellViewModel;
+
+        public DocumentNavigation()
+        {
+            _realStore = new ProjectDocumentStore(
+                _projectService, _recentProjects, CreateEditorFactory(), Substitute.For<ILogger<ProjectDocumentStore>>());
+
+            _shellViewModel = new MainWindowViewModel(
+                _realStore, _projectService, _recentProjects, _errorDialog, _viewFactory,
+                _toolStatus, _analysisService, _generationService, Substitute.For<ILogger<MainWindowViewModel>>());
+
+            // Activate the ViewModel so the OnActivated subscriptions (including the
+            // DocumentEpoch navigation pipeline) become live. Each test gets a fresh
+            // instance, so the activation is intentionally never deactivated.
+            _ = _shellViewModel.Activator.Activate();
+        }
+
+        [Fact]
+        public void Should_Show_Empty_State_On_Activation_When_No_Document()
+        {
+            _shellViewModel.SelectedNavigationItem.ShouldBeNull();
+            _viewFactory.Received(1).CreateViewFor<EmptyStateViewModel>();
+        }
+
+        [Fact]
+        public async Task Should_Navigate_To_Project_When_Document_Opened()
+        {
+            _projectService
+                .OpenAsync("test.sds", Arg.Any<CancellationToken>())
+                .Returns(CreateDocument());
+
+            await _realStore.OpenAsync("test.sds", TestContext.Current.CancellationToken);
+
+            _shellViewModel.SelectedNavigationItem!.ViewModelType.ShouldBe(typeof(ProjectViewModel));
+        }
+
+        [Fact]
+        public async Task Should_Navigate_To_Project_When_Second_Document_Opened_While_One_Is_Open()
+        {
+            _projectService
+                .OpenAsync("one.sds", Arg.Any<CancellationToken>())
+                .Returns(CreateDocument());
+
+            await _realStore.OpenAsync("one.sds", TestContext.Current.CancellationToken);
+
+            // Move to another page to prove the open genuinely triggers navigation.
+            _shellViewModel.SelectedNavigationItem = _shellViewModel.NavigationItems.Single(item => item.ViewModelType == typeof(ExportViewModel));
+
+            _projectService
+                .OpenAsync("two.sds", Arg.Any<CancellationToken>())
+                .Returns(CreateDocument());
+
+            await _realStore.OpenAsync("two.sds", TestContext.Current.CancellationToken);
+
+            _shellViewModel.SelectedNavigationItem!.ViewModelType.ShouldBe(typeof(ProjectViewModel));
+        }
+
+        [Fact]
+        public async Task Should_Show_Empty_State_When_Document_Closed()
+        {
+            _projectService
+                .OpenAsync("test.sds", Arg.Any<CancellationToken>())
+                .Returns(CreateDocument());
+
+            await _realStore.OpenAsync("test.sds", TestContext.Current.CancellationToken);
+
+            _realStore.Close();
+
+            _shellViewModel.SelectedNavigationItem.ShouldBeNull();
+            _viewFactory.Received(2).CreateViewFor<EmptyStateViewModel>();
+        }
+
+        [Fact]
+        public async Task Should_Not_Navigate_When_Save_As()
+        {
+            _projectService
+                .OpenAsync("test.sds", Arg.Any<CancellationToken>())
+                .Returns(CreateDocument());
+
+            await _realStore.OpenAsync("test.sds", TestContext.Current.CancellationToken);
+
+            // Move to another page — Save As must leave the current page untouched.
+            _shellViewModel.SelectedNavigationItem = _shellViewModel.NavigationItems.Single(item => item.ViewModelType == typeof(ExportViewModel));
+
+            await _realStore.SaveAsAsync("copy.sds", TestContext.Current.CancellationToken);
+
+            _shellViewModel.SelectedNavigationItem!.ViewModelType.ShouldBe(typeof(ExportViewModel));
+        }
+
+        private static DependencyProjectDocument CreateDocument()
+        {
+            return new DependencyProjectDocument
+            {
+                Metadata = new DependencyProjectMetadata
+                {
+                    ProjectName = "Test",
+                    Description = "Desc"
+                }
+            };
+        }
+    }
+
+    private static IStudioEditorFactory CreateEditorFactory()
+    {
+        var factory = Substitute.For<IStudioEditorFactory>();
+
+        // The DocumentNavigation tests drive a real ProjectDocumentStore so ReactiveUI
+        // change notifications flow through to the shell's DocumentEpoch subscription.
+        // The store therefore needs the real editor wrappers (substitutes would be no-ops).
+        factory.CreateEditor<IProjectMetadataEditor>().Returns(new ProjectMetadataEditor(Substitute.For<ILogger<ProjectMetadataEditor>>()));
+        factory.CreateEditor<ISolutionOptionsEditor>().Returns(new SolutionOptionsEditor(Substitute.For<ILogger<SolutionOptionsEditor>>()));
+        factory.CreateEditor<IExportOptionsEditor>().Returns(new ExportOptionsEditor(Substitute.For<ILogger<ExportOptionsEditor>>()));
+        factory.CreateEditor<IDiagramOptionsEditor>().Returns(new DiagramOptionsEditor(Substitute.For<ILogger<DiagramOptionsEditor>>()));
+        factory.CreateEditor<IPreGenerationConfigEditor>().Returns(new PreGenerationConfigEditor(Substitute.For<ILogger<PreGenerationConfigEditor>>()));
+        factory.CreateEditor<IRestoreSolutionEditor>().Returns(new RestoreSolutionEditor(Substitute.For<ILogger<RestoreSolutionEditor>>()));
+        factory.CreateEditor<IPostGenerationConfigEditor>().Returns(new PostGenerationConfigEditor(Substitute.For<ILogger<PostGenerationConfigEditor>>()));
+
+        return factory;
     }
 
     private static IViewFor<T> CreateMockView<T>() where T : class

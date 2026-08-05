@@ -254,9 +254,9 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
             }
         ];
 
-        // Defer: the HasDocument subscription in OnActivated fires immediately
-        // with HasDocument=false and calls ShowEmptyState() — but only after the
-        // window is activated and the visual tree is ready for Loaded events.
+        // Defer: the DocumentEpoch subscription in OnActivated fires immediately
+        // (DocumentEpoch=0, HasDocument=false) and calls ShowEmptyState() — but only
+        // after the window is activated and the visual tree is ready for Loaded events.
     }
 
     /// <inheritdoc />
@@ -303,11 +303,15 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
 
     private void WireDocumentStateTracking(CompositeDisposable disposables)
     {
+        // Single source of truth for page selection. The store's DocumentEpoch counter
+        // changes on every successful open (including replacing an already-open document)
+        // and on close, but never on save/save-as — so commands perform their operation
+        // only, and navigation is derived here. See IProjectDocumentStore.DocumentEpoch.
         _store
-            .WhenAnyValue(store => store.HasDocument)
-            .Subscribe(hasDocument =>
+            .WhenAnyValue(store => store.DocumentEpoch)
+            .Subscribe(_ =>
             {
-                if (hasDocument)
+                if (_store.HasDocument)
                 {
                     SelectNavigationItem<ProjectViewModel>();
                 }
@@ -419,9 +423,6 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
 
             return;
         }
-
-        // Navigate to the Project page — triggers SelectedNavigationItem subscription.
-        SelectNavigationItem<ProjectViewModel>();
     }
 
     private async Task NewProjectAsync()
@@ -445,8 +446,6 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
         await _store.OpenAsync(filePath);
 
         _logger.LogInformation("New project created: {FilePath}", filePath);
-
-        SelectNavigationItem<ProjectViewModel>();
     }
 
     private async Task NewFromExistingAsync()
@@ -478,8 +477,6 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
 
         _logger.LogInformation("New project created from existing: {SourcePath} → {DestinationPath}",
             sourcePath, destinationPath);
-
-        SelectNavigationItem<ProjectViewModel>();
     }
 
     private async Task SaveAsync()
@@ -508,8 +505,8 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
 
         _store.Close();
 
-        // The HasDocument subscription in WireDocumentStateTracking automatically
-        // calls ShowEmptyState() when HasDocument becomes false. No need to
+        // The DocumentEpoch subscription in WireDocumentStateTracking automatically
+        // calls ShowEmptyState() when the document is closed. No need to
         // manually clear CurrentPage/SelectedNavigationItem here.
     }
 
@@ -769,8 +766,6 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
 
             return;
         }
-
-        SelectNavigationItem<ProjectViewModel>();
     }
 
     private void RemoveRecentProject(string filePath)
