@@ -105,7 +105,7 @@ internal sealed class DiagramOptionsEditor : ReactiveObject, IDiagramOptionsEdit
     /// <inheritdoc />
     public void SetOriginalValues(GeneratorDiagramOptions source)
     {
-        _logger.LogDebug("Resetting {Editor}", nameof(DiagramOptionsEditor));
+        _logger.LogDebug("Set original values on {Editor}", nameof(DiagramOptionsEditor));
 
         Formats.SetOriginalItems(source.Formats);
 

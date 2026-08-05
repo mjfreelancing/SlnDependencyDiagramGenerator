@@ -55,7 +55,7 @@ internal sealed class ExportOptionsEditor : ReactiveObject, IExportOptionsEditor
     /// <param name="source">The export options to load.</param>
     public void SetOriginalValues(GeneratorExportOptions source)
     {
-        _logger.LogDebug("Resetting {Editor}", nameof(ExportOptionsEditor));
+        _logger.LogDebug("Set original values on {Editor}", nameof(ExportOptionsEditor));
 
         RootPath.SetOriginalValue(source.RootPath);
         ClearContents.SetOriginalValue(source.ClearContents);

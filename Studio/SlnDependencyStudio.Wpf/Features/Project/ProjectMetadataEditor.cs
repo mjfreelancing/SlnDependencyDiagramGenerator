@@ -43,7 +43,7 @@ internal sealed class ProjectMetadataEditor : ReactiveObject, IProjectMetadataEd
     /// <param name="source">The document metadata to load.</param>
     public void SetOriginalValues(DependencyProjectMetadata source)
     {
-        _logger.LogDebug("Resetting {Editor}", nameof(ProjectMetadataEditor));
+        _logger.LogDebug("Set original values on {Editor}", nameof(ProjectMetadataEditor));
 
         ProjectName.SetOriginalValue(source.ProjectName);
         Description.SetOriginalValue(source.Description);

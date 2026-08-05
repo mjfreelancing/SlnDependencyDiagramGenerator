@@ -104,7 +104,7 @@ internal sealed class SolutionOptionsEditor : ReactiveObject, ISolutionOptionsEd
     /// <param name="source">The solution options to load.</param>
     public void SetOriginalValues(GeneratorSolutionOptions source)
     {
-        _logger.LogDebug("Resetting {Editor}", nameof(SolutionOptionsEditor));
+        _logger.LogDebug("Set original values on {Editor}", nameof(SolutionOptionsEditor));
 
         SolutionPath.SetOriginalValue(source.SolutionPath);
 

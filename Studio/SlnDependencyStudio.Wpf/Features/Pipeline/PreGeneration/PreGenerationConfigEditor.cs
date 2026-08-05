@@ -64,7 +64,7 @@ internal sealed class PreGenerationConfigEditor : ReactiveObject, IPreGeneration
     /// <inheritdoc />
     public void SetOriginalValues(PreGenerationConfig source)
     {
-        _logger.LogDebug("Resetting {Editor}", nameof(PreGenerationConfigEditor));
+        _logger.LogDebug("Set original values on {Editor}", nameof(PreGenerationConfigEditor));
 
         Enabled.SetOriginalValue(source.Enabled);
         Command.SetOriginalValue(source.Command);

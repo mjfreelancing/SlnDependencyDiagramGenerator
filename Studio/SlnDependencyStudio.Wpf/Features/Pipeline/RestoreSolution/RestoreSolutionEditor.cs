@@ -38,7 +38,7 @@ internal sealed class RestoreSolutionEditor : ReactiveObject, IRestoreSolutionEd
     /// <inheritdoc />
     public void SetOriginalValues(bool restoreSolution)
     {
-        _logger.LogDebug("Resetting {Editor}", nameof(RestoreSolutionEditor));
+        _logger.LogDebug("Set original values on {Editor}", nameof(RestoreSolutionEditor));
 
         RestoreSolution.SetOriginalValue(restoreSolution);
     }

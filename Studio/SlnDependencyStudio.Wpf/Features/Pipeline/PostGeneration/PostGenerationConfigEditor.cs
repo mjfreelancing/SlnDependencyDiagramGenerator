@@ -59,7 +59,7 @@ internal sealed class PostGenerationConfigEditor : ReactiveObject, IPostGenerati
     /// <inheritdoc />
     public void SetOriginalValues(PostGenerationConfig source)
     {
-        _logger.LogDebug("Resetting {Editor}", nameof(PostGenerationConfigEditor));
+        _logger.LogDebug("Set original values on {Editor}", nameof(PostGenerationConfigEditor));
 
         Enabled.SetOriginalValue(source.Enabled);
         Command.SetOriginalValue(source.Command);

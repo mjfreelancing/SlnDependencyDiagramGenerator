@@ -747,6 +747,8 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
 
     private async Task OpenRecentProjectAsync(string filePath)
     {
+        _logger.LogInformation("Opening recent project: {FilePath}", filePath);
+
         if (!await SaveIfDirtyAsync(CancellationToken.None))
         {
             return;
@@ -767,8 +769,6 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
 
             return;
         }
-
-        _logger.LogInformation("Opened recent project: {FilePath}", filePath);
 
         SelectNavigationItem<ProjectViewModel>();
     }
