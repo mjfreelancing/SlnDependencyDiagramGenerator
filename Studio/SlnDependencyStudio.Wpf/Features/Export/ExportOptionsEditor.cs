@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using ReactiveUI;
 using SlnDependencyDiagramGenerator.Config;
+using SlnDependencyStudio.Shared.Utils;
 using SlnDependencyStudio.Wpf.Controls;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
@@ -17,7 +18,7 @@ internal sealed class ExportOptionsEditor : ReactiveObject, IExportOptionsEditor
     private readonly ILogger<ExportOptionsEditor> _logger;
 
     /// <inheritdoc />
-    public TrackableValue<string> RootPath { get; } = new();
+    public TrackableValue<string> RootPath { get; } = new(PathEqualityComparer.Default);
 
     /// <inheritdoc />
     public TrackableValue<bool> UseRelativePath { get; } = new();

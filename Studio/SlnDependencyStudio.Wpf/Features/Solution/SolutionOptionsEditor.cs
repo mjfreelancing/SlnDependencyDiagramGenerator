@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using ReactiveUI;
 using SlnDependencyDiagramGenerator.Config;
+using SlnDependencyStudio.Shared.Utils;
 using SlnDependencyStudio.Wpf.Controls;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
@@ -17,7 +18,7 @@ internal sealed class SolutionOptionsEditor : ReactiveObject, ISolutionOptionsEd
     private readonly ObservableAsPropertyHelper<bool> _isDirty;
 
     /// <inheritdoc />
-    public TrackableValue<string> SolutionPath { get; } = new();
+    public TrackableValue<string> SolutionPath { get; } = new(PathEqualityComparer.Default);
 
     /// <inheritdoc />
     public TrackableValue<bool> UseRelativePath { get; } = new();

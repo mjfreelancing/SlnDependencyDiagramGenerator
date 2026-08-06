@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Shouldly;
 using SlnDependencyDiagramGenerator.Config;
+using SlnDependencyStudio.Shared.Utils;
 using SlnDependencyStudio.Wpf.Features.Export;
 
 namespace SlnDependencyStudio.Wpf.Tests.Unit.Features.Export;
@@ -142,6 +143,52 @@ public class ExportOptionsEditorFixture : IDisposable
             target.RootPath.ShouldBe(@"C:\New");
             target.ClearContents.ShouldBeTrue();
             target.ImageFormats.ShouldBe([DiagramImageFormat.Svg]);
+        }
+    }
+
+    public class UseRelativePathDirtyTracking : ExportOptionsEditorFixture
+    {
+        [Fact]
+        public void Should_Become_Dirty_And_Clean_When_UseRelativePath_Toggled()
+        {
+            const string documentDirectory = @"C:\docs";
+
+            _editor.SetOriginalValues(CreateOptions(rootPath: @"Output", clearContents: false));
+            _editor.IsDirty.ShouldBeFalse();
+
+            // Toggling UseRelativePath OFF rewrites RootPath to its absolute form (mirrors the
+            // ViewModel's WireRelativePathToggle). The editor should become dirty.
+            _editor.UseRelativePath.Value = false;
+            _editor.RootPath.Value = PathUtils.ResolveAsAbsolutePath(_editor.RootPath.Value, documentDirectory);
+            _editor.IsDirty.ShouldBeTrue();
+
+            // Toggling back ON rewrites RootPath to its relative baseline, so the editor becomes clean.
+            _editor.UseRelativePath.Value = true;
+            _editor.RootPath.Value = PathUtils.MakeRelativeIfPossible(
+                PathUtils.ResolveAsAbsolutePath(_editor.RootPath.Value, documentDirectory), documentDirectory);
+
+            _editor.RootPath.Value.ShouldBe(@"Output");
+            _editor.IsDirty.ShouldBeFalse();
+        }
+
+        [Fact]
+        public void Should_Not_Be_Dirty_When_Toggle_Normalizes_Leading_Dot_Slash()
+        {
+            const string documentDirectory = @"C:\docs";
+
+            // Baseline is the non-canonical relative form ".\Output".
+            _editor.SetOriginalValues(CreateOptions(rootPath: @".\Output", clearContents: false));
+            _editor.IsDirty.ShouldBeFalse();
+
+            _editor.UseRelativePath.Value = false;
+            _editor.RootPath.Value = PathUtils.ResolveAsAbsolutePath(_editor.RootPath.Value, documentDirectory);
+
+            _editor.UseRelativePath.Value = true;
+            _editor.RootPath.Value = PathUtils.MakeRelativeIfPossible(
+                PathUtils.ResolveAsAbsolutePath(_editor.RootPath.Value, documentDirectory), documentDirectory);
+
+            _editor.RootPath.Value.ShouldBe(@"Output");
+            _editor.IsDirty.ShouldBeFalse();
         }
     }
 

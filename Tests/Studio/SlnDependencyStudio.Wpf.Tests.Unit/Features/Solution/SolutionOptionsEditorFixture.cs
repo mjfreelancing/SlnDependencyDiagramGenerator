@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Shouldly;
 using SlnDependencyDiagramGenerator.Config;
+using SlnDependencyStudio.Shared.Utils;
 using SlnDependencyStudio.Wpf.Features.Solution;
 
 namespace SlnDependencyStudio.Wpf.Tests.Unit.Features.Solution;
@@ -142,6 +143,52 @@ public class SolutionOptionsEditorFixture : IDisposable
                 individualEnabled: true, individualDepth: 3,
                 allEnabled: false, allDepth: 0));
 
+            _editor.IsDirty.ShouldBeFalse();
+        }
+    }
+
+    public class UseRelativePathDirtyTracking : SolutionOptionsEditorFixture
+    {
+        [Fact]
+        public void Should_Become_Dirty_And_Clean_When_UseRelativePath_Toggled()
+        {
+            const string documentDirectory = @"C:\docs";
+
+            _editor.SetOriginalValues(CreateOptions(@"Output\MyApp.sln"));
+            _editor.IsDirty.ShouldBeFalse();
+
+            // Toggling UseRelativePath OFF rewrites SolutionPath to its absolute form (mirrors the
+            // ViewModel's WireRelativePathToggle). The editor should become dirty.
+            _editor.UseRelativePath.Value = false;
+            _editor.SolutionPath.Value = PathUtils.ResolveAsAbsolutePath(_editor.SolutionPath.Value, documentDirectory);
+            _editor.IsDirty.ShouldBeTrue();
+
+            // Toggling back ON rewrites SolutionPath to its relative baseline, so the editor becomes clean.
+            _editor.UseRelativePath.Value = true;
+            _editor.SolutionPath.Value = PathUtils.MakeRelativeIfPossible(
+                PathUtils.ResolveAsAbsolutePath(_editor.SolutionPath.Value, documentDirectory), documentDirectory);
+
+            _editor.SolutionPath.Value.ShouldBe(@"Output\MyApp.sln");
+            _editor.IsDirty.ShouldBeFalse();
+        }
+
+        [Fact]
+        public void Should_Not_Be_Dirty_When_Toggle_Normalizes_Leading_Dot_Slash()
+        {
+            const string documentDirectory = @"C:\docs";
+
+            // Baseline is the non-canonical relative form ".\Output\MyApp.sln".
+            _editor.SetOriginalValues(CreateOptions(@".\Output\MyApp.sln"));
+            _editor.IsDirty.ShouldBeFalse();
+
+            _editor.UseRelativePath.Value = false;
+            _editor.SolutionPath.Value = PathUtils.ResolveAsAbsolutePath(_editor.SolutionPath.Value, documentDirectory);
+
+            _editor.UseRelativePath.Value = true;
+            _editor.SolutionPath.Value = PathUtils.MakeRelativeIfPossible(
+                PathUtils.ResolveAsAbsolutePath(_editor.SolutionPath.Value, documentDirectory), documentDirectory);
+
+            _editor.SolutionPath.Value.ShouldBe(@"Output\MyApp.sln");
             _editor.IsDirty.ShouldBeFalse();
         }
     }

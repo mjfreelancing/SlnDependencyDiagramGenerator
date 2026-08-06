@@ -1,4 +1,4 @@
-using ReactiveUI;
+﻿using ReactiveUI;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 
@@ -17,10 +17,11 @@ namespace SlnDependencyStudio.Wpf.Controls;
 /// </remarks>
 public sealed class TrackableValue<TValue> : ReactiveObject, IDisposable
 {
-    private TValue _original = default!;
-    private TValue _value = default!;
+    private readonly IEqualityComparer<TValue> _comparer;
     private readonly SerialDisposable _dirtySubscription = new();
     private ObservableAsPropertyHelper<bool> _isDirty = null!;
+    private TValue _original = default!;
+    private TValue _value = default!;
 
     /// <summary>
     /// The current value. Setting this raises <see cref="ReactiveObject.PropertyChanged"/>
@@ -44,8 +45,11 @@ public sealed class TrackableValue<TValue> : ReactiveObject, IDisposable
 
     /// <summary>Initializes a new instance. Values are uninitialised until
     /// <see cref="SetOriginalValue"/> is called.</summary>
-    public TrackableValue()
+    /// <param name="comparer">The equality comparer used to determine whether the current
+    /// value has diverged from the baseline. Defaults to <see cref="EqualityComparer{TValue}.Default"/>.</param>
+    public TrackableValue(IEqualityComparer<TValue>? comparer = null)
     {
+        _comparer = comparer ?? EqualityComparer<TValue>.Default;
     }
 
     /// <summary>Resets the baseline to the given value and marks the tracked value as clean.</summary>
@@ -59,7 +63,7 @@ public sealed class TrackableValue<TValue> : ReactiveObject, IDisposable
 
         _dirtySubscription.Disposable = this
             .WhenAnyValue(property => property.Value)
-            .Select(current => !EqualityComparer<TValue>.Default.Equals(current, _original))
+            .Select(current => !_comparer.Equals(current, _original))
             .ToProperty(this, name => name.IsDirty, out _isDirty);
 
         // The new OAPH starts with default(false) but its source observable hasn't emitted
