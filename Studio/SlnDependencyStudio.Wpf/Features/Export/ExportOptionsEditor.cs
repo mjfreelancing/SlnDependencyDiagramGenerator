@@ -42,13 +42,9 @@ internal sealed class ExportOptionsEditor : ReactiveObject, IExportOptionsEditor
 
         _disposables.Add(ImageFormats);
 
-        _isDirty = Observable
-            .CombineLatest(
-                RootPath.WhenAnyValue(path => path.IsDirty),
-                ClearContents.WhenAnyValue(contents => contents.IsDirty),
-                ImageFormats.WhenAnyValue(formats => formats.IsDirty),
-                (pathDirty, contentsDirty, formatsDirty) => pathDirty || contentsDirty || formatsDirty)
-            .ToProperty(this, nameof(IsDirty));
+        // Wire up dirty tracking after the trackables are initialized: WhenAnyValue evaluates the
+        // expression on subscription, and TrackableValue.IsDirty throws until SetOriginalValue is called.
+        _isDirty = WireupIsDirty();
     }
 
     /// <summary>Populates all TrackableValues from the given options and marks the editor clean.</summary>
@@ -81,5 +77,29 @@ internal sealed class ExportOptionsEditor : ReactiveObject, IExportOptionsEditor
     {
         trackable.SetOriginalValue(defaultValue);
         _disposables.Add(trackable);
+    }
+
+    private ObservableAsPropertyHelper<bool> WireupIsDirty()
+    {
+        var dirtyFlags = new IObservable<bool>[]
+        {
+            RootPath.WhenAnyValue(trackable => trackable.IsDirty),
+            ClearContents.WhenAnyValue(trackable => trackable.IsDirty),
+            ImageFormats.WhenAnyValue(trackable => trackable.IsDirty)
+        };
+
+        // Dirty state is always false at construction (baselines are set before wiring), so the
+        // initial emission adds no information. DistinctUntilChanged logs only genuine transitions
+        // and Skip(1) drops the initial value, avoiding an ILogger call during construction.
+        var isDirty = Observable
+            .CombineLatest(dirtyFlags, flags => flags.Any(isDirty => isDirty))
+            .DistinctUntilChanged()
+            .Skip(1)
+            .Do(isDirty => _logger.LogDebug("{Editor}.IsDirty changed to {IsDirty}", nameof(ExportOptionsEditor), isDirty))
+            .ToProperty(this, nameof(IsDirty));
+
+        _disposables.Add(isDirty);
+
+        return isDirty;
     }
 }

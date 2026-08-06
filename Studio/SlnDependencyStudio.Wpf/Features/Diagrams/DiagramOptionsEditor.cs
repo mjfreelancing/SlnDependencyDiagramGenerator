@@ -14,7 +14,7 @@ internal sealed class DiagramOptionsEditor : ReactiveObject, IDiagramOptionsEdit
 {
     private readonly CompositeDisposable _disposables = [];
     private readonly ILogger<DiagramOptionsEditor> _logger;
-    private bool _isDirty;
+    private readonly ObservableAsPropertyHelper<bool> _isDirty;
 
     /// <inheritdoc />
     public TrackableCollection<DiagramFormat> Formats { get; } = new();
@@ -56,7 +56,7 @@ internal sealed class DiagramOptionsEditor : ReactiveObject, IDiagramOptionsEdit
     public TrackableValue<string> GroupNameAlias { get; } = new();
 
     /// <inheritdoc />
-    public bool IsDirty => _isDirty;
+    public bool IsDirty => _isDirty.Value;
 
     /// <summary>Initializes a new instance with empty defaults.</summary>
     public DiagramOptionsEditor(ILogger<DiagramOptionsEditor> logger)
@@ -78,28 +78,9 @@ internal sealed class DiagramOptionsEditor : ReactiveObject, IDiagramOptionsEdit
         InitializeTrackable(GroupName, string.Empty);
         InitializeTrackable(GroupNameAlias, string.Empty);
 
-        var dirtyFlags = new IObservable<bool>[]
-        {
-            Formats.WhenAnyValue(formats => formats.IsDirty),
-            Direction.WhenAnyValue(direction => direction.IsDirty),
-            FrameworkFill.WhenAnyValue(frameworkFill => frameworkFill.IsDirty),
-            FrameworkOpacity.WhenAnyValue(frameworkOpacity => frameworkOpacity.IsDirty),
-            PackageFill.WhenAnyValue(packageFill => packageFill.IsDirty),
-            PackageOpacity.WhenAnyValue(packageOpacity => packageOpacity.IsDirty),
-            TransitiveFill.WhenAnyValue(transitiveFill => transitiveFill.IsDirty),
-            TransitiveOpacity.WhenAnyValue(transitiveOpacity => transitiveOpacity.IsDirty),
-            GroupingEnabled.WhenAnyValue(groupingEnabled => groupingEnabled.IsDirty),
-            GroupingFill.WhenAnyValue(groupingFill => groupingFill.IsDirty),
-            GroupingOpacity.WhenAnyValue(groupingOpacity => groupingOpacity.IsDirty),
-            GroupName.WhenAnyValue(groupName => groupName.IsDirty),
-            GroupNameAlias.WhenAnyValue(groupNameAlias => groupNameAlias.IsDirty)
-        };
-
-        var subscription = Observable
-            .CombineLatest(dirtyFlags)
-            .Subscribe(_ => UpdateIsDirty());
-
-        _disposables.Add(subscription);
+        // Wire up dirty tracking after the trackables are initialized: WhenAnyValue evaluates the
+        // expression on subscription, and TrackableValue.IsDirty throws until SetOriginalValue is called.
+        _isDirty = WireupIsDirty();
     }
 
     /// <inheritdoc />
@@ -148,28 +129,43 @@ internal sealed class DiagramOptionsEditor : ReactiveObject, IDiagramOptionsEdit
         _disposables.Dispose();
     }
 
-    private void UpdateIsDirty()
-    {
-        _isDirty = Formats.IsDirty ||
-                   Direction.IsDirty ||
-                   FrameworkFill.IsDirty ||
-                   FrameworkOpacity.IsDirty ||
-                   PackageFill.IsDirty ||
-                   PackageOpacity.IsDirty ||
-                   TransitiveFill.IsDirty ||
-                   TransitiveOpacity.IsDirty ||
-                   GroupingEnabled.IsDirty ||
-                   GroupingFill.IsDirty ||
-                   GroupingOpacity.IsDirty ||
-                   GroupName.IsDirty ||
-                   GroupNameAlias.IsDirty;
-
-        this.RaisePropertyChanged(nameof(IsDirty));
-    }
-
     private void InitializeTrackable<TValue>(TrackableValue<TValue> trackable, TValue defaultValue = default!)
     {
         trackable.SetOriginalValue(defaultValue);
         _disposables.Add(trackable);
+    }
+
+    private ObservableAsPropertyHelper<bool> WireupIsDirty()
+    {
+        var dirtyFlags = new IObservable<bool>[]
+        {
+            Formats.WhenAnyValue(formats => formats.IsDirty),
+            Direction.WhenAnyValue(direction => direction.IsDirty),
+            FrameworkFill.WhenAnyValue(frameworkFill => frameworkFill.IsDirty),
+            FrameworkOpacity.WhenAnyValue(frameworkOpacity => frameworkOpacity.IsDirty),
+            PackageFill.WhenAnyValue(packageFill => packageFill.IsDirty),
+            PackageOpacity.WhenAnyValue(packageOpacity => packageOpacity.IsDirty),
+            TransitiveFill.WhenAnyValue(transitiveFill => transitiveFill.IsDirty),
+            TransitiveOpacity.WhenAnyValue(transitiveOpacity => transitiveOpacity.IsDirty),
+            GroupingEnabled.WhenAnyValue(groupingEnabled => groupingEnabled.IsDirty),
+            GroupingFill.WhenAnyValue(groupingFill => groupingFill.IsDirty),
+            GroupingOpacity.WhenAnyValue(groupingOpacity => groupingOpacity.IsDirty),
+            GroupName.WhenAnyValue(groupName => groupName.IsDirty),
+            GroupNameAlias.WhenAnyValue(groupNameAlias => groupNameAlias.IsDirty)
+        };
+
+        // Dirty state is always false at construction (baselines are set before wiring), so the
+        // initial emission adds no information. DistinctUntilChanged logs only genuine transitions
+        // and Skip(1) drops the initial value, avoiding an ILogger call during construction.
+        var isDirty = Observable
+            .CombineLatest(dirtyFlags, flags => flags.Any(isDirty => isDirty))
+            .DistinctUntilChanged()
+            .Skip(1)
+            .Do(isDirty => _logger.LogDebug("{Editor}.IsDirty changed to {IsDirty}", nameof(DiagramOptionsEditor), isDirty))
+            .ToProperty(this, nameof(IsDirty));
+
+        _disposables.Add(isDirty);
+
+        return isDirty;
     }
 }

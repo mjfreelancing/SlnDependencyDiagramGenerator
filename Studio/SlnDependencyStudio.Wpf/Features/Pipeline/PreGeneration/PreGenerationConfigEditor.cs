@@ -14,7 +14,7 @@ internal sealed class PreGenerationConfigEditor : ReactiveObject, IPreGeneration
 {
     private readonly CompositeDisposable _disposables = [];
     private readonly ILogger<PreGenerationConfigEditor> _logger;
-    private bool _isDirty;
+    private readonly ObservableAsPropertyHelper<bool> _isDirty;
 
     /// <inheritdoc />
     public TrackableValue<bool> Enabled { get; } = new();
@@ -32,7 +32,7 @@ internal sealed class PreGenerationConfigEditor : ReactiveObject, IPreGeneration
     public TrackableValue<bool> ContinueOnFailure { get; } = new();
 
     /// <inheritdoc />
-    public bool IsDirty => _isDirty;
+    public bool IsDirty => _isDirty.Value;
 
     /// <summary>Initializes a new instance with empty defaults.</summary>
     public PreGenerationConfigEditor(ILogger<PreGenerationConfigEditor> logger)
@@ -45,20 +45,9 @@ internal sealed class PreGenerationConfigEditor : ReactiveObject, IPreGeneration
         InitializeTrackable(WorkingDirectory, string.Empty);
         InitializeTrackable(ContinueOnFailure, false);
 
-        var dirtyFlags = new[]
-        {
-            Enabled.WhenAnyValue(enabled => enabled.IsDirty),
-            Command.WhenAnyValue(command => command.IsDirty),
-            Arguments.WhenAnyValue(arguments => arguments.IsDirty),
-            WorkingDirectory.WhenAnyValue(workingDirectory => workingDirectory.IsDirty),
-            ContinueOnFailure.WhenAnyValue(continueOnFailure => continueOnFailure.IsDirty)
-        };
-
-        var subscription = Observable
-            .CombineLatest(dirtyFlags)
-            .Subscribe(_ => UpdateIsDirty());
-
-        _disposables.Add(subscription);
+        // Wire up dirty tracking after the trackables are initialized: WhenAnyValue evaluates the
+        // expression on subscription, and TrackableValue.IsDirty throws until SetOriginalValue is called.
+        _isDirty = WireupIsDirty();
     }
 
     /// <inheritdoc />
@@ -89,20 +78,35 @@ internal sealed class PreGenerationConfigEditor : ReactiveObject, IPreGeneration
         _disposables.Dispose();
     }
 
-    private void UpdateIsDirty()
-    {
-        _isDirty = Enabled.IsDirty ||
-                   Command.IsDirty ||
-                   Arguments.IsDirty ||
-                   WorkingDirectory.IsDirty ||
-                   ContinueOnFailure.IsDirty;
-
-        this.RaisePropertyChanged(nameof(IsDirty));
-    }
-
     private void InitializeTrackable<TValue>(TrackableValue<TValue> trackable, TValue defaultValue = default!)
     {
         trackable.SetOriginalValue(defaultValue);
         _disposables.Add(trackable);
+    }
+
+    private ObservableAsPropertyHelper<bool> WireupIsDirty()
+    {
+        var dirtyFlags = new[]
+        {
+            Enabled.WhenAnyValue(enabled => enabled.IsDirty),
+            Command.WhenAnyValue(command => command.IsDirty),
+            Arguments.WhenAnyValue(arguments => arguments.IsDirty),
+            WorkingDirectory.WhenAnyValue(workingDirectory => workingDirectory.IsDirty),
+            ContinueOnFailure.WhenAnyValue(continueOnFailure => continueOnFailure.IsDirty)
+        };
+
+        // Dirty state is always false at construction (baselines are set before wiring), so the
+        // initial emission adds no information. DistinctUntilChanged logs only genuine transitions
+        // and Skip(1) drops the initial value, avoiding an ILogger call during construction.
+        var isDirty = Observable
+            .CombineLatest(dirtyFlags, flags => flags.Any(isDirty => isDirty))
+            .DistinctUntilChanged()
+            .Skip(1)
+            .Do(isDirty => _logger.LogDebug("{Editor}.IsDirty changed to {IsDirty}", nameof(PreGenerationConfigEditor), isDirty))
+            .ToProperty(this, nameof(IsDirty));
+
+        _disposables.Add(isDirty);
+
+        return isDirty;
     }
 }

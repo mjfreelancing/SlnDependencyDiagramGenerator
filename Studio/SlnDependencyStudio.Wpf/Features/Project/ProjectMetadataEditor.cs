@@ -3,6 +3,7 @@ using ReactiveUI;
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Wpf.Controls;
 using System.Reactive.Disposables;
+using System.Reactive.Linq;
 
 namespace SlnDependencyStudio.Wpf.Features.Project;
 
@@ -32,11 +33,9 @@ internal sealed class ProjectMetadataEditor : ReactiveObject, IProjectMetadataEd
         InitializeTrackable(ProjectName, string.Empty);
         InitializeTrackable(Description, string.Empty);
 
-        _isDirty = this.WhenAnyValue(
-                editor => editor.ProjectName.IsDirty,
-                editor => editor.Description.IsDirty,
-                (nameDirty, descDirty) => nameDirty || descDirty)
-            .ToProperty(this, nameof(IsDirty));
+        // Wire up dirty tracking after the trackables are initialized: WhenAnyValue evaluates the
+        // expression on subscription, and TrackableValue.IsDirty throws until SetOriginalValue is called.
+        _isDirty = WireupIsDirty();
     }
 
     /// <summary>Populates all TrackableValues from the given metadata and establishes a clean baseline.</summary>
@@ -63,9 +62,32 @@ internal sealed class ProjectMetadataEditor : ReactiveObject, IProjectMetadataEd
         _disposables.Dispose();
     }
 
-    private void InitializeTrackable<TValue>(TrackableValue<TValue> tracklable, TValue defaultValue = default!)
+    private void InitializeTrackable<TValue>(TrackableValue<TValue> trackable, TValue defaultValue = default!)
     {
-        tracklable.SetOriginalValue(defaultValue);
-        _disposables.Add(tracklable);
+        trackable.SetOriginalValue(defaultValue);
+        _disposables.Add(trackable);
+    }
+
+    private ObservableAsPropertyHelper<bool> WireupIsDirty()
+    {
+        var dirtyFlags = new IObservable<bool>[]
+        {
+            ProjectName.WhenAnyValue(trackable => trackable.IsDirty),
+            Description.WhenAnyValue(trackable => trackable.IsDirty)
+        };
+
+        // Dirty state is always false at construction (baselines are set before wiring), so the
+        // initial emission adds no information. DistinctUntilChanged logs only genuine transitions
+        // and Skip(1) drops the initial value, avoiding an ILogger call during construction.
+        var isDirty = Observable
+            .CombineLatest(dirtyFlags, flags => flags.Any(isDirty => isDirty))
+            .DistinctUntilChanged()
+            .Skip(1)
+            .Do(isDirty => _logger.LogDebug("{Editor}.IsDirty changed to {IsDirty}", nameof(ProjectMetadataEditor), isDirty))
+            .ToProperty(this, nameof(IsDirty));
+
+        _disposables.Add(isDirty);
+
+        return isDirty;
     }
 }

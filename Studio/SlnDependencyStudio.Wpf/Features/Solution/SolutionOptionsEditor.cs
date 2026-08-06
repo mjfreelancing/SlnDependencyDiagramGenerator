@@ -14,7 +14,7 @@ internal sealed class SolutionOptionsEditor : ReactiveObject, ISolutionOptionsEd
 {
     private readonly CompositeDisposable _disposables = [];
     private readonly ILogger<SolutionOptionsEditor> _logger;
-    private bool _isDirty;
+    private readonly ObservableAsPropertyHelper<bool> _isDirty;
 
     /// <inheritdoc />
     public TrackableValue<string> SolutionPath { get; } = new();
@@ -53,7 +53,7 @@ internal sealed class SolutionOptionsEditor : ReactiveObject, ISolutionOptionsEd
     public TrackableValue<int> AllTransitiveDepth { get; } = new();
 
     /// <inheritdoc />
-    public bool IsDirty => _isDirty;
+    public bool IsDirty => _isDirty.Value;
 
     /// <summary>Initializes a new instance of <see cref="SolutionOptionsEditor"/>.</summary>
     public SolutionOptionsEditor(ILogger<SolutionOptionsEditor> logger)
@@ -74,30 +74,9 @@ internal sealed class SolutionOptionsEditor : ReactiveObject, ISolutionOptionsEd
         _disposables.Add(PackagesToExclude);
         _disposables.Add(FrameworksToExclude);
 
-        var collectionDirtyFlags = new IObservable<bool>[]
-        {
-            RegexToInclude.WhenAnyValue(trackable => trackable.IsDirty),
-            RegexToExclude.WhenAnyValue(trackable => trackable.IsDirty),
-            PackagesToExclude.WhenAnyValue(trackable => trackable.IsDirty),
-            FrameworksToExclude.WhenAnyValue(trackable => trackable.IsDirty)
-        };
-
-        var trackableDirtyFlags = new[]
-        {
-            SolutionPath.WhenAnyValue(trackable => trackable.IsDirty),
-            IndividualEnabled.WhenAnyValue(trackable => trackable.IsDirty),
-            IndividualIncludeDependencies.WhenAnyValue(trackable => trackable.IsDirty),
-            IndividualTransitiveDepth.WhenAnyValue(trackable => trackable.IsDirty),
-            AllEnabled.WhenAnyValue(trackable => trackable.IsDirty),
-            AllIncludeDependencies.WhenAnyValue(trackable => trackable.IsDirty),
-            AllTransitiveDepth.WhenAnyValue(trackable => trackable.IsDirty)
-        };
-
-        var subscription = Observable
-            .CombineLatest([.. trackableDirtyFlags, .. collectionDirtyFlags])
-            .Subscribe(_ => UpdateIsDirty());
-
-        _disposables.Add(subscription);
+        // Wire up dirty tracking after the trackables are initialized: WhenAnyValue evaluates the
+        // expression on subscription, and TrackableValue.IsDirty throws until SetOriginalValue is called.
+        _isDirty = WireupIsDirty();
     }
 
     /// <summary>Populates all TrackableValues from the given options and marks the editor clean.</summary>
@@ -145,21 +124,42 @@ internal sealed class SolutionOptionsEditor : ReactiveObject, ISolutionOptionsEd
         _disposables.Dispose();
     }
 
-    private void UpdateIsDirty()
+    private ObservableAsPropertyHelper<bool> WireupIsDirty()
     {
-        _isDirty = SolutionPath.IsDirty ||
-                   RegexToInclude.IsDirty ||
-                   RegexToExclude.IsDirty ||
-                   PackagesToExclude.IsDirty ||
-                   FrameworksToExclude.IsDirty ||
-                   IndividualEnabled.IsDirty ||
-                   IndividualIncludeDependencies.IsDirty ||
-                   IndividualTransitiveDepth.IsDirty ||
-                   AllEnabled.IsDirty ||
-                   AllIncludeDependencies.IsDirty ||
-                   AllTransitiveDepth.IsDirty;
+        var collectionDirtyFlags = new IObservable<bool>[]
+        {
+            RegexToInclude.WhenAnyValue(trackable => trackable.IsDirty),
+            RegexToExclude.WhenAnyValue(trackable => trackable.IsDirty),
+            PackagesToExclude.WhenAnyValue(trackable => trackable.IsDirty),
+            FrameworksToExclude.WhenAnyValue(trackable => trackable.IsDirty)
+        };
 
-        this.RaisePropertyChanged(nameof(IsDirty));
+        var trackableDirtyFlags = new[]
+        {
+            SolutionPath.WhenAnyValue(trackable => trackable.IsDirty),
+            IndividualEnabled.WhenAnyValue(trackable => trackable.IsDirty),
+            IndividualIncludeDependencies.WhenAnyValue(trackable => trackable.IsDirty),
+            IndividualTransitiveDepth.WhenAnyValue(trackable => trackable.IsDirty),
+            AllEnabled.WhenAnyValue(trackable => trackable.IsDirty),
+            AllIncludeDependencies.WhenAnyValue(trackable => trackable.IsDirty),
+            AllTransitiveDepth.WhenAnyValue(trackable => trackable.IsDirty)
+        };
+
+        IObservable<bool>[] dirtyFlags = [.. trackableDirtyFlags, .. collectionDirtyFlags];
+
+        // Dirty state is always false at construction (baselines are set before wiring), so the
+        // initial emission adds no information. DistinctUntilChanged logs only genuine transitions
+        // and Skip(1) drops the initial value, avoiding an ILogger call during construction.
+        var isDirty = Observable
+            .CombineLatest(dirtyFlags, flags => flags.Any(isDirty => isDirty))
+            .DistinctUntilChanged()
+            .Skip(1)
+            .Do(isDirty => _logger.LogDebug("{Editor}.IsDirty changed to {IsDirty}", nameof(SolutionOptionsEditor), isDirty))
+            .ToProperty(this, nameof(IsDirty));
+
+        _disposables.Add(isDirty);
+
+        return isDirty;
     }
 
     private void InitializeTrackable<TValue>(TrackableValue<TValue> trackable, TValue defaultValue = default!)

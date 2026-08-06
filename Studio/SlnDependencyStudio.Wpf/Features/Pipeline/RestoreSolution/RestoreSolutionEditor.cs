@@ -13,13 +13,13 @@ internal sealed class RestoreSolutionEditor : ReactiveObject, IRestoreSolutionEd
 {
     private readonly CompositeDisposable _disposables = [];
     private readonly ILogger<RestoreSolutionEditor> _logger;
-    private bool _isDirty;
+    private readonly ObservableAsPropertyHelper<bool> _isDirty;
 
     /// <inheritdoc />
     public TrackableValue<bool> RestoreSolution { get; } = new();
 
     /// <inheritdoc />
-    public bool IsDirty => _isDirty;
+    public bool IsDirty => _isDirty.Value;
 
     /// <summary>Initializes a new instance with the default value.</summary>
     public RestoreSolutionEditor(ILogger<RestoreSolutionEditor> logger)
@@ -28,11 +28,9 @@ internal sealed class RestoreSolutionEditor : ReactiveObject, IRestoreSolutionEd
 
         InitializeTrackable(RestoreSolution, true);
 
-        var subscription = RestoreSolution
-            .WhenAnyValue(restoreSolution => restoreSolution.IsDirty)
-            .Subscribe(_ => UpdateIsDirty());
-
-        _disposables.Add(subscription);
+        // Wire up dirty tracking after the trackables are initialized: WhenAnyValue evaluates the
+        // expression on subscription, and TrackableValue.IsDirty throws until SetOriginalValue is called.
+        _isDirty = WireupIsDirty();
     }
 
     /// <inheritdoc />
@@ -49,16 +47,26 @@ internal sealed class RestoreSolutionEditor : ReactiveObject, IRestoreSolutionEd
         _disposables.Dispose();
     }
 
-    private void UpdateIsDirty()
-    {
-        _isDirty = RestoreSolution.IsDirty;
-
-        this.RaisePropertyChanged(nameof(IsDirty));
-    }
-
     private void InitializeTrackable<TValue>(TrackableValue<TValue> trackable, TValue defaultValue = default!)
     {
         trackable.SetOriginalValue(defaultValue);
         _disposables.Add(trackable);
+    }
+
+    private ObservableAsPropertyHelper<bool> WireupIsDirty()
+    {
+        // Dirty state is always false at construction (baselines are set before wiring), so the
+        // initial emission adds no information. DistinctUntilChanged logs only genuine transitions
+        // and Skip(1) drops the initial value, avoiding an ILogger call during construction.
+        var isDirty = RestoreSolution
+            .WhenAnyValue(restoreSolution => restoreSolution.IsDirty)
+            .DistinctUntilChanged()
+            .Skip(1)
+            .Do(isDirty => _logger.LogDebug("{Editor}.IsDirty changed to {IsDirty}", nameof(RestoreSolutionEditor), isDirty))
+            .ToProperty(this, nameof(IsDirty));
+
+        _disposables.Add(isDirty);
+
+        return isDirty;
     }
 }
