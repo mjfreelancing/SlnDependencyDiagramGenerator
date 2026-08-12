@@ -265,6 +265,7 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
         WireDocumentStateTracking(disposables);
         WireNavigation(disposables);
         WireCancelCommand(disposables);
+        WireNavigationDirtyState(disposables);
     }
 
     private void WireCancelCommand(CompositeDisposable disposables)
@@ -313,6 +314,14 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
             {
                 if (_store.HasDocument)
                 {
+                    // Re-opening a document invalidates validation state captured from page
+                    // instances of the previous document (page VMs are created on demand and
+                    // disposed on navigation). Reset the dots so stale indicators don't linger
+                    // after re-opening; the current page's indicator is re-established by the
+                    // navigation below via WirePageValidation, or re-evaluated by its still-active
+                    // subscription when staying on the same page.
+                    ResetNavigationValidationDots();
+
                     SelectNavigationItem<ProjectViewModel>();
                 }
                 else
@@ -394,6 +403,43 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
             .Where(navItem => navItem is not null)
             .Subscribe(navItem => NavigateToPage(navItem!))
             .DisposeWith(disposables);
+    }
+
+    /// <summary>Wires each nav item's dirty indicator to the store editors that back its page,
+    /// so the sidebar reflects unsaved changes per section rather than for the whole document.</summary>
+    private void WireNavigationDirtyState(CompositeDisposable disposables)
+    {
+        // Each page delegates editing to a specific set of store editors; the dirty
+        // indicator for a nav item reflects only the section it represents.
+        var dirtySources = new Dictionary<Type, IObservable<bool>>
+        {
+            [typeof(ProjectViewModel)] = _store.MetadataEditor.WhenAnyValue(editor => editor.IsDirty),
+            [typeof(SolutionViewModel)] = _store.SolutionOptionsEditor.WhenAnyValue(editor => editor.IsDirty),
+            [typeof(ExportViewModel)] = _store.ExportOptionsEditor.WhenAnyValue(editor => editor.IsDirty),
+            [typeof(DiagramsViewModel)] = _store.DiagramOptionsEditor.WhenAnyValue(editor => editor.IsDirty),
+            [typeof(PipelineViewModel)] = Observable.CombineLatest(
+                _store.PreGenerationEditor.WhenAnyValue(editor => editor.IsDirty),
+                _store.RestoreSolutionEditor.WhenAnyValue(editor => editor.IsDirty),
+                _store.PostGenerationEditor.WhenAnyValue(editor => editor.IsDirty),
+                (preGen, restore, postGen) => preGen || restore || postGen)
+        };
+
+        foreach (var item in NavigationItems)
+        {
+            if (dirtySources.TryGetValue(item.ViewModelType, out var source))
+            {
+                // The editors pass through transient dirty states while a document is opening or
+                // closing (IsTransitioning). Gate the indicator on that flag so a freshly opened
+                // project always starts clean; genuine edits made after the transition still
+                // surface normally.
+                source
+                    .WithLatestFrom(
+                        _store.WhenAnyValue(store => store.IsTransitioning),
+                        (isDirty, isTransitioning) => isTransitioning ? false : isDirty)
+                    .Subscribe(isDirty => item.HasUnsavedChanges = isDirty)
+                    .DisposeWith(disposables);
+            }
+        }
     }
 
     private async Task OpenProjectAsync()
@@ -689,10 +735,22 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
         }
     }
 
+    /// <summary>Disposes the current page's validation subscription and resets every nav item's
+    /// validation indicator. Used when the document is closed and the workspace is replaced by
+    /// the empty state, so no validation subscription outlives the page it was created for.</summary>
     private void ClearNavigationValidationDots()
     {
         _pageValidationSubscriptions.Clear();
 
+        ResetNavigationValidationDots();
+    }
+
+    /// <summary>Resets the validation indicator on every nav item without disturbing the current
+    /// page's validation subscription. Used when a document is (re)opened so stale dots from the
+    /// previous document don't linger; the current page's indicator is either re-established by
+    /// navigation or re-evaluated by its still-active subscription.</summary>
+    private void ResetNavigationValidationDots()
+    {
         foreach (var navItem in NavigationItems)
         {
             navItem.HasValidationError = false;

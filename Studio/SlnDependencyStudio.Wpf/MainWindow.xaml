@@ -325,8 +325,21 @@
                                             <ColumnDefinition Width="Auto" />
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="Auto" />
-                                            <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
+
+                                        <!--  Status tooltip on the whole row so it is easy to reach
+                                              without hovering precisely on the small status dot.  -->
+                                        <Grid.Style>
+                                            <Style TargetType="Grid">
+                                                <Setter Property="ToolTip" Value="{Binding StatusToolTip}" />
+                                                <Style.Triggers>
+                                                    <!--  No status: clear the tooltip so no empty box appears  -->
+                                                    <DataTrigger Binding="{Binding StatusToolTip}" Value="">
+                                                        <Setter Property="ToolTip" Value="{x:Null}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Grid.Style>
 
                                         <materialDesign:PackIcon
                                             Grid.Column="0"
@@ -350,20 +363,52 @@
                                             Width="8"
                                             Height="8"
                                             Margin="6,0,0,0"
-                                            Fill="{DynamicResource MaterialDesign.Brush.ValidationError}"
-                                            ToolTip="This section has validation errors"
-                                            Visibility="{Binding HasValidationError, Converter={StaticResource BoolToVisibility}}" />
-
-                                        <materialDesign:Chip
-                                            Grid.Column="3"
-                                            Height="18"
-                                            Margin="4,0,0,0"
-                                            Padding="4,0"
-                                            VerticalAlignment="Center"
-                                            Content="opt"
-                                            FontSize="9"
-                                            IsHitTestVisible="False"
-                                            Visibility="{Binding IsAdvanced, Converter={StaticResource BoolToVisibility}}" />
+                                            VerticalAlignment="Center">
+                                                <!--
+                                                    Single status dot. Validation error (red, filled) takes
+                                                    precedence over unsaved changes (hollow ring); when both
+                                                    are present the red dot keeps a thin ring hint. Both
+                                                    brushes are theme-aware for light/dark switching.
+                                                -->
+                                                <Ellipse.Style>
+                                                    <Style TargetType="Ellipse">
+                                                        <!--  Neither dirty nor error: hidden  -->
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                        <Setter Property="Fill" Value="Transparent" />
+                                                        <Setter Property="Stroke" Value="Transparent" />
+                                                        <Setter Property="StrokeThickness" Value="0" />
+                                                        <Style.Triggers>
+                                                            <!--  Unsaved changes only: hollow ring  -->
+                                                            <MultiDataTrigger>
+                                                                <MultiDataTrigger.Conditions>
+                                                                    <Condition Binding="{Binding HasUnsavedChanges}" Value="True" />
+                                                                    <Condition Binding="{Binding HasValidationError}" Value="False" />
+                                                                </MultiDataTrigger.Conditions>
+                                                                <Setter Property="Visibility" Value="Visible" />
+                                                                <Setter Property="Fill" Value="Transparent" />
+                                                                <Setter Property="Stroke" Value="{DynamicResource MaterialDesign.Brush.ForegroundLight}" />
+                                                                <Setter Property="StrokeThickness" Value="2" />
+                                                            </MultiDataTrigger>
+                                                            <!--  Validation error supersedes dirty: solid red dot  -->
+                                                            <DataTrigger Binding="{Binding HasValidationError}" Value="True">
+                                                                <Setter Property="Visibility" Value="Visible" />
+                                                                <Setter Property="Fill" Value="{DynamicResource MaterialDesign.Brush.ValidationError}" />
+                                                                <Setter Property="Stroke" Value="Transparent" />
+                                                                <Setter Property="StrokeThickness" Value="0" />
+                                                            </DataTrigger>
+                                                            <!--  Both dirty and error: red dot with a thin ring hinting unsaved changes  -->
+                                                            <MultiDataTrigger>
+                                                                <MultiDataTrigger.Conditions>
+                                                                    <Condition Binding="{Binding HasValidationError}" Value="True" />
+                                                                    <Condition Binding="{Binding HasUnsavedChanges}" Value="True" />
+                                                                </MultiDataTrigger.Conditions>
+                                                                <Setter Property="Stroke" Value="{DynamicResource MaterialDesign.Brush.ForegroundLight}" />
+                                                                <Setter Property="StrokeThickness" Value="1" />
+                                                            </MultiDataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Ellipse.Style>
+                                        </Ellipse>
                                     </Grid>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>

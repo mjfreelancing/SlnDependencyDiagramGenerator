@@ -8,9 +8,10 @@ namespace SlnDependencyStudio.Wpf.ViewModels;
 public abstract class NavigationItemViewModel : ReactiveObject
 {
     private string _displayName = string.Empty;
+    private string _statusToolTip = string.Empty;
     private PackIconKind _iconKind;
     private bool _hasValidationError;
-    private bool _isAdvanced;
+    private bool _hasUnsavedChanges;
 
     /// <summary>The display label shown in the nav (e.g. "Project", "Sources").</summary>
     public string DisplayName
@@ -27,19 +28,49 @@ public abstract class NavigationItemViewModel : ReactiveObject
     }
 
     /// <summary>Whether the page associated with this nav item has validation errors.
-    /// Controls the warning dot indicator in the nav.</summary>
+    /// Controls the warning dot indicator in the nav. Supersedes the dirty indicator
+    /// when both are present.</summary>
     public bool HasValidationError
     {
         get => _hasValidationError;
-        set => this.RaiseAndSetIfChanged(ref _hasValidationError, value);
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _hasValidationError, value);
+            UpdateStatusToolTip();
+        }
     }
 
-    /// <summary>When <see langword="true"/>, this nav item is rendered with a Material Design
-    /// <c>Chip</c> showing "optional" text (e.g. the Pipeline item).</summary>
-    public bool IsAdvanced
+    /// <summary>Whether the page associated with this nav item has unsaved changes.
+    /// Controls the dirty indicator in the nav.</summary>
+    public bool HasUnsavedChanges
     {
-        get => _isAdvanced;
-        set => this.RaiseAndSetIfChanged(ref _isAdvanced, value);
+        get => _hasUnsavedChanges;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _hasUnsavedChanges, value);
+            UpdateStatusToolTip();
+        }
+    }
+
+    /// <summary>Tooltip describing the combined status of this nav item (unsaved changes
+    /// and/or validation errors). Empty when the item has no status to report.</summary>
+    public string StatusToolTip
+    {
+        get => _statusToolTip;
+        private set => this.RaiseAndSetIfChanged(ref _statusToolTip, value);
+    }
+
+    /// <summary>Recomputes <see cref="StatusToolTip"/> from the current validation and
+    /// dirty state so the dot's tooltip always describes the combined condition.</summary>
+    private void UpdateStatusToolTip()
+    {
+        StatusToolTip = (HasValidationError, HasUnsavedChanges) switch
+        {
+            (true, true) => "This section has validation errors and unsaved changes",
+            (true, false) => "This section has validation errors",
+            (false, true) => "This section has unsaved changes",
+            _ => string.Empty
+        };
     }
 
     /// <summary>The CLR <see cref="Type"/> of the page view model associated with this nav item.
