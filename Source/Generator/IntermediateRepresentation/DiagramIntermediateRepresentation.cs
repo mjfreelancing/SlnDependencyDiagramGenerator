@@ -57,7 +57,7 @@ internal sealed class DiagramIntermediateRepresentation
     /// <summary>The package grouping containers in insertion order.</summary>
     public IReadOnlyList<DiagramIrGroup> Groups => _groupOrder;
 
-    /// <summary>Adds or updates a node by alias.</summary>
+    /// <summary>Adds a node by alias if it has not already been added.</summary>
     /// <param name="alias">Renderer-neutral node alias.</param>
     /// <param name="label">Display label for the node.</param>
     /// <param name="version">Optional package version (used by package nodes).</param>

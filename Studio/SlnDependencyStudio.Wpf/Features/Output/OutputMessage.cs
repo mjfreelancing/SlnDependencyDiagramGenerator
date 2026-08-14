@@ -4,7 +4,7 @@ using System.Collections.ObjectModel;
 namespace SlnDependencyStudio.Wpf.Features.Output;
 
 /// <summary>
-/// A single message in the output panel. Level is used for color-coding in Phase 8.
+/// A single message in the output panel. Level is used for color-coding.
 /// </summary>
 public sealed class OutputMessage : ReactiveObject
 {
@@ -29,7 +29,12 @@ public sealed class OutputMessage : ReactiveObject
 /// <summary>Severity level for output messages.</summary>
 public enum OutputMessageLevel
 {
+    /// <summary>An informational message.</summary>
     Information,
+
+    /// <summary>A warning message.</summary>
     Warning,
+
+    /// <summary>An error message.</summary>
     Error
 }

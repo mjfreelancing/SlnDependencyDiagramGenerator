@@ -1,4 +1,4 @@
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Extensions;
@@ -115,7 +115,7 @@ public class ServiceCollectionExtensionsFixture
     {
         var services = new ServiceCollection();
 
-        var registration = services.AddSlnDependencyGenerator();
+        var registration = services.AddSlnDependencyDiagramGenerator();
 
         registration.Services.ShouldBeSameAs(services);
         registration.ValidationRegistry.ShouldNotBeNull();
@@ -127,7 +127,7 @@ public class ServiceCollectionExtensionsFixture
 
         services.AddSingleton(new GeneratorDiagramOptions());
         services.AddLogging();
-        services.AddSlnDependencyGenerator();
+        services.AddSlnDependencyDiagramGenerator();
 
         return services.BuildServiceProvider();
     }

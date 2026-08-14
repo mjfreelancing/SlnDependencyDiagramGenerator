@@ -1,6 +1,4 @@
-using System;
-
-namespace SlnDependencyDiagramGenerator.Exceptions;
+﻿namespace SlnDependencyDiagramGenerator.Exceptions;
 
 /// <summary>Exception thrown when a required external diagram tool (d2 or mmdc) is not available.</summary>
 public sealed class ToolNotFoundException : DependencyGeneratorException

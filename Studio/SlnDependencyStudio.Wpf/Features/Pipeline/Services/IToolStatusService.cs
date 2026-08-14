@@ -9,9 +9,9 @@ namespace SlnDependencyStudio.Wpf.Features.Pipeline.Services;
 /// </summary>
 public interface IToolStatusService : IStudioScopedDependency
 {
-    // The underlying <c>BehaviorSubject</c> replays the latest snapshot to late subscribers,
-    // so the Pipeline page always receives the current state when it binds — no need to diff
-    // individual collection changes.
+    // The observable replays the latest snapshot to late subscribers, so the Pipeline page
+    // always receives the current state when it binds — no need to diff individual collection
+    // changes.
 
     /// <summary>
     /// An observable that emits a complete snapshot of all tool statuses whenever

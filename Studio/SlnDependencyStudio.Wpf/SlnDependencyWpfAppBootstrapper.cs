@@ -6,6 +6,8 @@ using System.Windows;
 
 namespace SlnDependencyStudio.Wpf;
 
+/// <summary>Bootstraps the application after the DI host has started: loads application settings,
+/// applies the persisted theme, and shows the main window.</summary>
 internal sealed class SlnDependencyWpfAppBootstrapper
 {
     private readonly IApplicationSettingsService _applicationSettingsService;
@@ -13,6 +15,11 @@ internal sealed class SlnDependencyWpfAppBootstrapper
     private readonly IViewFactory _viewFactory;
     private readonly ILogger<SlnDependencyWpfAppBootstrapper> _logger;
 
+    /// <summary>Initializes a new instance of <see cref="SlnDependencyWpfAppBootstrapper"/>.</summary>
+    /// <param name="applicationSettingsService">The application settings service.</param>
+    /// <param name="themeService">The theme service used to apply the persisted theme.</param>
+    /// <param name="viewFactory">The view factory used to create the main window.</param>
+    /// <param name="logger">The logger instance.</param>
     public SlnDependencyWpfAppBootstrapper(IApplicationSettingsService applicationSettingsService,
         IThemeService themeService, IViewFactory viewFactory, ILogger<SlnDependencyWpfAppBootstrapper> logger)
     {
@@ -22,6 +29,8 @@ internal sealed class SlnDependencyWpfAppBootstrapper
         _logger = logger;
     }
 
+    /// <summary>Loads application settings, applies the persisted theme, and shows the main window.
+    /// On failure, logs the error and displays a message box.</summary>
     public async Task RunAsync()
     {
         try

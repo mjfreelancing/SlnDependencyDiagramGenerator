@@ -8,6 +8,7 @@ namespace SlnDependencyStudio.Wpf.Converters.Json;
 /// value (e.g. "Light", "Dark") as a string and deserializes back to the matching singleton instance.</summary>
 public sealed class StudioThemeJsonConverter : JsonConverter<StudioTheme>
 {
+    /// <inheritdoc />
     public override StudioTheme? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         var name = reader.GetString();
@@ -17,6 +18,7 @@ public sealed class StudioThemeJsonConverter : JsonConverter<StudioTheme>
             : StudioTheme.From(name);
     }
 
+    /// <inheritdoc />
     public override void Write(Utf8JsonWriter writer, StudioTheme value, JsonSerializerOptions options)
     {
         writer.WriteStringValue(value.Name);

@@ -3,8 +3,8 @@ using SlnDependencyStudio.Shared.DependencyInjection;
 namespace SlnDependencyStudio.Wpf.Features.Run;
 
 /// <summary>
-/// Runs the full generation pipeline: restore solution (if enabled), pre-generation command (if enabled),
-/// then <c>CreateDiagramsAsync</c>, then post-generation command (if enabled).
+/// Runs the full generation pipeline: restores the solution (if enabled), runs the pre-generation
+/// command (if enabled), generates the diagrams, then runs the post-generation command (if enabled).
 /// </summary>
 public interface IGenerationService : IStudioSingletonDependency
 {

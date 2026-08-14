@@ -10,6 +10,8 @@ namespace SlnDependencyStudio.Wpf.Features.Solution;
 /// editing buffer and only flushed to the document on explicit save.</summary>
 public partial class SolutionView : ReactiveUserControl<SolutionViewModel>
 {
+    /// <summary>Initializes a new instance of <see cref="SolutionView"/>.</summary>
+    /// <param name="viewModel">The view model for the Solution page.</param>
     public SolutionView(SolutionViewModel viewModel)
     {
         ViewModel = viewModel;

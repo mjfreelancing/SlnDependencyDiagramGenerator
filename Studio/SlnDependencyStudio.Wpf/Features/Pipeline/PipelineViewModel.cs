@@ -75,7 +75,7 @@ public sealed class PipelineViewModel : ReactiveObject, IValidatableViewModel, I
     /// <summary>
     /// Validation error for the pre-generation command, or <see langword="null"/>
     /// when valid. Only reports an error when the toggle is enabled and the command
-    /// is empty.</c>.
+    /// is empty.
     /// </summary>
     public string? PreGenError
     {

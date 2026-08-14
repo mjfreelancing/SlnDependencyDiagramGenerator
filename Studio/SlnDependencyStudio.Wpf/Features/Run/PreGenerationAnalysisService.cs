@@ -82,9 +82,9 @@ internal sealed class PreGenerationAnalysisService : IPreGenerationAnalysisServi
 
             _logger.LogInformation("Checking tool readiness");
 
-            // ToolStatuses is a BehaviorSubject-backed observable that replays the current snapshot
-            // on subscription. FirstAsync() takes that snapshot once for the readiness report and
-            // completes, rather than subscribing to the ongoing stream.
+            // ToolStatuses replays the current snapshot on subscription, so FirstAsync() can take
+            // that snapshot once for the readiness report and complete, rather than subscribing
+            // to the ongoing stream.
             var toolEntries = await _toolStatus.ToolStatuses.FirstAsync();
 
             foreach (var entry in toolEntries)

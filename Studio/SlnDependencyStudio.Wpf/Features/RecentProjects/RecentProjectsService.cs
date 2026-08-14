@@ -7,6 +7,7 @@ using System.IO;
 
 namespace SlnDependencyStudio.Wpf.Features.RecentProjects;
 
+/// <summary>Default implementation of <see cref="IRecentProjectsService"/>.</summary>
 internal sealed class RecentProjectsService : IRecentProjectsService
 {
     private const int MaxEntries = 10;

@@ -11,7 +11,8 @@ using System.Threading.Tasks;
 
 namespace SlnDependencyDiagramGenerator.Generator.ToolDetection;
 
-/// <summary>Detects and validates the availability of external CLI tools on PATH.</summary>
+/// <summary>Detects and validates the availability of external CLI tools, honoring configured
+/// path overrides and falling back to PATH lookup.</summary>
 internal sealed class ToolDetectionService : IToolDetectionService
 {
     private static readonly string[] KnownTools = ["d2", "mmdc"];
@@ -22,6 +23,9 @@ internal sealed class ToolDetectionService : IToolDetectionService
     /// <inheritdoc />
     public IReadOnlyList<string> KnownToolNames => KnownTools;
 
+    /// <summary>Initializes a new tool detection service.</summary>
+    /// <param name="toolPathResolver">Resolves effective tool paths for explicit-path availability checks.</param>
+    /// <param name="logger">A logger for diagnostics.</param>
     public ToolDetectionService(IToolPathResolver toolPathResolver, ILogger<ToolDetectionService> logger)
     {
         _toolPathResolver = toolPathResolver;

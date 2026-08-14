@@ -12,6 +12,6 @@ internal sealed class ProjectNode
     /// <summary>Direct (explicit) and transitive package references, as a recursive tree.</summary>
     public PackageNode[] PackageReferences { get; init; } = [];
 
-    /// <summary>Other projects this project depends on, by name.</summary>
+    /// <summary>The project file paths this project depends on.</summary>
     public string[] ProjectReferences { get; init; } = [];
 }

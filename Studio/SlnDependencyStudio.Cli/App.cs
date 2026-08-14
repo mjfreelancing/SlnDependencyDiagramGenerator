@@ -58,8 +58,7 @@ internal sealed class App : ConsoleAppBase
 
         _logger.LogDebug("Verbose logging enabled: {Verbose}", isVerbose);
 
-        // CommandResult gives the invoked command, and ParseResult.GetValue(ConfigFileOption) returns the value
-        // supplied for the --configFile/--cf option on the command line, or null when it was not provided.
+        // Log the selected command and the config file path supplied on the command line (if any).
         _logger.LogDebug("Selected command: {Command}, config file: {ConfigFile}",
             parseResult.CommandResult.Command.Name, parseResult.GetValue(setup.ConfigFileOption) ?? "<none>");
 
@@ -76,7 +75,7 @@ internal sealed class App : ConsoleAppBase
                 await parseResult.InvokeAsync(cancellationToken: cancellationToken);
 
                 // If no action ran (e.g. --help) and no handler set an exit code, default to success.
-                // This keeps ExitCode as null when a handler genuinely forgets to set it, so we can detect that bug.
+                // Only a null ExitCode is overwritten, so an exit code set by a handler is preserved.
                 ExitCode ??= 0;
             }
         }

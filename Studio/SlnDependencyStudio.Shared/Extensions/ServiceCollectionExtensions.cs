@@ -18,7 +18,7 @@ public static class ServiceCollectionExtensions
     {
         /// <summary>Registers all shared Sln Dependency Studio services with the service collection.</summary>
         /// <param name="validationRegistry">The validation registry to register additional validators with. This source registry
-        /// is expected to have been returned from <see cref="SlnDependencyDiagramGenerator.Extensions.ServiceCollectionExtensions.AddSlnDependencyGenerator"/>.</param>
+        /// is expected to have been returned from <see cref="SlnDependencyDiagramGenerator.Extensions.ServiceCollectionExtensions.AddSlnDependencyDiagramGenerator"/>.</param>
         /// <returns>The service collection, for chaining.</returns>
         public IServiceCollection AddSlnDependencyStudio(IValidationRegistry validationRegistry)
         {

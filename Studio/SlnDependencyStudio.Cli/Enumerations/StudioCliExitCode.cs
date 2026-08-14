@@ -1,5 +1,6 @@
 ﻿namespace SlnDependencyStudio.Cli.Enumerations;
 
+/// <summary>Exit codes returned by the CLI to signal command outcomes.</summary>
 public enum StudioCliExitCode
 {
     /// <summary>Command-line parsing failed.</summary>
@@ -17,7 +18,7 @@ public enum StudioCliExitCode
     /// <summary>The pre-generation command failed and continue-on-failure is disabled.</summary>
     PreGenerationCommandFailed = 1005,
 
-    /// <summary>The diagram generator threw an error during <c>CreateDiagramsAsync</c>.</summary>
+    /// <summary>The diagram generator failed while creating the diagrams.</summary>
     DiagramGeneratorFailed = 1006,
 
     /// <summary>A required external diagram tool (such as d2 or mmdc) was not found.</summary>

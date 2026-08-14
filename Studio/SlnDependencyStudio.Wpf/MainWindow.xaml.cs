@@ -20,6 +20,7 @@ using System.Windows;
 
 namespace SlnDependencyStudio.Wpf;
 
+/// <summary>The main application window.</summary>
 public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 {
     private readonly IViewFactory _viewFactory;
@@ -30,6 +31,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     private readonly ILogger<MainWindow> _logger;
     private bool _isClosing;
 
+    /// <summary>Initializes a new instance of <see cref="MainWindow"/>.</summary>
     public MainWindow(MainWindowViewModel viewModel, IViewFactory viewFactory, IApplicationSettingsService settingsService,
         IFileSystem fileSystem, IProjectDocumentStore store, IErrorDialogService errorDialog, ILogger<MainWindow> logger)
     {
@@ -193,7 +195,8 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         });
     }
 
-    /// <summary>Saves the current window placement to application state before closing.</summary>
+    /// <summary>Handles the window close flow: blocks close while an operation is running, prompts to
+    /// save or discard unsaved changes, and persists the window placement to application state before closing.</summary>
     protected override async void OnClosing(CancelEventArgs e)
     {
         base.OnClosing(e);

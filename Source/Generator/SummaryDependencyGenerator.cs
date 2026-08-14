@@ -282,7 +282,7 @@ internal static class SummaryDependencyGenerator
 
         try
         {
-            // Add all packages dependencies (recursively) for the current project
+            // Add all package dependencies (recursively) for the current project
             var packageReferences = solutionProject.PackageReferences;
 
             foreach (var packageReference in packageReferences)

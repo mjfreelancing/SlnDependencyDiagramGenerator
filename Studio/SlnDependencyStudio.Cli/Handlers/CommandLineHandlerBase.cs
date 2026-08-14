@@ -24,8 +24,9 @@ internal abstract class CommandLineHandlerBase
     /// <summary>Handles the command with the given configuration file and cancellation token.</summary>
     /// <param name="configFilename">The path to the configuration file.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>A task that completes when the command has been handled.</returns>
-    public abstract Task HandleAsync(string configFilename, CancellationToken cancellationToken);
+    /// <returns>A task that resolves to the process exit code: 0 on success, or a
+    /// <see cref="Enumerations.StudioCliExitCode"/> value on failure.</returns>
+    public abstract Task<int> HandleAsync(string configFilename, CancellationToken cancellationToken);
 
     /// <summary>Loads and resolves a dependency project document from a configuration file.</summary>
     /// <param name="configFilename">The path to the configuration file.</param>
@@ -48,7 +49,7 @@ internal abstract class CommandLineHandlerBase
         return document;
     }
 
-    /// <summary>Logs FluentValidation errors to the logger.</summary>
+    /// <summary>Logs validation errors to the logger.</summary>
     /// <param name="exception">The validation exception containing the errors.</param>
     protected void WriteValidationErrors(ValidationException exception)
     {

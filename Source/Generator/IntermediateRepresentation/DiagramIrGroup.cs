@@ -6,6 +6,8 @@ namespace SlnDependencyDiagramGenerator.Generator.IntermediateRepresentation;
 internal sealed class DiagramIrGroup
 {
     /// <summary>Initializes a new group container.</summary>
+    /// <param name="alias">The group alias.</param>
+    /// <param name="label">The group display label.</param>
     public DiagramIrGroup(string alias, string label)
     {
         Alias = alias;

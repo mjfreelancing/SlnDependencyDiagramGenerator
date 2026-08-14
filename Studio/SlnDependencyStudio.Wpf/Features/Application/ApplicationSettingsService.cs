@@ -133,6 +133,9 @@ internal sealed class ApplicationSettingsService : IApplicationSettingsService
         _fileSystem.MoveFile(tempPath, _stateFilePath, overwrite: true);
     }
 
+    /// <summary>Returns the default directory used to persist settings and state
+    /// (<c>%AppData%/SlnDependencyStudio</c>).</summary>
+    /// <returns>The default settings directory path.</returns>
     internal static string GetDefaultSettingsDirectory()
     {
         return Path.Combine(

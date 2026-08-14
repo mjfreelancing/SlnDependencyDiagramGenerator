@@ -1,4 +1,4 @@
-using AllOverIt.Validation;
+﻿using AllOverIt.Validation;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
 using SlnDependencyDiagramGenerator.Extensions;
@@ -95,7 +95,7 @@ public class StudioServiceCollectionExtensionsFixture
         var services = new ServiceCollection();
 
         services.AddLogging();
-        var (_, validationRegistry) = services.AddSlnDependencyGenerator();
+        var (_, validationRegistry) = services.AddSlnDependencyDiagramGenerator();
         services.AddSlnDependencyStudio(validationRegistry);
 
         return services.BuildServiceProvider();

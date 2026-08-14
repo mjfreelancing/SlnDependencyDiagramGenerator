@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
 using SlnDependencyDiagramGenerator.Config;
@@ -125,7 +125,7 @@ public class DependencyGeneratorConfigFixture
         var services = new ServiceCollection();
 
         services.AddLogging();
-        services.AddSlnDependencyGenerator();
+        services.AddSlnDependencyDiagramGenerator();
 
         var provider = services.BuildServiceProvider();
 

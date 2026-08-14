@@ -15,7 +15,7 @@ await GenericHost
     .ConfigureServices((context, services) =>
     {
         // Dependency diagram generator services
-        var (_, validationRegistry) = services.AddSlnDependencyGenerator();
+        var (_, validationRegistry) = services.AddSlnDependencyDiagramGenerator();
 
         // Shared Studio services
         services.AddSlnDependencyStudio(validationRegistry);

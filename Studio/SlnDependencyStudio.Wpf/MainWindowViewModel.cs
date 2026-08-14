@@ -131,7 +131,7 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
     /// <summary>Command that runs a dry-run analysis.</summary>
     public ReactiveCommand<Unit, Unit> AnalyseCommand { get; }
 
-    /// <summary>Command that runs generation (Phase 8 placeholder).</summary>
+    /// <summary>Command that runs generation.</summary>
     public ReactiveCommand<Unit, Unit> GenerateCommand { get; }
 
     /// <summary>Command that opens the application settings dialog.</summary>
@@ -795,6 +795,7 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
         _logger.LogDebug("Showing empty-state landing page");
     }
 
+    /// <summary>Reloads the recent projects list from the store.</summary>
     internal void RefreshRecentProjects()
     {
         _recentProjectsStore.Refresh();

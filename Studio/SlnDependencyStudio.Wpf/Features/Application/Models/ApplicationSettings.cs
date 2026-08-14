@@ -23,6 +23,8 @@ public sealed class ApplicationSettings
     /// <summary>Output panel preferences.</summary>
     public OutputSettings Output { get; set; } = new();
 
+    /// <summary>Creates a deep copy of the current settings.</summary>
+    /// <returns>A new <see cref="ApplicationSettings"/> instance with copied values.</returns>
     public ApplicationSettings Clone()
     {
         return new ApplicationSettings

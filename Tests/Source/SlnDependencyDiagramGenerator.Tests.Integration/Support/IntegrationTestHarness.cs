@@ -1,4 +1,4 @@
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Extensions;
 using SlnDependencyDiagramGenerator.Generator;
@@ -77,7 +77,7 @@ internal static class IntegrationTestHarness
         var services = new ServiceCollection();
 
         services.AddLogging();
-        services.AddSlnDependencyGenerator();
+        services.AddSlnDependencyDiagramGenerator();
 
         var provider = services.BuildServiceProvider();
 

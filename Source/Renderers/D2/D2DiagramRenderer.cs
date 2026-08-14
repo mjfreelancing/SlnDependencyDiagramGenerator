@@ -47,7 +47,7 @@ internal sealed class D2DiagramRenderer : DiagramRendererBase
     /// <inheritdoc />
     public override string Render(DependencyGraphModel model)
     {
-        // Shared graph semantics come from the base class diagram representation builder.
+        // Build the shared, renderer-neutral graph representation.
         var diagramRepresentation = BuildIntermediateRepresentation(model);
         var sb = new StringBuilder();
 

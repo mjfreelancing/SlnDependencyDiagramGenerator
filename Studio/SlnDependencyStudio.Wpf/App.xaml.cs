@@ -12,6 +12,8 @@ using System.Windows;
 
 namespace SlnDependencyStudio.Wpf;
 
+/// <summary>The WPF application entry point. Owns the dependency injection host and
+/// coordinates application startup and shutdown.</summary>
 public partial class App : Application
 {
     private static readonly string DefaultLogDirectory = Path.Combine(
@@ -40,7 +42,7 @@ public partial class App : Application
                 services.AddSingleton<IStudioLogBuffer>(logBuffer);
 
                 // Dependency diagram generator services from the core library.
-                var (_, validationRegistry) = services.AddSlnDependencyGenerator();
+                var (_, validationRegistry) = services.AddSlnDependencyDiagramGenerator();
 
                 // Shared Studio services.
                 services.AddSlnDependencyStudio(validationRegistry);

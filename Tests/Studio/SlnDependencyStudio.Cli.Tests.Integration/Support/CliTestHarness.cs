@@ -1,4 +1,4 @@
-using AllOverIt.DependencyInjection.Extensions;
+﻿using AllOverIt.DependencyInjection.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SlnDependencyDiagramGenerator.Extensions;
@@ -22,7 +22,7 @@ internal static class CliTestHarness
 
         var services = new ServiceCollection();
         services.AddLogging();
-        var (_, validationRegistry) = services.AddSlnDependencyGenerator();
+        var (_, validationRegistry) = services.AddSlnDependencyDiagramGenerator();
         services.AddSlnDependencyStudio(validationRegistry);
 
         // Auto-register CLI-specific services (mirrors Program.cs)

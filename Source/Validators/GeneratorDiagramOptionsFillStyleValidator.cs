@@ -5,13 +5,16 @@ using SlnDependencyDiagramGenerator.Config;
 
 namespace SlnDependencyDiagramGenerator.Validators;
 
+/// <summary>Validates <see cref="GeneratorDiagramOptions.FillStyle"/>.</summary>
 internal sealed class GeneratorDiagramOptionsFillStyleValidator : ValidatorBase<GeneratorDiagramOptions.FillStyle>
 {
+    /// <summary>Initializes static validator configuration.</summary>
     static GeneratorDiagramOptionsFillStyleValidator()
     {
         DisablePropertyNameSplitting();
     }
 
+    /// <summary>Initializes validation rules.</summary>
     public GeneratorDiagramOptionsFillStyleValidator()
     {
         RuleFor(model => model.Fill).IsNotEmpty();

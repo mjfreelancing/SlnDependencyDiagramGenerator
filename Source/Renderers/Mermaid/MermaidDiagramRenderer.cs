@@ -46,7 +46,7 @@ internal sealed class MermaidDiagramRenderer : DiagramRendererBase
     /// <inheritdoc />
     public override string Render(DependencyGraphModel model)
     {
-        // Build once from the shared traversal so Mermaid and D2 stay semantically aligned.
+        // Build the shared, renderer-neutral graph representation so all renderers stay semantically aligned.
         var diagramRepresentation = BuildIntermediateRepresentation(model);
         var sb = new StringBuilder();
         var groupingEnabled = Options.Grouping.Enabled;

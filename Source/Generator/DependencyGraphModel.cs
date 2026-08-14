@@ -10,6 +10,7 @@ internal sealed class DependencyGraphModel
     /// <summary>The ordered list of projects in this scope.</summary>
     public ProjectNode[] Projects { get; init; } = [];
 
-    /// <summary>Package names (not aliases) that appear with more than one resolved version across the scope.</summary>
+    /// <summary>Package names that resolve to more than one version across the scope, mapped to the
+    /// diagram group id used to group their nodes.</summary>
     public IReadOnlyDictionary<string, string> PackagesWithMultipleVersions { get; init; } = new Dictionary<string, string>();
 }

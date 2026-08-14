@@ -20,6 +20,7 @@ public interface IDependencyProjectSerializer : IStudioScopedDependency
     /// <summary>Deserializes a JSON string into a document.</summary>
     /// <param name="json">The JSON string.</param>
     /// <returns>The deserialized document.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the document's schema version is not supported.</exception>
     DependencyProjectDocument Deserialize(string json);
 
     /// <summary>Loads and deserializes a document from a JSON file.</summary>

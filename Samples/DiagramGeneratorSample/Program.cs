@@ -77,7 +77,7 @@ internal class Program
                         options.TimestampFormat = "HH:mm:ss ";
                     });
             })
-            .AddSlnDependencyGenerator();
+            .AddSlnDependencyDiagramGenerator();
 
         return services.BuildServiceProvider();
     }

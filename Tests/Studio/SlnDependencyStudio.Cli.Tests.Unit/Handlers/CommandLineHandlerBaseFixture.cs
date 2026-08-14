@@ -29,8 +29,8 @@ public class CommandLineHandlerBaseFixture
 
         public static string CallGetConfigDirectory(string path) => GetConfigDirectory(path);
 
-        public override Task HandleAsync(string configFilename, CancellationToken cancellationToken)
-            => Task.CompletedTask;
+        public override Task<int> HandleAsync(string configFilename, CancellationToken cancellationToken)
+            => Task.FromResult(0);
     }
 
     public class GetConfigDirectory : CommandLineHandlerBaseFixture
