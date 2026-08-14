@@ -12,7 +12,10 @@ This document covers every configuration option available in `SlnDependencyDiagr
   - [Export Options](#export-options)
 - [Studio Project Document (.sds) Format](#studio-project-document-sds-format)
   - [Metadata](#metadata)
+  - [Restore Solution](#restore-solution)
   - [Pre-Generation Command](#pre-generation-command)
+  - [Post-Generation Command](#post-generation-command)
+- [Path Resolution](#path-resolution)
 - [Target Framework Discovery](#target-framework-discovery)
 - [Tool Requirements](#tool-requirements)
 - [Architecture Overview](#architecture-overview)
@@ -129,6 +132,8 @@ Defined by `GeneratorExportOptions`.
     └── ...
 ```
 
+The `Dependency Summary.md` file is also written to each target-framework folder.
+
 **File naming:**
 
 Generated diagram and image files use normalized file-safe base names. For example, a project named `My.Project` with the Individual scope becomes `my-project-Individual.d2`. The solution-scope All diagram becomes `my-solution-all.d2`.
@@ -151,22 +156,31 @@ The `.sds` file is the saved dependency project document format used by SlnDepen
     "diagram": { ... },
     "export": { ... }
   },
+  "restoreSolution": true,
   "preGeneration": {
     "enabled": false,
     "command": "",
     "arguments": "",
     "workingDirectory": "",
     "continueOnFailure": false
+  },
+  "postGeneration": {
+    "enabled": false,
+    "command": "",
+    "arguments": "",
+    "workingDirectory": ""
   }
 }
 ```
 
-| Property           | Type     | Description                                                                                                        |
-| ------------------ | -------- | ------------------------------------------------------------------------------------------------------------------ |
-| `schemaVersion`    | `int`    | Schema version for forward compatibility. Currently `1`.                                                           |
-| `metadata`         | `object` | User-facing project metadata (see [Metadata](#metadata)).                                                          |
-| `diagramGenerator` | `object` | The `DependencyGeneratorConfig` payload (see [Diagram Generator Configuration](#diagram-generator-configuration)). |
-| `preGeneration`    | `object` | Optional pre-generation command configuration (see [Pre-Generation Command](#pre-generation-command)).             |
+| Property           | Type     | Default | Description                                                                                                        |
+| ------------------ | -------- | ------- | ------------------------------------------------------------------------------------------------------------------ |
+| `schemaVersion`    | `int`    | `1`     | Schema version for forward compatibility. Currently `1`.                                                           |
+| `metadata`         | `object` | —       | User-facing project metadata (see [Metadata](#metadata)).                                                          |
+| `diagramGenerator` | `object` | —       | The `DependencyGeneratorConfig` payload (see [Diagram Generator Configuration](#diagram-generator-configuration)). |
+| `restoreSolution`  | `bool`   | `true`  | When `true`, the solution is restored (via `dotnet restore`) before generation starts.                             |
+| `preGeneration`    | `object` | —       | Optional command that runs before generation (see [Pre-Generation Command](#pre-generation-command)).              |
+| `postGeneration`   | `object` | —       | Optional command that runs after generation (see [Post-Generation Command](#post-generation-command)).             |
 
 **Forward compatibility:** Unknown JSON fields are preserved via `[JsonExtensionData]`. Editing a document with a newer schema version does not strip data from unknown fields.
 
@@ -179,24 +193,47 @@ Defined by `DependencyProjectMetadata`.
 | `projectName` | `string` | A friendly display name for the dependency project. Not used during generation.        |
 | `description` | `string` | An optional description of the project's purpose or scope. Not used during generation. |
 
+### Restore Solution
+
+`restoreSolution` is a top-level boolean on the document (default `true`). When enabled, the CLI and WPF run `dotnet restore` against the configured solution before generation so each project has an up-to-date `obj/project.assets.json`.
+
+- In the CLI, a failed restore aborts the run with exit code `1008`.
+- In the WPF application, this is exposed as the **Restore Solution** toggle on the Pipeline page.
+
 ### Pre-Generation Command
 
-Defined by `PreGenerationConfig`. Controls an optional command that executes before diagram generation starts.
+Defined by `PreGenerationConfig`, which extends the shared `ProcessCommandConfig` base (see below) and adds one field.
 
 | Field               | Type     | Default | Description                                                                                                                                                        |
 | ------------------- | -------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `enabled`           | `bool`   | `false` | When `true`, the pre-generation command runs before diagram generation.                                                                                            |
+| `enabled`           | `bool`   | `false` | When `true`, the command runs before diagram generation.                                                                                                           |
 | `command`           | `string` | `""`    | The executable or script to run (e.g. `"dotnet"`, `"cmd.exe"`, `"powershell.exe"`).                                                                                |
 | `arguments`         | `string` | `""`    | Command-line arguments passed to the command. Tokens are split by spaces.                                                                                          |
 | `workingDirectory`  | `string` | `""`    | Working directory for the command. When empty, defaults to the folder containing the `.sds` file. Relative paths are resolved against the `.sds` file's directory. |
-| `continueOnFailure` | `bool`   | `false` | When `true`, diagram generation proceeds even if the pre-generation command exits with a non-zero exit code. When `false`, generation is aborted on failure.       |
+| `continueOnFailure` | `bool`   | `false` | When `true`, diagram generation proceeds even if the command exits with a non-zero exit code. When `false`, generation is aborted.                                 |
 
-**Common use cases:**
+### Post-Generation Command
 
-Run `dotnet restore` before generation to ensure `project.assets.json` files are up to date:
+Defined by `PostGenerationConfig`, which extends the shared `ProcessCommandConfig` base. It has the same `enabled`, `command`, `arguments`, and `workingDirectory` fields as the pre-generation command, but **no** `continueOnFailure` option.
+
+| Field              | Type     | Default | Description                                                                                       |
+| ------------------ | -------- | ------- | ------------------------------------------------------------------------------------------------- |
+| `enabled`          | `bool`   | `false` | When `true`, the command runs after diagram generation completes.                                 |
+| `command`          | `string` | `""`    | The executable or script to run.                                                                  |
+| `arguments`        | `string` | `""`    | Command-line arguments passed to the command. Tokens are split by spaces.                         |
+| `workingDirectory` | `string` | `""`    | Working directory for the command. When empty, defaults to the folder containing the `.sds` file. |
+
+Post-generation failures are logged as warnings and do not affect the CLI exit code.
+
+### Shared Process Command Configuration
+
+Both `preGeneration` and `postGeneration` share a common base shape (`ProcessCommandConfig`) for the `enabled`, `command`, `arguments`, and `workingDirectory` fields, so the two sections are configured identically.
+
+**Common use case — restore before generation:**
 
 ```json
 {
+  "restoreSolution": false,
   "preGeneration": {
     "enabled": true,
     "command": "dotnet",
@@ -207,7 +244,12 @@ Run `dotnet restore` before generation to ensure `project.assets.json` files are
 }
 ```
 
-**Path resolution (CLI):** In the CLI, relative paths inside the `.sds` file (`solutionPath`, `rootPath`, `workingDirectory`) are resolved relative to the folder containing the `.sds` file. In the WPF application, the user can choose whether to store paths as absolute or relative to the `.sds` file directory.
+---
+
+## Path Resolution
+
+- **CLI:** Relative paths inside the `.sds` file (`solutionPath`, `rootPath`, `workingDirectory`) are resolved relative to the folder containing the `.sds` file. The `--configFile` / `--cf` argument itself is resolved relative to the current working directory.
+- **WPF:** The user can choose whether to store paths as absolute or relative to the `.sds` file directory (the **Use relative path** checkbox on the Solution and Export pages).
 
 ---
 
@@ -217,7 +259,7 @@ Target frameworks are **auto-discovered** from each matching project's `obj/proj
 
 **Requirements:**
 
-- The solution must be restored or built **before** generation so each project has its `obj/project.assets.json` file. If these files are missing or stale, run `dotnet restore` or build the solution first.
+- The solution must be restored or built **before** generation so each project has its `obj/project.assets.json` file. If these files are missing or stale, run `dotnet restore` or build the solution first — or enable `restoreSolution` to automate this.
 
 **How it works:**
 
@@ -234,14 +276,14 @@ Target frameworks are **auto-discovered** from each matching project's `obj/proj
 ### D2 Diagrams
 
 - **Diagram generation** (`.d2` files): No external tools required.
-- **Image export** (PNG, SVG, PDF): Requires the [D2 CLI](https://github.com/terrastruct/d2/blob/master/docs/INSTALL.md) to be available on PATH (or configured via an explicit path override).
+- **Image export** (PNG, SVG, PDF): Requires the [D2 CLI](https://d2lang.com/tour/install/) to be available on PATH (or configured via an explicit path override).
 
 **PNG export notes:** D2's PNG export may have specific requirements depending on your platform. See the [D2 export documentation](https://d2lang.com/ko/tour/exports/) for details on potential issues and workarounds.
 
 ### Mermaid Diagrams
 
 - **Diagram generation** (`.mmd` files): No external tools required.
-- **Image export** (PNG, SVG, PDF): Requires [Mermaid CLI (mmdc)](https://github.com/mermaid-js/mermaid-cli) to be available on PATH (or configured via an explicit path override).
+- **Image export** (PNG, SVG, PDF): Requires [Mermaid CLI (mmdc)](https://github.com/mermaid-js/mermaid-cli#installation) to be available on PATH (or configured via an explicit path override).
 
 ### Tool Detection
 

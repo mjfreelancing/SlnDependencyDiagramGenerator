@@ -1,6 +1,8 @@
 # SlnDependencyStudio CLI User Guide
 
-SlnDependencyStudio CLI is a cross-platform command-line tool that reads a dependency project (`.sds`) file and generates dependency diagrams for a Visual Studio solution. It is designed for automation in scripts and CI pipelines.
+SlnDependencyStudio CLI is a cross-platform command-line tool that reads a dependency project (`.sds`) file and generates dependency diagrams for a Visual Studio solution — showing which projects depend on which, with full package and framework reference graphs.
+
+It is built for automation: it can validate configurations, restore the solution, run optional pre/post-generation commands, and returns deterministic exit codes that scripts and CI pipelines can rely on.
 
 ---
 
@@ -8,30 +10,45 @@ SlnDependencyStudio CLI is a cross-platform command-line tool that reads a depen
 
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
+- [Getting Help](#getting-help)
 - [Commands](#commands)
+  - [Shared Options](#shared-options)
   - [Validate Command](#validate-command)
   - [Run Command](#run-command)
-- [Configuration File (.sds)](#configuration-file-sds)
+- [The Configuration File (.sds)](#the-configuration-file-sds)
+- [Path Resolution](#path-resolution)
+- [The Generation Pipeline](#the-generation-pipeline)
+  - [Solution Restore](#solution-restore)
+  - [Pre-Generation Command](#pre-generation-command)
+  - [Diagram Generation](#diagram-generation)
+  - [Post-Generation Command](#post-generation-command)
 - [Exit Codes](#exit-codes)
 - [Logging and Output](#logging-and-output)
-- [Path Resolution](#path-resolution)
-- [Pre-Generation Commands](#pre-generation-commands)
+- [External Tool Requirements](#external-tool-requirements)
 - [Examples](#examples)
+- [Scripting and CI](#scripting-and-ci)
+- [Troubleshooting](#troubleshooting)
 - [Sample Files](#sample-files)
 
 ---
 
 ## Prerequisites
 
-1. **.NET 10.0 SDK** (or the version matching your build) to publish or run the CLI.
-2. **Solution restore** — The target solution must be restored or built so each project has `obj/project.assets.json` available. See [Pre-Generation Commands](#pre-generation-commands) for automating this.
+1. **.NET SDK** — The CLI targets `net10.0` (a matching .NET SDK is required to publish or run it).
+2. **Solution restore** — The target solution must be restored or built so each project has `obj/project.assets.json`. The CLI can do this for you automatically (see [Solution Restore](#solution-restore)) or via a pre-generation command.
 3. **External tools for image export** (optional):
-   - [D2 CLI](https://github.com/terrastruct/d2/blob/master/docs/INSTALL.md) — required when generating D2 images (PNG/SVG/PDF).
-   - [Mermaid CLI (mmdc)](https://github.com/mermaid-js/mermaid-cli) — required when generating Mermaid images.
+   - [D2 CLI](https://d2lang.com/tour/install/) — required when generating D2 images (PNG/SVG/PDF).
+   - [Mermaid CLI (mmdc)](https://github.com/mermaid-js/mermaid-cli#installation) — required when generating Mermaid images.
 
 ---
 
 ## Installation
+
+### Download a Pre-Built Binary
+
+Pre-built versions of the CLI are distributed as part of the **SlnDependencyStudio** application on the [Releases page](https://github.com/mjfreelancing/SlnDependencyDiagramGenerator/releases). Download the latest release, extract it to a folder of your choice, and add that folder to your PATH — no .NET SDK is required.
+
+Alternatively, build it yourself:
 
 ### Build and Publish
 
@@ -39,11 +56,11 @@ SlnDependencyStudio CLI is a cross-platform command-line tool that reads a depen
 # Publish the CLI to a folder of your choice
 dotnet publish Studio\SlnDependencyStudio.Cli -o D:\tools\SlnDependencyStudio
 
-# Add that folder to your PATH
+# Add that folder to your PATH (adjust the path to match your chosen location)
 $env:Path += ";D:\tools\SlnDependencyStudio"
 ```
 
-After adding to PATH, you can invoke the tool as `SlnDependencyStudio.Cli` from anywhere.
+After adding the folder to your PATH, you can invoke the tool as `SlnDependencyStudio.Cli` from anywhere.
 
 ### Verify Installation
 
@@ -53,42 +70,188 @@ SlnDependencyStudio.Cli --help
 
 ---
 
+## Getting Help
+
+Every command supports `--help` (or `-h`):
+
+```shell
+# Top-level help — lists commands and shared options
+SlnDependencyStudio.Cli --help
+
+# Per-command help — options for a specific command
+SlnDependencyStudio.Cli run --help
+SlnDependencyStudio.Cli validate --help
+```
+
+---
+
 ## Commands
 
 The CLI has two commands: `validate` and `run`. Both require the `--configFile` (or `--cf`) option pointing to a `.sds` configuration file.
 
+### Shared Options
+
+| Option         | Alias  | Required | Description                                                                                                             |
+| -------------- | ------ | -------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `--configFile` | `--cf` | Yes      | Path to the `.sds` configuration file. Resolved relative to the current working directory (or used as-is if absolute).  |
+| `--verbose`    | `-v`   | No       | Enable Debug-level logging on the console. Does not affect the rolling file log, which always captures Debug and above. |
+| `--help`       | `-h`   | No       | Show help and usage information.                                                                                        |
+
+> The `--verbose` flag is registered on the subcommands (`SlnDependencyStudio.Cli run --cf x.sds --verbose`).
+
 ### Validate Command
 
-Checks a `.sds` configuration file for errors — missing values, invalid paths, malformed settings — without running any generation.
+Checks a `.sds` configuration file for errors — missing values, invalid paths, malformed settings, invalid regex patterns — **without running any generation or pipeline commands**.
 
-```
+```text
 SlnDependencyStudio.Cli validate --cf <path-to-sds-file>
 ```
 
-**Typical use:** Run this first when setting up a new configuration or troubleshooting an existing one. Validation includes:
+**What it checks:**
 
 - JSON parse correctness
-- Pre-generation command configuration validity
-- Diagram generator configuration validity (solution path, regex patterns, export settings, etc.)
+- Document structure (`schemaVersion`, `metadata`, `diagramGenerator`, `preGeneration`, `postGeneration`, `restoreSolution`)
+- Solution configuration (path exists, at least one scope enabled, transitive depth, filters)
+- Diagram configuration (at least one format, valid colours, grouping)
+- Export configuration (root path set)
+- Pre/post-generation command configuration (command non-empty when enabled, working directory exists)
+
+**Exit codes:** `0` when valid; `1002` if the file cannot be loaded; `1003` if validation fails.
+
+**Typical use:** Run this first when setting up a new configuration or troubleshooting an existing one, before attempting a full `run`.
 
 ### Run Command
 
-Loads a `.sds` configuration file, validates it, optionally runs a pre-generation command, and then generates dependency diagrams as per the configuration settings.
+Loads a `.sds` configuration file, validates it, then executes the full generation pipeline:
 
-```
+```text
 SlnDependencyStudio.Cli run --cf <path-to-sds-file>
 ```
 
 **Pipeline:**
 
-1. Load and deserialize the `.sds` file
-2. Resolve all relative paths to absolute paths
-3. Log the resolved configuration (for troubleshooting)
-4. Validate pre-generation command settings
-5. Validate the main diagram generator configuration
-6. Execute the pre-generation command (if enabled)
-7. Run diagram generation (project discovery → dependency resolution → diagram emission → optional image export)
+1. Load and deserialize the `.sds` file and resolve relative paths
+2. Log the resolved configuration (for troubleshooting)
+3. Validate the whole document up front — failures are reported before any command or generation work begins
+4. Restore the solution if `restoreSolution` is enabled
+5. Run the pre-generation command if enabled (aborts on failure unless `continueOnFailure`)
+6. Generate diagrams (project discovery → dependency resolution → framework processing → diagram emission → optional image export)
+7. Run the post-generation command if enabled
 8. Report completion or errors
+
+---
+
+## The Configuration File (.sds)
+
+A `.sds` file is a JSON document (the extension is just a convention). It describes what to analyse, how diagrams should look, where to write them, and which pipeline steps to run.
+
+The complete field-level reference is in [configuration.md](./configuration.md). A summary of the document shape:
+
+```json
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "projectName": "My Solution",
+    "description": "Dependency diagrams for My Solution"
+  },
+  "diagramGenerator": {
+    "solution": {},
+    "diagram": {},
+    "export": {}
+  },
+  "restoreSolution": true,
+  "preGeneration": {
+    "enabled": false,
+    "command": "",
+    "arguments": "",
+    "workingDirectory": "",
+    "continueOnFailure": false
+  },
+  "postGeneration": {
+    "enabled": false,
+    "command": "",
+    "arguments": "",
+    "workingDirectory": ""
+  }
+}
+```
+
+Key points:
+
+- `diagramGenerator` holds the generator configuration (solution, diagram, export) and is shared with the WPF application.
+- `restoreSolution` (default `true`) runs `dotnet restore` on the solution before generation.
+- `preGeneration` / `postGeneration` run optional commands around the generation step.
+- Unknown fields are preserved on save for forward compatibility.
+
+---
+
+## Path Resolution
+
+- The `--configFile` / `--cf` path is resolved relative to your current working directory (or used as-is if absolute).
+- All paths inside the `.sds` file — `solutionPath`, `rootPath`, `workingDirectory` — are resolved relative to the folder containing the `.sds` file. This lets you store configs anywhere and move them without rewriting paths.
+
+---
+
+## The Generation Pipeline
+
+### Solution Restore
+
+When `restoreSolution` is `true` (the default), the CLI runs `dotnet restore` against the configured solution before anything else. This guarantees each project has an up-to-date `obj/project.assets.json`.
+
+- Restore output (stdout/stderr) is streamed to the console and rolling log in real time.
+- If the restore fails, the run aborts with exit code `1008`.
+
+Set `"restoreSolution": false` to skip this step (for example, when you manage restore yourself or want a fully offline run).
+
+### Pre-Generation Command
+
+Runs before diagram generation. Configured under `preGeneration`:
+
+```json
+{
+  "preGeneration": {
+    "enabled": true,
+    "command": "dotnet",
+    "arguments": "restore MySolution.sln",
+    "workingDirectory": "",
+    "continueOnFailure": false
+  }
+}
+```
+
+| Field               | Description                                                                                                                             |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `enabled`           | When `true`, the command runs before generation.                                                                                        |
+| `command`           | The executable or script to run (e.g. `dotnet`, `cmd.exe`, `powershell.exe`).                                                           |
+| `arguments`         | Command-line arguments, split by spaces.                                                                                                |
+| `workingDirectory`  | Working directory for the command. Empty defaults to the `.sds` file's folder.                                                          |
+| `continueOnFailure` | When `true`, generation proceeds even if the command exits with an error; when `false` (default), the run aborts with exit code `1005`. |
+
+Output from the command is streamed in real time to the console and rolling log.
+
+> **Security note:** Pre-generation commands execute whatever they are told to. Only run `.sds` files you trust.
+
+### Diagram Generation
+
+The core step — project discovery, dependency resolution, framework processing, diagram emission, and optional image export — as configured in `diagramGenerator`. All output appears in both the console and the rolling file log.
+
+### Post-Generation Command
+
+Runs after diagram generation completes. Configured under `postGeneration`:
+
+```json
+{
+  "postGeneration": {
+    "enabled": true,
+    "command": "powershell.exe",
+    "arguments": "-File .\\notify.ps1",
+    "workingDirectory": "",
+    "continueOnFailure": false
+  }
+}
+```
+
+`postGeneration` shares the same `command`, `arguments`, and `workingDirectory` fields as `preGeneration` (it has no `continueOnFailure` option — failures are logged as warnings and do not change the exit code).
 
 ---
 
@@ -106,7 +269,16 @@ The CLI returns deterministic exit codes suitable for script automation.
 | `1005`    | `PreGenerationCommandFailed` | Pre-generation command failed and `continueOnFailure` is disabled              |
 | `1006`    | `DiagramGeneratorFailed`     | The diagram generator threw an error during `CreateDiagramsAsync`              |
 | `1007`    | `DiagramToolNotFound`        | A required external diagram tool (d2, mmdc) was not found                      |
+| `1008`    | `DotNetRestoreFailed`        | `dotnet restore` failed while `restoreSolution` was enabled                    |
 | `1999`    | `UnhandledCliFailure`        | An unexpected failure occurred                                                 |
+
+When a pre-generation or restore command fails, the log also reports the failure classification (`ErrorCode`):
+
+| ErrorCode                  | Meaning                                                      |
+| -------------------------- | ------------------------------------------------------------ |
+| `Cancelled`                | The command was cancelled before or during execution         |
+| `UnexpectedError`          | The command could not be started (e.g. executable not found) |
+| `ProcessExitedWithFailure` | The command ran and exited with a non-zero exit code         |
 
 ---
 
@@ -114,37 +286,75 @@ The CLI returns deterministic exit codes suitable for script automation.
 
 ### Console Output
 
-- Uses **Serilog** with `Serilog.Sinks.Console` and `AnsiConsoleTheme.Code` for colorized output.
+- Uses **Serilog** with an `AnsiConsoleTheme.Code`-based console sink for colorized output.
 - Log levels are color-coded: Error (red), Warning (yellow), Information (white), Debug (gray).
 - Standard output and error output use separate logging channels.
 
 ### Rolling File Logs
 
-- Logs are written to a `logs` subfolder relative to the `.sds` file being processed.
-- File naming pattern: `{configFileBaseName}-{Date}.txt` (e.g. `sample-2026-07-25.txt`).
+- Logs are written to a `logs` subfolder **relative to the `.sds` file being processed**.
+- File naming pattern: `{configFileBaseName}-{Date}.txt` (e.g. `sample-2026-08-14.txt`).
+- Rolling file logs always capture **all log levels (Debug and above)** — the `--verbose` flag does not change what is written to the file.
 - This provides a persistent record for troubleshooting past runs.
-- Rolling file logs always capture **all log levels (Debug and above)**; the `--verbose` flag does not change what is written to the file.
 
 ### Verbosity
 
-The generator and renderers emit informational messages about project discovery, framework processing, and diagram creation, all of which appear in both the console and rolling file logs.
-
-The console shows **Information level and above** by default; passing `--verbose` / `-v` lowers the console level to **Debug**. Rolling file logs always capture Debug level and above regardless of the `--verbose` flag.
-
----
-
-## Path Resolution
-
-- The `--configFile` / `--cf` path is resolved relative to your current working directory (or used as-is if absolute).
-- All paths inside the `.sds` file — `solutionPath`, `rootPath`, `workingDirectory` — are resolved relative to the folder containing the `.sds` file. This allows you to store configs anywhere and move them without rewriting paths.
+- The console shows **Information level and above** by default.
+- Passing `--verbose` / `-v` lowers the console level to **Debug**, showing generator/renderer detail alongside the informational output.
 
 ---
 
-## Pre-Generation Commands
+## External Tool Requirements
 
-The pre-generation command runs before diagram generation. It is configured in the `.sds` file under the `preGeneration` section.
+| Tool                     | Required for                       | Notes                                                                                                              |
+| ------------------------ | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| **D2 CLI (`d2`)**        | D2 image export (PNG/SVG/PDF)      | Only needed when `formats` includes `D2` **and** `imageFormats` is non-empty. `.d2` text files need no tool.       |
+| **Mermaid CLI (`mmdc`)** | Mermaid image export (PNG/SVG/PDF) | Only needed when `formats` includes `Mermaid` **and** `imageFormats` is non-empty. `.mmd` text files need no tool. |
 
-**Example: restore before generation**
+- Tools are located via explicit path overrides first, then PATH discovery (using `where` on Windows, `which` elsewhere).
+- If a required tool is missing during a run, the CLI reports it and returns exit code `1007`.
+- Diagram text files (`.d2`/`.mmd`) and the `Dependency Summary.md` are always produced even when image export fails or is disabled.
+
+---
+
+## Examples
+
+### 1. Show help
+
+```shell
+SlnDependencyStudio.Cli --help
+SlnDependencyStudio.Cli run --help
+```
+
+### 2. Validate a configuration
+
+```shell
+SlnDependencyStudio.Cli validate --cf .\Studio\SlnDependencyStudio.Cli\sample.sds
+```
+
+### 3. Run generation
+
+```shell
+SlnDependencyStudio.Cli run --cf .\Studio\SlnDependencyStudio.Cli\sample.sds
+```
+
+### 4. Run with verbose logging
+
+```shell
+SlnDependencyStudio.Cli run --cf my-project.sds --verbose
+```
+
+### 5. Run with automatic restore
+
+With `"restoreSolution": true` in the `.sds` file (the default), the solution is restored first:
+
+```shell
+SlnDependencyStudio.Cli run --cf my-project.sds
+```
+
+### 6. Run with a pre-generation command
+
+A `.sds` configured to run `dotnet restore` before generation:
 
 ```json
 {
@@ -158,40 +368,44 @@ The pre-generation command runs before diagram generation. It is configured in t
 }
 ```
 
-**When `continueOnFailure` is `true`**, the command's stdout and stderr are still streamed to the log, but generation proceeds even on non-zero exit codes. This is useful when the pre-generation step is non-critical (e.g. a cleanup script that may already be clean).
-
-**When `continueOnFailure` is `false`** (the default), generation is aborted immediately and exit code `1005` is returned.
-
-Output from the pre-generation command (stdout/stderr) is streamed in real time to the console and rolling log.
-
----
-
-## Examples
-
-### Basic Validation
-
-```shell
-SlnDependencyStudio.Cli validate --cf .\Studio\SlnDependencyStudio.Cli\sample.sds
-```
-
-### Run Generation
-
-```shell
-SlnDependencyStudio.Cli run --cf .\Studio\SlnDependencyStudio.Cli\sample.sds
-```
-
-### Run with Restore First
-
-Using the `.sds` file's pre-generation section configured for `dotnet restore`:
-
 ```shell
 SlnDependencyStudio.Cli run --cf my-project.sds
 ```
 
-### Script Automation
+### 7. Run with a post-generation command
+
+A `.sds` configured to open the output folder after generation (Windows):
+
+```json
+{
+  "postGeneration": {
+    "enabled": true,
+    "command": "explorer.exe",
+    "arguments": "C:\\Output\\MySolution",
+    "workingDirectory": ""
+  }
+}
+```
+
+### 8. Portable paths
+
+Store the `.sds` anywhere — paths inside it resolve relative to its own folder, so moving the file (and its solution/output) keeps working:
+
+```text
+C:\repos\my-solution\
+├── SlnDependencyDiagramGenerator\
+│   └── config.sds        # solutionPath: "..\my-solution.sln", rootPath: "..\Output"
+├── my-solution.sln
+└── Output\
+```
+
+```shell
+SlnDependencyStudio.Cli run --cf C:\repos\my-solution\SlnDependencyDiagramGenerator\config.sds
+```
+
+### 9. Script automation (PowerShell)
 
 ```powershell
-# PowerShell
 $result = & SlnDependencyStudio.Cli run --cf project.sds
 if ($LASTEXITCODE -ne 0) {
     Write-Error "Generation failed with exit code $LASTEXITCODE"
@@ -199,13 +413,59 @@ if ($LASTEXITCODE -ne 0) {
 }
 ```
 
+### 10. Script automation (bash / CI)
+
+```bash
+SlnDependencyStudio.Cli run --cf project.sds
+exit_code=$?
+if [ $exit_code -ne 0 ]; then
+  echo "Generation failed with exit code $exit_code" >&2
+  exit $exit_code
+fi
+```
+
+### 11. Gate on a specific failure
+
+```bash
+SlnDependencyStudio.Cli run --cf project.sds
+case $? in
+  0)   echo "Success" ;;
+  1007) echo "A required diagram tool is missing (d2/mmdc)" >&2 ;;
+  1008) echo "dotnet restore failed" >&2 ;;
+  *)   echo "Generation failed" >&2 ;;
+esac
+```
+
+---
+
+## Scripting and CI
+
+- Prefer the `validate` command in a fast feedback loop (e.g. on pull requests) before committing `.sds` files.
+- Use the deterministic exit codes above rather than parsing console text.
+- Enable `--verbose` in logs only when diagnosing; keep CI output at the default Information level for readability.
+- Let the CLI restore the solution itself (`restoreSolution: true`) so CI does not need a separate restore step.
+- Check the rolling log in the `logs/` folder beside the `.sds` file when a run fails.
+
+---
+
+## Troubleshooting
+
+| Symptom                           | Likely cause                                             | Fix                                                                                                                                                           |
+| --------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Empty diagrams / no dependencies  | Projects have no `obj/project.assets.json`               | Enable `restoreSolution`, or run `dotnet restore`/build first.                                                                                                |
+| Exit code `1007`                  | A required image-export tool is missing                  | Install [d2](https://d2lang.com/tour/install/) and/or [mmdc](https://github.com/mermaid-js/mermaid-cli#installation), or configure an explicit path override. |
+| Exit code `1008`                  | `dotnet restore` failed                                  | Check the solution path and network/feed access; review the streamed restore output in the log.                                                               |
+| Exit code `1002`                  | File not found or malformed JSON                         | Verify the `--cf` path and that the file is valid JSON (use `validate` for details).                                                                          |
+| Exit code `1003`                  | Configuration errors found by `validate`                 | Read the reported errors, fix the `.sds` file, and re-validate.                                                                                               |
+| "Invalid regular expression"      | A `regexToInclude`/`regexToExclude` pattern is malformed | Escape backslashes in JSON (e.g. `\\.*\\.csproj`) and check the pattern.                                                                                      |
+| Validation passes but `run` fails | The solution/repo state changed between validate and run | Re-run `validate`; confirm the solution path still exists and is restored.                                                                                    |
+
 ---
 
 ## Sample Files
 
-The repository includes sample `.sds` files in `Studio\SlnDependencyStudio.Cli\`:
+The repository includes a ready-to-use sample `.sds` file in `Studio\SlnDependencyStudio.Cli\`:
 
-- **`sample.sds`** — Configuration for the `SlnDependencyDiagramGenerator` solution, excluding test/studio projects and overriding packages/frameworks.
-- **`alloverit.sds`** — Configuration for the `AllOverIt` solution, with pre-generation restore enabled, and filtering out test/demo/benchmark projects.
+- **`sample.sds`** — Configuration for the `SlnDependencyDiagramGenerator` solution: D2 + Mermaid output, PNG + SVG + PDF export, restore enabled, and test/studio projects excluded.
 
-These serve as reference configurations for creating your own `.sds` files.
+Use it as a reference when creating your own `.sds` files.

@@ -1,4 +1,29 @@
-﻿# v3.0.0
+﻿# v4.0.0
+
+## <date placeholder>
+
+### SlnDependencyDiagramGenerator
+
+- Added support for `.slnx` (XML-based solution) files.
+- Added support for excluding framework references from diagrams and the dependency summary.
+- Improved multi-version package conflict reporting in the dependency summary.
+- Added project grouping options and a renderer-neutral intermediate representation.
+- Added cancellation support to the generator.
+- Normalised generated file names to safe lower-kebab-case and made badge colours deterministic.
+- Added unit and integration test projects for the generator, validators, and renderers.
+
+### SlnDependencyStudio (new)
+
+- **SlnDependencyStudio.Shared** — Shared `.sds` document format, services, and process-execution contracts used by both frontends.
+- **SlnDependencyStudio CLI** — A cross-platform command-line tool with `validate` and `run` commands, deterministic exit codes (1001–1008, 1999), verbose logging, and rolling file logs.
+- **SlnDependencyStudio WPF** — A Windows desktop application (ReactiveUI, MaterialDesignThemes) with an IDE-style shell, five configuration pages, Analyse/Generate workflows, an output panel, application settings, and light/dark theming.
+- Added solution restore and optional pre/post-generation command support to the generation pipeline (CLI and WPF).
+- Added tool detection for the d2 and mmdc executables.
+- Added an installer project for the Studio applications.
+
+---
+
+# v3.0.0
 
 ## 26 Nov 2025
 
