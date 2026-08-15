@@ -6,9 +6,6 @@ using SlnDependencyDiagramGenerator.Generator.Discovery;
 using SlnDependencyDiagramGenerator.Generator.ToolDetection;
 using SlnDependencyDiagramGenerator.Parser;
 using SlnDependencyDiagramGenerator.Parser.Resolvers;
-using SlnDependencyDiagramGenerator.Renderers;
-using SlnDependencyDiagramGenerator.Renderers.D2;
-using SlnDependencyDiagramGenerator.Renderers.Mermaid;
 using SlnDependencyDiagramGenerator.Validators;
 
 namespace SlnDependencyDiagramGenerator.Extensions;
@@ -44,8 +41,6 @@ public static class ServiceCollectionExtensions
             services.AddScoped<IToolDetectionService, ToolDetectionService>();
             services.AddScoped<IToolPathResolver, ToolPathResolver>();
             services.AddScoped<IDependencyGenerator, DependencyGenerator>();
-            services.AddScoped<IDiagramRenderer, D2DiagramRenderer>();
-            services.AddScoped<IDiagramRenderer, MermaidDiagramRenderer>();
 
             var validationRegistry = services.AddValidationInvoker(validationRegistry =>
             {

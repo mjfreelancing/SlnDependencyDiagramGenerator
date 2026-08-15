@@ -1,15 +1,11 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
-using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Extensions;
 using SlnDependencyDiagramGenerator.Generator;
 using SlnDependencyDiagramGenerator.Generator.Discovery;
 using SlnDependencyDiagramGenerator.Generator.ToolDetection;
 using SlnDependencyDiagramGenerator.Parser;
 using SlnDependencyDiagramGenerator.Parser.Resolvers;
-using SlnDependencyDiagramGenerator.Renderers;
-using SlnDependencyDiagramGenerator.Renderers.D2;
-using SlnDependencyDiagramGenerator.Renderers.Mermaid;
 using System.Linq;
 
 namespace SlnDependencyDiagramGenerator.Tests.Unit.Extensions;
@@ -90,17 +86,6 @@ public class ServiceCollectionExtensionsFixture
     }
 
     [Fact]
-    public void Should_Register_DiagramRenderers()
-    {
-        var provider = CreateServiceProvider();
-
-        var renderers = provider.GetServices<IDiagramRenderer>().ToArray();
-        renderers.Length.ShouldBe(2);
-        renderers.ShouldContain(renderer => renderer is D2DiagramRenderer);
-        renderers.ShouldContain(renderer => renderer is MermaidDiagramRenderer);
-    }
-
-    [Fact]
     public void Should_Register_ProjectAssetReader_As_Scoped()
     {
         var provider = CreateServiceProvider();
@@ -125,7 +110,6 @@ public class ServiceCollectionExtensionsFixture
     {
         var services = new ServiceCollection();
 
-        services.AddSingleton(new GeneratorDiagramOptions());
         services.AddLogging();
         services.AddSlnDependencyDiagramGenerator();
 
