@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Shouldly;
 using SlnDependencyDiagramGenerator.Config;
+using SlnDependencyDiagramGenerator.Exceptions;
 using SlnDependencyDiagramGenerator.Generator;
 using SlnDependencyDiagramGenerator.Generator.IntermediateRepresentation;
 using SlnDependencyDiagramGenerator.Generator.Nodes;
@@ -9,6 +10,7 @@ using SlnDependencyDiagramGenerator.Generator.ToolDetection;
 using SlnDependencyDiagramGenerator.Renderers;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -42,6 +44,8 @@ public class DiagramRendererBaseFixture
         public static string PackageAliasPublic(PackageNode pkg, DependencyGraphModel model, bool groupingEnabled)
             => PackageAlias(pkg, model, groupingEnabled);
         public static string FormatElapsedPublic(TimeSpan elapsed) => FormatElapsed(elapsed);
+        public static void AssertImageExportSucceededPublic(int exitCode, string toolName, string diagramFileName, string imageFileName)
+            => AssertImageExportSucceeded(exitCode, toolName, diagramFileName, imageFileName);
 
         protected override Task ExportImageFileAsync(string diagramFileName, DiagramImageFormat format, CancellationToken cancellationToken)
             => Task.CompletedTask;
@@ -388,6 +392,52 @@ public class DiagramRendererBaseFixture
             var elapsed = new TimeSpan(0, hours, minutes, seconds, milliseconds);
             var result = TestDiagramRenderer.FormatElapsedPublic(elapsed);
             result.ShouldBe(expected);
+        }
+    }
+
+    // ─── AssertImageExportSucceeded ─────────────────────────────────────────
+
+    public class AssertImageExportSucceeded : DiagramRendererBaseFixture
+    {
+        [Fact]
+        public void Should_Throw_When_Exit_Code_Is_Non_Zero()
+        {
+            var imageFileName = Path.Combine(Path.GetTempPath(), $"assert-export-{Guid.NewGuid():N}.png");
+
+            var exception = Should.Throw<DiagramImageExportException>(() =>
+                TestDiagramRenderer.AssertImageExportSucceededPublic(1, "d2", "test.d2", imageFileName));
+
+            exception.Message.ShouldContain("'d2' failed to export an image for 'test.d2' (exit code 1)");
+        }
+
+        [Fact]
+        public void Should_Throw_When_Output_File_Not_Created()
+        {
+            var imageFileName = Path.Combine(Path.GetTempPath(), $"missing-{Guid.NewGuid():N}.png");
+            File.Delete(imageFileName);
+
+            var exception = Should.Throw<DiagramImageExportException>(() =>
+                TestDiagramRenderer.AssertImageExportSucceededPublic(0, "mmdc", "test.mmd", imageFileName));
+
+            exception.Message.ShouldContain("did not create the expected image file");
+        }
+
+        [Fact]
+        public void Should_Not_Throw_When_Exit_Code_Zero_And_File_Exists()
+        {
+            var imageFileName = Path.Combine(Path.GetTempPath(), $"existing-{Guid.NewGuid():N}.png");
+
+            try
+            {
+                File.WriteAllText(imageFileName, "content");
+
+                Should.NotThrow(() =>
+                    TestDiagramRenderer.AssertImageExportSucceededPublic(0, "d2", "test.d2", imageFileName));
+            }
+            finally
+            {
+                File.Delete(imageFileName);
+            }
         }
     }
 

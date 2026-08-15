@@ -1,5 +1,7 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using AllOverIt.Process;
+using Microsoft.Extensions.Logging;
 using SlnDependencyDiagramGenerator.Config;
+using SlnDependencyDiagramGenerator.Exceptions;
 using SlnDependencyDiagramGenerator.Generator;
 using SlnDependencyDiagramGenerator.Generator.IntermediateRepresentation;
 using SlnDependencyDiagramGenerator.Generator.Nodes;
@@ -92,6 +94,38 @@ internal abstract class DiagramRendererBase : IDiagramRenderer
     protected static Task EnsureToolAvailableAsync(string toolName, string missingToolMessage, CancellationToken cancellationToken)
     {
         return ToolDetectionService.EnsureToolAvailableAsync(toolName, missingToolMessage, cancellationToken);
+    }
+
+    /// <summary>Throws when an image export process did not complete successfully or did not produce the expected output file.</summary>
+    /// <param name="result">The process execution result.</param>
+    /// <param name="toolName">The tool used to perform the export (for example, "d2" or "mmdc").</param>
+    /// <param name="diagramFileName">The source diagram file that was exported.</param>
+    /// <param name="imageFileName">The expected image output file.</param>
+    /// <exception cref="DiagramImageExportException">Thrown when the process exited with a non-zero code or the output image file was not created.</exception>
+    protected static void AssertImageExportSucceeded(ProcessExecutorResult result, string toolName, string diagramFileName, string imageFileName)
+    {
+        AssertImageExportSucceeded(result.ExitCode, toolName, diagramFileName, imageFileName);
+    }
+
+    /// <summary>Throws when an image export exit code is non-zero or the expected output file does not exist.</summary>
+    /// <param name="exitCode">The process exit code.</param>
+    /// <param name="toolName">The tool used to perform the export (for example, "d2" or "mmdc").</param>
+    /// <param name="diagramFileName">The source diagram file that was exported.</param>
+    /// <param name="imageFileName">The expected image output file.</param>
+    /// <exception cref="DiagramImageExportException">Thrown when the exit code is non-zero or the output image file was not created.</exception>
+    internal static void AssertImageExportSucceeded(int exitCode, string toolName, string diagramFileName, string imageFileName)
+    {
+        if (exitCode != 0)
+        {
+            throw new DiagramImageExportException(
+                $"'{toolName}' failed to export an image for '{Path.GetFileName(diagramFileName)}' (exit code {exitCode}). Expected output: {imageFileName}");
+        }
+
+        if (!File.Exists(imageFileName))
+        {
+            throw new DiagramImageExportException(
+                $"'{toolName}' reported success but did not create the expected image file: {imageFileName}");
+        }
     }
 
     /// <summary>Returns elapsed time text with two decimal places in seconds.</summary>

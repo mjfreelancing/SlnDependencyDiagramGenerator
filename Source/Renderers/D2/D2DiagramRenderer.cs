@@ -134,8 +134,17 @@ internal sealed class D2DiagramRenderer : DiagramRendererBase
             .For(d2Path)
             .WithNoWindow()
             .WithArguments("-l", "elk", diagramFileName, imageFileName)
+            .WithStandardOutputHandler((sender, eventArgs) =>
+            {
+                // D2 doesn't output anything via StdOut, but keep this here in case that changes in the future
+                if (eventArgs.Data is string message)
+                {
+                    Logger.LogInformation("  {D2Message}", message);
+                }
+            })
             .WithErrorOutputHandler((sender, eventArgs) =>
             {
+                // D2 emits error and non-error messages via StdErr
                 if (eventArgs.Data is string message)
                 {
                     if (message.StartsWith("err:", true, CultureInfo.InvariantCulture))
@@ -150,7 +159,9 @@ internal sealed class D2DiagramRenderer : DiagramRendererBase
             })
             .BuildProcessExecutor();
 
-        _ = await d2Process.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+        var result = await d2Process.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+
+        AssertImageExportSucceeded(result, D2ToolName, diagramFileName, imageFileName);
 
         stopwatch.Stop();
 

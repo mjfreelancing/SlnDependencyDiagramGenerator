@@ -53,14 +53,14 @@ internal sealed class ToolDetectionService : IToolDetectionService
     /// <param name="toolName">The tool name.</param>
     /// <param name="missingToolMessage">The error message if the tool is missing.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    /// <exception cref="DependencyGeneratorException">Thrown when the tool is not available.</exception>
+    /// <exception cref="ToolNotFoundException">Thrown when the tool is not available.</exception>
     internal static async Task EnsureToolAvailableAsync(string toolName, string missingToolMessage, CancellationToken cancellationToken)
     {
         var resolvedPath = await ResolveToolPathAsync(toolName, cancellationToken).ConfigureAwait(false);
 
         if (resolvedPath is null)
         {
-            throw new DependencyGeneratorException(missingToolMessage);
+            throw new ToolNotFoundException(missingToolMessage);
         }
     }
 

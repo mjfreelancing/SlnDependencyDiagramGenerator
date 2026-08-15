@@ -27,6 +27,9 @@ public enum StudioCliExitCode
     /// <summary>The solution restore (via <c>dotnet restore</c>) failed.</summary>
     DotNetRestoreFailed = 1008,
 
+    /// <summary>The diagram generator failed to export an image (via d2 or mmdc).</summary>
+    DiagramImageExportFailed = 1009,
+
     /// <summary>An unexpected CLI failure occurred.</summary>
     UnhandledCliFailure = 1999
 }

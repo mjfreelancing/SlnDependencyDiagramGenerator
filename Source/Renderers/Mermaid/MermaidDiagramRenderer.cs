@@ -179,9 +179,11 @@ internal sealed class MermaidDiagramRenderer : DiagramRendererBase
             })
             .BuildProcessExecutor();
 
-        _ = await mmdProcess
+        var result = await mmdProcess
             .ExecuteAsync(cancellationToken)
             .ConfigureAwait(false);
+
+        AssertImageExportSucceeded(result, MermaidCliToolName, diagramFileName, imageFileName);
 
         stopwatch.Stop();
 

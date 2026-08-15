@@ -98,6 +98,11 @@ internal sealed class CommandLineRunHandler : CommandLineHandlerBase, ICommandLi
             _logger.LogError("Required diagram tool not found: {Message}", exception.Message);
             return (int)StudioCliExitCode.DiagramToolNotFound;
         }
+        catch (DiagramImageExportException exception)
+        {
+            _logger.LogError("Diagram image export failed: {Message}", exception.Message);
+            return (int)StudioCliExitCode.DiagramImageExportFailed;
+        }
         catch (DependencyGeneratorException exception)
         {
             _logger.LogError("Diagram generator failed: {Message}", exception.Message);
