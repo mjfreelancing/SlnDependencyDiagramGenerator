@@ -246,15 +246,15 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
                 DisplayName = "Solution",
                 IconKind = MaterialDesignThemes.Wpf.PackIconKind.FolderOpenOutline
             },
-            new NavigationItemViewModel<ExportViewModel>
-            {
-                DisplayName = "Export",
-                IconKind = MaterialDesignThemes.Wpf.PackIconKind.ExportVariant
-            },
             new NavigationItemViewModel<DiagramsViewModel>
             {
                 DisplayName = "Diagrams",
                 IconKind = MaterialDesignThemes.Wpf.PackIconKind.GraphOutline
+            },
+            new NavigationItemViewModel<ExportViewModel>
+            {
+                DisplayName = "Export",
+                IconKind = MaterialDesignThemes.Wpf.PackIconKind.ExportVariant
             },
             new NavigationItemViewModel<PipelineViewModel>
             {
