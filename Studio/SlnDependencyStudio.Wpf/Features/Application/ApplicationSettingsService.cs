@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using SlnDependencyStudio.Shared.Serialization;
 using SlnDependencyStudio.Wpf.Abstractions.IO;
 using SlnDependencyStudio.Wpf.Features.Application.Models;
@@ -107,16 +107,25 @@ internal sealed class ApplicationSettingsService : IApplicationSettingsService
     {
         _logger.LogDebug("Saving settings to {SettingsFilePath}", _settingsFilePath);
 
-        _fileSystem.CreateDirectory(_settingsDirectory);
-
-        var tempPath = _settingsFilePath + ".tmp";
-
-        await using (var stream = _fileSystem.OpenWrite(tempPath))
+        try
         {
-            await _jsonSerializer.SerializeAsync(stream, CurrentSettings, cancellationToken);
-        }
+            _fileSystem.CreateDirectory(_settingsDirectory);
 
-        _fileSystem.MoveFile(tempPath, _settingsFilePath, overwrite: true);
+            var tempPath = _settingsFilePath + ".tmp";
+
+            await using (var stream = _fileSystem.OpenWrite(tempPath))
+            {
+                await _jsonSerializer.SerializeAsync(stream, CurrentSettings, cancellationToken);
+            }
+
+            _fileSystem.MoveFile(tempPath, _settingsFilePath, overwrite: true);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "Failed to save settings to {SettingsFilePath}", _settingsFilePath);
+
+            throw;
+        }
     }
 
     /// <inheritdoc />
@@ -124,13 +133,21 @@ internal sealed class ApplicationSettingsService : IApplicationSettingsService
     {
         _logger.LogDebug("Saving application state to {StateFilePath}", _stateFilePath);
 
-        _fileSystem.CreateDirectory(_settingsDirectory);
+        try
+        {
+            _fileSystem.CreateDirectory(_settingsDirectory);
 
-        var tempPath = _stateFilePath + ".tmp";
-        var json = _jsonSerializer.Serialize(CurrentState);
+            var tempPath = _stateFilePath + ".tmp";
+            var json = _jsonSerializer.Serialize(CurrentState);
 
-        _fileSystem.WriteAllText(tempPath, json);
-        _fileSystem.MoveFile(tempPath, _stateFilePath, overwrite: true);
+            _fileSystem.WriteAllText(tempPath, json);
+            _fileSystem.MoveFile(tempPath, _stateFilePath, overwrite: true);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "Failed to save application state to {StateFilePath}", _stateFilePath);
+            throw;
+        }
     }
 
     /// <summary>Returns the default directory used to persist settings and state

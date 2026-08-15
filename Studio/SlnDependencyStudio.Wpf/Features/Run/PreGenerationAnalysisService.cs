@@ -90,15 +90,14 @@ internal sealed class PreGenerationAnalysisService : IPreGenerationAnalysisServi
             foreach (var entry in toolEntries)
             {
                 var icon = entry.IsAvailable ? "\u2713" : "\u2717";
-                var message = $"{icon} {entry.ToolName}: {entry.StatusText}";
 
                 if (entry.IsAvailable)
                 {
-                    _logger.LogInformation("{Message}", message);
+                    _logger.LogInformation("{Icon} {ToolName}: {StatusText}", icon, entry.ToolName, entry.StatusText);
                 }
                 else
                 {
-                    _logger.LogError("{Message}", message);
+                    _logger.LogError("{Icon} {ToolName}: {StatusText}", icon, entry.ToolName, entry.StatusText);
                 }
             }
 
@@ -155,11 +154,11 @@ internal sealed class PreGenerationAnalysisService : IPreGenerationAnalysisServi
 
         if (discoveryResult.ImplicitlyExcludedProjectPaths.Length > 0)
         {
-            _logger.LogWarning("Not Matched: {Count}", discoveryResult.ImplicitlyExcludedProjectPaths.Length);
+            _logger.LogInformation("Not Matched: {Count}", discoveryResult.ImplicitlyExcludedProjectPaths.Length);
 
             foreach (var path in discoveryResult.ImplicitlyExcludedProjectPaths)
             {
-                _logger.LogWarning("  {FileName}  [{Path}]", Path.GetFileName(path), path);
+                _logger.LogInformation("  {FileName}  [{Path}]", Path.GetFileName(path), path);
             }
         }
         else

@@ -1,4 +1,4 @@
-using AllOverIt.ReactiveUI.Factories;
+﻿using AllOverIt.ReactiveUI.Factories;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
@@ -215,6 +215,8 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 
         if (ViewModel is not null && !ViewModel.CanClose)
         {
+            _logger.LogDebug("Close blocked: an operation is in progress");
+
             var messageDialog = new Views.MessageDialog
             {
                 Title = "Operation in Progress",
@@ -227,35 +229,44 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             return;
         }
 
-        // Prompt before discarding unsaved changes.
-        if (_store.IsDirty)
+        try
         {
-            var action = await ViewModel!.PromptDiscardAsync();
-
-            if (action == DiscardAction.Cancel)
+            // Prompt before discarding unsaved changes.
+            if (_store.IsDirty)
             {
-                return;
+                var action = await ViewModel!.PromptDiscardAsync();
+
+                if (action == DiscardAction.Cancel)
+                {
+                    _logger.LogDebug("Close cancelled by user");
+
+                    return;
+                }
+
+                if (action == DiscardAction.Save)
+                {
+                    await ViewModel.SaveCommand.Execute();
+                }
             }
 
-            if (action == DiscardAction.Save)
+            var placement = new WindowPlacement
             {
-                await ViewModel.SaveCommand.Execute();
-            }
+                Left = RestoreBounds.Left,
+                Top = RestoreBounds.Top,
+                Width = RestoreBounds.Width,
+                Height = RestoreBounds.Height,
+                State = WindowState.ToString()
+            };
+
+            _settingsService.CurrentState.WindowPlacement = placement;
+            _settingsService.SaveState();
+
+            _logger.LogDebug("Window placement saved ({State})", placement.State);
         }
-
-        var placement = new WindowPlacement
+        catch
         {
-            Left = RestoreBounds.Left,
-            Top = RestoreBounds.Top,
-            Width = RestoreBounds.Width,
-            Height = RestoreBounds.Height,
-            State = WindowState.ToString()
-        };
-
-        _settingsService.CurrentState.WindowPlacement = placement;
-        _settingsService.SaveState();
-
-        _logger.LogDebug("Window placement saved ({State})", placement.State);
+            // Swallow any errors so the app will close
+        }
 
         _isClosing = true;
 
@@ -293,8 +304,12 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     {
         if (placement is null || !placement.IsOnScreen())
         {
+            _logger.LogDebug("No usable window placement to restore; using default");
+
             return;
         }
+
+        _logger.LogDebug("Restoring window placement ({State})", placement.State);
 
         WindowStartupLocation = WindowStartupLocation.Manual;
         Left = placement.Left;

@@ -14,7 +14,6 @@ using SlnDependencyStudio.Shared.Utils;
 using SlnDependencyStudio.Wpf.DependencyInjection;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
 using System.IO;
-using System.Text;
 
 namespace SlnDependencyStudio.Wpf.Features.Run;
 
@@ -125,6 +124,8 @@ internal sealed class GenerationService : IGenerationService
 
         if (!preGen.Enabled.Value || preGen.Command.Value.IsNullOrEmpty())
         {
+            _logger.LogDebug("Pre-generation command disabled or has no command — skipping");
+
             return true;
         }
 
@@ -166,22 +167,15 @@ internal sealed class GenerationService : IGenerationService
 
         if (preGenResult.ErrorCode == CommandErrorCode.Cancelled)
         {
-            var sb = new StringBuilder();
-
-            sb.Append($"Pre-generation command '{preGenConfig.Command}' ");
-
             if (preGenConfig.Arguments.IsNullOrEmpty())
             {
-                sb.Append("(with no args) ");
+                _logger.LogWarning("Pre-generation command '{Command}' (with no args) was cancelled", preGenConfig.Command);
             }
             else
             {
-                sb.Append($"with args '{preGenConfig.Arguments}' ");
+                _logger.LogWarning("Pre-generation command '{Command}' with args '{Arguments}' was cancelled",
+                    preGenConfig.Command, preGenConfig.Arguments);
             }
-
-            sb.Append("was cancelled");
-
-            _logger.LogWarning("{Message}", sb.ToString());
 
             return false;
         }
@@ -206,6 +200,8 @@ internal sealed class GenerationService : IGenerationService
     {
         if (!_store.RestoreSolutionEditor.RestoreSolution.Value)
         {
+            _logger.LogDebug("Solution restore disabled — skipping");
+
             return true;
         }
 
@@ -248,6 +244,8 @@ internal sealed class GenerationService : IGenerationService
 
         if (!postGen.Enabled.Value || postGen.Command.Value.IsNullOrEmpty())
         {
+            _logger.LogDebug("Post-generation command disabled or has no command — skipping");
+
             return;
         }
 

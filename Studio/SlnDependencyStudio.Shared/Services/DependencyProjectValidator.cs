@@ -47,7 +47,7 @@ internal sealed class DependencyProjectValidator : IDependencyProjectValidator
 
         _validationInvoker.AssertValidation(config);
 
-        _logger.LogInformation("{ConfigType} configuration is valid", configType);
+        _logger.LogDebug("{ConfigType} configuration is valid", configType);
     }
 
     private void Validate<TConfig, TContext>(string configType, TConfig config, TContext context)
@@ -56,6 +56,6 @@ internal sealed class DependencyProjectValidator : IDependencyProjectValidator
 
         _validationInvoker.AssertValidation(config, context);
 
-        _logger.LogInformation("{ConfigType} configuration is valid", configType);
+        _logger.LogDebug("{ConfigType} configuration is valid", configType);
     }
 }

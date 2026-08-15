@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Shouldly;
 using SlnDependencyDiagramGenerator.Generator.Discovery;
@@ -226,6 +227,6 @@ public class ProjectDiscoveryServiceFixture
 
     private ProjectDiscoveryService CreateSut()
     {
-        return new ProjectDiscoveryService(_solutionParser);
+        return new ProjectDiscoveryService(_solutionParser, Substitute.For<ILogger<ProjectDiscoveryService>>());
     }
 }

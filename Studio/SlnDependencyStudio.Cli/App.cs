@@ -68,15 +68,23 @@ internal sealed class App : ConsoleAppBase
         {
             if (parseResult.Errors.Count > 0)
             {
+                foreach (var error in parseResult.Errors)
+                {
+                    _logger.LogError("Command line error: {Message}", error.Message);
+                }
+
                 ExitCode = (int)StudioCliExitCode.CommandLineParseFailed;
             }
             else
             {
-                await parseResult.InvokeAsync(cancellationToken: cancellationToken);
+                // InvokeAsync returns the command action's exit code (or 0). Handlers set ExitCode via the
+                // setExitCode callback; the action's return value is used only when no exit code was set
+                // (e.g. the root fallback action when no subcommand is specified).
+                var actionExitCode = await parseResult.InvokeAsync(cancellationToken: cancellationToken);
 
                 // If no action ran (e.g. --help) and no handler set an exit code, default to success.
                 // Only a null ExitCode is overwritten, so an exit code set by a handler is preserved.
-                ExitCode ??= 0;
+                ExitCode ??= actionExitCode;
             }
         }
         catch (Exception exception)

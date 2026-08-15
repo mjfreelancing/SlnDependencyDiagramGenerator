@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Shouldly;
 using SlnDependencyDiagramGenerator.Parser;
@@ -206,6 +207,6 @@ public class SolutionParserFixture
         _slnResolver.Extension.Returns(".sln");
         _slnxResolver.Extension.Returns(".slnx");
 
-        return new SolutionParser(_assetReader, [_slnResolver, _slnxResolver]);
+        return new SolutionParser(_assetReader, [_slnResolver, _slnxResolver], Substitute.For<ILogger<SolutionParser>>());
     }
 }

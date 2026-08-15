@@ -174,10 +174,19 @@ public sealed class OutputPanelViewModel : ReactiveObject, IStudioScopedDependen
 
             if (filePath is not null)
             {
-                var text = string.Join(Environment.NewLine, Messages.Select(message => message.Text));
-                await _fileSystem.WriteAllTextAsync(filePath, text);
+                try
+                {
+                    var text = string.Join(Environment.NewLine, Messages.Select(message => message.Text));
+                    await _fileSystem.WriteAllTextAsync(filePath, text);
 
-                _logger.LogDebug("Output saved to {FilePath}", filePath);
+                    _logger.LogDebug("Output saved to {FilePath}", filePath);
+                }
+                catch (Exception exception)
+                {
+                    _logger.LogError(exception, "Failed to save output to {FilePath}", filePath);
+
+                    throw;
+                }
             }
         }, hasContent);
 

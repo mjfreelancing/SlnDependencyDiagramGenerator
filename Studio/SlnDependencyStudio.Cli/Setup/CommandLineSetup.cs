@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using SlnDependencyStudio.Cli.Enumerations;
 using SlnDependencyStudio.Cli.Handlers.Run;
 using SlnDependencyStudio.Cli.Handlers.Validate;
 using System.CommandLine;
@@ -100,10 +101,13 @@ internal sealed class CommandLineSetup
             root.Add(command);
         }
 
-        // Fallback: fires when --cf is provided without a subcommand
+        // Fallback: fires when --cf is provided without a subcommand. The returned exit code is surfaced
+        // by App via InvokeAsync's return value when no handler set an exit code.
         root.SetAction(parseResult =>
         {
             logger.LogError("A command must be specified. Use 'run' or 'validate'.");
+
+            return (int)StudioCliExitCode.CommandLineParseFailed;
         });
 
         return root;

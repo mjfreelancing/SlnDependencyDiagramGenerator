@@ -2,6 +2,7 @@
 using AllOverIt.ReactiveUI.Factories;
 using AllOverIt.ReactiveUI.Wpf.Extensions;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using SlnDependencyDiagramGenerator.Generator.ToolDetection;
 using SlnDependencyStudio.Shared.DependencyInjection;
 using SlnDependencyStudio.Wpf.Abstractions.IO;
@@ -123,7 +124,8 @@ public static class ServiceCollectionExtensions
             services.AddSingleton(typeof(IScopedOperationFactory<>), typeof(ScopedOperationFactory<>));
             services.AddSingleton<IStudioEditorFactory, StudioEditorFactory>();
 
-            services.AddSingleton<SlnDependencyWpfAppBootstrapper>();
+            services.AddSingleton<WpfAppBootstrapper>();
+            services.AddSingleton<IHostLifetime, WpfHostLifetime>();
             services.AddSingleton<IViewFactory, ViewFactory>();
 
             services.RegisterWindowSingleton<MainWindowViewModel, MainWindow>();

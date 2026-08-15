@@ -1,9 +1,11 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyDiagramGenerator.Extensions;
 using SlnDependencyDiagramGenerator.Generator;
 using SlnDependencyDiagramGenerator.Generator.Discovery;
 using SlnDependencyDiagramGenerator.Parser;
+using SlnDependencyDiagramGenerator.Parser.Resolvers;
 using SlnDependencyDiagramGenerator.Tests.Shared;
 using System.Threading;
 
@@ -234,7 +236,7 @@ internal static class IntegrationTestHarness
     public static async Task<SolutionProject[]> ParseFixtureAsync(string fixtureName, string extension, string targetFramework,
         string[] regexToInclude, string[] regexToExclude, string[] excludePackages, string[] excludeFrameworks, int maxTransitiveDepth)
     {
-        var discovery = new ProjectDiscoveryService();
+        var discovery = CreateDiscoveryService();
         var solutionPath = GetFixtureSolutionPath(fixtureName, extension);
 
         var parseRequest = new SolutionParseRequest
@@ -254,7 +256,7 @@ internal static class IntegrationTestHarness
     public static async Task<string[]> DiscoverFixtureTargetFrameworksAsync(string fixtureName, string extension,
         string[] regexToInclude, string[] regexToExclude)
     {
-        var discovery = new ProjectDiscoveryService();
+        var discovery = CreateDiscoveryService();
         var solutionPath = GetFixtureSolutionPath(fixtureName, extension);
 
         return await discovery.DiscoverTargetFrameworksAsync(solutionPath, regexToInclude, regexToExclude, CancellationToken.None);
@@ -263,10 +265,20 @@ internal static class IntegrationTestHarness
     public static async Task<ProjectDiscoveryResult> DiscoverFixtureProjectsAsync(string fixtureName, string extension,
         string[] regexToInclude, string[] regexToExclude)
     {
-        var discovery = new ProjectDiscoveryService();
+        var discovery = CreateDiscoveryService();
         var solutionPath = GetFixtureSolutionPath(fixtureName, extension);
 
         return await discovery.DiscoverProjectsAsync(solutionPath, regexToInclude, regexToExclude, CancellationToken.None);
+    }
+
+    private static ProjectDiscoveryService CreateDiscoveryService()
+    {
+        return new ProjectDiscoveryService(
+            new SolutionParser(
+                new ProjectAssetReader(NullLogger<ProjectAssetReader>.Instance),
+                [new SlnSolutionProjectResolver(), new SlnxSolutionProjectResolver()],
+                NullLogger<SolutionParser>.Instance),
+            NullLogger<ProjectDiscoveryService>.Instance);
     }
 
 }

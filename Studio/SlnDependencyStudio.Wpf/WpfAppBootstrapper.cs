@@ -8,20 +8,20 @@ namespace SlnDependencyStudio.Wpf;
 
 /// <summary>Bootstraps the application after the DI host has started: loads application settings,
 /// applies the persisted theme, and shows the main window.</summary>
-internal sealed class SlnDependencyWpfAppBootstrapper
+internal sealed class WpfAppBootstrapper
 {
     private readonly IApplicationSettingsService _applicationSettingsService;
     private readonly IThemeService _themeService;
     private readonly IViewFactory _viewFactory;
-    private readonly ILogger<SlnDependencyWpfAppBootstrapper> _logger;
+    private readonly ILogger<WpfAppBootstrapper> _logger;
 
-    /// <summary>Initializes a new instance of <see cref="SlnDependencyWpfAppBootstrapper"/>.</summary>
+    /// <summary>Initializes a new instance of <see cref="WpfAppBootstrapper"/>.</summary>
     /// <param name="applicationSettingsService">The application settings service.</param>
     /// <param name="themeService">The theme service used to apply the persisted theme.</param>
     /// <param name="viewFactory">The view factory used to create the main window.</param>
     /// <param name="logger">The logger instance.</param>
-    public SlnDependencyWpfAppBootstrapper(IApplicationSettingsService applicationSettingsService,
-        IThemeService themeService, IViewFactory viewFactory, ILogger<SlnDependencyWpfAppBootstrapper> logger)
+    public WpfAppBootstrapper(IApplicationSettingsService applicationSettingsService,
+        IThemeService themeService, IViewFactory viewFactory, ILogger<WpfAppBootstrapper> logger)
     {
         _applicationSettingsService = applicationSettingsService;
         _themeService = themeService;

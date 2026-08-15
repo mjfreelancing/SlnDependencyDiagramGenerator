@@ -52,6 +52,11 @@ internal sealed class CommandLineValidateHandler : CommandLineHandlerBase, IComm
             WriteValidationErrors(exception);
             return (int)StudioCliExitCode.ValidateCommandFailed;
         }
+        catch (OperationCanceledException)
+        {
+            _logger.LogWarning("Operation was cancelled.");
+            return (int)StudioCliExitCode.RunCommandFailed;
+        }
         catch (JsonException exception)
         {
             _logger.LogError("Failed to parse configuration file. Error on line {LineNumber} for Path {Path}.", exception.LineNumber + 1, exception.Path);

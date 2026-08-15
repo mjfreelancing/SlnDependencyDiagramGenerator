@@ -1,6 +1,8 @@
-﻿using Shouldly;
+﻿using Microsoft.Extensions.Logging.Abstractions;
+using Shouldly;
 using SlnDependencyDiagramGenerator.Exceptions;
 using SlnDependencyDiagramGenerator.Parser;
+using SlnDependencyDiagramGenerator.Parser.Resolvers;
 using SlnDependencyDiagramGenerator.Tests.Integration.Support;
 using SlnDependencyDiagramGenerator.Tests.Shared;
 
@@ -521,7 +523,10 @@ public class ParserScenariosFixture : FixtureCollectionTestBase
 
             await File.WriteAllTextAsync(malformedSolutionPath, "This is not a valid solution file.", TestContext.Current.CancellationToken);
 
-            var parser = new SolutionParser();
+            var parser = new SolutionParser(
+                new ProjectAssetReader(NullLogger<ProjectAssetReader>.Instance),
+                [new SlnSolutionProjectResolver(), new SlnxSolutionProjectResolver()],
+                NullLogger<SolutionParser>.Instance);
             string[] includeRegex = [@"^.*\.csproj$"];
             string[] excludeRegex = [];
 
@@ -540,7 +545,10 @@ public class ParserScenariosFixture : FixtureCollectionTestBase
 
             await File.WriteAllTextAsync(malformedSolutionPath, "<Solution><Project Path='Broken'", TestContext.Current.CancellationToken);
 
-            var parser = new SolutionParser();
+            var parser = new SolutionParser(
+                new ProjectAssetReader(NullLogger<ProjectAssetReader>.Instance),
+                [new SlnSolutionProjectResolver(), new SlnxSolutionProjectResolver()],
+                NullLogger<SolutionParser>.Instance);
             string[] includeRegex = [@"^.*\.csproj$"];
             string[] excludeRegex = [];
 

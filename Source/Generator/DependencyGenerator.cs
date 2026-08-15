@@ -95,6 +95,8 @@ public sealed class DependencyGenerator : IDependencyGenerator
         var excludeFrameworks = configuration.Solution.FrameworksToExclude;
         var solutionPath = configuration.Solution.SolutionPath;
 
+        _logger.LogInformation("Starting diagram generation for {SolutionPath}", Path.GetFileName(solutionPath));
+
         // Target frameworks are auto-discovered from each project's project.assets.json
         var targetFrameworks = await _projectDiscovery
             .DiscoverTargetFrameworksAsync(solutionPath, regexToInclude, regexToExclude, cancellationToken)
@@ -171,24 +173,26 @@ public sealed class DependencyGenerator : IDependencyGenerator
                 ClearFolder(exportPath);
             }
 
-            _logger.LogDebug("Exporting summary for {TargetFramework}…", targetFramework);
+            _logger.LogInformation("Exporting summary for {TargetFramework}…", targetFramework);
 
             await ExportAsSummaryAsync(exportPath, solutionProjects, cancellationToken).ConfigureAwait(false);
 
             if (configuration.Solution.Individual.Enabled)
             {
-                _logger.LogDebug("Generating per-project diagrams for {TargetFramework}…", targetFramework);
+                _logger.LogInformation("Generating per-project diagrams for {TargetFramework}…", targetFramework);
 
                 await ExportAsIndividualAsync(configuration, targetFramework, exportPath, solutionProjects, renderers, cancellationToken).ConfigureAwait(false);
             }
 
             if (configuration.Solution.All.Enabled)
             {
-                _logger.LogDebug("Generating all-projects diagram for {TargetFramework}…", targetFramework);
+                _logger.LogInformation("Generating all-projects diagram for {TargetFramework}…", targetFramework);
 
                 await ExportAsAllAsync(configuration, targetFramework, exportPath, solutionProjects, renderers, cancellationToken).ConfigureAwait(false);
             }
         }
+
+        _logger.LogInformation("Diagram generation complete");
     }
 
     private static void ClearFolder(string exportPath)

@@ -1,5 +1,6 @@
 ﻿using AllOverIt.Extensions;
 using Microsoft.Build.Evaluation;
+using Microsoft.Extensions.Logging;
 using SlnDependencyDiagramGenerator.Exceptions;
 using SlnDependencyDiagramGenerator.Parser.Resolvers;
 using System;
@@ -24,17 +25,23 @@ internal sealed partial class SolutionParser : ISolutionParser
     private IReadOnlyList<SolutionProjectDescriptor> _cachedProjects = [];
     private readonly Dictionary<string, ISolutionProjectResolver> _solutionProjectResolvers;
     private readonly IProjectAssetReader _assetReader;
+    private readonly ILogger<SolutionParser> _logger;
 
     /// <summary>Initializes a new parser instance.</summary>
     /// <param name="assetReader">The project assets reader used to resolve target frameworks and packages.</param>
     /// <param name="solutionProjectResolvers">The set of solution project resolvers, keyed by file extension.</param>
-    public SolutionParser(IProjectAssetReader assetReader, IEnumerable<ISolutionProjectResolver> solutionProjectResolvers)
+    /// <param name="logger">The logger used for diagnostics.</param>
+    public SolutionParser(IProjectAssetReader assetReader, IEnumerable<ISolutionProjectResolver> solutionProjectResolvers,
+        ILogger<SolutionParser> logger)
     {
         _assetReader = assetReader;
+        _logger = logger;
 
         // SDK-style project evaluation requires a registered MSBuild instance so SDK resolvers
         // can locate Microsoft.NET.Sdk and related toolset components.
         MsBuildSdkResolver.EnsureInitialized();
+
+        _logger.LogDebug("MSBuild SDK resolver initialised");
 
         _solutionProjectResolvers = new Dictionary<string, ISolutionProjectResolver>(StringComparer.OrdinalIgnoreCase);
 
@@ -42,12 +49,6 @@ internal sealed partial class SolutionParser : ISolutionParser
         {
             _solutionProjectResolvers[resolver.Extension] = resolver;
         }
-    }
-
-    // For use with integration tests.
-    internal SolutionParser()
-        : this(new ProjectAssetReader(), [new SlnSolutionProjectResolver(), new SlnxSolutionProjectResolver()])
-    {
     }
 
     /// <summary>
@@ -81,6 +82,8 @@ internal sealed partial class SolutionParser : ISolutionParser
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
+
+        _logger.LogDebug("Discovering target frameworks across {ProjectCount} project(s)", projects.Count);
 
         string[] targetFrameworks = [.. projects
             .SelectMany(project => _assetReader.GetTargetFrameworks(project.AbsolutePath))
@@ -123,10 +126,14 @@ internal sealed partial class SolutionParser : ISolutionParser
         var excludeSet = new HashSet<string>(request.ExcludePackages, StringComparer.OrdinalIgnoreCase);
         var excludeFrameworkSet = new HashSet<string>(request.ExcludeFrameworks, StringComparer.OrdinalIgnoreCase);
 
-        return [.. projects
+        var parsedProjects = (SolutionProject[])[.. projects
             .Where(project => _assetReader.HasTargetFramework(project.AbsolutePath, request.TargetFramework))
             .Select(project => BuildSolutionProject(project, request.TargetFramework, request.MaxTransitiveDepth, excludeSet, excludeFrameworkSet))
             .OrderBy(project => project.Name)];
+
+        _logger.LogDebug("Built {ProjectCount} parsed project(s) for {TargetFramework}", parsedProjects.Length, request.TargetFramework);
+
+        return parsedProjects;
     }
 
     /// <summary>
@@ -144,6 +151,9 @@ internal sealed partial class SolutionParser : ISolutionParser
 
         // Resolve all solution projects once so include/exclude evaluation runs against the same snapshot.
         var solutionProjects = await GetSolutionProjectsAsync(solutionFilePath, cancellationToken).ConfigureAwait(false);
+
+        _logger.LogDebug("Discovered {ProjectCount} project(s) from {SolutionPath}",
+            solutionProjects.Count, Path.GetFileName(solutionFilePath));
 
         // Relative-path matching is performed from the solution directory because solution entries are typically relative.
         var solutionDirectory = Path.GetDirectoryName(solutionFilePath) ?? string.Empty;
@@ -265,8 +275,12 @@ internal sealed partial class SolutionParser : ISolutionParser
     {
         if (_hasCachedProjects && string.Equals(_cachedSolutionFilePath, solutionFilePath, StringComparison.OrdinalIgnoreCase))
         {
+            _logger.LogDebug("Using cached solution projects for {SolutionPath}", Path.GetFileName(solutionFilePath));
+
             return _cachedProjects;
         }
+
+        _logger.LogDebug("Loading solution projects from {SolutionPath}", Path.GetFileName(solutionFilePath));
 
         var extension = Path.GetExtension(solutionFilePath);
 

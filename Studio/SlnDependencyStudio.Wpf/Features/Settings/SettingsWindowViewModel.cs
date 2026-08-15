@@ -1,4 +1,4 @@
-using AllOverIt.Assertion;
+﻿using AllOverIt.Assertion;
 using Microsoft.Extensions.Logging;
 using ReactiveUI;
 using SlnDependencyStudio.Wpf.Features.Application;
@@ -98,7 +98,7 @@ public sealed class SettingsWindowViewModel : ReactiveObject
         // When Save is clicked, the editor's properties are copied back to CurrentSettings.
         SettingsEditorViewModel.ApplyToSettings(_settingsService.CurrentSettings);
 
-        // ...and persisted to disk.
+        // If this throws, the error is logged and re-thrown
         await _settingsService.SaveSettingsAsync();
 
         _logger.LogInformation("Settings saved");

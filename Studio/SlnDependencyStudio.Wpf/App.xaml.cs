@@ -21,6 +21,7 @@ public partial class App : Application
         "SlnDependencyStudio", "Logs");
 
     private readonly IHost _host;
+    private readonly ILogger<App> _logger;
 
     public App()
     {
@@ -58,37 +59,36 @@ public partial class App : Application
                 logDirectory: DefaultLogDirectory,
                 retentionDays: ApplicationSettingsStartupReader.ReadLogRetentionDays())
             .Build();
+
+        _logger = _host.Services.GetRequiredService<ILogger<App>>();
     }
 
-    private async void Application_Startup(object sender, StartupEventArgs e)
+    private async void Application_Startup(object sender, StartupEventArgs startupArgs)
     {
-        var logger = _host.Services.GetRequiredService<ILogger<App>>();
-
         try
         {
-            logger.LogInformation("SlnDependencyStudio is starting");
+            _logger.LogInformation("SlnDependencyStudio is starting");
 
             await _host.StartAsync();
 
-            var bootstrapper = _host.Services.GetRequiredService<SlnDependencyWpfAppBootstrapper>();
+            var bootstrapper = _host.Services.GetRequiredService<WpfAppBootstrapper>();
             await bootstrapper.RunAsync();
 
-            logger.LogInformation("SlnDependencyStudio bootstrapper initialised");
+            _logger.LogInformation("SlnDependencyStudio bootstrapper initialised");
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, "Application startup failed");
+            _logger.LogError(exception, "Application startup failed");
 
             throw;
         }
     }
 
     /// <inheritdoc />
-    protected override void OnExit(ExitEventArgs e)
+    protected override void OnExit(ExitEventArgs exitArgs)
     {
-        var logger = _host.Services.GetRequiredService<ILogger<App>>();
-        logger.LogInformation("SlnDependencyStudio exiting");
+        _logger.LogInformation("SlnDependencyStudio exiting");
 
-        base.OnExit(e);
+        base.OnExit(exitArgs);
     }
 }

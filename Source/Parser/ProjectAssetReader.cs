@@ -1,4 +1,5 @@
 ﻿using AllOverIt.Extensions;
+using Microsoft.Extensions.Logging;
 using NuGet.Common;
 using NuGet.LibraryModel;
 using NuGet.ProjectModel;
@@ -23,6 +24,14 @@ internal sealed class ProjectAssetReader : IProjectAssetReader
     // Caches parsed project.assets.json lock files by absolute assets-file path so
     // repeated queries within a run do not re-read or re-parse the same file.
     private readonly Dictionary<string, LockFile> _lockFileCache = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ILogger<ProjectAssetReader> _logger;
+
+    /// <summary>Initializes a new instance of <see cref="ProjectAssetReader"/>.</summary>
+    /// <param name="logger">The logger used for diagnostics.</param>
+    public ProjectAssetReader(ILogger<ProjectAssetReader> logger)
+    {
+        _logger = logger;
+    }
 
     /// <summary>Returns all target frameworks declared in a project's assets file.</summary>
     /// <param name="projectPath">The project file path.</param>
@@ -31,9 +40,14 @@ internal sealed class ProjectAssetReader : IProjectAssetReader
     {
         var lockFile = LoadLockFile(projectPath);
 
-        return [.. lockFile.Targets
+        var frameworks = (string[])[.. lockFile.Targets
             .Where(target => target.RuntimeIdentifier.IsNullOrEmpty())
             .Select(target => target.TargetFramework.GetShortFolderName())];
+
+        _logger.LogDebug("Discovered {TargetFrameworkCount} target framework(s) for {ProjectPath}: {TargetFrameworks}",
+            frameworks.Length, Path.GetFileName(projectPath), string.Join(", ", frameworks));
+
+        return frameworks;
     }
 
     /// <summary>Checks if a project contains the requested target framework in its assets file.</summary>
@@ -103,6 +117,9 @@ internal sealed class ProjectAssetReader : IProjectAssetReader
                 result.Add(packageReference);
             }
         }
+
+        _logger.LogDebug("Resolved {ExplicitPackageCount} explicit package reference(s) for {ProjectPath} ({TargetFramework})",
+            result.Count, Path.GetFileName(projectPath), targetFramework);
 
         return [.. result];
     }
@@ -270,8 +287,12 @@ internal sealed class ProjectAssetReader : IProjectAssetReader
 
         if (_lockFileCache.TryGetValue(assetsPath, out var cached))
         {
+            _logger.LogDebug("Assets file cache hit: {AssetsPath}", assetsPath);
+
             return cached;
         }
+
+        _logger.LogDebug("Loading assets file: {AssetsPath}", assetsPath);
 
         if (!File.Exists(assetsPath))
         {

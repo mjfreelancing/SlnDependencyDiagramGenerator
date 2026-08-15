@@ -130,7 +130,7 @@ internal sealed class CommandLineRunHandler : CommandLineHandlerBase, ICommandLi
 
         if (!preGenConfig.Enabled)
         {
-            _logger.LogInformation("Pre-generation command disabled.");
+            _logger.LogDebug("Pre-generation command disabled.");
             return true;
         }
 
@@ -153,16 +153,12 @@ internal sealed class CommandLineRunHandler : CommandLineHandlerBase, ICommandLi
 
             if (!preGenConfig.ContinueOnFailure)
             {
-                _logger.LogError(
-                    "Pre-generation command failed and continue-on-failure is disabled. Aborting.\n  {ErrorMessage}",
-                    preGenResult.ErrorMessage);
+                _logger.LogError("Pre-generation command failed and continue-on-failure is disabled. Aborting.");
 
                 return false;
             }
 
-            _logger.LogWarning(
-                "Pre-generation command failed but continue-on-failure is enabled. Proceeding with generation.\n  {ErrorMessage}",
-                preGenResult.ErrorMessage);
+            _logger.LogWarning("Pre-generation command failed but continue-on-failure is enabled. Proceeding with generation.");
         }
 
         return true;
@@ -176,7 +172,7 @@ internal sealed class CommandLineRunHandler : CommandLineHandlerBase, ICommandLi
     {
         if (!document.RestoreSolution)
         {
-            _logger.LogInformation("Solution restore disabled.");
+            _logger.LogDebug("Solution restore disabled.");
             return true;
         }
 
@@ -221,14 +217,14 @@ internal sealed class CommandLineRunHandler : CommandLineHandlerBase, ICommandLi
 
         if (!postGenConfig.Enabled)
         {
-            _logger.LogInformation("Post-generation command disabled.");
+            _logger.LogDebug("Post-generation command disabled.");
             return;
         }
 
         _logger.LogInformation("Running Post-generation command...");
 
         // Subscribe to stdout/stderr so the output is captured in the CLI's log output.
-        using var stdoutSub = _postGenerationCommandRunner.StdOut.Subscribe(line => _logger.LogInformation("{Line}", line));
+        using var stdoutSub = _postGenerationCommandRunner.StdOut.Subscribe(line => _logger.LogDebug("{Line}", line));
         using var stderrSub = _postGenerationCommandRunner.StdErr.Subscribe(line => _logger.LogWarning("{Line}", line));
 
         var postGenResult = await _postGenerationCommandRunner.RunAsync(postGenConfig, cancellationToken);

@@ -93,7 +93,9 @@ public class GenerationServiceFixture
             var result = await _service.RunPreGenerationAsync(CancellationToken.None);
 
             result.ShouldBeTrue();
-            _logger.Records.ShouldBeEmpty();
+            _logger.Records.ShouldHaveSingleItem();
+            _logger.Records[0].Level.ShouldBe(LogLevel.Debug);
+            _logger.Records[0].Message.ShouldContain("skipping");
         }
 
         [Fact]
@@ -104,7 +106,9 @@ public class GenerationServiceFixture
             var result = await _service.RunPreGenerationAsync(CancellationToken.None);
 
             result.ShouldBeTrue();
-            _logger.Records.ShouldBeEmpty();
+            _logger.Records.ShouldHaveSingleItem();
+            _logger.Records[0].Level.ShouldBe(LogLevel.Debug);
+            _logger.Records[0].Message.ShouldContain("skipping");
         }
 
         [Fact]
@@ -528,7 +532,9 @@ public class GenerationServiceFixture
 
             result.ShouldBeTrue();
 
-            _logger.Records.ShouldBeEmpty();
+            _logger.Records.ShouldHaveSingleItem();
+            _logger.Records[0].Level.ShouldBe(LogLevel.Debug);
+            _logger.Records[0].Message.ShouldContain("skipping");
         }
 
         [Fact]
@@ -587,7 +593,9 @@ public class GenerationServiceFixture
         {
             await _service.RunPostGenerationAsync(CancellationToken.None);
 
-            _logger.Records.ShouldBeEmpty();
+            _logger.Records.ShouldHaveSingleItem();
+            _logger.Records[0].Level.ShouldBe(LogLevel.Debug);
+            _logger.Records[0].Message.ShouldContain("skipping");
 
             await _postGenRunnerFactory.DidNotReceiveWithAnyArgs().ExecuteAsync(default!, TestContext.Current.CancellationToken);
         }
