@@ -6,6 +6,7 @@ using SlnDependencyDiagramGenerator.Generator;
 using SlnDependencyStudio.Cli.Enumerations;
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Shared.Config.Extensions;
+using SlnDependencyStudio.Shared.Exceptions;
 using SlnDependencyStudio.Shared.ProcessExecution.PostGeneration;
 using SlnDependencyStudio.Shared.ProcessExecution.PreGeneration;
 using SlnDependencyStudio.Shared.ProcessExecution.RestoreSolution;
@@ -122,6 +123,11 @@ internal sealed class CommandLineRunHandler : CommandLineHandlerBase, ICommandLi
         {
             _logger.LogWarning("Operation was cancelled.");
             return (int)StudioCliExitCode.RunCommandFailed;
+        }
+        catch (DependencyProjectException exception)
+        {
+            _logger.LogError("The project document could not be loaded: {Message}", exception.Message);
+            return (int)StudioCliExitCode.CannotLoadConfigFile;
         }
         catch (JsonException exception)
         {

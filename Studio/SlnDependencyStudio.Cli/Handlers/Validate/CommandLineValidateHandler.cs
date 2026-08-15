@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using SlnDependencyStudio.Cli.Enumerations;
 using SlnDependencyStudio.Shared.Config.Extensions;
+using SlnDependencyStudio.Shared.Exceptions;
 using SlnDependencyStudio.Shared.Serialization;
 using SlnDependencyStudio.Shared.Services;
 using System.Text.Json;
@@ -56,6 +57,11 @@ internal sealed class CommandLineValidateHandler : CommandLineHandlerBase, IComm
         {
             _logger.LogWarning("Operation was cancelled.");
             return (int)StudioCliExitCode.RunCommandFailed;
+        }
+        catch (DependencyProjectException exception)
+        {
+            _logger.LogError("The project document could not be loaded: {Message}", exception.Message);
+            return (int)StudioCliExitCode.CannotLoadConfigFile;
         }
         catch (JsonException exception)
         {

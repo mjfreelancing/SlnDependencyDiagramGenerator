@@ -9,6 +9,7 @@ using SlnDependencyDiagramGenerator.Generator;
 using SlnDependencyStudio.Cli.Enumerations;
 using SlnDependencyStudio.Cli.Handlers.Run;
 using SlnDependencyStudio.Shared.Config;
+using SlnDependencyStudio.Shared.Exceptions;
 using SlnDependencyStudio.Shared.ProcessExecution;
 using SlnDependencyStudio.Shared.ProcessExecution.PostGeneration;
 using SlnDependencyStudio.Shared.ProcessExecution.PreGeneration;
@@ -177,6 +178,30 @@ public class CommandLineRunHandlerFixture
         serializer
             .DeserializeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .ThrowsAsync(new JsonException("Invalid JSON"));
+
+        var dependencyGenerator = Substitute.For<IDependencyGenerator>();
+        var preGenRunner = Substitute.For<IPreGenerationCommandRunner>();
+        var restoreRunner = Substitute.For<IRestoreSolutionRunner>();
+        var postGenRunner = Substitute.For<IPostGenerationCommandRunner>();
+        var projectValidator = Substitute.For<IDependencyProjectValidator>();
+        var logger = Substitute.For<ILogger<CommandLineRunHandler>>();
+
+        var handler = new CommandLineRunHandler(serializer, dependencyGenerator, restoreRunner, preGenRunner, postGenRunner, projectValidator, logger);
+
+        var result = await handler.HandleAsync(
+            Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None);
+
+        result.ShouldBe((int)StudioCliExitCode.CannotLoadConfigFile);
+    }
+
+    [Fact]
+    public async Task Should_Return_CannotLoadConfigFile_When_Project_Document_Is_Invalid()
+    {
+        var serializer = Substitute.For<IDependencyProjectSerializer>();
+
+        serializer
+            .DeserializeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .ThrowsAsync(new DependencyProjectException("The document is empty or not a valid dependency project document"));
 
         var dependencyGenerator = Substitute.For<IDependencyGenerator>();
         var preGenRunner = Substitute.For<IPreGenerationCommandRunner>();

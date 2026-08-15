@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using SlnDependencyStudio.Shared.Config;
+using SlnDependencyStudio.Shared.Exceptions;
 
 namespace SlnDependencyStudio.Shared.Serialization;
 
@@ -62,10 +63,14 @@ internal sealed class DependencyProjectSerializer : IDependencyProjectSerializer
     /// <summary>Deserializes a JSON string into a document.</summary>
     /// <param name="json">The JSON string.</param>
     /// <returns>The deserialized document.</returns>
+    /// <exception cref="DependencyProjectException">Thrown when the JSON is empty or not a valid dependency project document.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the schema version is not supported.</exception>
     public DependencyProjectDocument Deserialize(string json)
     {
-        var document = _jsonSerializer.Deserialize<DependencyProjectDocument>(json)!;
+        // System.Text.Json returns null for the JSON literal "null". Guard so an empty/invalid
+        // document surfaces as a clear error.
+        var document = _jsonSerializer.Deserialize<DependencyProjectDocument>(json)
+            ?? throw new DependencyProjectException("The document is empty or not a valid dependency project document.");
 
         if (document.SchemaVersion > CurrentSchemaVersion)
         {

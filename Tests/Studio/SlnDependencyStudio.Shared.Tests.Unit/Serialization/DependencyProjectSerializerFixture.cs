@@ -3,8 +3,10 @@ using NSubstitute;
 using Shouldly;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyStudio.Shared.Config;
+using SlnDependencyStudio.Shared.Exceptions;
 using SlnDependencyStudio.Shared.Serialization;
 using System;
+using System.Text.Json;
 
 namespace SlnDependencyStudio.Shared.Tests.Unit.Serialization;
 
@@ -241,6 +243,27 @@ public class DependencyProjectSerializerFixture
 
             reSerialized.ShouldContain("futureField");
             reSerialized.ShouldContain("will be preserved");
+        }
+
+        [Fact]
+        public void Should_Throw_DependencyProjectException_When_Json_Is_Null_Literal()
+        {
+            var serializer = CreateSerializer();
+
+            // System.Text.Json returns null for the JSON literal "null", which previously became a raw NRE.
+            var exception = Should.Throw<DependencyProjectException>(() => serializer.Deserialize("null"));
+
+            exception.Message.ShouldContain("empty or not a valid dependency project document");
+        }
+
+        [Fact]
+        public void Should_Throw_JsonException_When_Json_Is_Empty()
+        {
+            var serializer = CreateSerializer();
+
+            // Empty input is a parse failure (System.Text.Json), not a null result — the CLI already
+            // maps JsonException to CannotLoadConfigFile, so empty files surface a clear error too.
+            Should.Throw<JsonException>(() => serializer.Deserialize(string.Empty));
         }
     }
 

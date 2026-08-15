@@ -8,6 +8,7 @@ using SlnDependencyDiagramGenerator.Tests.Shared;
 using SlnDependencyStudio.Cli.Enumerations;
 using SlnDependencyStudio.Cli.Handlers.Validate;
 using SlnDependencyStudio.Shared.Config;
+using SlnDependencyStudio.Shared.Exceptions;
 using SlnDependencyStudio.Shared.Serialization;
 using SlnDependencyStudio.Shared.Services;
 using System.Text.Json;
@@ -62,6 +63,25 @@ public class CommandLineValidateHandlerFixture
         serializer
             .DeserializeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .ThrowsAsync(new JsonException("Invalid JSON"));
+
+        var projectValidator = Substitute.For<IDependencyProjectValidator>();
+        var logger = Substitute.For<ILogger<CommandLineValidateHandler>>();
+
+        var handler = new CommandLineValidateHandler(serializer, projectValidator, logger);
+
+        var result = await handler.HandleAsync(Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None);
+
+        result.ShouldBe((int)StudioCliExitCode.CannotLoadConfigFile);
+    }
+
+    [Fact]
+    public async Task Should_Return_CannotLoadConfigFile_When_Project_Document_Is_Invalid()
+    {
+        var serializer = Substitute.For<IDependencyProjectSerializer>();
+
+        serializer
+            .DeserializeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .ThrowsAsync(new DependencyProjectException("The document is empty or not a valid dependency project document"));
 
         var projectValidator = Substitute.For<IDependencyProjectValidator>();
         var logger = Substitute.For<ILogger<CommandLineValidateHandler>>();
