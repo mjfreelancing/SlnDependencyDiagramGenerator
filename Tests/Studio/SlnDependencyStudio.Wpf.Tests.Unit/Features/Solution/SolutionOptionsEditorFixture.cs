@@ -211,6 +211,29 @@ public class SolutionOptionsEditorFixture : IDisposable
         }
     }
 
+    public class RelativePathSync : SolutionOptionsEditorFixture
+    {
+        [Fact]
+        public void Should_Uncheck_UseRelativePath_When_SolutionPath_Becomes_Absolute()
+        {
+            _editor.SetOriginalValues(CreateOptions(@"..\Projects\test.sln"));
+
+            _editor.SolutionPath.Value = @"C:\Projects\test.sln";
+
+            _editor.UseRelativePath.Value.ShouldBeFalse();
+        }
+
+        [Fact]
+        public void Should_Check_UseRelativePath_When_SolutionPath_Becomes_Relative()
+        {
+            _editor.SetOriginalValues(CreateOptions(@"C:\Projects\test.sln"));
+
+            _editor.SolutionPath.Value = @"..\Projects\test.sln";
+
+            _editor.UseRelativePath.Value.ShouldBeTrue();
+        }
+    }
+
     public void Dispose()
     {
         _editor.Dispose();

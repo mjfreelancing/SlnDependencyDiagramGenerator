@@ -76,6 +76,10 @@ internal sealed class SolutionOptionsEditor : ReactiveObject, ISolutionOptionsEd
         _disposables.Add(PackagesToExclude);
         _disposables.Add(FrameworksToExclude);
 
+        // Keep the relative-path checkbox truthful while the path is edited/typed (debounced via
+        // RelativePathSync); document load is covered immediately by SetOriginalValues below.
+        _disposables.Add(RelativePathSync.Wire(SolutionPath, UseRelativePath));
+
         // Wire up dirty tracking after the trackables are initialized: WhenAnyValue evaluates the
         // expression on subscription, and TrackableValue.IsDirty throws until SetOriginalValue is called.
         _isDirty = WireupIsDirty();

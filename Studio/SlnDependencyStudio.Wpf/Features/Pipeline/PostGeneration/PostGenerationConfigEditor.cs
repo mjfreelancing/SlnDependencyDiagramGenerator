@@ -46,6 +46,10 @@ internal sealed class PostGenerationConfigEditor : ReactiveObject, IPostGenerati
         InitializeTrackable(WorkingDirectory, string.Empty);
         InitializeTrackable(UseRelativePath, true);
 
+        // Keep the relative-path checkbox truthful while the working directory is edited/typed
+        // (debounced via RelativePathSync); document load is covered immediately by SetOriginalValues.
+        _disposables.Add(RelativePathSync.Wire(WorkingDirectory, UseRelativePath));
+
         // Wire up dirty tracking after the trackables are initialized: WhenAnyValue evaluates the
         // expression on subscription, and TrackableValue.IsDirty throws until SetOriginalValue is called.
         _isDirty = WireupIsDirty();

@@ -139,6 +139,29 @@ public class PostGenerationConfigEditorFixture : IDisposable
         }
     }
 
+    public class RelativePathSync : PostGenerationConfigEditorFixture
+    {
+        [Fact]
+        public void Should_Uncheck_UseRelativePath_When_WorkingDirectory_Becomes_Absolute()
+        {
+            _editor.SetOriginalValues(new PostGenerationConfig { WorkingDirectory = "src" });
+
+            _editor.WorkingDirectory.Value = @"C:\src";
+
+            _editor.UseRelativePath.Value.ShouldBeFalse();
+        }
+
+        [Fact]
+        public void Should_Check_UseRelativePath_When_WorkingDirectory_Becomes_Relative()
+        {
+            _editor.SetOriginalValues(new PostGenerationConfig { WorkingDirectory = @"C:\src" });
+
+            _editor.WorkingDirectory.Value = @"..\src";
+
+            _editor.UseRelativePath.Value.ShouldBeTrue();
+        }
+    }
+
     public void Dispose()
     {
         _editor.Dispose();

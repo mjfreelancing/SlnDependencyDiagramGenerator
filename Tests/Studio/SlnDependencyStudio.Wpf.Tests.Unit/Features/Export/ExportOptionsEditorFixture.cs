@@ -210,6 +210,29 @@ public class ExportOptionsEditorFixture : IDisposable
         }
     }
 
+    public class RelativePathSync : ExportOptionsEditorFixture
+    {
+        [Fact]
+        public void Should_Uncheck_UseRelativePath_When_RootPath_Becomes_Absolute()
+        {
+            _editor.SetOriginalValues(CreateOptions(@"Output"));
+
+            _editor.RootPath.Value = @"C:\Output";
+
+            _editor.UseRelativePath.Value.ShouldBeFalse();
+        }
+
+        [Fact]
+        public void Should_Check_UseRelativePath_When_RootPath_Becomes_Relative()
+        {
+            _editor.SetOriginalValues(CreateOptions(@"C:\Output"));
+
+            _editor.RootPath.Value = @"Output";
+
+            _editor.UseRelativePath.Value.ShouldBeTrue();
+        }
+    }
+
     public void Dispose()
     {
         _editor.Dispose();

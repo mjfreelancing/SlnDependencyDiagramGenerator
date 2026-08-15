@@ -44,6 +44,10 @@ internal sealed class ExportOptionsEditor : ReactiveObject, IExportOptionsEditor
 
         _disposables.Add(ImageFormats);
 
+        // Keep the relative-path checkbox truthful while the path is edited/typed (debounced via
+        // RelativePathSync); document load is covered immediately by SetOriginalValues below.
+        _disposables.Add(RelativePathSync.Wire(RootPath, UseRelativePath));
+
         // Wire up dirty tracking after the trackables are initialized: WhenAnyValue evaluates the
         // expression on subscription, and TrackableValue.IsDirty throws until SetOriginalValue is called.
         _isDirty = WireupIsDirty();
