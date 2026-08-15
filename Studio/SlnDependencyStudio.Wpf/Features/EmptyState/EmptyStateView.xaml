@@ -294,6 +294,8 @@
                                 </Grid>
                             </Button>
 
+                            <!--  Always-visible remove affordance — shown for existing and missing items alike.
+                                  Theme-coloured so it reads as an action rather than an error.  -->
                             <Button
                                 Grid.Column="1"
                                 Width="28"
@@ -303,21 +305,23 @@
                                 VerticalAlignment="Center"
                                 Command="{Binding DataContext.RemoveRecentProjectCommand, ElementName=Root}"
                                 CommandParameter="{Binding FilePath}"
+                                Style="{StaticResource MaterialDesignFlatButton}"
                                 ToolTip="Remove from recent projects">
-                                <Button.Style>
-                                    <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignFlatButton}">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding Exists}" Value="False">
-                                                <Setter Property="Visibility" Value="Visible" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Button.Style>
                                 <materialDesign:PackIcon
                                     Width="14"
                                     Height="14"
-                                    Kind="Close" />
+                                    Kind="Close">
+                                    <materialDesign:PackIcon.Style>
+                                        <Style TargetType="materialDesign:PackIcon">
+                                            <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.ForegroundLight}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Exists}" Value="False">
+                                                    <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.ValidationError}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </materialDesign:PackIcon.Style>
+                                </materialDesign:PackIcon>
                             </Button>
                         </Grid>
                     </DataTemplate>
