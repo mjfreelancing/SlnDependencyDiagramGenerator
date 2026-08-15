@@ -163,6 +163,13 @@ internal sealed class MermaidDiagramRenderer : DiagramRendererBase
             .For(mmdcExe)
             .WithNoWindow()
             .WithArguments(mmdcArgs)
+            .WithStandardOutputHandler((sender, eventArgs) =>
+            {
+                if (eventArgs.Data is string message)
+                {
+                    Logger.LogInformation("  {MermaidMessage}", message);
+                }
+            })
             .WithErrorOutputHandler((sender, eventArgs) =>
             {
                 if (eventArgs.Data is string message)

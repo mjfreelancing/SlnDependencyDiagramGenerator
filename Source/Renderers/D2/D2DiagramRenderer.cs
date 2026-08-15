@@ -144,7 +144,7 @@ internal sealed class D2DiagramRenderer : DiagramRendererBase
                     }
                     else
                     {
-                        // Non-error stderr from d2 is informational.
+                        Logger.LogInformation("  {D2Message}", message);
                     }
                 }
             })
