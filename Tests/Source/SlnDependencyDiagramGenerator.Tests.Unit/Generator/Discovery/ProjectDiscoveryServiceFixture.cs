@@ -5,6 +5,7 @@ using SlnDependencyDiagramGenerator.Generator.Discovery;
 using SlnDependencyDiagramGenerator.Parser;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -131,6 +132,39 @@ public class ProjectDiscoveryServiceFixture
 
             await _solutionParser.Received(2).DiscoverProjectsAsync(
                 Arg.Any<string>(), Arg.Any<string[]>(), Arg.Any<string[]>(), Arg.Any<CancellationToken>());
+        }
+
+        [Fact]
+        public async Task Should_Bypass_Cache_When_Solution_File_Changes_On_Disk()
+        {
+            var sut = CreateSut();
+            var filtered = CreateFilteredProjects([], [], [], []);
+
+            _solutionParser
+                .DiscoverProjectsAsync(Arg.Any<string>(), Arg.Any<string[]>(), Arg.Any<string[]>(), Arg.Any<CancellationToken>())
+                .Returns(filtered);
+
+            var solutionFilePath = Path.Combine(Path.GetTempPath(), $"sln-dependency-{Guid.NewGuid():N}.sln");
+
+            try
+            {
+                await File.WriteAllTextAsync(solutionFilePath, "solution v1", TestContext.Current.CancellationToken);
+
+                await sut.DiscoverProjectsAsync(solutionFilePath, [".*"], [], CancellationToken.None);
+
+                // Simulate the solution being modified on disk so the last-write-time part of the
+                // cache key changes and the cached discovery is invalidated.
+                File.SetLastWriteTimeUtc(solutionFilePath, DateTime.UtcNow.AddSeconds(1));
+
+                await sut.DiscoverProjectsAsync(solutionFilePath, [".*"], [], CancellationToken.None);
+
+                await _solutionParser.Received(2).DiscoverProjectsAsync(
+                    Arg.Any<string>(), Arg.Any<string[]>(), Arg.Any<string[]>(), Arg.Any<CancellationToken>());
+            }
+            finally
+            {
+                File.Delete(solutionFilePath);
+            }
         }
     }
 

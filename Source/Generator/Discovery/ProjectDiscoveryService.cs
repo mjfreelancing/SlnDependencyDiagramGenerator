@@ -1,5 +1,7 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using AllOverIt.Caching;
+using Microsoft.Extensions.Logging;
 using SlnDependencyDiagramGenerator.Parser;
+using SlnDependencyDiagramGenerator.Utils;
 using System;
 using System.IO;
 using System.Linq;
@@ -13,7 +15,7 @@ internal sealed class ProjectDiscoveryService : IProjectDiscoveryService
 {
     private readonly ISolutionParser _solutionParser;
     private readonly ILogger<ProjectDiscoveryService> _logger;
-    private string _cachedDiscoveryKey = string.Empty;
+    private GenericCacheKey<string, long, EquatableArray<string>, EquatableArray<string>>? _cachedDiscoveryKey;
     private FilteredSolutionProjects? _cachedFilteredProjects;
 
     /// <summary>Initializes a new instance of <see cref="ProjectDiscoveryService"/>.</summary>
@@ -101,9 +103,16 @@ internal sealed class ProjectDiscoveryService : IProjectDiscoveryService
         CancellationToken cancellationToken)
     {
         var normalizedSolutionPath = Path.GetFullPath(solutionFilePath);
-        var discoveryKey = CreateDiscoveryKey(normalizedSolutionPath, regexToInclude, regexToExclude);
 
-        if (_cachedFilteredProjects is not null && string.Equals(_cachedDiscoveryKey, discoveryKey, StringComparison.Ordinal))
+        // The solution file's last-write-time is part of the cache key so that a long-lived service
+        // instance (e.g. the WPF host, which lives for the whole session) does not serve stale
+        // project discovery when the .sln/.slnx file is modified between generation runs. Discovery
+        // is cached on the instance, so without the timestamp the cache would return the previous
+        // project set indefinitely after the solution changes on disk.
+        var solutionFileLastWriteTimeUtc = File.GetLastWriteTimeUtc(normalizedSolutionPath);
+        var discoveryKey = CreateDiscoveryKey(normalizedSolutionPath, solutionFileLastWriteTimeUtc, regexToInclude, regexToExclude);
+
+        if (_cachedFilteredProjects is not null && _cachedDiscoveryKey == discoveryKey)
         {
             _logger.LogDebug("Using cached project discovery for {SolutionPath}", Path.GetFileName(normalizedSolutionPath));
 
@@ -130,8 +139,18 @@ internal sealed class ProjectDiscoveryService : IProjectDiscoveryService
         return filteredProjects;
     }
 
-    private static string CreateDiscoveryKey(string solutionFilePath, string[] regexToInclude, string[] regexToExclude)
+    private static GenericCacheKey<string, long, EquatableArray<string>, EquatableArray<string>> CreateDiscoveryKey(
+        string solutionFilePath, DateTime solutionFileLastWriteTimeUtc, string[] regexToInclude, string[] regexToExclude)
     {
-        return string.Join("|", solutionFilePath, string.Join(";", regexToInclude), string.Join(";", regexToExclude));
+        // EquatableArray<string> is used instead of string[] because GenericCacheKey is a record:
+        // records compare each component via EqualityComparer<T>.Default, and a plain array
+        // compares by reference. EquatableArray is a struct that compares by length and element
+        // content, so two keys built from the same regex patterns are considered equal regardless
+        // of which array instances were used — the cache is keyed by content, not by instance.
+        return new GenericCacheKey<string, long, EquatableArray<string>, EquatableArray<string>>(
+            solutionFilePath,
+            solutionFileLastWriteTimeUtc.Ticks,             // Caters for when the solution file changes on disk.
+            new EquatableArray<string>(regexToInclude),
+            new EquatableArray<string>(regexToExclude));
     }
 }
