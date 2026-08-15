@@ -39,4 +39,10 @@
 		<ProjectReference Include="..\SlnDependencyStudio.Shared\SlnDependencyStudio.Shared.csproj" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <None Update="sample.sds">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	</ItemGroup>
+
 </Project>
