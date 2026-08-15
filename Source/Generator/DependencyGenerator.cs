@@ -1,4 +1,4 @@
-using AllOverIt.Extensions;
+﻿using AllOverIt.Extensions;
 using AllOverIt.IO;
 using AllOverIt.Patterns.Specification.Extensions;
 using AllOverIt.Validation;
@@ -177,6 +177,13 @@ public sealed class DependencyGenerator : IDependencyGenerator
 
             await ExportAsSummaryAsync(exportPath, solutionProjects, cancellationToken).ConfigureAwait(false);
 
+            // Prepare renderer folders up-front so both individual and all-projects output start clean,
+            // regardless of which scope(s) are enabled.
+            if (configuration.Solution.Individual.Enabled || configuration.Solution.All.Enabled)
+            {
+                PrepareRendererFolders(exportPath, renderers, configuration.Export.ClearContents);
+            }
+
             if (configuration.Solution.Individual.Enabled)
             {
                 _logger.LogInformation("Generating per-project diagrams for {TargetFramework}…", targetFramework);
@@ -205,6 +212,28 @@ public sealed class DependencyGenerator : IDependencyGenerator
         }
     }
 
+    /// <summary>Creates each configured renderer's output folder and, when requested, empties it of existing files.</summary>
+    /// <param name="exportPath">The target-framework export path.</param>
+    /// <param name="renderers">The configured diagram renderers.</param>
+    /// <param name="clearContents">When <see langword="true"/>, existing files in each renderer folder are deleted first.</param>
+    private static void PrepareRendererFolders(string exportPath, IDiagramRenderer[] renderers, bool clearContents)
+    {
+        // Renderer folders are prepared up-front (before both individual and all-projects output) so that
+        // either scope starts from a clean folder — otherwise a run that switches scope could leave stale
+        // per-project files from a previous run behind.
+        foreach (var renderer in renderers)
+        {
+            var rendererExportPath = Path.Combine(exportPath, renderer.FileExtension);
+
+            Directory.CreateDirectory(rendererExportPath);
+
+            if (clearContents)
+            {
+                ClearFolder(rendererExportPath);
+            }
+        }
+    }
+
     private async Task ExportAsIndividualAsync(DependencyGeneratorConfig configuration, string targetFramework,
         string exportPath, IDictionary<string, SolutionProject> solutionProjects, IDiagramRenderer[] renderers,
         CancellationToken cancellationToken)
@@ -219,13 +248,6 @@ public sealed class DependencyGenerator : IDependencyGenerator
             cancellationToken.ThrowIfCancellationRequested();
 
             var rendererExportPath = Path.Combine(exportPath, renderer.FileExtension);
-
-            Directory.CreateDirectory(rendererExportPath);
-
-            if (configuration.Export.ClearContents)
-            {
-                ClearFolder(rendererExportPath);
-            }
 
             foreach (var scopedProject in solutionProjects.Values)
             {
