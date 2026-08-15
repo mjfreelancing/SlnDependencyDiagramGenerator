@@ -326,6 +326,7 @@ internal sealed partial class SolutionParser : ISolutionParser
         }
         catch (Exception exception)
         {
+            _logger.LogError(exception, "Failed to parse solution file {SolutionFilePath}", solutionFilePath);
             throw CreateSolutionParseException(solutionFilePath, exception);
         }
 
@@ -367,6 +368,9 @@ internal sealed partial class SolutionParser : ISolutionParser
         }
         catch (Exception exception)
         {
+            _logger.LogError(exception, "Failed while evaluating SDK-style project {ProjectPath} for target framework {TargetFramework}",
+                projectPath, targetFramework);
+
             throw CreateMsBuildEvaluationException(projectPath, targetFramework, exception);
         }
 
@@ -380,6 +384,9 @@ internal sealed partial class SolutionParser : ISolutionParser
         }
         catch (Exception exception)
         {
+            _logger.LogError(exception, "Failed while evaluating SDK-style project {ProjectPath} for target framework {TargetFramework}",
+                projectPath, targetFramework);
+
             throw CreateMsBuildEvaluationException(projectPath, targetFramework, exception);
         }
 
@@ -402,11 +409,11 @@ internal sealed partial class SolutionParser : ISolutionParser
     }
 
     /// <summary>
-    /// Creates a diagnostic-rich parser exception for malformed or unreadable solution files.
+    /// Creates a parser exception for malformed or unreadable solution files.
     /// </summary>
     /// <param name="solutionFilePath">The solution path being parsed when the failure occurred.</param>
     /// <param name="exception">The underlying exception thrown while parsing the solution file.</param>
-    /// <returns>A <see cref="DependencyGeneratorException"/> that includes solution path and underlying parser diagnostics.</returns>
+    /// <returns>A <see cref="DependencyGeneratorException"/> that includes the solution path and the underlying exception message.</returns>
     private static DependencyGeneratorException CreateSolutionParseException(string solutionFilePath, Exception exception)
     {
         var extension = Path.GetExtension(solutionFilePath);
@@ -416,7 +423,7 @@ internal sealed partial class SolutionParser : ISolutionParser
         builder.AppendLine($"Detected format: {extension}");
         builder.AppendLine();
         builder.AppendLine("Underlying exception:");
-        builder.AppendLine(exception.ToString());
+        builder.AppendLine(exception.Message);
 
         return new DependencyGeneratorException(builder.ToString(), exception);
     }
@@ -460,14 +467,14 @@ internal sealed partial class SolutionParser : ISolutionParser
     }
 
     /// <summary>
-    /// Creates a diagnostic-rich parser exception for MSBuild evaluation failures.
+    /// Creates a parser exception for MSBuild evaluation failures.
     /// </summary>
     /// <param name="projectPath">The project path being evaluated when the failure occurred.</param>
     /// <param name="targetFramework">The target framework being evaluated when the failure occurred.</param>
     /// <param name="exception">The underlying exception thrown by MSBuild evaluation or item processing.</param>
     /// <returns>
     /// A <see cref="DependencyGeneratorException"/> that includes project context, target framework,
-    /// resolver diagnostics, and the full underlying exception details.
+    /// resolver diagnostics, and the underlying exception message.
     /// </returns>
     private static DependencyGeneratorException CreateMsBuildEvaluationException(string projectPath, string targetFramework, Exception exception)
     {
@@ -480,7 +487,7 @@ internal sealed partial class SolutionParser : ISolutionParser
         builder.AppendLine("MSBuild diagnostic context:");
         builder.AppendLine(MsBuildSdkResolver.GetDiagnostics());
         builder.AppendLine("Underlying exception:");
-        builder.AppendLine(exception.ToString());
+        builder.AppendLine(exception.Message);
 
         return new DependencyGeneratorException(builder.ToString(), exception);
     }
