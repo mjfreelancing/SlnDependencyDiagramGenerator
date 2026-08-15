@@ -199,7 +199,7 @@ internal abstract class DiagramRendererBase : IDiagramRenderer
         // Throw to prevent runaway recursion if malformed or inconsistent project metadata is encountered.
         if (!activePathProjects.Add(projectName))
         {
-            throw new DependencyGeneratorException($"A circular project reference was detected while building the diagram for '{projectName}'.");
+            throw new DependencyGraphException($"A circular project reference was detected while building the diagram for '{projectName}'.");
         }
 
         // Return a disposable that auto-reverts the path membership when the caller's using scope

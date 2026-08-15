@@ -108,6 +108,11 @@ internal sealed class CommandLineRunHandler : CommandLineHandlerBase, ICommandLi
             _logger.LogError("Project assets could not be read: {Message}", exception.Message);
             return (int)StudioCliExitCode.ProjectAssetsFailed;
         }
+        catch (DependencyGraphException exception)
+        {
+            _logger.LogError("Dependency graph is inconsistent: {Message}", exception.Message);
+            return (int)StudioCliExitCode.DependencyGraphFailed;
+        }
         catch (DependencyGeneratorException exception)
         {
             _logger.LogError("Diagram generator failed: {Message}", exception.Message);

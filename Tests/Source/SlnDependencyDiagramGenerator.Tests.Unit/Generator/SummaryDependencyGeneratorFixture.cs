@@ -215,7 +215,7 @@ public class SummaryDependencyGeneratorFixture
 
             var solutionProjects = CreateSolutionProjects(app);
 
-            var exception = Should.Throw<DependencyGeneratorException>(() =>
+            var exception = Should.Throw<DependencyGraphException>(() =>
                 SummaryDependencyGenerator.CreateContent(solutionProjects));
 
             exception.Message.ShouldContain("MissingLib");
@@ -238,7 +238,7 @@ public class SummaryDependencyGeneratorFixture
 
             var solutionProjects = CreateSolutionProjects(libA, libB);
 
-            var exception = Should.Throw<DependencyGeneratorException>(() =>
+            var exception = Should.Throw<DependencyGraphException>(() =>
                 SummaryDependencyGenerator.CreateContent(solutionProjects));
 
             exception.Message.ShouldContain("circular");

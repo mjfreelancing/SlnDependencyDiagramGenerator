@@ -33,6 +33,9 @@ public enum StudioCliExitCode
     /// <summary>The project assets could not be read (missing assets file or unsupported assets format).</summary>
     ProjectAssetsFailed = 1010,
 
+    /// <summary>The project dependency graph is inconsistent (a referenced project was not found or a circular reference was detected).</summary>
+    DependencyGraphFailed = 1011,
+
     /// <summary>An unexpected CLI failure occurred.</summary>
     UnhandledCliFailure = 1999
 }

@@ -308,7 +308,7 @@ public class DiagramRendererBaseFixture
                     ProjectReferences = [@"C:\sln\LibA\LibA.csproj"]
                 });
 
-            var exception = Should.Throw<DependencyGeneratorException>(() => sut.BuildIntermediateRepresentation(model));
+            var exception = Should.Throw<DependencyGraphException>(() => sut.BuildIntermediateRepresentation(model));
 
             exception.Message.ShouldContain("circular");
         }

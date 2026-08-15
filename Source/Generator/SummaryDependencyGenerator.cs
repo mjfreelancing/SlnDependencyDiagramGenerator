@@ -268,14 +268,14 @@ internal static class SummaryDependencyGenerator
 
         if (!solutionProjects.TryGetValue(projectName, out var solutionProject))
         {
-            throw new DependencyGeneratorException($"The dependency project '{projectName}' was not found using the provided regex paths.");
+            throw new DependencyGraphException($"The dependency project '{projectName}' was not found using the provided regex paths.");
         }
 
         // Defensive check: valid project reference graphs are expected to be acyclic.
         // Throw to prevent runaway recursion if malformed or inconsistent project metadata is encountered.
         if (!activePathProjects.Add(projectName))
         {
-            throw new DependencyGeneratorException($"A circular project reference was detected while building the dependency summary for '{projectName}'.");
+            throw new DependencyGraphException($"A circular project reference was detected while building the dependency summary for '{projectName}'.");
         }
 
         dependencySet.Add(projectName);
