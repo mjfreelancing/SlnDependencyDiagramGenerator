@@ -24,6 +24,12 @@ public class PreGenerationConfigEditorFixture : IDisposable
         {
             _editor.Command.Value.ShouldBe(string.Empty);
         }
+
+        [Fact]
+        public void Should_Seed_UseRelativePath_With_True()
+        {
+            _editor.UseRelativePath.Value.ShouldBeTrue();
+        }
     }
 
     public class IsDirty : PreGenerationConfigEditorFixture
@@ -91,6 +97,24 @@ public class PreGenerationConfigEditorFixture : IDisposable
             _editor.SetOriginalValues(new PreGenerationConfig { Command = "b" });
 
             _editor.IsDirty.ShouldBeFalse();
+        }
+
+        [Fact]
+        public void Should_Sync_UseRelativePath_To_Absolute_When_WorkingDirectory_Is_Absolute()
+        {
+            _editor.SetOriginalValues(new PreGenerationConfig { WorkingDirectory = @"C:\src" });
+
+            _editor.WorkingDirectory.Value.ShouldBe(@"C:\src");
+            _editor.UseRelativePath.Value.ShouldBeFalse();
+        }
+
+        [Fact]
+        public void Should_Sync_UseRelativePath_To_Relative_When_WorkingDirectory_Is_Relative()
+        {
+            _editor.SetOriginalValues(new PreGenerationConfig { WorkingDirectory = @"..\src" });
+
+            _editor.WorkingDirectory.Value.ShouldBe(@"..\src");
+            _editor.UseRelativePath.Value.ShouldBeTrue();
         }
     }
 

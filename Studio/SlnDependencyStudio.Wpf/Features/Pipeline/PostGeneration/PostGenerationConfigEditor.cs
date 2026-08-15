@@ -2,6 +2,7 @@
 using ReactiveUI;
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Wpf.Controls;
+using System.IO;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 
@@ -29,6 +30,9 @@ internal sealed class PostGenerationConfigEditor : ReactiveObject, IPostGenerati
     public TrackableValue<string> WorkingDirectory { get; } = new();
 
     /// <inheritdoc />
+    public TrackableValue<bool> UseRelativePath { get; } = new();
+
+    /// <inheritdoc />
     public bool IsDirty => _isDirty.Value;
 
     /// <summary>Initializes a new instance with empty defaults.</summary>
@@ -40,6 +44,7 @@ internal sealed class PostGenerationConfigEditor : ReactiveObject, IPostGenerati
         InitializeTrackable(Command, string.Empty);
         InitializeTrackable(Arguments, string.Empty);
         InitializeTrackable(WorkingDirectory, string.Empty);
+        InitializeTrackable(UseRelativePath, true);
 
         // Wire up dirty tracking after the trackables are initialized: WhenAnyValue evaluates the
         // expression on subscription, and TrackableValue.IsDirty throws until SetOriginalValue is called.
@@ -55,6 +60,10 @@ internal sealed class PostGenerationConfigEditor : ReactiveObject, IPostGenerati
         Command.SetOriginalValue(source.Command);
         Arguments.SetOriginalValue(source.Arguments);
         WorkingDirectory.SetOriginalValue(source.WorkingDirectory);
+
+        // Keep the relative-path checkbox in sync with the loaded working directory so it can
+        // never disagree with the stored value (an absolute WorkingDirectory shows it unchecked).
+        UseRelativePath.SetOriginalValue(!Path.IsPathFullyQualified(source.WorkingDirectory));
     }
 
     /// <inheritdoc />

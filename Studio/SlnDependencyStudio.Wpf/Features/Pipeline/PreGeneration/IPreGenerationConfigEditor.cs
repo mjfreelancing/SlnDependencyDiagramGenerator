@@ -25,6 +25,10 @@ public interface IPreGenerationConfigEditor : IStudioEditor, IStudioSingletonDep
     /// <summary>The working directory for the command.</summary>
     TrackableValue<string> WorkingDirectory { get; }
 
+    /// <summary>Whether the Browse button stores the working directory relative to the project file.
+    /// Synced from the loaded <see cref="WorkingDirectory"/> by <see cref="SetOriginalValues"/>.</summary>
+    TrackableValue<bool> UseRelativePath { get; }
+
     /// <summary>Whether to continue on failure.</summary>
     TrackableValue<bool> ContinueOnFailure { get; }
 

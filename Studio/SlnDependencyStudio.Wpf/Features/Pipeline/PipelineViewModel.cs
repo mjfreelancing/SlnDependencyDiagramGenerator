@@ -43,8 +43,9 @@ public sealed class PipelineViewModel : ReactiveObject, IValidatableViewModel, I
     /// <summary>Whether to continue on failure.</summary>
     public TrackableValue<bool> ContinueOnFailure => _store.PreGenerationEditor.ContinueOnFailure;
 
-    /// <summary>When true, the pre-generation Browse button stores the working directory relative to the project file.</summary>
-    public TrackableValue<bool> UseRelativePathForPreGenWorkingDirectory { get; } = new();
+    /// <summary>When true, the pre-generation Browse button stores the working directory relative to the project file.
+    /// Synced from the loaded working directory by the editor's <c>SetOriginalValues</c>.</summary>
+    public TrackableValue<bool> UseRelativePathForPreGenWorkingDirectory => _store.PreGenerationEditor.UseRelativePath;
 
     /// <summary>Whether the solution should be restored (via <c>dotnet restore</c>) before generation.</summary>
     public TrackableValue<bool> RestoreSolution => _store.RestoreSolutionEditor.RestoreSolution;
@@ -61,8 +62,9 @@ public sealed class PipelineViewModel : ReactiveObject, IValidatableViewModel, I
     /// <summary>The working directory for the command.</summary>
     public TrackableValue<string> PostGenWorkingDirectory => _store.PostGenerationEditor.WorkingDirectory;
 
-    /// <summary>When true, the post-generation Browse button stores the working directory relative to the project file.</summary>
-    public TrackableValue<bool> UseRelativePathForPostGenWorkingDirectory { get; } = new();
+    /// <summary>When true, the post-generation Browse button stores the working directory relative to the project file.
+    /// Synced from the loaded working directory by the editor's <c>SetOriginalValues</c>.</summary>
+    public TrackableValue<bool> UseRelativePathForPostGenWorkingDirectory => _store.PostGenerationEditor.UseRelativePath;
 
     /// <inheritdoc />
     public IValidationContext ValidationContext { get; } = new ValidationContext();
@@ -150,9 +152,6 @@ public sealed class PipelineViewModel : ReactiveObject, IValidatableViewModel, I
     {
         _store = store;
         _toolStatus = toolStatus;
-
-        UseRelativePathForPreGenWorkingDirectory.SetOriginalValue(true);
-        UseRelativePathForPostGenWorkingDirectory.SetOriginalValue(true);
 
         _toolStatusEntries = [];
         ToolStatusEntries = new ReadOnlyObservableCollection<ToolStatusEntry>(_toolStatusEntries);
@@ -288,6 +287,9 @@ public sealed class PipelineViewModel : ReactiveObject, IValidatableViewModel, I
 
     private void WirePreGenRelativePathToggle()
     {
+        // The editor's SetOriginalValues syncs UseRelativePath to the loaded working directory, so
+        // the checkbox always reflects the stored format and the initial emission here is a no-op.
+        // When the user flips the checkbox, ToggleRelativePath rewrites the working directory to match.
         this.WhenAnyValue(vm => vm.UseRelativePathForPreGenWorkingDirectory.Value)
             .Subscribe(useRelative => ToggleRelativePath(WorkingDirectory, useRelative))
             .DisposeWith(_disposables);
@@ -295,6 +297,8 @@ public sealed class PipelineViewModel : ReactiveObject, IValidatableViewModel, I
 
     private void WirePostGenRelativePathToggle()
     {
+        // Same as WirePreGenRelativePathToggle — the checkbox is synced on load and only converts
+        // the working directory when the user flips it.
         this.WhenAnyValue(vm => vm.UseRelativePathForPostGenWorkingDirectory.Value)
             .Subscribe(useRelative => ToggleRelativePath(PostGenWorkingDirectory, useRelative))
             .DisposeWith(_disposables);

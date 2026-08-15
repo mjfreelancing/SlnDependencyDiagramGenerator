@@ -3,6 +3,7 @@ using ReactiveUI;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyStudio.Shared.Utils;
 using SlnDependencyStudio.Wpf.Controls;
+using System.IO;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 
@@ -87,6 +88,10 @@ internal sealed class SolutionOptionsEditor : ReactiveObject, ISolutionOptionsEd
         _logger.LogDebug("Set original values on {Editor}", nameof(SolutionOptionsEditor));
 
         SolutionPath.SetOriginalValue(source.SolutionPath);
+
+        // Keep the relative-path checkbox in sync with the loaded path so it can never disagree
+        // with the stored value (an absolute SolutionPath shows the checkbox unchecked).
+        UseRelativePath.SetOriginalValue(!Path.IsPathFullyQualified(source.SolutionPath));
 
         RegexToInclude.SetOriginalItems(source.RegexToInclude);
         RegexToExclude.SetOriginalItems(source.RegexToExclude);

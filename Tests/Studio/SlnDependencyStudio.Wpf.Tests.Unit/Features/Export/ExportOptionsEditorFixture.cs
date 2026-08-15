@@ -123,6 +123,24 @@ public class ExportOptionsEditorFixture : IDisposable
             _editor.ImageFormats.Items.ShouldContain(DiagramImageFormat.Svg);
             _editor.ImageFormats.Items.Count.ShouldBe(2);
         }
+
+        [Fact]
+        public void Should_Sync_UseRelativePath_To_Absolute_When_RootPath_Is_Absolute()
+        {
+            _editor.SetOriginalValues(CreateOptions(@"C:\Output"));
+
+            _editor.RootPath.Value.ShouldBe(@"C:\Output");
+            _editor.UseRelativePath.Value.ShouldBeFalse();
+        }
+
+        [Fact]
+        public void Should_Sync_UseRelativePath_To_Relative_When_RootPath_Is_Relative()
+        {
+            _editor.SetOriginalValues(CreateOptions(@"Output"));
+
+            _editor.RootPath.Value.ShouldBe(@"Output");
+            _editor.UseRelativePath.Value.ShouldBeTrue();
+        }
     }
 
     public class FlushTo : ExportOptionsEditorFixture

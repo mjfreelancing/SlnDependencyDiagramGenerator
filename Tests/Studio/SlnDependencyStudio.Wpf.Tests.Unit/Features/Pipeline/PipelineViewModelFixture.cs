@@ -24,6 +24,7 @@ public class PipelineViewModelFixture
     private readonly TrackableValue<string> _arguments = new();
     private readonly TrackableValue<string> _workingDirectory = new();
     private readonly TrackableValue<bool> _continueOnFailure = new();
+    private readonly TrackableValue<bool> _useRelativePath = new();
     private readonly IPreGenerationConfigEditor _editor = Substitute.For<IPreGenerationConfigEditor>();
     private readonly TrackableValue<bool> _restoreSolution = new();
     private readonly IRestoreSolutionEditor _restoreSolutionEditor = Substitute.For<IRestoreSolutionEditor>();
@@ -31,6 +32,7 @@ public class PipelineViewModelFixture
     private readonly TrackableValue<string> _postGenCommand = new();
     private readonly TrackableValue<string> _postGenArguments = new();
     private readonly TrackableValue<string> _postGenWorkingDirectory = new();
+    private readonly TrackableValue<bool> _postGenUseRelativePath = new();
     private readonly IPostGenerationConfigEditor _postGenEditor = Substitute.For<IPostGenerationConfigEditor>();
     private readonly BehaviorSubject<IReadOnlyList<ToolStatusEntry>> _toolStatusSubject = new(Array.Empty<ToolStatusEntry>());
     private readonly PipelineViewModel _viewModel;
@@ -48,11 +50,14 @@ public class PipelineViewModelFixture
         _postGenCommand.SetOriginalValue(string.Empty);
         _postGenArguments.SetOriginalValue(string.Empty);
         _postGenWorkingDirectory.SetOriginalValue(string.Empty);
+        _useRelativePath.SetOriginalValue(true);
+        _postGenUseRelativePath.SetOriginalValue(true);
 
         _editor.Enabled.Returns(_enabled);
         _editor.Command.Returns(_command);
         _editor.Arguments.Returns(_arguments);
         _editor.WorkingDirectory.Returns(_workingDirectory);
+        _editor.UseRelativePath.Returns(_useRelativePath);
         _editor.ContinueOnFailure.Returns(_continueOnFailure);
         _store.PreGenerationEditor.Returns(_editor);
 
@@ -63,6 +68,7 @@ public class PipelineViewModelFixture
         _postGenEditor.Command.Returns(_postGenCommand);
         _postGenEditor.Arguments.Returns(_postGenArguments);
         _postGenEditor.WorkingDirectory.Returns(_postGenWorkingDirectory);
+        _postGenEditor.UseRelativePath.Returns(_postGenUseRelativePath);
         _store.PostGenerationEditor.Returns(_postGenEditor);
 
         _toolStatus.ToolStatuses.Returns(_toolStatusSubject.AsObservable());
@@ -297,6 +303,41 @@ public class PipelineViewModelFixture
             _viewModel.UseRelativePathForPreGenWorkingDirectory.Value = false;
 
             _workingDirectory.Value.ShouldBe(@"C:\tools");
+        }
+    }
+
+    public class DocumentOpen : PipelineViewModelFixture
+    {
+        [Fact]
+        public void Should_Not_Rewrite_Absolute_WorkingDirectory_When_Toggle_Synced_To_Absolute()
+        {
+            // Simulates a document opened with an absolute working directory: the editor's
+            // SetOriginalValues syncs UseRelativePath to match the loaded path BEFORE the page
+            // view model is constructed (page VMs are created lazily on navigation). Regression
+            // test: constructing the page must not run ToggleRelativePath and rewrite the loaded
+            // absolute path to relative, and the checkbox must reflect the absolute format.
+            _store.DocumentFilePath.Returns(@"C:\projects\test.sds");
+            _workingDirectory.SetOriginalValue(@"C:\projects\src");
+            _useRelativePath.SetOriginalValue(false);
+
+            var pageViewModel = new PipelineViewModel(_store, _toolStatus);
+
+            _workingDirectory.Value.ShouldBe(@"C:\projects\src");
+            pageViewModel.UseRelativePathForPreGenWorkingDirectory.Value.ShouldBeFalse();
+        }
+
+        [Fact]
+        public void Should_Not_Rewrite_Absolute_PostGen_WorkingDirectory_When_Toggle_Synced_To_Absolute()
+        {
+            // Same regression as above, but for the post-generation working directory.
+            _store.DocumentFilePath.Returns(@"C:\projects\test.sds");
+            _postGenWorkingDirectory.SetOriginalValue(@"C:\projects\src");
+            _postGenUseRelativePath.SetOriginalValue(false);
+
+            var pageViewModel = new PipelineViewModel(_store, _toolStatus);
+
+            _postGenWorkingDirectory.Value.ShouldBe(@"C:\projects\src");
+            pageViewModel.UseRelativePathForPostGenWorkingDirectory.Value.ShouldBeFalse();
         }
     }
 

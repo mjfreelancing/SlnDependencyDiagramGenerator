@@ -67,6 +67,24 @@ public class SolutionOptionsEditorFixture : IDisposable
 
             _editor.IsDirty.ShouldBeFalse();
         }
+
+        [Fact]
+        public void Should_Sync_UseRelativePath_To_Absolute_When_SolutionPath_Is_Absolute()
+        {
+            _editor.SetOriginalValues(CreateOptions(@"C:\Projects\test.sln"));
+
+            _editor.SolutionPath.Value.ShouldBe(@"C:\Projects\test.sln");
+            _editor.UseRelativePath.Value.ShouldBeFalse();
+        }
+
+        [Fact]
+        public void Should_Sync_UseRelativePath_To_Relative_When_SolutionPath_Is_Relative()
+        {
+            _editor.SetOriginalValues(CreateOptions(@"..\Projects\test.sln"));
+
+            _editor.SolutionPath.Value.ShouldBe(@"..\Projects\test.sln");
+            _editor.UseRelativePath.Value.ShouldBeTrue();
+        }
     }
 
     public class FlushTo : SolutionOptionsEditorFixture

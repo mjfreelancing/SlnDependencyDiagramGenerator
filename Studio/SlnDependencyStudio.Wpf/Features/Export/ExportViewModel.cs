@@ -145,8 +145,10 @@ public sealed class ExportViewModel : ReactiveObject, IValidatableViewModel, IDi
 
     private void WireRelativePathToggle()
     {
+        // The editor's SetOriginalValues syncs UseRelativePath to the loaded path, so the checkbox
+        // always reflects the stored format and the initial emission here is a no-op. This only
+        // rewrites the path when the user flips the checkbox.
         this.WhenAnyValue(vm => vm.UseRelativePath.Value)
-            .Skip(1)        // Skip the initial seeded value after loading
             .Subscribe(useRelative =>
             {
                 var currentPath = RootPath.Value;

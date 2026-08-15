@@ -25,6 +25,10 @@ public interface IPostGenerationConfigEditor : IStudioEditor, IStudioSingletonDe
     /// <summary>The working directory for the command.</summary>
     TrackableValue<string> WorkingDirectory { get; }
 
+    /// <summary>Whether the Browse button stores the working directory relative to the project file.
+    /// Synced from the loaded <see cref="WorkingDirectory"/> by <see cref="SetOriginalValues"/>.</summary>
+    TrackableValue<bool> UseRelativePath { get; }
+
     /// <summary>Populates all TrackableValues from the given config and establishes a clean baseline.</summary>
     /// <param name="source">The post-generation config to load.</param>
     void SetOriginalValues(PostGenerationConfig source);

@@ -2,6 +2,7 @@
 using ReactiveUI;
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Wpf.Controls;
+using System.IO;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 
@@ -29,6 +30,9 @@ internal sealed class PreGenerationConfigEditor : ReactiveObject, IPreGeneration
     public TrackableValue<string> WorkingDirectory { get; } = new();
 
     /// <inheritdoc />
+    public TrackableValue<bool> UseRelativePath { get; } = new();
+
+    /// <inheritdoc />
     public TrackableValue<bool> ContinueOnFailure { get; } = new();
 
     /// <inheritdoc />
@@ -43,6 +47,7 @@ internal sealed class PreGenerationConfigEditor : ReactiveObject, IPreGeneration
         InitializeTrackable(Command, string.Empty);
         InitializeTrackable(Arguments, string.Empty);
         InitializeTrackable(WorkingDirectory, string.Empty);
+        InitializeTrackable(UseRelativePath, true);
         InitializeTrackable(ContinueOnFailure, false);
 
         // Wire up dirty tracking after the trackables are initialized: WhenAnyValue evaluates the
@@ -59,6 +64,11 @@ internal sealed class PreGenerationConfigEditor : ReactiveObject, IPreGeneration
         Command.SetOriginalValue(source.Command);
         Arguments.SetOriginalValue(source.Arguments);
         WorkingDirectory.SetOriginalValue(source.WorkingDirectory);
+
+        // Keep the relative-path checkbox in sync with the loaded working directory so it can
+        // never disagree with the stored value (an absolute WorkingDirectory shows it unchecked).
+        UseRelativePath.SetOriginalValue(!Path.IsPathFullyQualified(source.WorkingDirectory));
+
         ContinueOnFailure.SetOriginalValue(source.ContinueOnFailure);
     }
 

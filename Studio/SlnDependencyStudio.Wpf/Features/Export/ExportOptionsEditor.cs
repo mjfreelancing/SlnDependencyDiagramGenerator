@@ -3,6 +3,7 @@ using ReactiveUI;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyStudio.Shared.Utils;
 using SlnDependencyStudio.Wpf.Controls;
+using System.IO;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 
@@ -55,6 +56,11 @@ internal sealed class ExportOptionsEditor : ReactiveObject, IExportOptionsEditor
         _logger.LogDebug("Set original values on {Editor}", nameof(ExportOptionsEditor));
 
         RootPath.SetOriginalValue(source.RootPath);
+
+        // Keep the relative-path checkbox in sync with the loaded path so it can never disagree
+        // with the stored value (an absolute RootPath shows the checkbox unchecked).
+        UseRelativePath.SetOriginalValue(!Path.IsPathFullyQualified(source.RootPath));
+
         ClearContents.SetOriginalValue(source.ClearContents);
         ImageFormats.SetOriginalItems(source.ImageFormats);
     }
