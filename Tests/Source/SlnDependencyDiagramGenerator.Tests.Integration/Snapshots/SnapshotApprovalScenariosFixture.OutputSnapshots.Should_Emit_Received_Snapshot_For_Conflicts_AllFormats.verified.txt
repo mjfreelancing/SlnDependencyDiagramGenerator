@@ -102,8 +102,8 @@ conflicts.style.opacity: 0.75
 
 | Project | Resolved | Conflict Details |
 |---------|----------|----------------------|
-| LibV1 | 12.0.3 | Project requested Newtonsoft.Json [12.0.3, ), resolved v12.0.3 |
-| LibV2 | 13.0.3 | Project requested Newtonsoft.Json [13.0.3, ), resolved v13.0.3 |
+| LibV1 | 12.0.3 | Project resolved v12.0.3 |
+| LibV2 | 13.0.3 | Project resolved v13.0.3 |
 
 
 <br>

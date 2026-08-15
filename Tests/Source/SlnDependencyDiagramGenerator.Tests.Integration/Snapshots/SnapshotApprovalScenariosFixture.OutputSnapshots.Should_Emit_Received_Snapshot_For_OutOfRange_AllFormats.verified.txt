@@ -1,0 +1,296 @@
+﻿{
+  net10.0/d2/app.d2:
+direction: left
+
+outofrange: Out Of Range Group
+newtonsoft-json-group: ""
+outofrange.app: App
+microsoft-netcore-app: Microsoft.NETCore.App
+outofrange.libv1: LibV1
+newtonsoft-json-group.newtonsoft-json_13-0-1: Newtonsoft.Json\nv13.0.1
+outofrange.libv2: LibV2
+newtonsoft-json-group.newtonsoft-json_12-0-3: Newtonsoft.Json\nv12.0.3
+restsharp-serializers-newtonsoftjson_108-0-3: RestSharp.Serializers.NewtonsoftJson\nv108.0.3
+restsharp_108-0-3: RestSharp\nv108.0.3
+microsoft-netcore-app <- outofrange.app
+outofrange.libv1 <- outofrange.app
+newtonsoft-json-group.newtonsoft-json_13-0-1 <- outofrange.libv1
+outofrange.libv2 <- outofrange.app
+newtonsoft-json-group.newtonsoft-json_12-0-3 <- outofrange.libv2
+restsharp-serializers-newtonsoftjson_108-0-3 <- outofrange.libv2
+newtonsoft-json-group.newtonsoft-json_12-0-3 <- restsharp-serializers-newtonsoftjson_108-0-3
+restsharp_108-0-3 <- restsharp-serializers-newtonsoftjson_108-0-3
+microsoft-netcore-app <- outofrange.libv1
+microsoft-netcore-app <- outofrange.libv2
+microsoft-netcore-app.style.fill: "#102030"
+microsoft-netcore-app.style.opacity: 0.8
+newtonsoft-json-group.newtonsoft-json_13-0-1.style.fill: "#405060"
+newtonsoft-json-group.newtonsoft-json_13-0-1.style.opacity: 0.8
+newtonsoft-json-group.newtonsoft-json_12-0-3.style.fill: "#405060"
+newtonsoft-json-group.newtonsoft-json_12-0-3.style.opacity: 0.8
+restsharp-serializers-newtonsoftjson_108-0-3.style.fill: "#405060"
+restsharp-serializers-newtonsoftjson_108-0-3.style.opacity: 0.8
+restsharp_108-0-3.style.fill: "#708090"
+restsharp_108-0-3.style.opacity: 0.8
+outofrange.style.fill: "#DDEEFF"
+outofrange.style.opacity: 0.75
+newtonsoft-json-group.style.fill: "#DDEEFF"
+newtonsoft-json-group.style.opacity: 0.75
+
+,
+  net10.0/d2/libv1.d2:
+direction: left
+
+outofrange: Out Of Range Group
+outofrange.libv1: LibV1
+microsoft-netcore-app: Microsoft.NETCore.App
+newtonsoft-json_13-0-1: Newtonsoft.Json\nv13.0.1
+microsoft-netcore-app <- outofrange.libv1
+newtonsoft-json_13-0-1 <- outofrange.libv1
+microsoft-netcore-app.style.fill: "#102030"
+microsoft-netcore-app.style.opacity: 0.8
+newtonsoft-json_13-0-1.style.fill: "#405060"
+newtonsoft-json_13-0-1.style.opacity: 0.8
+outofrange.style.fill: "#DDEEFF"
+outofrange.style.opacity: 0.75
+
+,
+  net10.0/d2/libv2.d2:
+direction: left
+
+outofrange: Out Of Range Group
+outofrange.libv2: LibV2
+microsoft-netcore-app: Microsoft.NETCore.App
+newtonsoft-json_12-0-3: Newtonsoft.Json\nv12.0.3
+restsharp-serializers-newtonsoftjson_108-0-3: RestSharp.Serializers.NewtonsoftJson\nv108.0.3
+restsharp_108-0-3: RestSharp\nv108.0.3
+microsoft-netcore-app <- outofrange.libv2
+newtonsoft-json_12-0-3 <- outofrange.libv2
+restsharp-serializers-newtonsoftjson_108-0-3 <- outofrange.libv2
+newtonsoft-json_12-0-3 <- restsharp-serializers-newtonsoftjson_108-0-3
+restsharp_108-0-3 <- restsharp-serializers-newtonsoftjson_108-0-3
+microsoft-netcore-app.style.fill: "#102030"
+microsoft-netcore-app.style.opacity: 0.8
+newtonsoft-json_12-0-3.style.fill: "#405060"
+newtonsoft-json_12-0-3.style.opacity: 0.8
+restsharp-serializers-newtonsoftjson_108-0-3.style.fill: "#405060"
+restsharp-serializers-newtonsoftjson_108-0-3.style.opacity: 0.8
+restsharp_108-0-3.style.fill: "#708090"
+restsharp_108-0-3.style.opacity: 0.8
+outofrange.style.fill: "#DDEEFF"
+outofrange.style.opacity: 0.75
+
+,
+  net10.0/d2/out-of-range-group-all.d2:
+direction: left
+
+outofrange: Out Of Range Group
+newtonsoft-json-group: ""
+outofrange.app: App
+microsoft-netcore-app: Microsoft.NETCore.App
+outofrange.libv1: LibV1
+newtonsoft-json-group.newtonsoft-json_13-0-1: Newtonsoft.Json\nv13.0.1
+outofrange.libv2: LibV2
+newtonsoft-json-group.newtonsoft-json_12-0-3: Newtonsoft.Json\nv12.0.3
+restsharp-serializers-newtonsoftjson_108-0-3: RestSharp.Serializers.NewtonsoftJson\nv108.0.3
+restsharp_108-0-3: RestSharp\nv108.0.3
+microsoft-netcore-app <- outofrange.app
+outofrange.libv1 <- outofrange.app
+newtonsoft-json-group.newtonsoft-json_13-0-1 <- outofrange.libv1
+outofrange.libv2 <- outofrange.app
+newtonsoft-json-group.newtonsoft-json_12-0-3 <- outofrange.libv2
+restsharp-serializers-newtonsoftjson_108-0-3 <- outofrange.libv2
+newtonsoft-json-group.newtonsoft-json_12-0-3 <- restsharp-serializers-newtonsoftjson_108-0-3
+restsharp_108-0-3 <- restsharp-serializers-newtonsoftjson_108-0-3
+microsoft-netcore-app <- outofrange.libv1
+microsoft-netcore-app <- outofrange.libv2
+microsoft-netcore-app.style.fill: "#102030"
+microsoft-netcore-app.style.opacity: 0.8
+newtonsoft-json-group.newtonsoft-json_13-0-1.style.fill: "#405060"
+newtonsoft-json-group.newtonsoft-json_13-0-1.style.opacity: 0.8
+newtonsoft-json-group.newtonsoft-json_12-0-3.style.fill: "#405060"
+newtonsoft-json-group.newtonsoft-json_12-0-3.style.opacity: 0.8
+restsharp-serializers-newtonsoftjson_108-0-3.style.fill: "#405060"
+restsharp-serializers-newtonsoftjson_108-0-3.style.opacity: 0.8
+restsharp_108-0-3.style.fill: "#708090"
+restsharp_108-0-3.style.opacity: 0.8
+outofrange.style.fill: "#DDEEFF"
+outofrange.style.opacity: 0.75
+newtonsoft-json-group.style.fill: "#DDEEFF"
+newtonsoft-json-group.style.opacity: 0.75
+
+,
+  net10.0/Dependency Summary.md:
+# Dependency Summary
+
+## Cross-Project Version Conflicts
+
+### Newtonsoft.Json
+
+| Project | Resolved | Conflict Details |
+|---------|----------|----------------------|
+| LibV2 | 12.0.3 | Via RestSharp.Serializers.NewtonsoftJson v108.0.3 requested Newtonsoft.Json [13.0.1, ), resolved v12.0.3 |
+| LibV1 | 13.0.1 | Project resolved v13.0.1 |
+
+
+<br>
+
+---
+
+<br>
+
+## App
+
+![](https://img.shields.io/badge/.NET-10.0-55A9EE.svg)
+
+### Dependencies
+
+* LibV1
+* LibV2
+* Microsoft.NETCore.App
+* Newtonsoft.Json v12.0.3
+* Newtonsoft.Json v13.0.1
+* RestSharp v108.0.3
+* RestSharp.Serializers.NewtonsoftJson v108.0.3
+
+<br>
+
+---
+
+<br>
+
+## LibV1
+
+![](https://img.shields.io/badge/.NET-10.0-55A9EE.svg)
+
+### Dependencies
+
+* Microsoft.NETCore.App
+* Newtonsoft.Json v13.0.1
+
+<br>
+
+---
+
+<br>
+
+## LibV2
+
+![](https://img.shields.io/badge/.NET-10.0-55A9EE.svg)
+
+### Dependencies
+
+* Microsoft.NETCore.App
+* Newtonsoft.Json v12.0.3
+* RestSharp v108.0.3
+* RestSharp.Serializers.NewtonsoftJson v108.0.3
+
+<br>
+
+---
+
+<br>
+
+,
+  net10.0/mmd/app.mmd:
+flowchart LR
+  subgraph outofrange["Out Of Range Group"]
+    direction LR
+    outofrange_app["App"]
+    outofrange_libv1["LibV1"]
+    outofrange_libv2["LibV2"]
+  end
+  microsoft-netcore-app["Microsoft.NETCore.App"]
+  restsharp-serializers-newtonsoftjson_108-0-3["RestSharp.Serializers.NewtonsoftJson<br>v108.0.3"]
+  restsharp_108-0-3["RestSharp<br>v108.0.3"]
+  subgraph newtonsoft-json-group["Newtonsoft.Json"]
+      newtonsoft-json-group_newtonsoft-json_13-0-1["Newtonsoft.Json<br>v13.0.1"]
+      newtonsoft-json-group_newtonsoft-json_12-0-3["Newtonsoft.Json<br>v12.0.3"]
+    end
+  outofrange_app --> microsoft-netcore-app
+  outofrange_app --> outofrange_libv1
+  outofrange_libv1 --> newtonsoft-json-group_newtonsoft-json_13-0-1
+  outofrange_app --> outofrange_libv2
+  outofrange_libv2 --> newtonsoft-json-group_newtonsoft-json_12-0-3
+  outofrange_libv2 --> restsharp-serializers-newtonsoftjson_108-0-3
+  restsharp-serializers-newtonsoftjson_108-0-3 --> newtonsoft-json-group_newtonsoft-json_12-0-3
+  restsharp-serializers-newtonsoftjson_108-0-3 --> restsharp_108-0-3
+  outofrange_libv1 --> microsoft-netcore-app
+  outofrange_libv2 --> microsoft-netcore-app
+  style outofrange fill:#DDEEFF,stroke:#DDEEFF,stroke-width:1px,opacity:0.75
+  style newtonsoft-json-group fill:#DDEEFF,stroke:#DDEEFF,stroke-width:1px,opacity:0.75
+  style microsoft-netcore-app fill:#102030,opacity:0.8
+  style newtonsoft-json-group_newtonsoft-json_13-0-1 fill:#405060,opacity:0.8
+  style newtonsoft-json-group_newtonsoft-json_12-0-3 fill:#405060,opacity:0.8
+  style restsharp-serializers-newtonsoftjson_108-0-3 fill:#405060,opacity:0.8
+  style restsharp_108-0-3 fill:#708090,opacity:0.8
+,
+  net10.0/mmd/libv1.mmd:
+flowchart LR
+  subgraph outofrange["Out Of Range Group"]
+    direction LR
+    outofrange_libv1["LibV1"]
+  end
+  microsoft-netcore-app["Microsoft.NETCore.App"]
+  newtonsoft-json_13-0-1["Newtonsoft.Json<br>v13.0.1"]
+  outofrange_libv1 --> microsoft-netcore-app
+  outofrange_libv1 --> newtonsoft-json_13-0-1
+  style outofrange fill:#DDEEFF,stroke:#DDEEFF,stroke-width:1px,opacity:0.75
+  style microsoft-netcore-app fill:#102030,opacity:0.8
+  style newtonsoft-json_13-0-1 fill:#405060,opacity:0.8
+,
+  net10.0/mmd/libv2.mmd:
+flowchart LR
+  subgraph outofrange["Out Of Range Group"]
+    direction LR
+    outofrange_libv2["LibV2"]
+  end
+  microsoft-netcore-app["Microsoft.NETCore.App"]
+  newtonsoft-json_12-0-3["Newtonsoft.Json<br>v12.0.3"]
+  restsharp-serializers-newtonsoftjson_108-0-3["RestSharp.Serializers.NewtonsoftJson<br>v108.0.3"]
+  restsharp_108-0-3["RestSharp<br>v108.0.3"]
+  outofrange_libv2 --> microsoft-netcore-app
+  outofrange_libv2 --> newtonsoft-json_12-0-3
+  outofrange_libv2 --> restsharp-serializers-newtonsoftjson_108-0-3
+  restsharp-serializers-newtonsoftjson_108-0-3 --> newtonsoft-json_12-0-3
+  restsharp-serializers-newtonsoftjson_108-0-3 --> restsharp_108-0-3
+  style outofrange fill:#DDEEFF,stroke:#DDEEFF,stroke-width:1px,opacity:0.75
+  style microsoft-netcore-app fill:#102030,opacity:0.8
+  style newtonsoft-json_12-0-3 fill:#405060,opacity:0.8
+  style restsharp-serializers-newtonsoftjson_108-0-3 fill:#405060,opacity:0.8
+  style restsharp_108-0-3 fill:#708090,opacity:0.8
+,
+  net10.0/mmd/out-of-range-group-all.mmd:
+flowchart LR
+  subgraph outofrange["Out Of Range Group"]
+    direction LR
+    outofrange_app["App"]
+    outofrange_libv1["LibV1"]
+    outofrange_libv2["LibV2"]
+  end
+  microsoft-netcore-app["Microsoft.NETCore.App"]
+  restsharp-serializers-newtonsoftjson_108-0-3["RestSharp.Serializers.NewtonsoftJson<br>v108.0.3"]
+  restsharp_108-0-3["RestSharp<br>v108.0.3"]
+  subgraph newtonsoft-json-group["Newtonsoft.Json"]
+      newtonsoft-json-group_newtonsoft-json_13-0-1["Newtonsoft.Json<br>v13.0.1"]
+      newtonsoft-json-group_newtonsoft-json_12-0-3["Newtonsoft.Json<br>v12.0.3"]
+    end
+  outofrange_app --> microsoft-netcore-app
+  outofrange_app --> outofrange_libv1
+  outofrange_libv1 --> newtonsoft-json-group_newtonsoft-json_13-0-1
+  outofrange_app --> outofrange_libv2
+  outofrange_libv2 --> newtonsoft-json-group_newtonsoft-json_12-0-3
+  outofrange_libv2 --> restsharp-serializers-newtonsoftjson_108-0-3
+  restsharp-serializers-newtonsoftjson_108-0-3 --> newtonsoft-json-group_newtonsoft-json_12-0-3
+  restsharp-serializers-newtonsoftjson_108-0-3 --> restsharp_108-0-3
+  outofrange_libv1 --> microsoft-netcore-app
+  outofrange_libv2 --> microsoft-netcore-app
+  style outofrange fill:#DDEEFF,stroke:#DDEEFF,stroke-width:1px,opacity:0.75
+  style newtonsoft-json-group fill:#DDEEFF,stroke:#DDEEFF,stroke-width:1px,opacity:0.75
+  style microsoft-netcore-app fill:#102030,opacity:0.8
+  style newtonsoft-json-group_newtonsoft-json_13-0-1 fill:#405060,opacity:0.8
+  style newtonsoft-json-group_newtonsoft-json_12-0-3 fill:#405060,opacity:0.8
+  style restsharp-serializers-newtonsoftjson_108-0-3 fill:#405060,opacity:0.8
+  style restsharp_108-0-3 fill:#708090,opacity:0.8
+
+}

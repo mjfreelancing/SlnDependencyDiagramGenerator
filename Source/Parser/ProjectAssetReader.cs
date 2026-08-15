@@ -248,28 +248,63 @@ internal sealed class ProjectAssetReader : IProjectAssetReader
         };
     }
 
-    private static bool IsRequestedDifferentVersion(VersionRange? requestedVersionRange, NuGetVersion? resolvedVersion)
+    // Determines whether a package node's resolved version should be flagged as "requested a
+    // different version" in the summary. This drives the per-edge "requested ... resolved ..."
+    // lines in the package-conflict table, so it must only return true when there is a GENUINE
+    // discrepancy between what the requesting edge asked for and what NuGet actually resolved.
+    //
+    // The inputs are:
+    //   requestedVersionRange - the VersionRange declared by the edge that requested this package.
+    //     For an explicit (direct) reference this comes from the project's PackageReference
+    //     (LibraryRange.VersionRange); for a transitive reference it is the range declared by the
+    //     parent package's dependency on this one.
+    //   resolvedVersion      - the version NuGet actually resolved for the package, read from the
+    //     project.assets.json library entry (LockFileTargetLibrary.Version).
+    //
+    // NuGet requests are rarely exact pins. A PackageReference such as
+    //     <PackageReference Include="Some.Package" Version=">= 2.0.0" />
+    // declares a RANGE, and NuGet resolves the best available version that SATISFIES that range
+    // (2.1.0, for example). Resolving within the range is normal, correct behaviour — the resolved
+    // version is exactly what the request permitted, so there is NO discrepancy and nothing to
+    // flag. Only when NuGet resolves OUTSIDE the requested constraint (an unexpected result, or a
+    // conflicting set of transitive constraints) is there a "different version" worth surfacing.
+    //
+    // NuGet's VersionRange.Satisfies(version) answers precisely that question: "is this version
+    // valid under the requested constraint?" So the whole decision collapses to
+    //     !requestedVersionRange.Satisfies(resolvedVersion)
+    // with exact pins falling out naturally from the same check:
+    //
+    //   Example 1 - exact pin that matches the resolution (no mismatch):
+    //       requested [1.2.3, 1.2.3], resolved 1.2.3   -> Satisfies == true  -> false
+    //
+    //   Example 2 - exact pin that does NOT match the resolution (a real conflict):
+    //       requested [1.2.3, 1.2.3], resolved 1.2.4   -> Satisfies == false -> true
+    //       The project pinned 1.2.3 but got 1.2.4, so it genuinely requested a different version.
+    //
+    //   Example 3 - ranged request resolved WITHIN the range (normal - do NOT add noise):
+    //       requested >= 2.0.0,       resolved 2.1.0   -> Satisfies == true  -> false
+    //       2.1.0 satisfies the >= 2.0.0 constraint, so NuGet behaved exactly as asked.
+    //
+    //   Example 4 - ranged request resolved OUTSIDE the range (a genuine discrepancy to surface):
+    //       requested [2.0.0, 3.0.0), resolved 3.1.0   -> Satisfies == false -> true
+    //       3.1.0 falls outside [2.0.0, 3.0.0), so the edge really requested a different version.
+    //
+    //   Example 5 - no constraint or no resolved version (nothing to compare):
+    //       requested null, resolved 2.1.0             -> false
+    //       requested >= 2.0.0, resolved null          -> false
+    //
+    // A floating range such as "1.*" behaves the same way: Satisfies(1.5.0) is true, so an
+    // in-range floating resolution is not flagged.
+    //
+    /// <summary>Determines whether a resolved package version does not satisfy the version range requested by its parent edge.</summary>
+    /// <param name="requestedVersionRange">The version range requested by the parent dependency edge.</param>
+    /// <param name="resolvedVersion">The version NuGet resolved for the package.</param>
+    /// <returns><see langword="true"/> when the resolved version falls outside the requested range; otherwise, <see langword="false"/>.</returns>
+    internal static bool IsRequestedDifferentVersion(VersionRange? requestedVersionRange, NuGetVersion? resolvedVersion)
     {
-        if (requestedVersionRange is null || resolvedVersion is null)
-        {
-            return false;
-        }
-
-        // Report exact version pins only when the requested version differs.
-        var isExactVersionRequest = requestedVersionRange.MinVersion is not null &&
-            requestedVersionRange.MaxVersion is not null &&
-            requestedVersionRange.IsMinInclusive &&
-            requestedVersionRange.IsMaxInclusive &&
-            requestedVersionRange.MinVersion == requestedVersionRange.MaxVersion;
-
-        if (isExactVersionRequest)
-        {
-            return requestedVersionRange.MinVersion != resolvedVersion;
-        }
-
-        // For version ranges, preserve request-path context in the summary to explain
-        // what constraints fed into the final NuGet resolution.
-        return true;
+        return requestedVersionRange is not null &&
+               resolvedVersion is not null &&
+               !requestedVersionRange.Satisfies(resolvedVersion);
     }
 
     private static VersionRange? GetRequestedVersionRange(LibraryDependency dependency)

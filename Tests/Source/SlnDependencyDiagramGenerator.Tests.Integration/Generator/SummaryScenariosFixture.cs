@@ -1,5 +1,5 @@
-﻿using SlnDependencyDiagramGenerator.Tests.Integration.Support;
-using Shouldly;
+﻿using Shouldly;
+using SlnDependencyDiagramGenerator.Tests.Integration.Support;
 
 namespace SlnDependencyDiagramGenerator.Tests.Integration.Generator;
 
@@ -45,6 +45,28 @@ public class SummaryScenariosFixture : FixtureCollectionTestBase
             summary.ShouldContain("### Newtonsoft.Json");
             summary.ShouldContain("| LibV1 | 12.0.3 |");
             summary.ShouldContain("| LibV2 | 13.0.3 |");
+        }
+
+        [Fact]
+        public async Task Should_Report_Resolved_Version_Outside_Requested_Range_In_Conflict_Details()
+        {
+            var options = IntegrationTestHarness.CreateScenarioOptions("OutOfRange", "Out Of Range Group", "outofrange");
+
+            using var scenarioRun = await IntegrationTestHarness.RunGeneratorAsync(options);
+
+            var summary = IntegrationTestHarness.ReadSummaryFile(scenarioRun.ExportRoot, "net10.0");
+
+            summary.ShouldContain("## Cross-Project Version Conflicts");
+            summary.ShouldContain("### Newtonsoft.Json");
+
+            // LibV1 requests Newtonsoft.Json 13.0.1 and resolves it in-range -> no "different version" noise.
+            summary.ShouldContain("| LibV1 | 13.0.1 |");
+            summary.ShouldContain("Project resolved v13.0.1");
+
+            // LibV2 pins [12.0.3] but transitively depends (via RestSharp.Serializers.NewtonsoftJson v108.0.3)
+            // on Newtonsoft.Json >= 13.0.1; the resolved 12.0.3 is outside that range -> genuine drift surfaced.
+            summary.ShouldContain("| LibV2 | 12.0.3 |");
+            summary.ShouldContain("Via RestSharp.Serializers.NewtonsoftJson v108.0.3 requested Newtonsoft.Json [13.0.1, ), resolved v12.0.3");
         }
 
         [Fact]

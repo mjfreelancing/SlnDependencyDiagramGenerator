@@ -29,5 +29,17 @@ public class SnapshotApprovalScenariosFixture : FixtureCollectionTestBase
 
             await Verifier.Verify(snapshot);
         }
+
+        [Fact]
+        public async Task Should_Emit_Received_Snapshot_For_OutOfRange_AllFormats()
+        {
+            var options = IntegrationTestHarness.CreateScenarioOptions("OutOfRange", "Out Of Range Group", "outofrange");
+
+            using var scenarioRun = await IntegrationTestHarness.RunGeneratorAsync(options);
+
+            var snapshot = IntegrationTestHarness.CollectExportSnapshot(scenarioRun.ExportRoot);
+
+            await Verifier.Verify(snapshot);
+        }
     }
 }
