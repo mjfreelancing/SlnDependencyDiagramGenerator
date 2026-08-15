@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Shouldly;
 using SlnDependencyDiagramGenerator.Config;
@@ -285,6 +285,32 @@ public class DiagramRendererBaseFixture
             var ir = sut.BuildIntermediateRepresentation(model);
 
             ir.Groups.ShouldBeEmpty();
+        }
+
+        [Fact]
+        public void Should_Throw_When_Circular_Project_Reference_Is_Detected()
+        {
+            var sut = CreateSut();
+
+            var model = CreateModel(
+                new ProjectNode
+                {
+                    Name = "LibA",
+                    FrameworkReferences = [],
+                    PackageReferences = [],
+                    ProjectReferences = [@"C:\sln\LibB\LibB.csproj"]
+                },
+                new ProjectNode
+                {
+                    Name = "LibB",
+                    FrameworkReferences = [],
+                    PackageReferences = [],
+                    ProjectReferences = [@"C:\sln\LibA\LibA.csproj"]
+                });
+
+            var exception = Should.Throw<DependencyGeneratorException>(() => sut.BuildIntermediateRepresentation(model));
+
+            exception.Message.ShouldContain("circular");
         }
     }
 

@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reactive.Disposables;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -166,10 +167,11 @@ internal abstract class DiagramRendererBase : IDiagramRenderer
     {
         var diagramRepresentation = new DiagramIntermediateRepresentation();
         var projectsByName = model.Projects.ToDictionary(project => project.Name, StringComparer.OrdinalIgnoreCase);
+        var activePathProjects = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var project in model.Projects)
         {
-            EmitProjectToDiagramRepresentation(project, model, projectsByName, diagramRepresentation);
+            EmitProjectToDiagramRepresentation(project, model, projectsByName, diagramRepresentation, activePathProjects);
         }
 
         return diagramRepresentation;
@@ -186,9 +188,36 @@ internal abstract class DiagramRendererBase : IDiagramRenderer
             : alias;
     }
 
-    private void EmitProjectToDiagramRepresentation(ProjectNode project, DependencyGraphModel model,
-        IDictionary<string, ProjectNode> projectsByName, DiagramIntermediateRepresentation diagramRepresentation)
+    /// <summary>Adds a project to the active recursion path, throwing when the project is already on the path (a circular reference).</summary>
+    /// <param name="projectName">The project name.</param>
+    /// <param name="activePathProjects">The set of projects on the current recursion path.</param>
+    /// <returns>A disposable that removes the project from the active path when disposed, reverting the path membership.</returns>
+    /// <exception cref="DependencyGeneratorException">Thrown when the project is already on the active recursion path.</exception>
+    private static IDisposable AssertNotCircular(string projectName, HashSet<string> activePathProjects)
     {
+        // Defensive check: valid project reference graphs are expected to be acyclic.
+        // Throw to prevent runaway recursion if malformed or inconsistent project metadata is encountered.
+        if (!activePathProjects.Add(projectName))
+        {
+            throw new DependencyGeneratorException($"A circular project reference was detected while building the diagram for '{projectName}'.");
+        }
+
+        // Return a disposable that auto-reverts the path membership when the caller's using scope
+        // exits (including on exceptions), so callers don't need a manual try/finally to unwind.
+        return Disposable.Create(() =>
+        {
+            activePathProjects.Remove(projectName);
+        });
+    }
+
+    private void EmitProjectToDiagramRepresentation(ProjectNode project, DependencyGraphModel model,
+        IDictionary<string, ProjectNode> projectsByName, DiagramIntermediateRepresentation diagramRepresentation,
+        HashSet<string> activePathProjects)
+    {
+        // Keep the project on the active recursion path for the duration of this walk; the using scope
+        // auto-reverts the membership on exit (including on exceptions), so no try/finally is needed.
+        using var _ = AssertNotCircular(project.Name, activePathProjects);
+
         var projectAlias = ProjectAlias(project.Name);
 
         diagramRepresentation.AddNode(projectAlias, project.Name);
@@ -215,17 +244,22 @@ internal abstract class DiagramRendererBase : IDiagramRenderer
             diagramRepresentation.AddNode(referencedAlias, referencedProjectName);
             diagramRepresentation.AddEdge(projectAlias, referencedAlias);
 
-            EmitProjectPackagesToDiagramRepresentation(referencedProjectName, model, projectsByName, diagramRepresentation);
+            EmitProjectPackagesToDiagramRepresentation(referencedProjectName, model, projectsByName, diagramRepresentation, activePathProjects);
         }
     }
 
     private void EmitProjectPackagesToDiagramRepresentation(string projectName, DependencyGraphModel model,
-        IDictionary<string, ProjectNode> projectsByName, DiagramIntermediateRepresentation diagramRepresentation)
+        IDictionary<string, ProjectNode> projectsByName, DiagramIntermediateRepresentation diagramRepresentation,
+        HashSet<string> activePathProjects)
     {
         if (!projectsByName.TryGetValue(projectName, out var project))
         {
             return;
         }
+
+        // Keep the project on the active recursion path for the duration of this walk; the using scope
+        // auto-reverts the membership on exit (including on exceptions), so no try/finally is needed.
+        using var _ = AssertNotCircular(project.Name, activePathProjects);
 
         var projectAlias = ProjectAlias(project.Name);
 
@@ -242,7 +276,7 @@ internal abstract class DiagramRendererBase : IDiagramRenderer
             diagramRepresentation.AddNode(referencedAlias, referencedProjectName);
             diagramRepresentation.AddEdge(projectAlias, referencedAlias);
 
-            EmitProjectPackagesToDiagramRepresentation(referencedProjectName, model, projectsByName, diagramRepresentation);
+            EmitProjectPackagesToDiagramRepresentation(referencedProjectName, model, projectsByName, diagramRepresentation, activePathProjects);
         }
     }
 
