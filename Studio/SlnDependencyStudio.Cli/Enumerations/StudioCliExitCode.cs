@@ -30,6 +30,9 @@ public enum StudioCliExitCode
     /// <summary>The diagram generator failed to export an image (via d2 or mmdc).</summary>
     DiagramImageExportFailed = 1009,
 
+    /// <summary>The project assets could not be read (missing assets file or unsupported assets format).</summary>
+    ProjectAssetsFailed = 1010,
+
     /// <summary>An unexpected CLI failure occurred.</summary>
     UnhandledCliFailure = 1999
 }

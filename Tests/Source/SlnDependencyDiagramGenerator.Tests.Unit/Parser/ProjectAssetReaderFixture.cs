@@ -1,4 +1,6 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using NuGet.Versioning;
+using SlnDependencyDiagramGenerator.Exceptions;
 using SlnDependencyDiagramGenerator.Parser;
 using Shouldly;
 using Xunit;
@@ -77,5 +79,19 @@ public class ProjectAssetReaderFixture
         // A bounded range such as "[2.0.0, 3.0.0)" when includeMax is false.
         private static VersionRange CreateRange(string minVersion, string maxVersion, bool includeMax)
             => new(new NuGetVersion(minVersion), true, new NuGetVersion(maxVersion), includeMax);
+    }
+
+    public class LoadLockFile : ProjectAssetReaderFixture
+    {
+        [Fact]
+        public void Should_Throw_ProjectAssetsException_When_Assets_File_Is_Missing()
+        {
+            var reader = new ProjectAssetReader(NullLogger<ProjectAssetReader>.Instance);
+
+            var exception = Should.Throw<ProjectAssetsException>(
+                () => reader.GetTargetFrameworks(@"X:\nonexistent\project\project.csproj"));
+
+            exception.Message.ShouldContain("Run 'dotnet restore' before generating diagrams. Missing assets file:");
+        }
     }
 }

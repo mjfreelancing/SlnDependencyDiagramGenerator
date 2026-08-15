@@ -103,6 +103,11 @@ internal sealed class CommandLineRunHandler : CommandLineHandlerBase, ICommandLi
             _logger.LogError("Diagram image export failed: {Message}", exception.Message);
             return (int)StudioCliExitCode.DiagramImageExportFailed;
         }
+        catch (ProjectAssetsException exception)
+        {
+            _logger.LogError("Project assets could not be read: {Message}", exception.Message);
+            return (int)StudioCliExitCode.ProjectAssetsFailed;
+        }
         catch (DependencyGeneratorException exception)
         {
             _logger.LogError("Diagram generator failed: {Message}", exception.Message);

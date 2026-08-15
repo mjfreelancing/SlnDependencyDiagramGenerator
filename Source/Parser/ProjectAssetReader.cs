@@ -315,7 +315,7 @@ internal sealed class ProjectAssetReader : IProjectAssetReader
     /// <summary>Loads and caches a project's assets file.</summary>
     /// <param name="projectPath">The project file path.</param>
     /// <returns>The parsed lock file.</returns>
-    /// <exception cref="DependencyGeneratorException">Thrown when the assets file is missing or has an unsupported format.</exception>
+    /// <exception cref="ProjectAssetsException">Thrown when the assets file is missing or has an unsupported format.</exception>
     private LockFile LoadLockFile(string projectPath)
     {
         var assetsPath = GetAssetsFilePath(projectPath);
@@ -331,7 +331,7 @@ internal sealed class ProjectAssetReader : IProjectAssetReader
 
         if (!File.Exists(assetsPath))
         {
-            throw new DependencyGeneratorException(
+            throw new ProjectAssetsException(
                 $"Run 'dotnet restore' before generating diagrams. Missing assets file: {assetsPath}");
         }
 
@@ -339,7 +339,7 @@ internal sealed class ProjectAssetReader : IProjectAssetReader
 
         if (lockFile.Version < 3)
         {
-            throw new DependencyGeneratorException(
+            throw new ProjectAssetsException(
                 $"The project.assets.json at '{assetsPath}' uses an unsupported format (version {lockFile.Version}). Re-run 'dotnet restore'.");
         }
 
@@ -351,11 +351,11 @@ internal sealed class ProjectAssetReader : IProjectAssetReader
     /// <summary>Builds the expected assets file path for a project.</summary>
     /// <param name="projectPath">The project file path.</param>
     /// <returns>The assets file path under the project's obj folder.</returns>
-    /// <exception cref="DependencyGeneratorException">Thrown when the project directory cannot be determined.</exception>
+    /// <exception cref="ProjectAssetsException">Thrown when the project directory cannot be determined.</exception>
     private static string GetAssetsFilePath(string projectPath)
     {
         var projectDir = Path.GetDirectoryName(projectPath)
-            ?? throw new DependencyGeneratorException($"Cannot determine the directory for project: {projectPath}");
+            ?? throw new ProjectAssetsException($"Cannot determine the directory for project: {projectPath}");
 
         return Path.Combine(projectDir, "obj", "project.assets.json");
     }

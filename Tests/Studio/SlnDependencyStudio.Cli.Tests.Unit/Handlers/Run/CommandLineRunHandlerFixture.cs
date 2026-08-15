@@ -310,6 +310,35 @@ public class CommandLineRunHandlerFixture
     }
 
     [Fact]
+    public async Task Should_Return_ProjectAssetsFailed_When_Project_Assets_Exception_Is_Thrown()
+    {
+        var serializer = Substitute.For<IDependencyProjectSerializer>();
+
+        serializer
+            .DeserializeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(CreateValidDocument(preGenEnabled: false)));
+
+        var dependencyGenerator = Substitute.For<IDependencyGenerator>();
+
+        dependencyGenerator
+            .CreateDiagramsAsync(Arg.Any<DependencyGeneratorConfig>(), Arg.Any<CancellationToken>())
+            .ThrowsAsync(new ProjectAssetsException("Project assets could not be read"));
+
+        var preGenRunner = Substitute.For<IPreGenerationCommandRunner>();
+        var restoreRunner = Substitute.For<IRestoreSolutionRunner>();
+        var postGenRunner = Substitute.For<IPostGenerationCommandRunner>();
+        var projectValidator = Substitute.For<IDependencyProjectValidator>();
+        var logger = Substitute.For<ILogger<CommandLineRunHandler>>();
+
+        var handler = new CommandLineRunHandler(serializer, dependencyGenerator, restoreRunner, preGenRunner, postGenRunner, projectValidator, logger);
+
+        var result = await handler.HandleAsync(
+            Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None);
+
+        result.ShouldBe((int)StudioCliExitCode.ProjectAssetsFailed);
+    }
+
+    [Fact]
     public async Task Should_Return_RunCommandFailed_When_Cancelled()
     {
         var serializer = Substitute.For<IDependencyProjectSerializer>();
