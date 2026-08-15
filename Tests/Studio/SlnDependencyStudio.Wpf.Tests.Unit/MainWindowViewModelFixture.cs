@@ -26,8 +26,11 @@ using SlnDependencyStudio.Wpf.Features.Project.Stores;
 using SlnDependencyStudio.Wpf.Features.RecentProjects;
 using SlnDependencyStudio.Wpf.Features.RecentProjects.Models;
 using SlnDependencyStudio.Wpf.Features.Run;
+using SlnDependencyStudio.Wpf.Enumerations;
 using SlnDependencyStudio.Wpf.Features.Solution;
 using SlnDependencyStudio.Wpf.Models;
+using SlnDependencyStudio.Wpf.Utils;
+using System.IO;
 using System.Reactive.Linq;
 
 namespace SlnDependencyStudio.Wpf.Tests.Unit;
@@ -99,6 +102,7 @@ public class MainWindowViewModelFixture
             _toolStatus, _analysisService, _generationService, logger);
 
         _store.HasDocument.Returns(true);
+        _store.GetRelativePathFields().Returns([]);
     }
 
     public class SaveAsync : MainWindowViewModelFixture
@@ -130,6 +134,84 @@ public class MainWindowViewModelFixture
             await _viewModel.SaveAsCommand.Execute();
 
             await _store.Received(1).SaveAsAsync("new.sds", Arg.Any<CancellationToken>());
+        }
+
+        [Fact]
+        public async Task Should_Prompt_And_Convert_When_Destination_Folder_Differs()
+        {
+            _store.IsDirty.Returns(true);
+            _store.DocumentDirectory.Returns(@"C:\projects");
+            _store.GetRelativePathFields().Returns([new RelativePathField("Solution path", @"..\MyApp.sln")]);
+
+            _viewModel.SaveFileInteraction.RegisterHandler(context => context.SetOutput(@"D:\backup\new.sds"));
+            _viewModel.RelativePathSaveAsInteraction.RegisterHandler(context =>
+            {
+                context.Input.RelativePaths.Count.ShouldBe(1);
+                context.SetOutput(SaveAsRelativePathAction.ConvertToAbsolute);
+            });
+
+            await _viewModel.SaveAsCommand.Execute();
+
+            await _store.Received(1).SaveAsAsync(@"D:\backup\new.sds", SaveAsRelativePathAction.ConvertToAbsolute, Arg.Any<CancellationToken>());
+        }
+
+        [Fact]
+        public async Task Should_Not_Save_When_Relative_Path_Prompt_Cancelled()
+        {
+            _store.IsDirty.Returns(true);
+            _store.DocumentDirectory.Returns(@"C:\projects");
+            _store.GetRelativePathFields().Returns([new RelativePathField("Solution path", @"..\MyApp.sln")]);
+
+            _viewModel.SaveFileInteraction.RegisterHandler(context => context.SetOutput(@"D:\backup\new.sds"));
+            _viewModel.RelativePathSaveAsInteraction.RegisterHandler(context => context.SetOutput(SaveAsRelativePathAction.Cancel));
+
+            await _viewModel.SaveAsCommand.Execute();
+
+            await _store.DidNotReceive().SaveAsAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+            await _store.DidNotReceive().SaveAsAsync(Arg.Any<string>(), Arg.Any<SaveAsRelativePathAction>(), Arg.Any<CancellationToken>());
+        }
+
+        [Fact]
+        public async Task Should_Not_Prompt_When_Destination_Folder_Matches()
+        {
+            _store.IsDirty.Returns(true);
+            _store.DocumentDirectory.Returns(@"C:\projects");
+            _store.GetRelativePathFields().Returns([new RelativePathField("Solution path", @"..\MyApp.sln")]);
+
+            var prompted = false;
+            _viewModel.RelativePathSaveAsInteraction.RegisterHandler(context =>
+            {
+                prompted = true;
+                context.SetOutput(SaveAsRelativePathAction.Cancel);
+            });
+
+            _viewModel.SaveFileInteraction.RegisterHandler(context => context.SetOutput(@"C:\projects\copy.sds"));
+
+            await _viewModel.SaveAsCommand.Execute();
+
+            prompted.ShouldBeFalse();
+            await _store.Received(1).SaveAsAsync(@"C:\projects\copy.sds", Arg.Any<CancellationToken>());
+        }
+
+        [Fact]
+        public async Task Should_Not_Prompt_When_No_Relative_Paths()
+        {
+            _store.IsDirty.Returns(true);
+            _store.DocumentDirectory.Returns(@"C:\projects");
+
+            var prompted = false;
+            _viewModel.RelativePathSaveAsInteraction.RegisterHandler(context =>
+            {
+                prompted = true;
+                context.SetOutput(SaveAsRelativePathAction.Cancel);
+            });
+
+            _viewModel.SaveFileInteraction.RegisterHandler(context => context.SetOutput(@"D:\backup\new.sds"));
+
+            await _viewModel.SaveAsCommand.Execute();
+
+            prompted.ShouldBeFalse();
+            await _store.Received(1).SaveAsAsync(@"D:\backup\new.sds", Arg.Any<CancellationToken>());
         }
     }
 
@@ -423,6 +505,78 @@ public class MainWindowViewModelFixture
 
             await _store.DidNotReceive().SaveAsync(Arg.Any<CancellationToken>());
             await _projectService.Received(1).SaveAsync(document, "dest.sds", Arg.Any<CancellationToken>());
+        }
+
+        [Fact]
+        public async Task Should_Rebase_Relative_Paths_When_Destination_Folder_Differs()
+        {
+            _store.IsDirty.Returns(false);
+
+            var document = new DependencyProjectDocument();
+            document.DiagramGenerator.Solution.SolutionPath = @"..\MyApp.sln";
+
+            _projectService.OpenAsync(@"C:\projects\source.sds", Arg.Any<CancellationToken>()).Returns(document);
+
+            _viewModel.OpenFileInteraction.RegisterHandler(context => context.SetOutput(@"C:\projects\source.sds"));
+            _viewModel.SaveFileInteraction.RegisterHandler(context => context.SetOutput(@"D:\backup\dest.sds"));
+            _viewModel.RelativePathSaveAsInteraction.RegisterHandler(context =>
+            {
+                context.Input.RelativePaths.Count.ShouldBe(1);
+                context.SetOutput(SaveAsRelativePathAction.ConvertToAbsolute);
+            });
+
+            await _viewModel.NewFromExistingCommand.Execute();
+
+            await _projectService.Received(1).SaveAsync(
+                Arg.Is<DependencyProjectDocument>(d => d.DiagramGenerator.Solution.SolutionPath == Path.GetFullPath(@"C:\projects\..\MyApp.sln")),
+                @"D:\backup\dest.sds",
+                Arg.Any<CancellationToken>());
+        }
+
+        [Fact]
+        public async Task Should_Not_Save_When_Relative_Path_Prompt_Cancelled()
+        {
+            _store.IsDirty.Returns(false);
+
+            var document = new DependencyProjectDocument();
+            document.DiagramGenerator.Solution.SolutionPath = @"..\MyApp.sln";
+
+            _projectService.OpenAsync(@"C:\projects\source.sds", Arg.Any<CancellationToken>()).Returns(document);
+
+            _viewModel.OpenFileInteraction.RegisterHandler(context => context.SetOutput(@"C:\projects\source.sds"));
+            _viewModel.SaveFileInteraction.RegisterHandler(context => context.SetOutput(@"D:\backup\dest.sds"));
+            _viewModel.RelativePathSaveAsInteraction.RegisterHandler(context => context.SetOutput(SaveAsRelativePathAction.Cancel));
+
+            await _viewModel.NewFromExistingCommand.Execute();
+
+            await _projectService.DidNotReceive().SaveAsync(Arg.Any<DependencyProjectDocument>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+            await _store.DidNotReceive().OpenAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+        }
+
+        [Fact]
+        public async Task Should_Not_Prompt_When_Destination_Folder_Matches()
+        {
+            _store.IsDirty.Returns(false);
+
+            var document = new DependencyProjectDocument();
+            document.DiagramGenerator.Solution.SolutionPath = @"..\MyApp.sln";
+
+            _projectService.OpenAsync(@"C:\projects\source.sds", Arg.Any<CancellationToken>()).Returns(document);
+
+            var prompted = false;
+            _viewModel.RelativePathSaveAsInteraction.RegisterHandler(context =>
+            {
+                prompted = true;
+                context.SetOutput(SaveAsRelativePathAction.Cancel);
+            });
+
+            _viewModel.OpenFileInteraction.RegisterHandler(context => context.SetOutput(@"C:\projects\source.sds"));
+            _viewModel.SaveFileInteraction.RegisterHandler(context => context.SetOutput(@"C:\projects\dest.sds"));
+
+            await _viewModel.NewFromExistingCommand.Execute();
+
+            prompted.ShouldBeFalse();
+            await _projectService.Received(1).SaveAsync(document, @"C:\projects\dest.sds", Arg.Any<CancellationToken>());
         }
     }
 

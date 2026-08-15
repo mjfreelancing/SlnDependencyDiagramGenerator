@@ -56,7 +56,12 @@
     </Window.InputBindings>
 
     <Grid Background="{DynamicResource MaterialDesign.Brush.Card.Background}">
-        <materialDesign:DialogHost x:Name="MainDialogHost" Identifier="MainDialogHost">
+        <!-- CloseOnClickAway is explicitly disabled so a dialog can only be dismissed via its buttons —
+             DialogHost.Show then always returns a button's CommandParameter and never null. -->
+        <materialDesign:DialogHost
+            x:Name="MainDialogHost"
+            Identifier="{x:Static wpf:DialogHostIdentifiers.MainDialogHost}"
+            CloseOnClickAway="False">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />

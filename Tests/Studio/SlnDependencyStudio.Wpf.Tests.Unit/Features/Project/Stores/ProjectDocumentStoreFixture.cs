@@ -4,6 +4,7 @@ using Shouldly;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Wpf.Editors;
+using SlnDependencyStudio.Wpf.Enumerations;
 using SlnDependencyStudio.Wpf.Features.Diagrams;
 using SlnDependencyStudio.Wpf.Features.Export;
 using SlnDependencyStudio.Wpf.Features.Pipeline.PostGeneration;
@@ -13,6 +14,7 @@ using SlnDependencyStudio.Wpf.Features.Project;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
 using SlnDependencyStudio.Wpf.Features.RecentProjects;
 using SlnDependencyStudio.Wpf.Features.Solution;
+using System.IO;
 
 namespace SlnDependencyStudio.Wpf.Tests.Unit.Features.Project.Stores;
 
@@ -521,6 +523,67 @@ public class ProjectDocumentStoreFixture
             await _store.SaveAsAsync("new.sds", TestContext.Current.CancellationToken);
 
             _recentProjects.Received(1).Add("new.sds");
+        }
+
+        [Fact]
+        public async Task Should_Convert_Relative_Path_To_Absolute_When_ConvertToAbsolute()
+        {
+            var document = CreateDocument("Name", "Desc");
+            document.DiagramGenerator.Solution.SolutionPath = @"..\MyApp.sln";
+
+            _projectService
+                .OpenAsync(@"C:\projects\old.sds", Arg.Any<CancellationToken>())
+                .Returns(document);
+
+            await _store.OpenAsync(@"C:\projects\old.sds", TestContext.Current.CancellationToken);
+
+            await _store.SaveAsAsync(@"D:\backup\new.sds", SaveAsRelativePathAction.ConvertToAbsolute, TestContext.Current.CancellationToken);
+
+            _store.SolutionOptionsEditor.SolutionPath.Value.ShouldBe(Path.GetFullPath(@"C:\projects\..\MyApp.sln"));
+            await _projectService.Received(1).SaveAsync(
+                Arg.Is<DependencyProjectDocument>(d => d.DiagramGenerator.Solution.SolutionPath == Path.GetFullPath(@"C:\projects\..\MyApp.sln")),
+                @"D:\backup\new.sds",
+                Arg.Any<CancellationToken>());
+        }
+
+        [Fact]
+        public async Task Should_Rebase_Relative_Path_To_New_Directory()
+        {
+            var document = CreateDocument("Name", "Desc");
+            document.DiagramGenerator.Solution.SolutionPath = @"..\MyApp.sln";
+
+            _projectService
+                .OpenAsync(@"C:\projects\old.sds", Arg.Any<CancellationToken>())
+                .Returns(document);
+
+            await _store.OpenAsync(@"C:\projects\old.sds", TestContext.Current.CancellationToken);
+
+            await _store.SaveAsAsync(@"C:\backups\new.sds", SaveAsRelativePathAction.RebaseRelative, TestContext.Current.CancellationToken);
+
+            var expected = Path.GetRelativePath(@"C:\backups", Path.GetFullPath(@"C:\projects\..\MyApp.sln"));
+
+            _store.SolutionOptionsEditor.SolutionPath.Value.ShouldBe(expected);
+        }
+
+        [Fact]
+        public async Task Should_Not_Rebase_Paths_When_Cancel()
+        {
+            var document = CreateDocument("Name", "Desc");
+            document.DiagramGenerator.Solution.SolutionPath = @"..\MyApp.sln";
+
+            _projectService
+                .OpenAsync(@"C:\projects\old.sds", Arg.Any<CancellationToken>())
+                .Returns(document);
+
+            await _store.OpenAsync(@"C:\projects\old.sds", TestContext.Current.CancellationToken);
+
+            await _store.SaveAsAsync(@"D:\backup\new.sds", SaveAsRelativePathAction.Cancel, TestContext.Current.CancellationToken);
+
+            _store.SolutionOptionsEditor.SolutionPath.Value.ShouldBe(@"..\MyApp.sln");
+            await _projectService.Received(1).SaveAsync(
+                Arg.Is<DependencyProjectDocument>(d => d.DiagramGenerator.Solution.SolutionPath == @"..\MyApp.sln"),
+                @"D:\backup\new.sds",
+                Arg.Any<CancellationToken>());
         }
     }
 

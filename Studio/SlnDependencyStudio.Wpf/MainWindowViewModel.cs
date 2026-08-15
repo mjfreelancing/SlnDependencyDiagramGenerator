@@ -4,6 +4,9 @@ using AllOverIt.ReactiveUI.Factories;
 using Microsoft.Extensions.Logging;
 using ReactiveUI;
 using ReactiveUI.Validation.Abstractions;
+using SlnDependencyStudio.Shared.Config;
+using SlnDependencyStudio.Shared.Utils;
+using SlnDependencyStudio.Wpf.Enumerations;
 using SlnDependencyStudio.Wpf.Features.Diagrams;
 using SlnDependencyStudio.Wpf.Features.EmptyState;
 using SlnDependencyStudio.Wpf.Features.ErrorDialog;
@@ -18,8 +21,10 @@ using SlnDependencyStudio.Wpf.Features.RecentProjects.Models;
 using SlnDependencyStudio.Wpf.Features.Run;
 using SlnDependencyStudio.Wpf.Features.Solution;
 using SlnDependencyStudio.Wpf.Models;
+using SlnDependencyStudio.Wpf.Utils;
 using SlnDependencyStudio.Wpf.ViewModels;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Disposables.Fluent;
@@ -163,6 +168,10 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
 
     /// <summary>Interaction for showing a save-before-discard confirmation dialog.</summary>
     public Interaction<string, DiscardAction> ConfirmDiscardInteraction { get; } = new();
+
+    /// <summary>Interaction that asks the view to prompt how document-relative paths should be handled when
+    /// saving the project to a different folder.</summary>
+    public Interaction<RelativePathChangeInfo, SaveAsRelativePathAction> RelativePathSaveAsInteraction { get; } = new();
 
     /// <summary>Recently opened project files, most recent first. Shared collection from the store.</summary>
     public ObservableCollection<RecentProjectEntry> RecentProjects => _recentProjectsStore.RecentProjects;
@@ -517,6 +526,22 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
             return;
         }
 
+        var sourceDirectory = Path.GetDirectoryName(sourcePath);
+        var destinationDirectory = Path.GetDirectoryName(destinationPath);
+        var affectedFields = RelativePathRebaser.GetRelativePathFields(document);
+
+        if (ShouldPromptForRelativePaths(sourceDirectory, destinationDirectory, affectedFields))
+        {
+            var action = await RelativePathSaveAsInteraction.Handle(new RelativePathChangeInfo(affectedFields));
+
+            if (action == SaveAsRelativePathAction.Cancel)
+            {
+                return;
+            }
+
+            RebaseDocumentPaths(document, sourceDirectory ?? string.Empty, destinationDirectory ?? string.Empty, action);
+        }
+
         await _projectService.SaveAsync(document, destinationPath);
 
         await _store.OpenAsync(destinationPath);
@@ -539,7 +564,43 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
             return;
         }
 
-        await _store.SaveAsAsync(filePath);
+        var affectedFields = _store.GetRelativePathFields();
+
+        if (ShouldPromptForRelativePaths(_store.DocumentDirectory, Path.GetDirectoryName(filePath), affectedFields))
+        {
+            var action = await RelativePathSaveAsInteraction.Handle(new RelativePathChangeInfo(affectedFields));
+
+            if (action == SaveAsRelativePathAction.Cancel)
+            {
+                return;
+            }
+
+            await _store.SaveAsAsync(filePath, action);
+        }
+        else
+        {
+            await _store.SaveAsAsync(filePath);
+        }
+    }
+
+    /// <summary>Whether the user should be prompted about relative paths when saving to <paramref name="newDirectory"/>.
+    /// Prompts only when at least one relative path would change meaning (i.e. the folder actually differs).</summary>
+    private static bool ShouldPromptForRelativePaths(string? oldDirectory, string? newDirectory, IReadOnlyList<RelativePathField> affectedFields)
+    {
+        return affectedFields.Count > 0
+            && oldDirectory.IsNotNullOrEmpty()
+            && newDirectory.IsNotNullOrEmpty()
+            && !PathEqualityComparer.Default.Equals(oldDirectory, newDirectory);
+    }
+
+    /// <summary>Re-writes the document's relative paths so they keep pointing at the same target after the document
+    /// moves from <paramref name="oldDirectory"/> to <paramref name="newDirectory"/>.</summary>
+    private static void RebaseDocumentPaths(DependencyProjectDocument document, string oldDirectory, string newDirectory, SaveAsRelativePathAction action)
+    {
+        document.DiagramGenerator.Solution.SolutionPath = RelativePathRebaser.Rewrite(document.DiagramGenerator.Solution.SolutionPath, oldDirectory, newDirectory, action);
+        document.DiagramGenerator.Export.RootPath = RelativePathRebaser.Rewrite(document.DiagramGenerator.Export.RootPath, oldDirectory, newDirectory, action);
+        document.PreGeneration.WorkingDirectory = RelativePathRebaser.Rewrite(document.PreGeneration.WorkingDirectory, oldDirectory, newDirectory, action);
+        document.PostGeneration.WorkingDirectory = RelativePathRebaser.Rewrite(document.PostGeneration.WorkingDirectory, oldDirectory, newDirectory, action);
     }
 
     private async Task CloseProjectAsync()

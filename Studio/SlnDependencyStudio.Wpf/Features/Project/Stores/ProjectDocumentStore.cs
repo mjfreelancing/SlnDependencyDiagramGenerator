@@ -5,6 +5,7 @@ using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Shared.Utils;
 using SlnDependencyStudio.Wpf.Editors;
+using SlnDependencyStudio.Wpf.Enumerations;
 using SlnDependencyStudio.Wpf.Features.Diagrams;
 using SlnDependencyStudio.Wpf.Features.Export;
 using SlnDependencyStudio.Wpf.Features.Pipeline.PostGeneration;
@@ -12,6 +13,7 @@ using SlnDependencyStudio.Wpf.Features.Pipeline.PreGeneration;
 using SlnDependencyStudio.Wpf.Features.Pipeline.RestoreSolution;
 using SlnDependencyStudio.Wpf.Features.RecentProjects;
 using SlnDependencyStudio.Wpf.Features.Solution;
+using SlnDependencyStudio.Wpf.Utils;
 using System.IO;
 using System.Reactive.Linq;
 
@@ -178,12 +180,21 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
     }
 
     /// <inheritdoc />
-    public async Task SaveAsAsync(string filePath, CancellationToken cancellationToken = default)
+    public Task SaveAsAsync(string filePath, CancellationToken cancellationToken = default)
+        => SaveAsAsync(filePath, SaveAsRelativePathAction.Cancel, cancellationToken);
+
+    /// <inheritdoc />
+    public async Task SaveAsAsync(string filePath, SaveAsRelativePathAction rebaseAction, CancellationToken cancellationToken = default)
     {
         Throw<InvalidOperationException>.WhenNull(_document, "No project is loaded");
         filePath.WhenNotNull();
 
         _logger.LogInformation("Saving project as: {FilePath}", filePath);
+
+        if (rebaseAction != SaveAsRelativePathAction.Cancel)
+        {
+            RebaseRelativePaths(Path.GetDirectoryName(filePath) ?? string.Empty, rebaseAction);
+        }
 
         FlushAllEditors();
 
@@ -194,6 +205,34 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
         _recentProjects.Add(filePath);
 
         MarkAllEditorsClean();
+    }
+
+    /// <inheritdoc />
+    public IReadOnlyList<RelativePathField> GetRelativePathFields()
+    {
+        var fields = new List<RelativePathField>();
+
+        RelativePathRebaser.AddIfRelative(fields, "Solution path", _solutionOptionsEditor.SolutionPath.Value);
+        RelativePathRebaser.AddIfRelative(fields, "Export root", _exportOptionsEditor.RootPath.Value);
+        RelativePathRebaser.AddIfRelative(fields, "Pre-generation working directory", _preGenerationEditor.WorkingDirectory.Value);
+        RelativePathRebaser.AddIfRelative(fields, "Post-generation working directory", _postGenerationEditor.WorkingDirectory.Value);
+
+        return fields;
+    }
+
+    private void RebaseRelativePaths(string newDirectory, SaveAsRelativePathAction action)
+    {
+        var oldDirectory = DocumentDirectory;
+
+        if (string.IsNullOrEmpty(oldDirectory))
+        {
+            return;
+        }
+
+        _solutionOptionsEditor.SolutionPath.Value = RelativePathRebaser.Rewrite(_solutionOptionsEditor.SolutionPath.Value, oldDirectory, newDirectory, action);
+        _exportOptionsEditor.RootPath.Value = RelativePathRebaser.Rewrite(_exportOptionsEditor.RootPath.Value, oldDirectory, newDirectory, action);
+        _preGenerationEditor.WorkingDirectory.Value = RelativePathRebaser.Rewrite(_preGenerationEditor.WorkingDirectory.Value, oldDirectory, newDirectory, action);
+        _postGenerationEditor.WorkingDirectory.Value = RelativePathRebaser.Rewrite(_postGenerationEditor.WorkingDirectory.Value, oldDirectory, newDirectory, action);
     }
 
     /// <inheritdoc />

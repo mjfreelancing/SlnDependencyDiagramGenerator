@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
 using ReactiveUI;
 using SlnDependencyStudio.Wpf.Abstractions.IO;
+using SlnDependencyStudio.Wpf.Enumerations;
 using SlnDependencyStudio.Wpf.Features.Application;
 using SlnDependencyStudio.Wpf.Features.Application.Extensions;
 using SlnDependencyStudio.Wpf.Features.Application.Models;
@@ -17,6 +18,7 @@ using System.Reactive;
 using System.Reactive.Disposables.Fluent;
 using System.Reactive.Linq;
 using System.Windows;
+using System.Windows.Input;
 
 namespace SlnDependencyStudio.Wpf;
 
@@ -140,13 +142,32 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 
                     var dialog = new Views.ConfirmDiscardDialog
                     {
-                        Title = $"Save changes to \"{projectName}\"?"
+                        Title = "Save changes?"
                     };
 
+                    // CloseOnClickAway is disabled on the dialog host, so the dialog always returns a button's CommandParameter and never null.
                     // The buttons in the dialog are bound to the DiscardAction enum values — see the CommandParameter bindings in the XAML.
-                    var result = await DialogHost.Show(dialog, "MainDialogHost");
+                    var result = await DialogHost.Show(dialog, DialogHostIdentifiers.MainDialogHost);
 
                     context.SetOutput((DiscardAction)result!);
+                })
+                .DisposeWith(disposables);
+
+            // Relative-path Save As dialog — prompts how document-relative paths should be re-written
+            // when saving to a different folder.
+            ViewModel!
+                .RelativePathSaveAsInteraction
+                .RegisterHandler(async context =>
+                {
+                    var dialog = new Views.RelativePathsDialog
+                    {
+                        RelativePaths = context.Input.RelativePaths
+                    };
+
+                    var result = await DialogHost.Show(dialog, DialogHostIdentifiers.MainDialogHost);
+
+                    // CloseOnClickAway is disabled on the dialog host, so the dialog always returns a button's CommandParameter and never null.
+                    context.SetOutput((SaveAsRelativePathAction)result!);
                 })
                 .DisposeWith(disposables);
 
@@ -165,7 +186,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                         IconForeground = "MaterialDesign.Brush.ValidationError"
                     };
 
-                    await DialogHost.Show(dialog, "MainDialogHost");
+                    await DialogHost.Show(dialog, DialogHostIdentifiers.MainDialogHost);
 
                     context.SetOutput(Unit.Default);
                 })
@@ -213,6 +234,15 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 
         _logger.LogDebug("Main window closing");
 
+        // Do not close while a modal dialog is open — the user must dismiss it first, otherwise the
+        // dialog would be left dangling over a closed window (or closed project). IsOpen is the library's
+        // authoritative open-state signal and is always correct after a normal dismissal.
+        if (MainDialogHost.IsOpen)
+        {
+            _logger.LogDebug("Close blocked: a modal dialog is open");
+            return;
+        }
+
         if (ViewModel is not null && !ViewModel.CanClose)
         {
             _logger.LogDebug("Close blocked: an operation is in progress");
@@ -224,8 +254,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                 IconKind = PackIconKind.InformationOutline
             };
 
-            await DialogHost.Show(messageDialog, "MainDialogHost");
-
+            await DialogHost.Show(messageDialog, DialogHostIdentifiers.MainDialogHost);
             return;
         }
 
@@ -273,6 +302,27 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         // Close must be deferred — calling it directly while still inside the Closing
         // event sequence throws InvalidOperationException.
         await Dispatcher.InvokeAsync(Close);
+    }
+
+    /// <summary>Suppresses the close shortcuts (Ctrl+F4 and Alt+F4) while a modal dialog is open, so the dialog
+    /// cannot be dismissed or the window closed out from under an awaiting operation — the user must dismiss the
+    /// dialog via its buttons first. <see cref="OnClosing"/> is a second layer for the Alt+F4 window-close path.</summary>
+    protected override void OnPreviewKeyDown(KeyEventArgs e)
+    {
+        base.OnPreviewKeyDown(e);
+
+        if (!MainDialogHost.IsOpen)
+        {
+            return;
+        }
+
+        var isCloseProjectShortcut = e.Key == Key.F4 && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
+        var isCloseWindowShortcut = e.Key == Key.System && e.SystemKey == Key.F4;
+
+        if (isCloseProjectShortcut || isCloseWindowShortcut)
+        {
+            e.Handled = true;
+        }
     }
 
     private void OpenSettingsDialog()

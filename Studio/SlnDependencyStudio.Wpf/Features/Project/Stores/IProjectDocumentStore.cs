@@ -1,12 +1,14 @@
 ﻿using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Shared.DependencyInjection;
+using SlnDependencyStudio.Wpf.Enumerations;
 using SlnDependencyStudio.Wpf.Features.Diagrams;
 using SlnDependencyStudio.Wpf.Features.Export;
 using SlnDependencyStudio.Wpf.Features.Pipeline.PostGeneration;
 using SlnDependencyStudio.Wpf.Features.Pipeline.PreGeneration;
 using SlnDependencyStudio.Wpf.Features.Pipeline.RestoreSolution;
 using SlnDependencyStudio.Wpf.Features.Solution;
+using SlnDependencyStudio.Wpf.Utils;
 using System.ComponentModel;
 
 namespace SlnDependencyStudio.Wpf.Features.Project.Stores;
@@ -123,6 +125,18 @@ public interface IProjectDocumentStore : IStudioSingletonDependency, INotifyProp
     /// <param name="filePath">The destination file path.</param>
     /// <param name="cancellationToken">A token for cancelling the operation.</param>
     Task SaveAsAsync(string filePath, CancellationToken cancellationToken = default);
+
+    /// <summary>Flushes all editor wrapper values to the document and serializes to the specified file path,
+    /// re-writing any document-relative paths so they keep pointing at the same target when the destination
+    /// folder differs. Updates <see cref="DocumentFilePath"/> and marks all editors as clean after a successful save.</summary>
+    /// <param name="filePath">The destination file path.</param>
+    /// <param name="rebaseAction">How document-relative paths should be re-written before saving.</param>
+    /// <param name="cancellationToken">A token for cancelling the operation.</param>
+    Task SaveAsAsync(string filePath, SaveAsRelativePathAction rebaseAction, CancellationToken cancellationToken = default);
+
+    /// <summary>Returns the current document-relative path fields (label + value) that would be affected
+    /// by saving the project to a different folder.</summary>
+    IReadOnlyList<RelativePathField> GetRelativePathFields();
 
     /// <summary>Closes the current document, resets all editor wrappers, and clears the file path.</summary>
     void Close();
