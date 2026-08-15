@@ -17,6 +17,12 @@ namespace SlnDependencyDiagramGenerator.Parser;
 /// <summary>Parses solution projects and resolves project, framework, and package dependencies.</summary>
 internal sealed partial class SolutionParser : ISolutionParser
 {
+    // Bounds how long any single user-supplied regex match may run. .NET's engine is backtracking-based,
+    // so patterns like nested quantifiers can exhibit exponential backtracking on longer inputs — a latent
+    // ReDoS risk when config regexes meet long file paths. The timeout turns a potential hang into a
+    // RegexMatchTimeoutException, surfaced as a clear error. Kept in sync with the validator's 100ms bound.
+    private const int RegexMatchTimeoutMilliseconds = 100;
+
     [GeneratedRegex(@"^[a-z]+(\d+\.\d+)", RegexOptions.IgnoreCase, "en-AU")]
     private static partial Regex TargetFrameworkRegex();
 
@@ -159,10 +165,20 @@ internal sealed partial class SolutionParser : ISolutionParser
         var solutionDirectory = Path.GetDirectoryName(solutionFilePath) ?? string.Empty;
 
         // Compile each configured pattern once up-front to avoid per-project regex construction.
-        var includeRegexes = regexToInclude.SelectToArray(regex => new Regex(regex));
-        var excludeRegexes = regexToExclude.SelectToArray(regex => new Regex(regex));
+        // A bounded match timeout means a pathological pattern fails fast rather than hanging generation.
+        var includeRegexes = regexToInclude.SelectToArray(CompileRegex);
+        var excludeRegexes = regexToExclude.SelectToArray(CompileRegex);
 
-        return ClassifyProjects(solutionProjects, solutionDirectory, includeRegexes, excludeRegexes);
+        try
+        {
+            return ClassifyProjects(solutionProjects, solutionDirectory, includeRegexes, excludeRegexes);
+        }
+        catch (RegexMatchTimeoutException exception)
+        {
+            throw new DependencyGeneratorException(
+                $"The regular expression '{exception.Pattern}' exceeded the {RegexMatchTimeoutMilliseconds}ms match timeout while evaluating '{exception.Input}'. Simplify the pattern or shorten the matched path.",
+                exception);
+        }
     }
 
     /// <summary>
@@ -240,6 +256,18 @@ internal sealed partial class SolutionParser : ISolutionParser
             ExcludedProjects = [.. excluded],
             ImplicitlyExcludedProjects = [.. implicitlyExcluded]
         };
+    }
+
+    /// <summary>Compiles a user-supplied regex pattern with a bounded match timeout.</summary>
+    /// <param name="pattern">The regex pattern.</param>
+    /// <returns>The compiled regex.</returns>
+    /// <exception cref="ArgumentException">Thrown when the pattern is not a valid regular expression.</exception>
+    private static Regex CompileRegex(string pattern)
+    {
+        // A match timeout (rather than RegexOptions.NonBacktracking) is used because NonBacktracking rejects
+        // otherwise-valid user patterns that use lookarounds, backreferences, or atomic groups. The timeout
+        // bounds every match, so a pathological pattern fails fast (RegexMatchTimeoutException) instead of hanging.
+        return new Regex(pattern, RegexOptions.None, TimeSpan.FromMilliseconds(RegexMatchTimeoutMilliseconds));
     }
 
     private static bool IsMatch(Regex[] regexes, string solutionDirectory, SolutionProjectDescriptor project)

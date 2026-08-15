@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Shouldly;
+using SlnDependencyDiagramGenerator.Exceptions;
 using SlnDependencyDiagramGenerator.Parser;
 using SlnDependencyDiagramGenerator.Parser.Resolvers;
 using System;
@@ -193,6 +194,26 @@ public class SolutionParserFixture
 
             await _slnxResolver.Received(1).GetProjectsAsync(
                 Arg.Is<string>(path => path.EndsWith(".slnx")), Arg.Any<CancellationToken>());
+        }
+
+        [Fact]
+        public async Task Should_Throw_When_Regex_Match_Exceeds_Timeout()
+        {
+            var sut = CreateSut();
+
+            // A long run of 'a' followed by a non-matching tail triggers catastrophic backtracking for
+            // "(a+)+$" — without the bounded match timeout this would hang instead of throwing.
+            var longPath = $"/src/{new string('a', 2000)}/LibA/LibA.csproj";
+            var project = CreateDescriptor("LibA", longPath);
+
+            _slnResolver
+                .GetProjectsAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+                .Returns([project]);
+
+            var exception = await Should.ThrowAsync<DependencyGeneratorException>(() =>
+                sut.DiscoverProjectsAsync("test.sln", ["(a+)+$"], [], CancellationToken.None));
+
+            exception.Message.ShouldContain("exceeded the 100ms match timeout");
         }
     }
 
