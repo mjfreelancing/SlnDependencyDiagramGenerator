@@ -562,6 +562,13 @@ public sealed class DependencyGenerator : IDependencyGenerator
 
     private async Task AssertToolAvailabilityAsync(DependencyGeneratorConfig configuration, CancellationToken cancellationToken)
     {
+        // External tools are only required for image export. Generating the diagram
+        // text files is fully in-process, so text-only generation must work without d2/mmdc.
+        if (configuration.Export.ImageFormats.Length == 0)
+        {
+            return;
+        }
+
         var formats = configuration.Diagram.Formats;
 
         if (formats.Length == 0)

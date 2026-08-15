@@ -99,6 +99,16 @@ internal sealed class TestConfigBuilder
         return this;
     }
 
+    /// <summary>Sets image export formats.</summary>
+    /// <param name="imageFormats">The image formats to export.</param>
+    /// <returns>The builder instance.</returns>
+    public TestConfigBuilder WithImageFormats(params DiagramImageFormat[] imageFormats)
+    {
+        _imageFormats = imageFormats;
+
+        return this;
+    }
+
     /// <summary>Builds a test configuration instance.</summary>
     /// <returns>A populated configuration object.</returns>
     public DependencyGeneratorConfig Build()

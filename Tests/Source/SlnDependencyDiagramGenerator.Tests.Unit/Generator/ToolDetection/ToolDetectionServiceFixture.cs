@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Shouldly;
-using SlnDependencyDiagramGenerator.Exceptions;
 using SlnDependencyDiagramGenerator.Generator.ToolDetection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -88,19 +87,6 @@ public class ToolDetectionServiceFixture
             var service = CreateSut();
 
             service.KnownToolNames.Count.ShouldBe(2);
-        }
-    }
-
-    public class EnsureToolAvailableAsync : ToolDetectionServiceFixture
-    {
-        [Fact]
-        public async Task Should_Throw_ToolNotFoundException_When_Tool_Not_On_Path()
-        {
-            var exception = await Should.ThrowAsync<ToolNotFoundException>(() =>
-                ToolDetectionService.EnsureToolAvailableAsync(
-                    "definitely-not-a-real-tool-xyz", "Tool is missing", CancellationToken.None));
-
-            exception.Message.ShouldBe("Tool is missing");
         }
     }
 }

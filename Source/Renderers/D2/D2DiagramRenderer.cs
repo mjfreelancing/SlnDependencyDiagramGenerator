@@ -19,7 +19,6 @@ namespace SlnDependencyDiagramGenerator.Renderers.D2;
 internal sealed class D2DiagramRenderer : DiagramRendererBase
 {
     private const string D2ToolName = "d2";
-    private const string ToolNotFoundMessage = "'d2' was not found on PATH. See: https://d2lang.com/tour/install";
 
     /// <inheritdoc />
     public override string FileExtension => "d2";
@@ -31,17 +30,6 @@ internal sealed class D2DiagramRenderer : DiagramRendererBase
     public D2DiagramRenderer(GeneratorDiagramOptions options, IToolPathResolver toolPathResolver, ILogger<D2DiagramRenderer> logger)
         : base(options, toolPathResolver, logger)
     {
-    }
-
-    /// <inheritdoc />
-    public override async Task ValidateRequiredToolsAsync(bool imageExportEnabled, CancellationToken cancellationToken)
-    {
-        if (!imageExportEnabled)
-        {
-            return;
-        }
-
-        await EnsureToolAvailableAsync(D2ToolName, ToolNotFoundMessage, cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />

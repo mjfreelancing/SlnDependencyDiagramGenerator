@@ -47,9 +47,6 @@ internal abstract class DiagramRendererBase : IDiagramRenderer
     public abstract string Render(DependencyGraphModel model);
 
     /// <inheritdoc />
-    public virtual Task ValidateRequiredToolsAsync(bool imageExportEnabled, CancellationToken cancellationToken) => Task.CompletedTask;
-
-    /// <inheritdoc />
     public async Task CreateDiagramArtifactsAsync(string targetFramework, string exportPath, string projectScope,
         DependencyGraphModel model, DiagramImageFormat[] imageFormats, CancellationToken cancellationToken)
     {
@@ -83,18 +80,6 @@ internal abstract class DiagramRendererBase : IDiagramRenderer
     /// <param name="format">The desired image format.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     protected abstract Task ExportImageFileAsync(string diagramFileName, DiagramImageFormat format, CancellationToken cancellationToken);
-
-    /// <summary>
-    /// Throws when a required external tool is not available on PATH. Delegates to the shared
-    /// <see cref="ToolDetectionService"/> for cross-platform tool lookup.
-    /// </summary>
-    /// <param name="toolName">The command/tool name to check.</param>
-    /// <param name="missingToolMessage">The error message for a missing tool.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    protected static Task EnsureToolAvailableAsync(string toolName, string missingToolMessage, CancellationToken cancellationToken)
-    {
-        return ToolDetectionService.EnsureToolAvailableAsync(toolName, missingToolMessage, cancellationToken);
-    }
 
     /// <summary>Throws when an image export process did not complete successfully or did not produce the expected output file.</summary>
     /// <param name="result">The process execution result.</param>

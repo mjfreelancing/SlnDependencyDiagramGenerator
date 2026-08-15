@@ -56,7 +56,10 @@ public class DependencyGeneratorFixture
         public async Task Should_Throw_ToolNotFoundException_When_Required_Tools_Are_Not_Available()
         {
             var sut = CreateSut();
-            var config = new TestConfigBuilder().WithFormats(DiagramFormat.D2).Build();
+            var config = new TestConfigBuilder()
+                .WithFormats(DiagramFormat.D2)
+                .WithImageFormats(DiagramImageFormat.Png)
+                .Build();
 
             var unavailableStatus = new ToolStatus { ToolName = "d2", IsAvailable = false, ErrorMessage = "d2 not found" };
 
@@ -70,10 +73,29 @@ public class DependencyGeneratorFixture
         }
 
         [Fact]
-        public async Task Should_Not_Throw_When_All_Required_Tools_Are_Available()
+        public async Task Should_Not_Require_Tools_When_Only_Text_Output_Is_Requested()
         {
             var sut = CreateSut();
             var config = new TestConfigBuilder().WithFormats(DiagramFormat.D2).Build();
+
+            _projectDiscovery
+                .DiscoverTargetFrameworksAsync(Arg.Any<string>(), Arg.Any<string[]>(), Arg.Any<string[]>(), Arg.Any<CancellationToken>())
+                .Returns([]);
+
+            await Should.NotThrowAsync(() => sut.CreateDiagramsAsync(config, CancellationToken.None));
+
+            await _toolDetection.DidNotReceive().CheckToolAvailabilityAsync(
+                Arg.Any<string>(), Arg.Any<CancellationToken>());
+        }
+
+        [Fact]
+        public async Task Should_Not_Throw_When_All_Required_Tools_Are_Available()
+        {
+            var sut = CreateSut();
+            var config = new TestConfigBuilder()
+                .WithFormats(DiagramFormat.D2)
+                .WithImageFormats(DiagramImageFormat.Png)
+                .Build();
 
             var availableStatus = new ToolStatus { ToolName = "d2", IsAvailable = true, ResolvedPath = "/usr/bin/d2" };
 
@@ -320,7 +342,10 @@ public class DependencyGeneratorFixture
         public async Task Should_Check_All_Distinct_Formats_When_Multiple_Configured()
         {
             var sut = CreateSut();
-            var config = new TestConfigBuilder().WithFormats(DiagramFormat.D2, DiagramFormat.Mermaid).Build();
+            var config = new TestConfigBuilder()
+                .WithFormats(DiagramFormat.D2, DiagramFormat.Mermaid)
+                .WithImageFormats(DiagramImageFormat.Png)
+                .Build();
 
             _toolPathResolver.GetToolName(DiagramFormat.D2).Returns("d2");
             _toolPathResolver.GetToolName(DiagramFormat.Mermaid).Returns("mmdc");

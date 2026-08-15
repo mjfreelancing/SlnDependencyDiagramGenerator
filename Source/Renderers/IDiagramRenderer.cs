@@ -16,15 +16,6 @@ internal interface IDiagramRenderer
     string FileExtension { get; }
 
     /// <summary>
-    /// Validates that any required external tools are available.
-    /// </summary>
-    /// <param name="imageExportEnabled">
-    /// <see langword="true"/> when image export is requested; otherwise <see langword="false"/>.
-    /// </param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    Task ValidateRequiredToolsAsync(bool imageExportEnabled, CancellationToken cancellationToken);
-
-    /// <summary>
     /// Renders and writes the diagram file, and optionally exports images.
     /// </summary>
     /// <param name="targetFramework">The target framework being processed.</param>

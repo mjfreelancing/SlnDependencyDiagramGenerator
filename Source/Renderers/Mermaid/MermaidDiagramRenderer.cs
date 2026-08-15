@@ -18,7 +18,6 @@ namespace SlnDependencyDiagramGenerator.Renderers.Mermaid;
 internal sealed class MermaidDiagramRenderer : DiagramRendererBase
 {
     private const string MermaidCliToolName = "mmdc";
-    private const string ToolNotFoundMessage = "'mmdc' was not found on PATH. See: https://github.com/mermaid-js/mermaid-cli#installation";
 
     /// <inheritdoc />
     public override string FileExtension => "mmd";
@@ -30,17 +29,6 @@ internal sealed class MermaidDiagramRenderer : DiagramRendererBase
     public MermaidDiagramRenderer(GeneratorDiagramOptions options, IToolPathResolver toolPathResolver, ILogger<MermaidDiagramRenderer> logger)
         : base(options, toolPathResolver, logger)
     {
-    }
-
-    /// <inheritdoc />
-    public override async Task ValidateRequiredToolsAsync(bool imageExportEnabled, CancellationToken cancellationToken)
-    {
-        if (!imageExportEnabled)
-        {
-            return;
-        }
-
-        await EnsureToolAvailableAsync(MermaidCliToolName, ToolNotFoundMessage, cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />

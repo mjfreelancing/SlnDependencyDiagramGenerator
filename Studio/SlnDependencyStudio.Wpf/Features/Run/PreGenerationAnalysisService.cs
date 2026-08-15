@@ -1,6 +1,7 @@
 using AllOverIt.Extensions;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
+using SlnDependencyDiagramGenerator.Exceptions;
 using SlnDependencyDiagramGenerator.Generator.Discovery;
 using SlnDependencyStudio.Shared.Services;
 using SlnDependencyStudio.Shared.Utils;
@@ -115,6 +116,12 @@ internal sealed class PreGenerationAnalysisService : IPreGenerationAnalysisServi
             {
                 _logger.LogError("  - {ErrorMessage}", error.ErrorMessage);
             }
+        }
+        catch (DependencyGeneratorException exception)
+        {
+            // Well-known generator failures (e.g. solution parse problems) are self-describing
+            // via type + message; the stack trace adds noise for these expected outcomes.
+            _logger.LogError("Analysis failed: {Message}", exception.Message);
         }
         catch (Exception ex)
         {

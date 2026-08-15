@@ -2,6 +2,7 @@ using AllOverIt.Extensions;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
 using SlnDependencyDiagramGenerator.Config;
+using SlnDependencyDiagramGenerator.Exceptions;
 using SlnDependencyDiagramGenerator.Generator;
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Shared.Config.Extensions;
@@ -96,6 +97,12 @@ internal sealed class GenerationService : IGenerationService
             {
                 _logger.LogError("  - {ErrorMessage}", error.ErrorMessage);
             }
+        }
+        catch (DependencyGeneratorException exception)
+        {
+            // Well-known generator failures (e.g. missing tools) are self-describing via
+            // type + message; the stack trace adds noise for these expected outcomes.
+            _logger.LogError("Generation failed: {Message}", exception.Message);
         }
         catch (Exception ex)
         {

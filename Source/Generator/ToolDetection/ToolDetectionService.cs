@@ -2,7 +2,6 @@
 using AllOverIt.Process;
 using AllOverIt.Process.Extensions;
 using Microsoft.Extensions.Logging;
-using SlnDependencyDiagramGenerator.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -47,21 +46,6 @@ internal sealed class ToolDetectionService : IToolDetectionService
         _logger.LogInformation("Checking availability of {ToolName} on PATH", toolName);
 
         return await CheckPathAsync(toolName, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>Throws if a required tool is not available, with a descriptive message.</summary>
-    /// <param name="toolName">The tool name.</param>
-    /// <param name="missingToolMessage">The error message if the tool is missing.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    /// <exception cref="ToolNotFoundException">Thrown when the tool is not available.</exception>
-    internal static async Task EnsureToolAvailableAsync(string toolName, string missingToolMessage, CancellationToken cancellationToken)
-    {
-        var resolvedPath = await ResolveToolPathAsync(toolName, cancellationToken).ConfigureAwait(false);
-
-        if (resolvedPath is null)
-        {
-            throw new ToolNotFoundException(missingToolMessage);
-        }
     }
 
     /// <summary>
