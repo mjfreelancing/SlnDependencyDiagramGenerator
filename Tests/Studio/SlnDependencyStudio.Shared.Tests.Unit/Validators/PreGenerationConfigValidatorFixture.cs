@@ -1,4 +1,4 @@
-using AllOverIt.Validation;
+﻿using AllOverIt.Validation;
 using AllOverIt.Validation.Extensions;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
@@ -30,8 +30,7 @@ public class PreGenerationConfigValidatorFixture
 
         var exception = Should.Throw<ValidationException>(() => invoker.AssertValidation(config));
 
-        exception.Errors.ShouldContain(error =>
-            error.PropertyName.Contains("Command", System.StringComparison.OrdinalIgnoreCase));
+        exception.Errors.ShouldContain(error => error.PropertyName.Contains("Command", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -62,8 +61,7 @@ public class PreGenerationConfigValidatorFixture
         var exception = Should.Throw<ValidationException>(() =>
             invoker.AssertValidation(config, context));
 
-        exception.Errors.ShouldContain(error =>
-            error.PropertyName.Contains("WorkingDirectory", System.StringComparison.OrdinalIgnoreCase));
+        exception.Errors.ShouldContain(error => error.PropertyName.Contains("WorkingDirectory", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -99,8 +97,24 @@ public class PreGenerationConfigValidatorFixture
 
         var exception = Should.Throw<ValidationException>(() => invoker.AssertValidation(config));
 
-        exception.Errors.ShouldContain(error =>
-            error.PropertyName.Contains("Command", System.StringComparison.OrdinalIgnoreCase));
+        exception.Errors.ShouldContain(error => error.PropertyName.Contains("Command", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void Should_Fail_Without_Throwing_When_Enabled_And_Command_Is_Null()
+    {
+        var invoker = CreateValidationInvoker();
+        var config = new PreGenerationConfig
+        {
+            Enabled = true,
+            Command = null!
+        };
+
+        // A null command (e.g. from JSON "command": null) must yield a clean validation failure
+        // from IsNotEmpty, not a raw ArgumentNullException from the invalid-character predicate.
+        var exception = Should.Throw<ValidationException>(() => invoker.AssertValidation(config));
+
+        exception.Errors.ShouldContain(error => error.PropertyName.Contains("Command", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -130,8 +144,7 @@ public class PreGenerationConfigValidatorFixture
 
         var exception = Should.Throw<ValidationException>(() => invoker.AssertValidation(config));
 
-        exception.Errors.ShouldContain(error =>
-            error.PropertyName.Contains("Arguments", System.StringComparison.OrdinalIgnoreCase));
+        exception.Errors.ShouldContain(error => error.PropertyName.Contains("Arguments", StringComparison.OrdinalIgnoreCase));
     }
 
     private static IValidationInvoker CreateValidationInvoker()

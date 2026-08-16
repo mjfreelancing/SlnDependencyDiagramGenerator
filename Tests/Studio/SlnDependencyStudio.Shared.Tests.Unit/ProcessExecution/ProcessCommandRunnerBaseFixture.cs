@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Shouldly;
 using SlnDependencyStudio.Shared.ProcessExecution;
@@ -133,7 +133,7 @@ public class ProcessCommandRunnerBaseFixture
             runner.Dispose();
 
             // Would time out (hang) if the subject were disposed without OnCompleted.
-            await completed.Task.WaitAsync(TimeSpan.FromSeconds(1));
+            await completed.Task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
         }
 
         [Fact]
@@ -147,7 +147,7 @@ public class ProcessCommandRunnerBaseFixture
             runner.Dispose();
 
             // Would time out (hang) if the subject were disposed without OnCompleted.
-            await completed.Task.WaitAsync(TimeSpan.FromSeconds(1));
+            await completed.Task.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
         }
 
         [Fact]

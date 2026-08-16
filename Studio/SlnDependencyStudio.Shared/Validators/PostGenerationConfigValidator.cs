@@ -1,4 +1,4 @@
-using AllOverIt.Extensions;
+﻿using AllOverIt.Extensions;
 using AllOverIt.Validation;
 using AllOverIt.Validation.Extensions;
 using FluentValidation;
@@ -52,7 +52,7 @@ internal sealed class PostGenerationConfigValidator : ValidatorBase<PostGenerati
                     .WithMessage($"{nameof(PostGenerationConfig.Arguments)} contains invalid characters.");
             });
 
-            When(config => !string.IsNullOrEmpty(config.Command), () =>
+            When(config => config.Command.IsNotNullOrEmpty(), () =>
             {
                 RuleFor(config => config.Command)
                     .Must(cmd => !cmd.Any(ch => Path.GetInvalidPathChars().Contains(ch)))
