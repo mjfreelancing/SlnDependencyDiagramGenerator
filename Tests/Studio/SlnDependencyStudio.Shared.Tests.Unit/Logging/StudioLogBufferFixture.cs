@@ -118,6 +118,44 @@ public class StudioLogBufferFixture
         observer.Received(1).OnCompleted();
     }
 
+    [Fact]
+    public void Should_Not_Propagate_And_Drop_Backlog_When_Backlog_Observer_Throws()
+    {
+        var buffer = new StudioLogBuffer();
+        buffer.Add(CreateEntry(LogEventLevel.Information, "one"));
+        buffer.Add(CreateEntry(LogEventLevel.Information, "two"));
+
+        // The throwing subscriber's OnNext fires during backlog replay. Subscribe must not propagate
+        // the exception (which would leave a half-attached subscription) and must drop the remaining
+        // backlog so no stale entries are retained or replayed later.
+        var firstSubscription = buffer.Subscribe(new ThrowingObserver());
+
+        // The caller owns the returned subscription and detaches it when done; the buffer must not
+        // auto-dispose it on replay failure.
+        firstSubscription.Dispose();
+
+        var live = new List<StudioLogEntry>();
+        using var secondSubscription = buffer.Subscribe(live.Add);
+
+        buffer.Add(CreateEntry(LogEventLevel.Information, "live"));
+
+        // The backlog was dropped on failure, so the second subscriber only sees the live entry.
+        live.Select(entry => entry.Message).ShouldBe(new[] { "live" });
+    }
+
+    private sealed class ThrowingObserver : IObserver<StudioLogEntry>
+    {
+        public void OnNext(StudioLogEntry value) => throw new InvalidOperationException("observer failure");
+
+        public void OnError(Exception error)
+        {
+        }
+
+        public void OnCompleted()
+        {
+        }
+    }
+
     private static StudioLogEntry CreateEntry(LogEventLevel level, string message)
     {
         return new StudioLogEntry(DateTimeOffset.Now, level, message, null);

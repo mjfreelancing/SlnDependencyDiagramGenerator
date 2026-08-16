@@ -88,9 +88,24 @@ public sealed class StudioLogBuffer : IStudioLogBuffer
 
             _streaming = true;
 
-            while (_backlog.Count > 0)
+            // Replay the backlog. OnNext is expected to only schedule work (e.g. via ObserveOn), so
+            // it does not throw in practice — this guard is purely defensive. A throwing observer
+            // must not corrupt the capture-to-live transition: the remaining backlog is dropped so
+            // no stale entries are retained or replayed later. The subscription is deliberately left
+            // attached — the caller owns it and is not expecting it to be auto-disposed; detaching a
+            // broken observer is the caller's responsibility. The catch is intentionally silent —
+            // this buffer IS the log capture mechanism, so logging here would recurse back into
+            // itself via the StudioLogSink.
+            try
             {
-                observer.OnNext(_backlog.Dequeue());
+                while (_backlog.Count > 0)
+                {
+                    observer.OnNext(_backlog.Dequeue());
+                }
+            }
+            catch (Exception)
+            {
+                _backlog.Clear();
             }
 
             return subscription;
