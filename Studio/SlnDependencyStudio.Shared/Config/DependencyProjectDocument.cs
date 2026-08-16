@@ -7,8 +7,9 @@ namespace SlnDependencyStudio.Shared.Config;
 /// Uses an extensible envelope so future metadata can be added without breaking existing files.</summary>
 public sealed class DependencyProjectDocument
 {
-    /// <summary>The schema version of this document. Used for migration and forward compatibility.</summary>
-    public int SchemaVersion { get; init; } = 1;
+    /// <summary>The schema version of this document. Used for migration and forward compatibility.
+    /// Settable so a schema migration step can advance it to the next version.</summary>
+    public int SchemaVersion { get; set; } = 1;
 
     /// <summary>User-facing metadata about the project.</summary>
     public DependencyProjectMetadata Metadata { get; init; } = new();

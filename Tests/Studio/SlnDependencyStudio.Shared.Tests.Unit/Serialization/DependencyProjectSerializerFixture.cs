@@ -7,6 +7,7 @@ using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Shared.Exceptions;
 using SlnDependencyStudio.Shared.Serialization;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading;
@@ -270,6 +271,25 @@ public class DependencyProjectSerializerFixture
             // maps JsonException to CannotLoadConfigFile, so empty files surface a clear error too.
             Should.Throw<JsonException>(() => serializer.Deserialize(string.Empty));
         }
+
+        [Fact]
+        public void Should_Throw_When_Migration_Path_Is_Missing()
+        {
+            var serializer = CreateSerializer();
+            var json = """
+                {
+                    "schemaVersion": 0,
+                    "metadata": { "projectName": "Legacy", "description": "" },
+                    "diagramGenerator": {}
+                }
+                """;
+
+            // A document below the current schema with no defined migration step must fail fast with a
+            // clear message instead of silently loading at a stale version.
+            var exception = Should.Throw<InvalidOperationException>(() => serializer.Deserialize(json));
+
+            exception.Message.ShouldContain("schema version 0");
+        }
     }
 
     public class Cancellation : DependencyProjectSerializerFixture
@@ -317,6 +337,42 @@ public class DependencyProjectSerializerFixture
                 .SelectMany(arguments => arguments.OfType<LogLevel>());
 
             loggedLevels.ShouldNotContain(LogLevel.Error);
+        }
+    }
+
+    public class Migration : DependencyProjectSerializerFixture
+    {
+        [Fact]
+        public void Should_Migrate_Document_To_Current_When_Path_Exists()
+        {
+            var migrations = new Dictionary<int, DependencyProjectSerializer.MigrationStep>
+            {
+                // A fake 0 -> 1 migration proving the chain walk applies the step and advances the version.
+                { 0, new DependencyProjectSerializer.MigrationStep(ToVersion: 1, Apply: document => document.SchemaVersion = 1) }
+            };
+
+            var document = new DependencyProjectDocument { SchemaVersion = 0 };
+
+            DependencyProjectSerializer.MigrateToCurrent(document, migrations);
+
+            document.SchemaVersion.ShouldBe(1);
+        }
+
+        [Fact]
+        public void Should_Throw_When_Migration_Does_Not_Advance_Declared_Version()
+        {
+            var migrations = new Dictionary<int, DependencyProjectSerializer.MigrationStep>
+            {
+                // The step declares it migrates to version 1 but its transform never bumps the version.
+                { 0, new DependencyProjectSerializer.MigrationStep(ToVersion: 1, Apply: _ => { }) }
+            };
+
+            var document = new DependencyProjectDocument { SchemaVersion = 0 };
+
+            var exception = Should.Throw<InvalidOperationException>(() =>
+                DependencyProjectSerializer.MigrateToCurrent(document, migrations));
+
+            exception.Message.ShouldContain("did not advance the document to the declared version 1");
         }
     }
 

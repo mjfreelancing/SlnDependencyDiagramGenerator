@@ -8,13 +8,21 @@ namespace SlnDependencyStudio.Shared.Serialization;
 /// including schema versioning, forward-compatible unknown field handling, and migration between schema versions.</summary>
 internal sealed class DependencyProjectSerializer : IDependencyProjectSerializer
 {
-    /// <summary>Schema migration steps, keyed by source version. Each step transforms the document
-    /// from that version to the next. Migrations are applied in ascending version order until the
-    /// document reaches <see cref="CurrentSchemaVersion"/>.</summary>
-    private static readonly SortedDictionary<int, Action<DependencyProjectDocument>> Migrations = new()
+    /// <summary>A single schema migration step: transforms a document from its source version (the
+    /// <see cref="Migrations"/> key) to <see cref="ToVersion"/>.</summary>
+    /// <param name="ToVersion">The schema version the document must have after the step is applied.</param>
+    /// <param name="Apply">The transform that performs the migration.</param>
+    internal sealed record MigrationStep(int ToVersion, Action<DependencyProjectDocument> Apply);
+
+    /// <summary>
+    /// Schema migrations, keyed by the source schema version each step migrates FROM. Each step
+    /// records its target version explicitly so <see cref="MigrateToCurrent"/> can walk the chain
+    /// and verify every step advances the document as declared.
+    /// </summary>
+    private static readonly Dictionary<int, MigrationStep> Migrations = new()
     {
         // Example for future use:
-        // { 1, document => { document.SchemaVersion = 2; /* transform fields */ } },
+        // { 1, new MigrationStep(ToVersion: 2, Apply: document => { /* transform fields */ }) },
     };
 
     private readonly IStudioJsonSerializer _jsonSerializer;
@@ -107,13 +115,41 @@ internal sealed class DependencyProjectSerializer : IDependencyProjectSerializer
 
     private static void MigrateToCurrent(DependencyProjectDocument document)
     {
-        var orderedMigrations = Migrations
-            .Where(kvp => kvp.Key >= document.SchemaVersion)
-            .OrderBy(kvp => kvp.Key);
+        MigrateToCurrent(document, Migrations);
+    }
 
-        foreach (var (_, migration) in orderedMigrations)
+    /// <summary>
+    /// Walks the explicit (from → to) migration chain using the supplied table: applies the step for
+    /// the document's current version, asserts it advanced to the declared target, and repeats until
+    /// the document reaches <see cref="CurrentSchemaVersion"/>. Internal so tests can exercise the
+    /// chain with their own migration table without mutating the production map.
+    /// </summary>
+    /// <param name="document">The document to migrate.</param>
+    /// <param name="migrations">The migration table, keyed by source schema version.</param>
+    /// <exception cref="InvalidOperationException">Thrown when a migration step is missing, or a step does not advance the version as declared.</exception>
+    internal static void MigrateToCurrent(DependencyProjectDocument document, IReadOnlyDictionary<int, MigrationStep> migrations)
+    {
+        // Walk the explicit (from -> to) migration chain: apply the step for the document's current
+        // version, assert it advanced to the declared target, then repeat until the document reaches
+        // CurrentSchemaVersion. This fails fast instead of silently leaving a stale version when a
+        // step is missing or a migration does not advance the version it declares.
+        while (document.SchemaVersion < CurrentSchemaVersion)
         {
-            migration(document);
+            var sourceVersion = document.SchemaVersion;
+
+            if (!migrations.TryGetValue(sourceVersion, out var migration))
+            {
+                throw new InvalidOperationException(
+                    $"No migration is defined from schema version {sourceVersion} to {CurrentSchemaVersion}. A migration step is missing.");
+            }
+
+            migration.Apply(document);
+
+            if (document.SchemaVersion != migration.ToVersion)
+            {
+                throw new InvalidOperationException(
+                    $"The migration from schema version {sourceVersion} did not advance the document to the declared version {migration.ToVersion}.");
+            }
         }
     }
 }
