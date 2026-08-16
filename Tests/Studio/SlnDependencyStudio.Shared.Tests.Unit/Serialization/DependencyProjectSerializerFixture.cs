@@ -226,6 +226,7 @@ public class DependencyProjectSerializerFixture
 
             exception.Message.ShouldContain("999");
             exception.Message.ShouldContain("1");
+            exception.Message.ShouldContain("Update the application");
         }
 
         [Fact]

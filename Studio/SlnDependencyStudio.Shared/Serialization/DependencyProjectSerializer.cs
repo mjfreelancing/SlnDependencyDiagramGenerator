@@ -76,8 +76,8 @@ internal sealed class DependencyProjectSerializer : IDependencyProjectSerializer
         if (document.SchemaVersion > CurrentSchemaVersion)
         {
             throw new InvalidOperationException(
-                $"The document schema version {document.SchemaVersion} is not supported. " +
-                $"The latest supported version is {CurrentSchemaVersion}.");
+                $"The document schema version {document.SchemaVersion} is not supported by this version of " +
+                $"SlnDependencyStudio (latest supported: {CurrentSchemaVersion}). Update the application to open this file.");
         }
 
         MigrateToCurrent(document);

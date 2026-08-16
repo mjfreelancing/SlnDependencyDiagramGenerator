@@ -26,8 +26,10 @@ public sealed class DependencyProjectDocument
     public PostGenerationConfig PostGeneration { get; init; } = new();
 
     /// <summary>Captures unknown JSON fields for forward compatibility.
-    /// Fields not matching known properties are stored here and re-serialized on save,
-    /// so editing a document with a newer schema version does not strip unknown data.</summary>
+    /// Fields not matching known properties are stored here and re-serialized on save, so a field
+    /// added by a newer build without a schema-version bump is not stripped on round-trip. Documents
+    /// with a newer schema version are rejected on load (update the application to open them), so
+    /// this never preserves fields from an unsupported schema.</summary>
     [JsonExtensionData]
     public Dictionary<string, object>? ExtensionData { get; init; }
 }
