@@ -53,7 +53,8 @@ internal sealed class DependencyProjectSerializer : IDependencyProjectSerializer
             var json = Serialize(document);
             await File.WriteAllTextAsync(filePath, json, cancellationToken).ConfigureAwait(false);
         }
-        catch (Exception exception)
+        // Cancellation is a normal shutdown path — do not log it as a failure.
+        catch (Exception exception) when (exception is not OperationCanceledException)
         {
             _logger.LogError(exception, "Failed to serialize project to {FilePath}", filePath);
             throw;
@@ -96,7 +97,8 @@ internal sealed class DependencyProjectSerializer : IDependencyProjectSerializer
             var json = await File.ReadAllTextAsync(configFilename, cancellationToken).ConfigureAwait(false);
             return Deserialize(json);
         }
-        catch (Exception exception)
+        // Cancellation is a normal shutdown path — do not log it as a failure.
+        catch (Exception exception) when (exception is not OperationCanceledException)
         {
             _logger.LogError(exception, "Failed to deserialize project from {ConfigFilename}", configFilename);
             throw;

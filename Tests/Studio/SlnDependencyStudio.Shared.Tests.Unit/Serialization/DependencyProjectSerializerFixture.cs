@@ -2,11 +2,15 @@ using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Shouldly;
 using SlnDependencyDiagramGenerator.Config;
+using SlnDependencyDiagramGenerator.Tests.Shared;
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Shared.Exceptions;
 using SlnDependencyStudio.Shared.Serialization;
 using System;
+using System.Linq;
 using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace SlnDependencyStudio.Shared.Tests.Unit.Serialization;
 
@@ -264,6 +268,54 @@ public class DependencyProjectSerializerFixture
             // Empty input is a parse failure (System.Text.Json), not a null result — the CLI already
             // maps JsonException to CannotLoadConfigFile, so empty files surface a clear error too.
             Should.Throw<JsonException>(() => serializer.Deserialize(string.Empty));
+        }
+    }
+
+    public class Cancellation : DependencyProjectSerializerFixture
+    {
+        [Fact]
+        public async Task Should_Propagate_Without_Logging_Error_When_SerializeAsync_Is_Cancelled()
+        {
+            var logger = Substitute.For<ILogger<DependencyProjectSerializer>>();
+            var serializer = new DependencyProjectSerializer(new StudioJsonSerializer(), logger);
+
+            using var tempFile = new DisposableTempFile(".sds", string.Empty);
+            using var cancellationTokenSource = new CancellationTokenSource();
+            cancellationTokenSource.Cancel();
+
+            // A fired token must propagate (as OperationCanceledException) without being logged as an error.
+            await Should.ThrowAsync<OperationCanceledException>(() =>
+                serializer.SerializeAsync(new DependencyProjectDocument(), tempFile.FilePath, cancellationTokenSource.Token));
+
+            ShouldNotLogError(logger);
+        }
+
+        [Fact]
+        public async Task Should_Propagate_Without_Logging_Error_When_DeserializeAsync_Is_Cancelled()
+        {
+            var logger = Substitute.For<ILogger<DependencyProjectSerializer>>();
+            var serializer = new DependencyProjectSerializer(new StudioJsonSerializer(), logger);
+
+            using var tempFile = new DisposableTempFile(".sds", "{}");
+            using var cancellationTokenSource = new CancellationTokenSource();
+            cancellationTokenSource.Cancel();
+
+            // A fired token must propagate (as OperationCanceledException) without being logged as an error.
+            await Should.ThrowAsync<OperationCanceledException>(() =>
+                serializer.DeserializeAsync(tempFile.FilePath, cancellationTokenSource.Token));
+
+            ShouldNotLogError(logger);
+        }
+
+        // Cancellation should propagate without being logged as an error: the first argument of every
+        // ILogger.Log call is the LogLevel, so none of the recorded levels may be Error.
+        private static void ShouldNotLogError(ILogger<DependencyProjectSerializer> logger)
+        {
+            var loggedLevels = logger.ReceivedCalls()
+                .Select(call => call.GetArguments())
+                .SelectMany(arguments => arguments.OfType<LogLevel>());
+
+            loggedLevels.ShouldNotContain(LogLevel.Error);
         }
     }
 
