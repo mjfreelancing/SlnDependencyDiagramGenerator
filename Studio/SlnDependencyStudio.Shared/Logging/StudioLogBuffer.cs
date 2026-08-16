@@ -31,17 +31,17 @@ namespace SlnDependencyStudio.Shared.Logging;
 // Events can be produced from any thread, so all transitions are guarded by a single lock. The
 // switch from "capturing" to "streaming live" happens atomically within the first subscription,
 // so no event is lost in the gap and none is delivered twice.
+//
+// Retention
+// ------------------------------------------------------------------------------------------
+// The pre-subscription backlog is deliberately unbounded. This type is internal (not a public
+// API), and the hosts always attach a subscriber in practice: the WPF output panel subscribes
+// during main-window construction, and headless hosts (the CLI) do not wire this buffer into
+// logging at all. The backlog is therefore bounded by the time between application start and the
+// first subscriber. A host that never subscribed would retain Debug events for the app lifetime;
+// that is accepted by design.
 
-/// <summary>
-/// Default implementation of <see cref="IStudioLogBuffer"/>.
-/// </summary>
-/// <remarks>
-/// <para>Queue-based pre-subscription capture: entries are queued under a lock until the first
-/// subscriber attaches. On that first subscription the entire backlog is replayed in order and the
-/// buffer switches to a live <see cref="Subject{T}"/> relay. No capacity limit is required because
-/// the backlog is bounded in practice by the time between application start and the first
-/// subscriber (for example, the WPF output panel subscribing during main-window construction).</para>
-/// </remarks>
+/// <summary>Default implementation of <see cref="IStudioLogBuffer"/>.</summary>
 public sealed class StudioLogBuffer : IStudioLogBuffer
 {
     private readonly Lock _syncRoot = new();
