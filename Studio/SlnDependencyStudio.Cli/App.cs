@@ -45,7 +45,6 @@ internal sealed class App : ConsoleAppBase
             .AddRun(_runCommandHandler, exitCode => ExitCode = exitCode)
             .Build(_logger, out var verboseOption);
 
-        var args = Environment.GetCommandLineArgs()[1..];
         var parseResult = root.Parse(args);
 
         // Set the logging level as early as possible, before any handler runs.
@@ -58,11 +57,18 @@ internal sealed class App : ConsoleAppBase
 
         _logger.LogDebug("Verbose logging enabled: {Verbose}", isVerbose);
 
-        // Log the selected command and the config file path supplied on the command line (if any).
-        _logger.LogDebug("Selected command: {Command}, config file: {ConfigFile}",
-            parseResult.CommandResult.Command.Name, parseResult.GetValue(setup.ConfigFileOption) ?? "<none>");
-
         _logger.LogDebug("Command line arguments: {Arguments}", string.Join(' ', args));
+
+        // Only read parsed option values once parsing has succeeded. A required-but-missing option
+        // (e.g. a bare `studio` invocation that omits --configFile) makes GetValue throw
+        // InvalidOperationException. That must surface as a parse error (exit 1001) in the try block
+        // below, not escape StartAsync and be reported as an unhandled stack trace by the host.
+        if (parseResult.Errors.Count == 0)
+        {
+            // Log the selected command and the config file path supplied on the command line (if any).
+            _logger.LogDebug("Selected command: {Command}, config file: {ConfigFile}",
+                parseResult.CommandResult.Command.Name, parseResult.GetValue(setup.ConfigFileOption) ?? "<none>");
+        }
 
         try
         {
