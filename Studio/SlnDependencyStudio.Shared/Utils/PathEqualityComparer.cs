@@ -24,6 +24,13 @@ public sealed class PathEqualityComparer : IEqualityComparer<string>
     /// <inheritdoc />
     public int GetHashCode(string obj)
     {
+        // A null key must not throw — hash-set/dictionary lookups can probe with null, and Equals
+        // already handles it. Return a fixed code, consistent with Equals(null, null) == true.
+        if (obj is null)
+        {
+            return 0;
+        }
+
         return Normalize(obj).GetHashCode();
     }
 

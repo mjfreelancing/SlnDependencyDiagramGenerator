@@ -54,5 +54,13 @@ public class PathEqualityComparerFixture
         {
             _comparer.GetHashCode(@".\Output").ShouldBe(_comparer.GetHashCode(@"Output"));
         }
+
+        [Fact]
+        public void Should_Not_Throw_When_Hashing_Null()
+        {
+            // A null key must not throw (hash-set/dictionary lookups may probe with null), matching
+            // Equals(null, null) == true.
+            _comparer.GetHashCode(null!).ShouldBe(0);
+        }
     }
 }
