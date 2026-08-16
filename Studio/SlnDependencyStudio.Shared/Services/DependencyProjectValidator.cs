@@ -1,3 +1,4 @@
+﻿using AllOverIt.Assertion;
 using AllOverIt.Validation;
 using Microsoft.Extensions.Logging;
 using SlnDependencyStudio.Shared.Config;
@@ -23,6 +24,9 @@ internal sealed class DependencyProjectValidator : IDependencyProjectValidator
     /// <inheritdoc />
     public void Validate(DependencyProjectDocument document, string configDirectory)
     {
+        _ = document.WhenNotNull();
+        _ = configDirectory.WhenNotNull();
+
         // All configuration is validated up front so failures are reported before any command or
         // generation work begins. The command runners themselves do not perform validation.
 

@@ -107,6 +107,23 @@ public class DependencyProjectValidatorFixture
             error.PropertyName.Contains("WorkingDirectory", System.StringComparison.OrdinalIgnoreCase));
     }
 
+    [Fact]
+    public void Should_Throw_When_Document_Is_Null()
+    {
+        var validator = CreateValidator();
+
+        Should.Throw<ArgumentNullException>(() => validator.Validate(null!, Environment.CurrentDirectory));
+    }
+
+    [Fact]
+    public void Should_Throw_When_ConfigDirectory_Is_Null()
+    {
+        var validator = CreateValidator();
+        var document = CreateValidDocument(Path.Combine(Path.GetTempPath(), "sample.sln"));
+
+        Should.Throw<ArgumentNullException>(() => validator.Validate(document, null!));
+    }
+
     private static IDependencyProjectValidator CreateValidator()
     {
         var services = new ServiceCollection();
