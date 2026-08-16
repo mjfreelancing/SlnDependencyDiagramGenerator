@@ -97,12 +97,14 @@ public class StudioLogBufferFixture
     }
 
     [Fact]
-    public void Should_Throw_When_Adding_After_Dispose()
+    public void Should_Be_NoOp_When_Adding_After_Dispose()
     {
         var buffer = new StudioLogBuffer();
         buffer.Dispose();
 
-        Should.Throw<ObjectDisposedException>(() => buffer.Add(CreateEntry(LogEventLevel.Information, "late")));
+        // A late event during/after teardown is silently dropped rather than throwing into the
+        // Serilog pipeline (which does not swallow sink exceptions).
+        Should.NotThrow(() => buffer.Add(CreateEntry(LogEventLevel.Information, "late")));
     }
 
     [Fact]

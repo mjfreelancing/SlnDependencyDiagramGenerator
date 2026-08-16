@@ -57,7 +57,14 @@ public sealed class StudioLogBuffer : IStudioLogBuffer
 
         lock (_syncRoot)
         {
-            ObjectDisposedException.ThrowIf(_disposed, this);
+            // After disposal, silently drop late events rather than throwing. This buffer feeds the
+            // Serilog pipeline, which does not swallow sink exceptions — a late log event during or
+            // after teardown would otherwise propagate out of StudioLogSink.Emit and break shutdown
+            // logging. The buffer's job is done once disposed, so there is no value in retaining it.
+            if (_disposed)
+            {
+                return;
+            }
 
             if (_streaming)
             {
