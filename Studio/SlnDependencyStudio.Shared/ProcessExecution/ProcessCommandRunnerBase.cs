@@ -17,6 +17,7 @@ public abstract class ProcessCommandRunnerBase<TResult> : IDisposable
     private readonly ILogger _logger;
     private readonly Subject<string> _stdoutSubject = new();
     private readonly Subject<string> _stderrSubject = new();
+    private bool _disposed;
 
     /// <summary>
     /// Standard output lines from the running command, streamed as they arrive.
@@ -135,6 +136,18 @@ public abstract class ProcessCommandRunnerBase<TResult> : IDisposable
     /// <inheritdoc />
     public void Dispose()
     {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+
+        // Complete the output subjects before disposing them so subscribers waiting for completion
+        // (e.g. ToArray, LastAsync, aggregations) observe OnCompleted instead of hanging forever.
+        _stdoutSubject.OnCompleted();
+        _stderrSubject.OnCompleted();
+
         _stdoutSubject.Dispose();
         _stderrSubject.Dispose();
 

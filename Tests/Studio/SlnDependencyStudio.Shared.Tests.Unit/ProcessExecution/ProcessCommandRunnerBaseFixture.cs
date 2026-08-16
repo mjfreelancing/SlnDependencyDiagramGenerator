@@ -120,6 +120,47 @@ public class ProcessCommandRunnerBaseFixture
         }
     }
 
+    public class Dispose : ProcessCommandRunnerBaseFixture
+    {
+        [Fact]
+        public async Task Should_Complete_StdOut_Subscribers_On_Dispose()
+        {
+            var runner = CreateRunner();
+
+            var completed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            runner.StdOut.Subscribe(_ => { }, () => completed.TrySetResult());
+
+            runner.Dispose();
+
+            // Would time out (hang) if the subject were disposed without OnCompleted.
+            await completed.Task.WaitAsync(TimeSpan.FromSeconds(1));
+        }
+
+        [Fact]
+        public async Task Should_Complete_StdErr_Subscribers_On_Dispose()
+        {
+            var runner = CreateRunner();
+
+            var completed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            runner.StdErr.Subscribe(_ => { }, () => completed.TrySetResult());
+
+            runner.Dispose();
+
+            // Would time out (hang) if the subject were disposed without OnCompleted.
+            await completed.Task.WaitAsync(TimeSpan.FromSeconds(1));
+        }
+
+        [Fact]
+        public void Should_Be_Idempotent_When_Disposed_Multiple_Times()
+        {
+            var runner = CreateRunner();
+
+            runner.Dispose();
+
+            Should.NotThrow(() => runner.Dispose());
+        }
+    }
+
     private static TestCommandRunner CreateRunner()
     {
         return new TestCommandRunner(Substitute.For<ILogger>());
