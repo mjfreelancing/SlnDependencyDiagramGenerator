@@ -1,3 +1,4 @@
+﻿using AllOverIt.Assertion;
 using AllOverIt.Extensions;
 using Microsoft.Extensions.Logging;
 using SlnDependencyStudio.Shared.Config;
@@ -30,6 +31,8 @@ internal sealed class PreGenerationCommandRunner : ProcessCommandRunnerBase<PreG
     /// <inheritdoc />
     public async Task<PreGenerationCommandResult> RunAsync(PreGenerationConfig config, CancellationToken cancellationToken)
     {
+        _ = config.WhenNotNull();
+
         if (!config.Enabled)
         {
             return new PreGenerationCommandResult

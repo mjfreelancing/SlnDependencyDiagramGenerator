@@ -1,3 +1,4 @@
+﻿using AllOverIt.Assertion;
 using AllOverIt.Extensions;
 using Microsoft.Extensions.Logging;
 using SlnDependencyStudio.Shared.Config;
@@ -30,6 +31,8 @@ internal sealed class PostGenerationCommandRunner : ProcessCommandRunnerBase<Pos
     /// <inheritdoc />
     public async Task<PostGenerationCommandResult> RunAsync(PostGenerationConfig config, CancellationToken cancellationToken)
     {
+        _ = config.WhenNotNull();
+
         if (!config.Enabled)
         {
             return new PostGenerationCommandResult
