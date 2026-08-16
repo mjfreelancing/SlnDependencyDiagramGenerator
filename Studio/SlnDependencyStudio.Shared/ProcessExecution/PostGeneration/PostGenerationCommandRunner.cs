@@ -1,6 +1,7 @@
 using AllOverIt.Extensions;
 using Microsoft.Extensions.Logging;
 using SlnDependencyStudio.Shared.Config;
+using SlnDependencyStudio.Shared.Utils;
 
 namespace SlnDependencyStudio.Shared.ProcessExecution.PostGeneration;
 
@@ -38,10 +39,10 @@ internal sealed class PostGenerationCommandRunner : ProcessCommandRunnerBase<Pos
         }
 
         // Split the arguments string so each token is passed as a separate argument to the process.
-        // Without splitting, the entire string is treated as a single quoted argument
-        // (e.g. "restore file.sln" will be seen by the process as a single unknown command name).
+        // The splitter honours double-quoted segments, so a value containing spaces stays a single
+        // argument (e.g. --file "my file.txt" -> ["--file", "my file.txt"]).
         var arguments = config.Arguments.IsNotNullOrEmpty()
-            ? config.Arguments.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            ? CommandLineUtils.SplitArguments(config.Arguments)
             : [];
 
         return await RunAsync(config.Command, arguments, config.WorkingDirectory, cancellationToken).ConfigureAwait(false);

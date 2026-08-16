@@ -44,8 +44,11 @@ internal sealed class PostGenerationConfigValidator : ValidatorBase<PostGenerati
 
             When(config => config.Arguments.IsNotNullOrEmpty(), () =>
             {
+                // Double quotes are valid — they group tokens into a single argument
+                // (e.g. --file "my file.txt") and are stripped by CommandLineUtils.SplitArguments.
                 RuleFor(config => config.Arguments)
-                    .Must(args => !args.Any(ch => Path.GetInvalidPathChars().Contains(ch)))
+                    .Must(argumentLine => !argumentLine.Any(character =>
+                        character != '"' && Path.GetInvalidPathChars().Contains(character)))
                     .WithMessage($"{nameof(PostGenerationConfig.Arguments)} contains invalid characters.");
             });
 

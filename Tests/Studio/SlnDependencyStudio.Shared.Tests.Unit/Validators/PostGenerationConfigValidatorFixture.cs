@@ -104,6 +104,20 @@ public class PostGenerationConfigValidatorFixture
     }
 
     [Fact]
+    public void Should_Pass_When_Arguments_Contain_Quoted_Spaces()
+    {
+        var invoker = CreateValidationInvoker();
+        var config = new PostGenerationConfig
+        {
+            Enabled = true,
+            Command = "dotnet",
+            Arguments = "--file \"my file.txt\""
+        };
+
+        Should.NotThrow(() => invoker.AssertValidation(config));
+    }
+
+    [Fact]
     public void Should_Fail_When_Arguments_Contain_Invalid_Path_Chars()
     {
         var invoker = CreateValidationInvoker();
