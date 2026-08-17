@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Serilog.Core;
 using Shouldly;
@@ -12,9 +11,9 @@ namespace SlnDependencyStudio.Cli.Tests.Unit;
 public class AppFixture
 {
     [Fact]
-    public async Task Should_Cancel_InFlight_Command_And_Return_NonZero_Exit_Code_When_Application_Stops()
+    public async Task Should_Cancel_InFlight_Command_And_Return_NonZero_Exit_Code_When_Token_Is_Cancelled()
     {
-        var lifetime = new FakeApplicationLifetime();
+        using var cts = new CancellationTokenSource();
 
         var runHandler = Substitute.For<ICommandLineRunHandler>();
 
@@ -24,10 +23,11 @@ public class AppFixture
             {
                 var token = callInfo.Arg<CancellationToken>();
 
-                // Simulate Ctrl+C while the command is in flight (fires ApplicationStopping).
-                lifetime.StopApplication();
+                // Simulate Ctrl+C while the command is in flight by cancelling the token passed to StartAsync.
+                cts.Cancel();
 
-                // The token passed to the handler must be the linked token, cancelled by ApplicationStopping.
+                // AllOverIt.GenericHost hands StartAsync a token linked against ApplicationStopping, so a
+                // shutdown request cancels it; the handler must observe that cancellation.
                 token.IsCancellationRequested.ShouldBeTrue();
 
                 return (int)StudioCliExitCode.RunCommandFailed;
@@ -36,11 +36,10 @@ public class AppFixture
         var app = new App(
             Substitute.For<ICommandLineValidateHandler>(),
             runHandler,
-            lifetime,
             new LoggingLevelSwitch(),
             Substitute.For<ILogger<App>>());
 
-        await app.StartAsync(["run", "--cf", @"C:\tmp\config.sds"], CancellationToken.None);
+        await app.StartAsync(["run", "--cf", @"C:\tmp\config.sds"], cts.Token);
 
         // A cancelled run must not exit 0 (the handler's cancellation exit code is preserved).
         app.ExitCode.ShouldBe((int)StudioCliExitCode.RunCommandFailed);
@@ -52,7 +51,6 @@ public class AppFixture
         var app = new App(
             Substitute.For<ICommandLineValidateHandler>(),
             Substitute.For<ICommandLineRunHandler>(),
-            new FakeApplicationLifetime(),
             new LoggingLevelSwitch(),
             Substitute.For<ILogger<App>>());
 
@@ -62,18 +60,5 @@ public class AppFixture
         await app.StartAsync([], CancellationToken.None);
 
         app.ExitCode.ShouldBe((int)StudioCliExitCode.CommandLineParseFailed);
-    }
-
-    private sealed class FakeApplicationLifetime : IHostApplicationLifetime
-    {
-        private readonly CancellationTokenSource _cts = new();
-
-        public CancellationToken ApplicationStarted => CancellationToken.None;
-
-        public CancellationToken ApplicationStopping => _cts.Token;
-
-        public CancellationToken ApplicationStopped => CancellationToken.None;
-
-        public void StopApplication() => _cts.Cancel();
     }
 }
