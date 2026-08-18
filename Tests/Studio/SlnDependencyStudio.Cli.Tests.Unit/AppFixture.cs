@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Serilog.Core;
 using Shouldly;
@@ -34,8 +35,7 @@ public class AppFixture
             });
 
         var app = new App(
-            Substitute.For<ICommandLineValidateHandler>(),
-            runHandler,
+            CreateScopeFactory(Substitute.For<ICommandLineValidateHandler>(), runHandler),
             new LoggingLevelSwitch(),
             Substitute.For<ILogger<App>>());
 
@@ -49,8 +49,7 @@ public class AppFixture
     public async Task Should_Not_Throw_And_Return_ParseFailed_When_Invoked_With_No_Arguments()
     {
         var app = new App(
-            Substitute.For<ICommandLineValidateHandler>(),
-            Substitute.For<ICommandLineRunHandler>(),
+            CreateScopeFactory(Substitute.For<ICommandLineValidateHandler>(), Substitute.For<ICommandLineRunHandler>()),
             new LoggingLevelSwitch(),
             Substitute.For<ILogger<App>>());
 
@@ -60,5 +59,21 @@ public class AppFixture
         await app.StartAsync([], CancellationToken.None);
 
         app.ExitCode.ShouldBe((int)StudioCliExitCode.CommandLineParseFailed);
+    }
+
+    private static IServiceScopeFactory CreateScopeFactory(
+        ICommandLineValidateHandler validateHandler, ICommandLineRunHandler runHandler)
+    {
+        var serviceProvider = Substitute.For<IServiceProvider>();
+        serviceProvider.GetService(typeof(ICommandLineValidateHandler)).Returns(validateHandler);
+        serviceProvider.GetService(typeof(ICommandLineRunHandler)).Returns(runHandler);
+
+        var scope = Substitute.For<IServiceScope>();
+        scope.ServiceProvider.Returns(serviceProvider);
+
+        var scopeFactory = Substitute.For<IServiceScopeFactory>();
+        scopeFactory.CreateScope().Returns(scope);
+
+        return scopeFactory;
     }
 }

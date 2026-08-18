@@ -1,4 +1,5 @@
 ﻿using AllOverIt.GenericHost;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog.Core;
 using Serilog.Events;
@@ -13,21 +14,17 @@ namespace SlnDependencyStudio.Cli;
 /// <summary>CLI entry point that parses commands and delegates to registered handlers.</summary>
 internal sealed class App : ConsoleAppBase
 {
-    private readonly ICommandLineValidateHandler _validateCommandHandler;
-    private readonly ICommandLineRunHandler _runCommandHandler;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly LoggingLevelSwitch _levelSwitch;
     private readonly ILogger<App> _logger;
 
     /// <summary>Initializes a new instance of <see cref="App"/>.</summary>
-    /// <param name="validateCommandHandler">The Validate command handler.</param>
-    /// <param name="runCommandHandler">The Run command handler.</param>
+    /// <param name="scopeFactory">The service scope factory, used to resolve the scoped command handlers for each run.</param>
     /// <param name="levelSwitch">The logging level switch (registered by <c>UseStudioSerilog</c>).</param>
     /// <param name="logger">The logger instance.</param>
-    public App(ICommandLineValidateHandler validateCommandHandler, ICommandLineRunHandler runCommandHandler,
-        LoggingLevelSwitch levelSwitch, ILogger<App> logger)
+    public App(IServiceScopeFactory scopeFactory, LoggingLevelSwitch levelSwitch, ILogger<App> logger)
     {
-        _validateCommandHandler = validateCommandHandler;
-        _runCommandHandler = runCommandHandler;
+        _scopeFactory = scopeFactory;
         _levelSwitch = levelSwitch;
         _logger = logger;
     }
@@ -47,6 +44,14 @@ internal sealed class App : ConsoleAppBase
     {
         _logger.LogInformation("SlnDependencyStudio CLI started");
 
+        // App is a singleton, but the command handlers (and their dependencies) are registered Scoped.
+        // Resolve them from an explicit scope so the scoped graph is created and disposed per command -
+        // a singleton resolving scoped services from the root would be a captive dependency.
+        using var scope = _scopeFactory.CreateScope();
+
+        var validateCommandHandler = scope.ServiceProvider.GetRequiredService<ICommandLineValidateHandler>();
+        var runCommandHandler = scope.ServiceProvider.GetRequiredService<ICommandLineRunHandler>();
+
         // AllOverIt.GenericHost hands StartAsync a token linked against ApplicationStopping (held for the whole
         // command), so it cancels on Ctrl+C/SIGTERM. Threading it through CommandLineSetup means the in-flight
         // command and its subprocesses are cancelled on shutdown.
@@ -55,8 +60,8 @@ internal sealed class App : ConsoleAppBase
         var setup = new CommandLineSetup(cancellationToken);
 
         var root = setup
-            .AddValidate(_validateCommandHandler, exitCode => ExitCode = exitCode)
-            .AddRun(_runCommandHandler, exitCode => ExitCode = exitCode)
+            .AddValidate(validateCommandHandler, exitCode => ExitCode = exitCode)
+            .AddRun(runCommandHandler, exitCode => ExitCode = exitCode)
             .Build(_logger, out var verboseOption);
 
         var parseResult = root.Parse(args);
