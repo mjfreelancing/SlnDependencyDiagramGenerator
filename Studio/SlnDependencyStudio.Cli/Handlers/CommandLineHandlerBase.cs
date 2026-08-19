@@ -10,6 +10,10 @@ namespace SlnDependencyStudio.Cli.Handlers;
 internal abstract class CommandLineHandlerBase
 {
     private readonly IDependencyProjectSerializer _serializer;
+
+    // Deliberately non-generic ILogger: this base class is abstract and has no type of its own, so derived
+    // handlers pass their concrete ILogger<THandler> (e.g. ILogger<CommandLineRunHandler>) - the log
+    // category then reflects the concrete handler rather than this base class.
     private readonly ILogger _logger;
 
     /// <summary>Initializes a new instance of <see cref="CommandLineHandlerBase"/>.</summary>

@@ -3,7 +3,7 @@
 namespace SlnDependencyStudio.Cli.Handlers.Validate;
 
 /// <summary>Handles the <c>validate</c> command which validates a dependency project file without running generation.</summary>
-public interface ICommandLineValidateHandler : IStudioScopedDependency
+internal interface ICommandLineValidateHandler : IStudioScopedDependency
 {
     /// <summary>Validates the configuration in the specified file.</summary>
     /// <param name="configFilename">The path to the configuration file.</param>

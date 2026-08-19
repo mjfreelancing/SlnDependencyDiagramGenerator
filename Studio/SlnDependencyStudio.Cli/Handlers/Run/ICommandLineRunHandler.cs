@@ -3,7 +3,7 @@
 namespace SlnDependencyStudio.Cli.Handlers.Run;
 
 /// <summary>Handles the <c>run</c> command which executes pre-generation commands and generates dependency diagrams.</summary>
-public interface ICommandLineRunHandler : IStudioScopedDependency
+internal interface ICommandLineRunHandler : IStudioScopedDependency
 {
     /// <summary>Runs the pre-generation command (if configured) and then generates dependency diagrams.</summary>
     /// <param name="configFilename">The path to the configuration file.</param>

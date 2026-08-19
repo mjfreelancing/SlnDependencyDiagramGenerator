@@ -19,15 +19,6 @@ internal sealed class CommandLineSetup
     // regardless of which command matched, falling back to the root's non-required copy.
     private readonly Option<string> _requiredConfigFileOption = CreateConfigFileOption(true);
 
-    /// <summary>Creates a new <c>--configFile</c> / <c>--cf</c> option instance.</summary>
-    /// <param name="required">Whether the option is required on the command it is registered on.</param>
-    private static Option<string> CreateConfigFileOption(bool required) =>
-        new("--configFile", "--cf")
-        {
-            Description = "Path to the configuration JSON file",
-            Required = required
-        };
-
     /// <summary>Adds the <c>validate</c> subcommand wired to the provided handler.</summary>
     /// <param name="handler">The validate command handler.</param>
     /// <param name="setExitCode">A callback invoked with the exit code returned by the handler.</param>
@@ -127,4 +118,15 @@ internal sealed class CommandLineSetup
     /// <returns>The config file path, or <c>null</c> if none was supplied.</returns>
     public string? GetConfigFileValue(ParseResult parseResult) =>
         parseResult.GetValue(_requiredConfigFileOption) ?? parseResult.GetValue(_configFileOption);
+
+    /// <summary>Creates a new <c>--configFile</c> / <c>--cf</c> option instance.</summary>
+    /// <param name="required">Whether the option is required on the command it is registered on.</param>
+    private static Option<string> CreateConfigFileOption(bool required)
+    {
+        return new("--configFile", "--cf")
+        {
+            Description = "Path to the configuration JSON file",
+            Required = required
+        };
+    }
 }
