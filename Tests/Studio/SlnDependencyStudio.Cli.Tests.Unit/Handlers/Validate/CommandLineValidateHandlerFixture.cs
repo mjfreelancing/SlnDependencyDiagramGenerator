@@ -119,6 +119,26 @@ public class CommandLineValidateHandlerFixture
         result.ShouldBe((int)StudioCliExitCode.ValidateCommandFailed);
     }
 
+    [Fact]
+    public async Task Should_Rethrow_OperationCanceledException_When_Cancelled()
+    {
+        var serializer = Substitute.For<IDependencyProjectSerializer>();
+
+        serializer
+            .DeserializeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .ThrowsAsync(new OperationCanceledException());
+
+        var projectValidator = Substitute.For<IDependencyProjectValidator>();
+        var logger = Substitute.For<ILogger<CommandLineValidateHandler>>();
+
+        var handler = new CommandLineValidateHandler(serializer, projectValidator, logger);
+
+        // The handler logs the cancellation and rethrows; App owns the exit-code mapping so the code is
+        // not coupled to whichever handler happened to observe the cancellation.
+        await Should.ThrowAsync<OperationCanceledException>(() => handler.HandleAsync(
+            Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None));
+    }
+
     private static DependencyProjectDocument CreateValidDocument()
     {
         return new DependencyProjectDocument

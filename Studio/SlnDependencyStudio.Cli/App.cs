@@ -110,16 +110,38 @@ internal sealed class App : ConsoleAppBase
                 // ProcessTerminationHandler: on Ctrl+C it forces InvokeAsync to the signal's native exit code
                 // (130 for SIGINT) if the in-flight command has not completed within that window - bypassing
                 // the handler's own exit code. All handlers here are cancellation-aware via the shutdown
-                // token threaded through CommandLineSetup above, so the override is disabled and
-                // cancellation flows through the handler's OCE -> exit code path (e.g. RunCommandFailed
-                // when a run is cancelled).
-                var invocationConfiguration = new InvocationConfiguration { ProcessTerminationTimeout = null };
+                // token threaded through CommandLineSetup above, so the override is disabled and cancellation
+                // flows through the handler's OCE -> rethrow path to the catches below.
+                //
+                // The default exception handler must also be disabled: InvokeAsync otherwise catches any
+                // exception thrown by the command action, prints it to stderr, and returns 1 - which would
+                // swallow both the OCE (mapped to UserCancelled/OperationCancelled below) and genuine
+                // failures (mapped to UnhandledCliFailure), collapsing every escaped exception to 1.
+                var invocationConfiguration = new InvocationConfiguration
+                {
+                    ProcessTerminationTimeout = null,
+                    EnableDefaultExceptionHandler = false
+                };
                 var actionExitCode = await parseResult.InvokeAsync(invocationConfiguration, cancellationToken: cancellationToken);
 
                 // If no action ran (e.g. --help) and no handler set an exit code, default to success.
                 // Only a null ExitCode is overwritten, so an exit code set by a handler is preserved.
                 ExitCode ??= actionExitCode;
             }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // The shutdown token (linked against ApplicationStopping by AllOverIt.GenericHost) fired, so the
+            // user pressed Ctrl+C/SIGTERM. This is distinct from a failure - the command was interrupted.
+            _logger.LogWarning("Command cancelled by the user.");
+            ExitCode = (int)StudioCliExitCode.UserCancelled;
+        }
+        catch (OperationCanceledException)
+        {
+            // The user's shutdown token did not fire, so an operation cancelled itself internally. Kept
+            // distinct from a user-requested shutdown so scripts can tell the two apart.
+            _logger.LogWarning("An operation was cancelled internally.");
+            ExitCode = (int)StudioCliExitCode.OperationCancelled;
         }
         catch (Exception exception)
         {

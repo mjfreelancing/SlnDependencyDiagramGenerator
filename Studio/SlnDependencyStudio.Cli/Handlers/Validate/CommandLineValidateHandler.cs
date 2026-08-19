@@ -27,6 +27,11 @@ internal sealed class CommandLineValidateHandler : CommandLineHandlerBase, IComm
         _logger = logger;
     }
 
+    // Cancellation here relies on OperationCanceledException (OCE) only, deliberately: the validate pipeline contains
+    // no process-command step, so nothing reports cancellation as a failed result - the sole cancellable step
+    // (document deserialization) observes the token and throws OCE, which is caught (logged with the stage for traceability)
+    // and rethrown so App owns the exit-code mapping. Unlike CommandLineRunHandler, there is no subprocess at stake in the tail,
+    // so no post-step IsCancellationRequested check is needed.
     /// <inheritdoc />
     public override async Task<int> HandleAsync(string configFilename, CancellationToken cancellationToken)
     {
@@ -55,8 +60,11 @@ internal sealed class CommandLineValidateHandler : CommandLineHandlerBase, IComm
         }
         catch (OperationCanceledException)
         {
-            _logger.LogWarning("Operation was cancelled.");
-            return (int)StudioCliExitCode.RunCommandFailed;
+            // Log the cancellation here so the log records where it originated (which stage was in
+            // flight); the exit code is assigned by App, which distinguishes a user-requested shutdown
+            // from an internal operation cancellation. Rethrow so the code mapping stays in one place.
+            _logger.LogWarning("Operation was cancelled during validation.");
+            throw;
         }
         catch (DependencyProjectException exception)
         {

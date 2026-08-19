@@ -393,7 +393,7 @@ public class CommandLineRunHandlerFixture
     }
 
     [Fact]
-    public async Task Should_Return_RunCommandFailed_When_Cancelled()
+    public async Task Should_Rethrow_OperationCanceledException_When_Cancelled()
     {
         var serializer = Substitute.For<IDependencyProjectSerializer>();
 
@@ -415,10 +415,10 @@ public class CommandLineRunHandlerFixture
 
         var handler = new CommandLineRunHandler(serializer, dependencyGenerator, restoreRunner, preGenRunner, postGenRunner, projectValidator, logger);
 
-        var result = await handler.HandleAsync(
-            Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None);
-
-        result.ShouldBe((int)StudioCliExitCode.RunCommandFailed);
+        // The handler logs the cancellation and rethrows; App owns the exit-code mapping so the code is
+        // not coupled to whichever handler happened to observe the cancellation.
+        await Should.ThrowAsync<OperationCanceledException>(() => handler.HandleAsync(
+            Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None));
     }
 
     [Fact]
@@ -449,6 +449,51 @@ public class CommandLineRunHandlerFixture
 
         result.ShouldBe(0);
         await restoreRunner.Received(1).RunAsync(Path.GetTempPath(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Should_Return_UserCancelled_When_Restore_Is_Cancelled()
+    {
+        using var cts = new CancellationTokenSource();
+
+        var serializer = Substitute.For<IDependencyProjectSerializer>();
+
+        serializer
+            .DeserializeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(CreateValidDocument(restoreEnabled: true)));
+
+        var dependencyGenerator = Substitute.For<IDependencyGenerator>();
+        var preGenRunner = Substitute.For<IPreGenerationCommandRunner>();
+        var restoreRunner = Substitute.For<IRestoreSolutionRunner>();
+
+        restoreRunner
+            .RunAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo =>
+            {
+                // Fire the token while the restore step is in flight, so the pipeline's failure branch maps
+                // the Cancelled result to UserCancelled (a pre-cancelled token would short-circuit earlier).
+                cts.Cancel();
+
+                return Task.FromResult(new RestoreSolutionResult
+                {
+                    ErrorCode = CommandErrorCode.Cancelled,
+                    ErrorMessage = "Restore was cancelled"
+                });
+            });
+
+        var postGenRunner = Substitute.For<IPostGenerationCommandRunner>();
+        var projectValidator = Substitute.For<IDependencyProjectValidator>();
+        var logger = Substitute.For<ILogger<CommandLineRunHandler>>();
+
+        var handler = new CommandLineRunHandler(serializer, dependencyGenerator, restoreRunner, preGenRunner, postGenRunner, projectValidator, logger);
+
+        var result = await handler.HandleAsync(
+            Path.Combine(Path.GetTempPath(), "test.sds"), cts.Token);
+
+        // The restore runner reports cancellation as a failed result (CommandErrorCode.Cancelled) rather
+        // than throwing OCE, so a user cancellation must surface as UserCancelled rather than being
+        // conflated with a genuine restore failure.
+        result.ShouldBe((int)StudioCliExitCode.UserCancelled);
     }
 
     [Fact]
@@ -542,7 +587,7 @@ public class CommandLineRunHandlerFixture
     }
 
     [Fact]
-    public async Task Should_Return_Zero_When_PostGeneration_Fails()
+    public async Task Should_Return_PostGenerationCommandFailed_When_PostGeneration_Fails()
     {
         var serializer = Substitute.For<IDependencyProjectSerializer>();
 
@@ -572,7 +617,90 @@ public class CommandLineRunHandlerFixture
         var result = await handler.HandleAsync(
             Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None);
 
-        result.ShouldBe(0);
+        result.ShouldBe((int)StudioCliExitCode.PostGenerationCommandFailed);
+    }
+
+    [Fact]
+    public async Task Should_Return_UserCancelled_When_PostGeneration_Command_Is_Cancelled()
+    {
+        using var cts = new CancellationTokenSource();
+
+        var serializer = Substitute.For<IDependencyProjectSerializer>();
+
+        serializer
+            .DeserializeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(CreateValidDocument(postGenEnabled: true)));
+
+        var dependencyGenerator = Substitute.For<IDependencyGenerator>();
+        var preGenRunner = Substitute.For<IPreGenerationCommandRunner>();
+        var restoreRunner = Substitute.For<IRestoreSolutionRunner>();
+        var postGenRunner = Substitute.For<IPostGenerationCommandRunner>();
+
+        postGenRunner
+            .RunAsync(Arg.Any<PostGenerationConfig>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo =>
+            {
+                // Fire the token while the post-gen step is in flight, so the pipeline's failure branch maps
+                // the Cancelled result to UserCancelled (a pre-cancelled token would short-circuit earlier).
+                cts.Cancel();
+
+                return Task.FromResult(new PostGenerationCommandResult
+                {
+                    ErrorCode = CommandErrorCode.Cancelled,
+                    ErrorMessage = "Post-generation command was cancelled"
+                });
+            });
+
+        var projectValidator = Substitute.For<IDependencyProjectValidator>();
+        var logger = Substitute.For<ILogger<CommandLineRunHandler>>();
+
+        var handler = new CommandLineRunHandler(serializer, dependencyGenerator, restoreRunner, preGenRunner, postGenRunner, projectValidator, logger);
+
+        var result = await handler.HandleAsync(
+            Path.Combine(Path.GetTempPath(), "test.sds"), cts.Token);
+
+        // The post-gen runner reports cancellation as a failed result (CommandErrorCode.Cancelled)
+        // rather than throwing OCE, so it must surface as UserCancelled rather than a post-gen failure.
+        result.ShouldBe((int)StudioCliExitCode.UserCancelled);
+    }
+
+    [Fact]
+    public async Task Should_Return_UserCancelled_When_Token_Cancelled_After_Generation()
+    {
+        using var cts = new CancellationTokenSource();
+
+        var serializer = Substitute.For<IDependencyProjectSerializer>();
+
+        serializer
+            .DeserializeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(CreateValidDocument(postGenEnabled: true)));
+
+        var dependencyGenerator = Substitute.For<IDependencyGenerator>();
+
+        // The token fires after the generator's last cooperative check - generation still completes, but the
+        // pipeline's per-iteration check must not start the post-gen command or exit 0.
+        dependencyGenerator
+            .CreateDiagramsAsync(Arg.Any<DependencyGeneratorConfig>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo =>
+            {
+                cts.Cancel();
+                return Task.CompletedTask;
+            });
+
+        var preGenRunner = Substitute.For<IPreGenerationCommandRunner>();
+        var restoreRunner = Substitute.For<IRestoreSolutionRunner>();
+        var postGenRunner = Substitute.For<IPostGenerationCommandRunner>();
+        var projectValidator = Substitute.For<IDependencyProjectValidator>();
+        var logger = Substitute.For<ILogger<CommandLineRunHandler>>();
+
+        var handler = new CommandLineRunHandler(serializer, dependencyGenerator, restoreRunner, preGenRunner, postGenRunner, projectValidator, logger);
+
+        var result = await handler.HandleAsync(
+            Path.Combine(Path.GetTempPath(), "test.sds"), cts.Token);
+
+        // A user cancellation that lands after generation must not start the post-gen command or exit 0.
+        result.ShouldBe((int)StudioCliExitCode.UserCancelled);
+        await postGenRunner.DidNotReceiveWithAnyArgs().RunAsync(default!, TestContext.Current.CancellationToken);
     }
 
     private static DependencyProjectDocument CreateValidDocument(

@@ -133,8 +133,8 @@ SlnDependencyStudio.Cli run --cf <path-to-sds-file>
 1. Load and deserialize the `.sds` file and resolve relative paths
 2. Log the resolved configuration (for troubleshooting)
 3. Validate the whole document up front — failures are reported before any command or generation work begins
-4. Restore the solution if `restoreSolution` is enabled
-5. Run the pre-generation command if enabled (aborts on failure unless `continueOnFailure`)
+4. Run the pre-generation command if enabled (aborts on failure unless `continueOnFailure`)
+5. Restore the solution if `restoreSolution` is enabled
 6. Generate diagrams (project discovery → dependency resolution → framework processing → diagram emission → optional image export)
 7. Run the post-generation command if enabled
 8. Report completion or errors
@@ -194,18 +194,9 @@ Key points:
 
 ## The Generation Pipeline
 
-### Solution Restore
-
-When `restoreSolution` is `true` (the default), the CLI runs `dotnet restore` against the configured solution before anything else. This guarantees each project has an up-to-date `obj/project.assets.json`.
-
-- Restore output (stdout/stderr) is streamed to the console and rolling log in real time.
-- If the restore fails, the run aborts with exit code `1008`.
-
-Set `"restoreSolution": false` to skip this step (for example, when you manage restore yourself or want a fully offline run).
-
 ### Pre-Generation Command
 
-Runs before diagram generation. Configured under `preGeneration`:
+Runs before the solution restore and diagram generation — the earliest user hook in the pipeline. Configured under `preGeneration`:
 
 ```json
 {
@@ -231,6 +222,17 @@ Output from the command is streamed in real time to the console and rolling log.
 
 > **Security note:** Pre-generation commands execute whatever they are told to. Only run `.sds` files you trust.
 
+> **Ordering note:** the pre-generation command runs **before** the solution is restored, so it cannot rely on `obj/project.assets.json` being present. Use it for setup that must happen before the built-in restore (e.g. generating project files, preparing a custom feed) — not for steps that consume restored packages.
+
+### Solution Restore
+
+When `restoreSolution` is `true` (the default), the CLI runs `dotnet restore` against the solution after any pre-generation command and before diagram generation. This guarantees each project has an up-to-date `obj/project.assets.json`.
+
+- Restore output (stdout/stderr) is streamed to the console and rolling log in real time.
+- If the restore fails, the run aborts with exit code `1009`.
+
+Set `"restoreSolution": false` to skip this step (for example, when you manage restore yourself or want a fully offline run).
+
 ### Diagram Generation
 
 The core step — project discovery, dependency resolution, framework processing, diagram emission, and optional image export — as configured in `diagramGenerator`. All output appears in both the console and the rolling file log.
@@ -245,13 +247,12 @@ Runs after diagram generation completes. Configured under `postGeneration`:
     "enabled": true,
     "command": "powershell.exe",
     "arguments": "-File .\\notify.ps1",
-    "workingDirectory": "",
-    "continueOnFailure": false
+    "workingDirectory": ""
   }
 }
 ```
 
-`postGeneration` shares the same `command`, `arguments`, and `workingDirectory` fields as `preGeneration` (it has no `continueOnFailure` option — failures are logged as warnings and do not change the exit code).
+`postGeneration` shares the same `command`, `arguments`, and `workingDirectory` fields as `preGeneration` (it has no `continueOnFailure` option — a failed post-generation command aborts the run with exit code `1006`).
 
 ---
 
@@ -259,18 +260,24 @@ Runs after diagram generation completes. Configured under `postGeneration`:
 
 The CLI returns deterministic exit codes suitable for script automation.
 
-| Exit Code | Enum Constant                | Meaning                                                                        |
-| --------- | ---------------------------- | ------------------------------------------------------------------------------ |
-| `0`       | —                            | Success                                                                        |
-| `1001`    | `CommandLineParseFailed`     | Command-line argument parsing failed                                           |
-| `1002`    | `CannotLoadConfigFile`       | Config file not found, inaccessible, or malformed JSON                         |
-| `1003`    | `ValidateCommandFailed`      | The `validate` command found configuration errors                              |
-| `1004`    | `RunCommandFailed`           | The `run` command failed (validation errors, regex errors, cancellation, etc.) |
-| `1005`    | `PreGenerationCommandFailed` | Pre-generation command failed and `continueOnFailure` is disabled              |
-| `1006`    | `DiagramGeneratorFailed`     | The diagram generator threw an error during `CreateDiagramsAsync`              |
-| `1007`    | `DiagramToolNotFound`        | A required external diagram tool (d2, mmdc) was not found                      |
-| `1008`    | `DotNetRestoreFailed`        | `dotnet restore` failed while `restoreSolution` was enabled                    |
-| `1999`    | `UnhandledCliFailure`        | An unexpected failure occurred                                                 |
+| Exit Code | Enum Constant                 | Meaning                                                                     |
+| --------- | ----------------------------- | --------------------------------------------------------------------------- |
+| `0`       | —                             | Success                                                                     |
+| `1001`    | `CommandLineParseFailed`      | Command-line argument parsing failed                                        |
+| `1002`    | `CannotLoadConfigFile`        | Config file not found, inaccessible, or malformed JSON                      |
+| `1003`    | `ValidateCommandFailed`       | The `validate` command found configuration errors                           |
+| `1004`    | `RunCommandFailed`            | The `run` command failed (validation errors, regex errors, etc.)            |
+| `1005`    | `PreGenerationCommandFailed`  | Pre-generation command failed and `continueOnFailure` is disabled           |
+| `1006`    | `PostGenerationCommandFailed` | Post-generation command failed                                              |
+| `1007`    | `DiagramGeneratorFailed`      | The diagram generator threw an error during `CreateDiagramsAsync`           |
+| `1008`    | `DiagramToolNotFound`         | A required external diagram tool (d2, mmdc) was not found                   |
+| `1009`    | `DotNetRestoreFailed`         | `dotnet restore` failed while `restoreSolution` was enabled                 |
+| `1010`    | `DiagramImageExportFailed`    | Diagram image export failed (via d2 or mmdc)                                |
+| `1011`    | `ProjectAssetsFailed`         | Project assets could not be read (missing assets file / unsupported format) |
+| `1012`    | `DependencyGraphFailed`       | Project dependency graph is inconsistent (missing reference / circular)     |
+| `1013`    | `UserCancelled`               | The command was cancelled by the user (Ctrl+C/SIGTERM)                      |
+| `1014`    | `OperationCancelled`          | An operation was cancelled internally (not a user shutdown request)         |
+| `1999`    | `UnhandledCliFailure`         | An unexpected failure occurred                                              |
 
 When a pre-generation or restore command fails, the log also reports the failure classification (`ErrorCode`):
 
@@ -312,7 +319,7 @@ When a pre-generation or restore command fails, the log also reports the failure
 | **Mermaid CLI (`mmdc`)** | Mermaid image export (PNG/SVG/PDF) | Only needed when `formats` includes `Mermaid` **and** `imageFormats` is non-empty. `.mmd` text files need no tool. |
 
 - Tools are located via explicit path overrides first, then PATH discovery (using `where` on Windows, `which` elsewhere).
-- If a required tool is missing during a run, the CLI reports it and returns exit code `1007`.
+- If a required tool is missing during a run, the CLI reports it and returns exit code `1008`.
 - Diagram text files (`.d2`/`.mmd`) and the `Dependency Summary.md` are always produced even when image export fails or is disabled.
 
 ---
@@ -346,7 +353,7 @@ SlnDependencyStudio.Cli run --cf my-project.sds --verbose
 
 ### 5. Run with automatic restore
 
-With `"restoreSolution": true` in the `.sds` file (the default), the solution is restored first:
+With `"restoreSolution": true` in the `.sds` file (the default), the solution is restored as part of the pipeline, before diagram generation:
 
 ```shell
 SlnDependencyStudio.Cli run --cf my-project.sds
@@ -430,8 +437,8 @@ fi
 SlnDependencyStudio.Cli run --cf project.sds
 case $? in
   0)   echo "Success" ;;
-  1007) echo "A required diagram tool is missing (d2/mmdc)" >&2 ;;
-  1008) echo "dotnet restore failed" >&2 ;;
+  1008) echo "A required diagram tool is missing (d2/mmdc)" >&2 ;;
+  1009) echo "dotnet restore failed" >&2 ;;
   *)   echo "Generation failed" >&2 ;;
 esac
 ```
@@ -453,8 +460,8 @@ esac
 | Symptom                           | Likely cause                                             | Fix                                                                                                                                                           |
 | --------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Empty diagrams / no dependencies  | Projects have no `obj/project.assets.json`               | Enable `restoreSolution`, or run `dotnet restore`/build first.                                                                                                |
-| Exit code `1007`                  | A required image-export tool is missing                  | Install [d2](https://d2lang.com/tour/install/) and/or [mmdc](https://github.com/mermaid-js/mermaid-cli#installation), or configure an explicit path override. |
-| Exit code `1008`                  | `dotnet restore` failed                                  | Check the solution path and network/feed access; review the streamed restore output in the log.                                                               |
+| Exit code `1008`                  | A required image-export tool is missing                  | Install [d2](https://d2lang.com/tour/install/) and/or [mmdc](https://github.com/mermaid-js/mermaid-cli#installation), or configure an explicit path override. |
+| Exit code `1009`                  | `dotnet restore` failed                                  | Check the solution path and network/feed access; review the streamed restore output in the log.                                                               |
 | Exit code `1002`                  | File not found or malformed JSON                         | Verify the `--cf` path and that the file is valid JSON (use `validate` for details).                                                                          |
 | Exit code `1003`                  | Configuration errors found by `validate`                 | Read the reported errors, fix the `.sds` file, and re-validate.                                                                                               |
 | "Invalid regular expression"      | A `regexToInclude`/`regexToExclude` pattern is malformed | Escape backslashes in JSON (e.g. `\\.*\\.csproj`) and check the pattern.                                                                                      |

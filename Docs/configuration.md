@@ -197,7 +197,7 @@ Defined by `DependencyProjectMetadata`.
 
 `restoreSolution` is a top-level boolean on the document (default `true`). When enabled, the CLI and WPF run `dotnet restore` against the configured solution before generation so each project has an up-to-date `obj/project.assets.json`.
 
-- In the CLI, a failed restore aborts the run with exit code `1008`.
+- In the CLI, a failed restore aborts the run with exit code `1009`.
 - In the WPF application, this is exposed as the **Restore Solution** toggle on the Pipeline page.
 
 ### Pre-Generation Command
@@ -223,7 +223,7 @@ Defined by `PostGenerationConfig`, which extends the shared `ProcessCommandConfi
 | `arguments`        | `string` | `""`    | Command-line arguments passed to the command. Tokens are split by spaces.                         |
 | `workingDirectory` | `string` | `""`    | Working directory for the command. When empty, defaults to the folder containing the `.sds` file. |
 
-Post-generation failures are logged as warnings and do not affect the CLI exit code.
+A failed post-generation command aborts the run with exit code `1006` (there is no `continueOnFailure` option to proceed anyway).
 
 ### Shared Process Command Configuration
 

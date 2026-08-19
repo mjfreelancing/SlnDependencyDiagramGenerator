@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 using Serilog.Core;
 using Shouldly;
 using SlnDependencyStudio.Cli.Enumerations;
@@ -12,7 +13,7 @@ namespace SlnDependencyStudio.Cli.Tests.Unit;
 public class AppFixture
 {
     [Fact]
-    public async Task Should_Cancel_InFlight_Command_And_Return_NonZero_Exit_Code_When_Token_Is_Cancelled()
+    public async Task Should_Return_UserCancelled_When_Token_Is_Cancelled_During_Command()
     {
         using var cts = new CancellationTokenSource();
 
@@ -20,7 +21,7 @@ public class AppFixture
 
         runHandler
             .HandleAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(async callInfo =>
+            .Returns(callInfo =>
             {
                 var token = callInfo.Arg<CancellationToken>();
 
@@ -28,10 +29,11 @@ public class AppFixture
                 cts.Cancel();
 
                 // AllOverIt.GenericHost hands StartAsync a token linked against ApplicationStopping, so a
-                // shutdown request cancels it; the handler must observe that cancellation.
+                // shutdown request cancels it. The handler observes that cancellation (as the real handlers
+                // do) and the operation surfaces as an OCE, which App maps to UserCancelled.
                 token.IsCancellationRequested.ShouldBeTrue();
 
-                return (int)StudioCliExitCode.RunCommandFailed;
+                return Task.FromException<int>(new OperationCanceledException());
             });
 
         var app = new App(
@@ -41,8 +43,29 @@ public class AppFixture
 
         await app.StartAsync(["run", "--cf", @"C:\tmp\config.sds"], cts.Token);
 
-        // A cancelled run must not exit 0 (the handler's cancellation exit code is preserved).
-        app.ExitCode.ShouldBe((int)StudioCliExitCode.RunCommandFailed);
+        // A user cancellation is distinct from a failure and must not exit 0.
+        app.ExitCode.ShouldBe((int)StudioCliExitCode.UserCancelled);
+    }
+
+    [Fact]
+    public async Task Should_Return_OperationCancelled_When_Oce_Is_Thrown_Without_User_Cancellation()
+    {
+        var runHandler = Substitute.For<ICommandLineRunHandler>();
+
+        runHandler
+            .HandleAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .ThrowsAsync(new OperationCanceledException());
+
+        var app = new App(
+            CreateScopeFactory(Substitute.For<ICommandLineValidateHandler>(), runHandler),
+            new LoggingLevelSwitch(),
+            Substitute.For<ILogger<App>>());
+
+        await app.StartAsync(["run", "--cf", @"C:\tmp\config.sds"], CancellationToken.None);
+
+        // An OCE that is not caused by the user's shutdown token is an internal operation cancellation,
+        // distinct from a user-requested shutdown.
+        app.ExitCode.ShouldBe((int)StudioCliExitCode.OperationCancelled);
     }
 
     [Fact]

@@ -20,6 +20,10 @@ namespace SlnDependencyStudio.Cli.Handlers.Run;
 /// <inheritdoc cref="ICommandLineRunHandler"/>
 internal sealed class CommandLineRunHandler : CommandLineHandlerBase, ICommandLineRunHandler
 {
+    // One step in the run pipeline. Execute returns true to continue to the next step, or false when the step
+    // failed - the pipeline then returns FailureExitCode (or UserCancelled if the token fired meanwhile).
+    private sealed record PipelineStep(Func<DependencyProjectDocument, CancellationToken, Task<bool>> Execute, StudioCliExitCode FailureExitCode);
+
     private readonly IDependencyGenerator _generator;
     private readonly IRestoreSolutionRunner _restoreSolutionRunner;
     private readonly IPreGenerationCommandRunner _preGenerationCommandRunner;
@@ -49,6 +53,14 @@ internal sealed class CommandLineRunHandler : CommandLineHandlerBase, ICommandLi
         _logger = logger;
     }
 
+    // Cancellation is handled deliberately with two mechanisms, because the run pipeline contains two kinds of step.
+    // (1) The process runners (restore, pre-gen, post-gen) report cancellation as a failed result - CommandErrorCode.Cancelled -
+    // rather than throwing, so RunPipelineAsync checks cancellationToken.IsCancellationRequested around each one to tell a
+    // user cancellation from a genuine step failure. (2) The serializer and generator throw OperationCanceledException, which
+    // the catch below logs (with the stage, for traceability) and rethrows so App owns the exit-code mapping (UserCancelled vs
+    // OperationCancelled). The pipeline's per-iteration check also covers the window where a cancellation lands after the
+    // generator's last cooperative check but before it returns - so we never spawn a fresh subprocess, or exit 0, for a run
+    // the user already cancelled.
     /// <inheritdoc />
     public override async Task<int> HandleAsync(string configFilename, CancellationToken cancellationToken)
     {
@@ -66,19 +78,13 @@ internal sealed class CommandLineRunHandler : CommandLineHandlerBase, ICommandLi
             // generation work begins. The command runners themselves do not perform validation.
             _projectValidator.Validate(document, configDirectory);
 
-            if (!await RunRestoreSolutionIfRequiredAsync(document, cancellationToken))
+            // Run the pipeline; it returns 0 on success or the exit code of the first step that failed or was cancelled.
+            var pipelineExitCode = await RunPipelineAsync(document, cancellationToken);
+
+            if (pipelineExitCode != 0)
             {
-                return (int)StudioCliExitCode.DotNetRestoreFailed;
+                return pipelineExitCode;
             }
-
-            if (!await RunPreGenerationCommandIfRequiredAsync(document, cancellationToken))
-            {
-                return (int)StudioCliExitCode.PreGenerationCommandFailed;
-            }
-
-            await GenerateDiagramsAsync(document, cancellationToken);
-
-            await RunPostGenerationCommandIfRequiredAsync(document, cancellationToken);
 
             _logger.LogInformation("Generation complete.");
 
@@ -121,8 +127,11 @@ internal sealed class CommandLineRunHandler : CommandLineHandlerBase, ICommandLi
         }
         catch (OperationCanceledException)
         {
-            _logger.LogWarning("Operation was cancelled.");
-            return (int)StudioCliExitCode.RunCommandFailed;
+            // Log the cancellation here so the log records where it originated (which stage was in
+            // flight); the exit code is assigned by App, which distinguishes a user-requested shutdown
+            // from an internal operation cancellation. Rethrow so the code mapping stays in one place.
+            _logger.LogWarning("Operation was cancelled during generation.");
+            throw;
         }
         catch (DependencyProjectException exception)
         {
@@ -139,6 +148,56 @@ internal sealed class CommandLineRunHandler : CommandLineHandlerBase, ICommandLi
             _logger.LogError("Could not load file: {Message}", exception.Message);
             return (int)StudioCliExitCode.CannotLoadConfigFile;
         }
+    }
+
+    /// <summary>Runs the generation pipeline, returning <c>0</c> on success or the exit code of the first failing or cancelled step.</summary>
+    /// <param name="document">The dependency project document.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns><c>0</c> when every step succeeded; otherwise the exit code of the step that failed or was cancelled.</returns>
+    private async Task<int> RunPipelineAsync(DependencyProjectDocument document, CancellationToken cancellationToken)
+    {
+        // Cancellation is checked before every step, so a user cancellation short-circuits before the next step runs -
+        // which is what prevents the post-gen subprocess from being spawned (and a 0 exit) when a cancellation lands
+        // after the generator's last cooperative check.
+        PipelineStep[] pipeline =
+        [
+            // Execute the pre-generation command
+            new(RunPreGenerationCommandIfRequiredAsync, StudioCliExitCode.PreGenerationCommandFailed),
+
+            // Restore the solution so the dependency assets are generated
+            new(RunRestoreSolutionIfRequiredAsync, StudioCliExitCode.DotNetRestoreFailed),
+
+            // Generation is a transparent step: it throws typed exceptions / OCE on failure, so it never returns false
+            // (DiagramGeneratorFailed is an unreachable fallback for the record). The per-iteration cancellation check
+            // above then covers a token that fires after the generator's last cooperative check.
+            new(async (doc, token) =>
+            {
+                await GenerateDiagramsAsync(doc, token);
+                return true;
+            }, StudioCliExitCode.DiagramGeneratorFailed),
+
+            // Execute the post-generation command
+            new(RunPostGenerationCommandIfRequiredAsync, StudioCliExitCode.PostGenerationCommandFailed)
+        ];
+
+        foreach (var step in pipeline)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return (int)StudioCliExitCode.UserCancelled;
+            }
+
+            if (!await step.Execute(document, cancellationToken))
+            {
+                // The process runners report cancellation as a failed result (CommandErrorCode.Cancelled) rather than
+                // throwing OCE, so check the token again to tell a user cancellation from a genuine step failure.
+                return cancellationToken.IsCancellationRequested
+                    ? (int)StudioCliExitCode.UserCancelled
+                    : (int)step.FailureExitCode;
+            }
+        }
+
+        return 0;
     }
 
     /// <summary>Runs the pre-generation command if enabled. Returns <see langword="false"/> if the command failed and continue-on-failure is disabled.</summary>
@@ -228,18 +287,18 @@ internal sealed class CommandLineRunHandler : CommandLineHandlerBase, ICommandLi
         return false;
     }
 
-    /// <summary>Runs the post-generation command if enabled.</summary>
+    /// <summary>Runs the post-generation command if enabled. Returns <see langword="false"/> if the command failed.</summary>
     /// <param name="document">The dependency project document.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>A task that completes when the post-generation command has finished.</returns>
-    private async Task RunPostGenerationCommandIfRequiredAsync(DependencyProjectDocument document, CancellationToken cancellationToken)
+    /// <returns><see langword="true"/> if no command was required or it succeeded; <see langword="false"/> if it failed.</returns>
+    private async Task<bool> RunPostGenerationCommandIfRequiredAsync(DependencyProjectDocument document, CancellationToken cancellationToken)
     {
         var postGenConfig = document.PostGeneration;
 
         if (!postGenConfig.Enabled)
         {
             _logger.LogDebug("Post-generation command disabled.");
-            return;
+            return true;
         }
 
         _logger.LogInformation("Running Post-generation command...");
@@ -253,14 +312,16 @@ internal sealed class CommandLineRunHandler : CommandLineHandlerBase, ICommandLi
         if (postGenResult.Succeeded)
         {
             _logger.LogInformation("Post-generation command completed successfully.");
-            return;
+            return true;
         }
 
-        _logger.LogWarning(
+        _logger.LogError(
             "Post-generation command failed ({ErrorCode}, exit code {ExitCode}, error: {ErrorMessage}).",
             postGenResult.ErrorCode,
             postGenResult.ExitCode,
             postGenResult.ErrorMessage);
+
+        return false;
     }
 
     /// <summary>Initiates diagram generation via the dependency generator.</summary>
