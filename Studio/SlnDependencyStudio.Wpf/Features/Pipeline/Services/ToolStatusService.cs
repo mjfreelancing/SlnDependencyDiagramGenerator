@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using SlnDependencyDiagramGenerator.Generator.ToolDetection;
 using SlnDependencyStudio.Wpf.Features.Pipeline.Models;
 using System.Collections.ObjectModel;
@@ -13,7 +13,6 @@ namespace SlnDependencyStudio.Wpf.Features.Pipeline.Services;
 /// </summary>
 internal sealed class ToolStatusService : IToolStatusService, IDisposable
 {
-    private readonly IToolPathResolver _toolPathResolver;
     private readonly IToolDetectionService _toolDetection;
     private readonly ILogger<ToolStatusService> _logger;
 
@@ -27,10 +26,8 @@ internal sealed class ToolStatusService : IToolStatusService, IDisposable
     /// <param name="toolPathResolver">Resolves effective tool paths for external CLI tools.</param>
     /// <param name="toolDetection">The tool detection service.</param>
     /// <param name="logger">The logger instance.</param>
-    public ToolStatusService(IToolPathResolver toolPathResolver, IToolDetectionService toolDetection,
-        ILogger<ToolStatusService> logger)
+    public ToolStatusService(IToolDetectionService toolDetection, ILogger<ToolStatusService> logger)
     {
-        _toolPathResolver = toolPathResolver;
         _toolDetection = toolDetection;
         _logger = logger;
 

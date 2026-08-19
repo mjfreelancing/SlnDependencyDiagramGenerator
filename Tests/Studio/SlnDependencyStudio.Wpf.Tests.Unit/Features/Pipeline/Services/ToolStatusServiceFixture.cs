@@ -10,7 +10,6 @@ namespace SlnDependencyStudio.Wpf.Tests.Unit.Features.Pipeline.Services;
 [Collection(nameof(ReactiveUIInitializer))]
 public class ToolStatusServiceFixture
 {
-    private readonly IToolPathResolver _toolPathResolver = Substitute.For<IToolPathResolver>();
     private readonly IToolDetectionService _detectionService = Substitute.For<IToolDetectionService>();
 
     protected ToolStatusServiceFixture()
@@ -163,6 +162,6 @@ public class ToolStatusServiceFixture
 
     private ToolStatusService CreateSut()
     {
-        return new ToolStatusService(_toolPathResolver, _detectionService, Substitute.For<ILogger<ToolStatusService>>());
+        return new ToolStatusService(_detectionService, Substitute.For<ILogger<ToolStatusService>>());
     }
 }
