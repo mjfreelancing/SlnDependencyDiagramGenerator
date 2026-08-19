@@ -58,8 +58,6 @@ internal sealed class App : ConsoleAppBase
         // forwards it to the command action via the token-aware SetAction overload (as a token linked to the one
         // given here), so the in-flight command and its subprocesses are cancelled on shutdown without
         // CommandLineSetup needing to hold the token itself.
-        // The setup instance builds the command tree and owns the shared options, so it is kept
-        // around to query parsed values (such as ConfigFileOption) once parsing has completed.
         var setup = new CommandLineSetup();
 
         var root = setup
@@ -82,14 +80,17 @@ internal sealed class App : ConsoleAppBase
         _logger.LogDebug("Command line arguments: {Arguments}", string.Join(' ', args));
 
         // Only read parsed option values once parsing has succeeded. A required-but-missing option
-        // (e.g. a bare `studio` invocation that omits --configFile) makes GetValue throw
-        // InvalidOperationException. That must surface as a parse error (exit 1001) in the try block
-        // below, not escape StartAsync and be reported as an unhandled stack trace by the host.
+        // (e.g. `run` without --configFile) makes GetValue throw InvalidOperationException. That must
+        // surface as a parse error (exit 1001) in the try block below, not escape StartAsync and be
+        // reported as an unhandled stack trace by the host.
         if (parseResult.Errors.Count == 0)
         {
             // Log the selected command and the config file path supplied on the command line (if any).
+            // The value is resolved via the registered option instances (not by name) because each
+            // subcommand owns its own --configFile instance, while the root copy is non-required so a
+            // bare invocation parses cleanly and reaches the friendly root fallback.
             _logger.LogDebug("Selected command: {Command}, config file: {ConfigFile}",
-                parseResult.CommandResult.Command.Name, parseResult.GetValue(setup.ConfigFileOption) ?? "<none>");
+                parseResult.CommandResult.Command.Name, setup.GetConfigFileValue(parseResult) ?? "<none>");
         }
 
         try

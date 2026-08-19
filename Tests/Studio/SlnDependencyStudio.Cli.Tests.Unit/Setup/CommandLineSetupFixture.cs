@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Shouldly;
+using SlnDependencyStudio.Cli.Enumerations;
 using SlnDependencyStudio.Cli.Handlers.Run;
 using SlnDependencyStudio.Cli.Handlers.Validate;
 using SlnDependencyStudio.Cli.Setup;
@@ -197,5 +198,59 @@ public class CommandLineSetupFixture
 
         // Long form
         root.Parse("run --verbose --cf file.sds").Errors.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task Bare_Invocation_Should_Fall_Through_To_Root_Action()
+    {
+        var logger = Substitute.For<ILogger>();
+
+        var root = new CommandLineSetup()
+            .AddRun(Substitute.For<ICommandLineRunHandler>(), _ => { })
+            .AddValidate(Substitute.For<ICommandLineValidateHandler>(), _ => { })
+            .Build(logger, out _);
+
+        // A bare invocation (no --configFile, no subcommand) must parse cleanly - the root copy of
+        // --configFile is not required - so the friendly root fallback fires (CL-L1) instead of a terse
+        // "Option '--configFile' is required." parse error.
+        var parseResult = root.Parse("");
+        parseResult.Errors.ShouldBeEmpty();
+
+        var exitCode = await parseResult.InvokeAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+        exitCode.ShouldBe((int)StudioCliExitCode.CommandLineParseFailed);
+
+        logger.Received(1).Log(
+            Arg.Is<LogLevel>(level => level == LogLevel.Error),
+            Arg.Any<EventId>(),
+            Arg.Is<object>(obj => obj.ToString()!.Contains("run")),
+            null,
+            Arg.Any<Func<object, Exception?, string>>());
+    }
+
+    [Fact]
+    public void Run_Command_Should_Require_ConfigFile()
+    {
+        var root = new CommandLineSetup()
+            .AddRun(Substitute.For<ICommandLineRunHandler>(), _ => { })
+            .Build(Substitute.For<ILogger>(), out _);
+
+        // --configFile is required per-subcommand, so omitting it on `run` still reports the standard error.
+        root.Parse("run").Errors
+            .Select(error => error.Message)
+            .ShouldContain("Option '--configFile' is required.");
+    }
+
+    [Fact]
+    public void Validate_Command_Should_Require_ConfigFile()
+    {
+        var root = new CommandLineSetup()
+            .AddValidate(Substitute.For<ICommandLineValidateHandler>(), _ => { })
+            .Build(Substitute.For<ILogger>(), out _);
+
+        // --configFile is required per-subcommand, so omitting it on `validate` still reports the standard error.
+        root.Parse("validate").Errors
+            .Select(error => error.Message)
+            .ShouldContain("Option '--configFile' is required.");
     }
 }

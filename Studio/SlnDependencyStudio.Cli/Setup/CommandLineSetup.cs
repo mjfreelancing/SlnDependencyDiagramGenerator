@@ -11,17 +11,21 @@ namespace SlnDependencyStudio.Cli.Setup;
 internal sealed class CommandLineSetup
 {
     private readonly List<Command> _commands = [];
-    private readonly Option<string> _configFileOption = CreateConfigFileOption();
+    private readonly Option<string> _configFileOption = CreateConfigFileOption(false);
 
-    /// <summary>The shared <c>--configFile</c>/<c>--cf</c> option used by all subcommands.</summary>
-    public Option<string> ConfigFileOption => _configFileOption;
+    // The required --configFile instance shared by both subcommands. Only one subcommand can match per
+    // invocation, so a single instance can be registered on each of them (System.CommandLine allows one
+    // option instance on multiple commands); GetConfigFileValue reads it to resolve the supplied value
+    // regardless of which command matched, falling back to the root's non-required copy.
+    private readonly Option<string> _requiredConfigFileOption = CreateConfigFileOption(true);
 
-    /// <summary>Creates a new, shared, <c>--configFile</c> / <c>--cf</c> option instance.</summary>
-    private static Option<string> CreateConfigFileOption() =>
+    /// <summary>Creates a new <c>--configFile</c> / <c>--cf</c> option instance.</summary>
+    /// <param name="required">Whether the option is required on the command it is registered on.</param>
+    private static Option<string> CreateConfigFileOption(bool required) =>
         new("--configFile", "--cf")
         {
             Description = "Path to the configuration JSON file",
-            Required = true
+            Required = required
         };
 
     /// <summary>Adds the <c>validate</c> subcommand wired to the provided handler.</summary>
@@ -30,16 +34,19 @@ internal sealed class CommandLineSetup
     /// <returns>This instance, for chaining.</returns>
     public CommandLineSetup AddValidate(ICommandLineValidateHandler handler, Action<int> setExitCode)
     {
+        // The subcommand requires --configFile (the shared _requiredConfigFileOption), while the root copy
+        // (_configFileOption) is not required so a bare invocation - or --cf without a subcommand - parses
+        // cleanly and reaches the friendly root fallback instead of a terse "option is required" error.
         var command = new Command("validate", "Validate a configuration file without running generation")
         {
-            _configFileOption
+            _requiredConfigFileOption
         };
 
         // Use the token-aware SetAction overload so the handler receives the invocation's cancellation token
         // - the token passed to InvokeAsync. This decouples the setup instance from the shutdown token.
         command.SetAction(async (parseResult, cancellationToken) =>
         {
-            var configFilename = parseResult.GetValue(_configFileOption)!;
+            var configFilename = parseResult.GetValue(_requiredConfigFileOption)!;
             var exitCode = await handler.HandleAsync(configFilename, cancellationToken);
             setExitCode(exitCode);
         });
@@ -57,12 +64,12 @@ internal sealed class CommandLineSetup
     {
         var command = new Command("run", "Generate dependency diagrams from a configuration file")
         {
-            _configFileOption
+            _requiredConfigFileOption
         };
 
         command.SetAction(async (parseResult, cancellationToken) =>
         {
-            var configFilename = parseResult.GetValue(_configFileOption)!;
+            var configFilename = parseResult.GetValue(_requiredConfigFileOption)!;
             var exitCode = await handler.HandleAsync(configFilename, cancellationToken);
 
             setExitCode(exitCode);
@@ -95,8 +102,9 @@ internal sealed class CommandLineSetup
             root.Add(command);
         }
 
-        // Fallback: fires when --cf is provided without a subcommand. The returned exit code is surfaced
-        // by App via InvokeAsync's return value when no handler set an exit code.
+        // Fallback: fires when no subcommand is matched (a bare invocation, or --cf without a subcommand).
+        // The returned exit code is surfaced by App via InvokeAsync's return value when no handler set an
+        // exit code.
         root.SetAction(parseResult =>
         {
             logger.LogError("A command must be specified. Use 'run' or 'validate'.");
@@ -106,4 +114,13 @@ internal sealed class CommandLineSetup
 
         return root;
     }
+
+    /// <summary>Resolves the <c>--configFile</c> value from a parse result, regardless of which command
+    /// matched. The subcommands share a single required instance while the root owns a non-required copy, so
+    /// the matched command's instance carries the supplied value. Resolving via the registered option
+    /// instances (rather than by name or alias) means the lookup cannot drift from the registered options.</summary>
+    /// <param name="parseResult">The parse result to read the option value from.</param>
+    /// <returns>The config file path, or <c>null</c> if none was supplied.</returns>
+    public string? GetConfigFileValue(ParseResult parseResult) =>
+        parseResult.GetValue(_requiredConfigFileOption) ?? parseResult.GetValue(_configFileOption);
 }
