@@ -82,23 +82,27 @@ internal sealed class CommandLineSetup
 
     /// <summary>Builds the root command with all registered subcommands and the shared config file option.</summary>
     /// <param name="logger">The logger used by the root fallback action when no subcommand is matched.</param>
-    /// <param name="verboseOption">The verbose option registered on all subcommands.</param>
+    /// <param name="verboseOption">The recursive verbose option registered on the root.</param>
     /// <returns>The configured <see cref="RootCommand"/>.</returns>
     public RootCommand Build(ILogger logger, out Option<bool> verboseOption)
     {
+        // --verbose is recursive and registered on the root only, so it is valid both before and after
+        // the subcommand (e.g. `studio --verbose run` and `studio run --verbose`) - the same way
+        // System.CommandLine treats --help/--version as global options.
         verboseOption = new Option<bool>("--verbose", "-v")
         {
-            Description = "Enable verbose logging"
+            Description = "Enable verbose logging",
+            Recursive = true
         };
 
         var root = new RootCommand("SlnDependencyStudio CLI — dependency diagram generation")
         {
-            _configFileOption
+            _configFileOption,
+            verboseOption
         };
 
         foreach (var command in _commands)
         {
-            command.Add(verboseOption);
             root.Add(command);
         }
 

@@ -201,6 +201,17 @@ public class CommandLineSetupFixture
     }
 
     [Fact]
+    public void Verbose_Flag_Should_Be_Accepted_Before_Subcommand()
+    {
+        var root = new CommandLineSetup()
+            .AddRun(Substitute.For<ICommandLineRunHandler>(), _ => { })
+            .Build(Substitute.For<ILogger>(), out _);
+
+        // --verbose is recursive on the root, so the global position (before the subcommand) parses too (CL-L2).
+        root.Parse("--verbose run --cf file.sds").Errors.ShouldBeEmpty();
+    }
+
+    [Fact]
     public async Task Bare_Invocation_Should_Fall_Through_To_Root_Action()
     {
         var logger = Substitute.For<ILogger>();

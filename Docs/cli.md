@@ -97,7 +97,7 @@ The CLI has two commands: `validate` and `run`. Both require the `--configFile` 
 | `--verbose`    | `-v`   | No       | Enable Debug-level logging on the console. Does not affect the rolling file log, which always captures Debug and above. |
 | `--help`       | `-h`   | No       | Show help and usage information.                                                                                        |
 
-> The `--verbose` flag is registered on the subcommands (`SlnDependencyStudio.Cli run --cf x.sds --verbose`).
+> The `--verbose` flag works before or after the subcommand (e.g. `SlnDependencyStudio.Cli --verbose run --cf x.sds` or `SlnDependencyStudio.Cli run --verbose --cf x.sds`).
 
 ### Validate Command
 
