@@ -39,7 +39,7 @@ internal static class CliTestHarness
         var loggerFactory = scope.ServiceProvider.GetRequiredService<ILoggerFactory>();
         var logger = loggerFactory.CreateLogger("CLIIntegrationTest");
 
-        var root = new CommandLineSetup(CancellationToken.None)
+        var root = new CommandLineSetup()
             .AddValidate(validateHandler, code => exitCode = code)
             .AddRun(runHandler, code => exitCode = code)
             .Build(logger, out _);

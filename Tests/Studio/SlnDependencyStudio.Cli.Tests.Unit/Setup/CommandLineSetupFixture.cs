@@ -13,7 +13,7 @@ public class CommandLineSetupFixture
     [Fact]
     public void Build_Should_Include_Validate_Command()
     {
-        var setup = new CommandLineSetup(CancellationToken.None);
+        var setup = new CommandLineSetup();
 
         var root = setup
             .AddRun(Substitute.For<ICommandLineRunHandler>(), _ => { })
@@ -26,7 +26,7 @@ public class CommandLineSetupFixture
     [Fact]
     public void Build_Should_Include_Run_Command()
     {
-        var setup = new CommandLineSetup(CancellationToken.None);
+        var setup = new CommandLineSetup();
 
         var root = setup
             .AddRun(Substitute.For<ICommandLineRunHandler>(), _ => { })
@@ -39,7 +39,7 @@ public class CommandLineSetupFixture
     [Fact]
     public void Build_Should_Include_ConfigFile_Option_On_Root()
     {
-        var root = new CommandLineSetup(CancellationToken.None)
+        var root = new CommandLineSetup()
             .AddRun(Substitute.For<ICommandLineRunHandler>(), _ => { })
             .AddValidate(Substitute.For<ICommandLineValidateHandler>(), _ => { })
             .Build(Substitute.For<ILogger>(), out _);
@@ -58,7 +58,7 @@ public class CommandLineSetupFixture
             .HandleAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(0));
 
-        var root = new CommandLineSetup(CancellationToken.None)
+        var root = new CommandLineSetup()
             .AddRun(handler, _ => { })
             .Build(Substitute.For<ILogger>(), out _);
 
@@ -80,7 +80,7 @@ public class CommandLineSetupFixture
             .HandleAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(99));
 
-        var root = new CommandLineSetup(CancellationToken.None)
+        var root = new CommandLineSetup()
             .AddValidate(handler, code => exitCode = code)
             .Build(Substitute.For<ILogger>(), out _);
 
@@ -101,7 +101,7 @@ public class CommandLineSetupFixture
             .HandleAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(42));
 
-        var root = new CommandLineSetup(CancellationToken.None)
+        var root = new CommandLineSetup()
             .AddRun(handler, code => exitCode = code)
             .Build(Substitute.For<ILogger>(), out _);
 
@@ -113,11 +113,44 @@ public class CommandLineSetupFixture
     }
 
     [Fact]
+    public async Task Handler_Should_Receive_The_Invocation_CancellationToken()
+    {
+        var handler = Substitute.For<ICommandLineRunHandler>();
+        using var cts = new CancellationTokenSource();
+
+        CancellationToken receivedToken = default;
+
+        handler
+            .HandleAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo =>
+            {
+                receivedToken = callInfo.Arg<CancellationToken>();
+                return Task.FromResult(0);
+            });
+
+        var root = new CommandLineSetup()
+            .AddRun(handler, _ => { })
+            .Build(Substitute.For<ILogger>(), out _);
+
+        var parseResult = root.Parse("run --cf file.sds");
+
+        // Cancel before invoking: the token-aware SetAction forwards the invocation's cancellation token
+        // (System.CommandLine links it to the token passed to InvokeAsync), so the handler observes the
+        // cancellation rather than a fresh token captured via a closure field.
+        cts.Cancel();
+
+        await parseResult.InvokeAsync(cancellationToken: cts.Token);
+
+        await handler.Received(1).HandleAsync("file.sds", Arg.Any<CancellationToken>());
+        receivedToken.IsCancellationRequested.ShouldBeTrue();
+    }
+
+    [Fact]
     public async Task Unknown_Command_Should_Fall_Through_To_Root_Action()
     {
         var logger = Substitute.For<ILogger>();
 
-        var root = new CommandLineSetup(CancellationToken.None)
+        var root = new CommandLineSetup()
             .AddRun(Substitute.For<ICommandLineRunHandler>(), _ => { })
             .AddValidate(Substitute.For<ICommandLineValidateHandler>(), _ => { })
             .Build(logger, out _);
@@ -136,7 +169,7 @@ public class CommandLineSetupFixture
     [Fact]
     public void Build_Should_Return_VerboseOption()
     {
-        var root = new CommandLineSetup(CancellationToken.None)
+        var root = new CommandLineSetup()
             .AddRun(Substitute.For<ICommandLineRunHandler>(), _ => { })
             .Build(Substitute.For<ILogger>(), out var verboseOption);
 
@@ -147,7 +180,7 @@ public class CommandLineSetupFixture
     [Fact]
     public void Validate_Command_Should_Accept_Verbose_Flag()
     {
-        var root = new CommandLineSetup(CancellationToken.None)
+        var root = new CommandLineSetup()
             .AddValidate(Substitute.For<ICommandLineValidateHandler>(), _ => { })
             .Build(Substitute.For<ILogger>(), out _);
 
@@ -158,7 +191,7 @@ public class CommandLineSetupFixture
     [Fact]
     public void Run_Command_Should_Accept_Verbose_Flag()
     {
-        var root = new CommandLineSetup(CancellationToken.None)
+        var root = new CommandLineSetup()
             .AddRun(Substitute.For<ICommandLineRunHandler>(), _ => { })
             .Build(Substitute.For<ILogger>(), out _);
 

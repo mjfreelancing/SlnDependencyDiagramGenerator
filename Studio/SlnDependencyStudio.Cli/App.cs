@@ -54,11 +54,13 @@ internal sealed class App : ConsoleAppBase
         var runCommandHandler = scope.ServiceProvider.GetRequiredService<ICommandLineRunHandler>();
 
         // AllOverIt.GenericHost hands StartAsync a token linked against ApplicationStopping (held for the whole
-        // command), so it cancels on Ctrl+C/SIGTERM. Threading it through CommandLineSetup means the in-flight
-        // command and its subprocesses are cancelled on shutdown.
+        // command), so it cancels on Ctrl+C/SIGTERM. The token is passed to InvokeAsync below; System.CommandLine
+        // forwards it to the command action via the token-aware SetAction overload (as a token linked to the one
+        // given here), so the in-flight command and its subprocesses are cancelled on shutdown without
+        // CommandLineSetup needing to hold the token itself.
         // The setup instance builds the command tree and owns the shared options, so it is kept
         // around to query parsed values (such as ConfigFileOption) once parsing has completed.
-        var setup = new CommandLineSetup(cancellationToken);
+        var setup = new CommandLineSetup();
 
         var root = setup
             .AddValidate(validateCommandHandler, exitCode => ExitCode = exitCode)

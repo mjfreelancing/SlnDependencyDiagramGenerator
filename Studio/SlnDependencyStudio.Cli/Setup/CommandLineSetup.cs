@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using SlnDependencyStudio.Cli.Enumerations;
 using SlnDependencyStudio.Cli.Handlers.Run;
 using SlnDependencyStudio.Cli.Handlers.Validate;
@@ -10,19 +10,11 @@ namespace SlnDependencyStudio.Cli.Setup;
 /// Each <c>AddXxx</c> method registers a subcommand and wires it to its handler.</summary>
 internal sealed class CommandLineSetup
 {
-    private readonly CancellationToken _cancellationToken;
     private readonly List<Command> _commands = [];
     private readonly Option<string> _configFileOption = CreateConfigFileOption();
 
     /// <summary>The shared <c>--configFile</c>/<c>--cf</c> option used by all subcommands.</summary>
     public Option<string> ConfigFileOption => _configFileOption;
-
-    /// <summary>Initializes a new instance of <see cref="CommandLineSetup"/>.</summary>
-    /// <param name="cancellationToken">The cancellation token passed to all handlers.</param>
-    public CommandLineSetup(CancellationToken cancellationToken)
-    {
-        _cancellationToken = cancellationToken;
-    }
 
     /// <summary>Creates a new, shared, <c>--configFile</c> / <c>--cf</c> option instance.</summary>
     private static Option<string> CreateConfigFileOption() =>
@@ -43,10 +35,12 @@ internal sealed class CommandLineSetup
             _configFileOption
         };
 
-        command.SetAction(async parseResult =>
+        // Use the token-aware SetAction overload so the handler receives the invocation's cancellation token
+        // - the token passed to InvokeAsync. This decouples the setup instance from the shutdown token.
+        command.SetAction(async (parseResult, cancellationToken) =>
         {
             var configFilename = parseResult.GetValue(_configFileOption)!;
-            var exitCode = await handler.HandleAsync(configFilename, _cancellationToken);
+            var exitCode = await handler.HandleAsync(configFilename, cancellationToken);
             setExitCode(exitCode);
         });
 
@@ -66,10 +60,10 @@ internal sealed class CommandLineSetup
             _configFileOption
         };
 
-        command.SetAction(async parseResult =>
+        command.SetAction(async (parseResult, cancellationToken) =>
         {
             var configFilename = parseResult.GetValue(_configFileOption)!;
-            var exitCode = await handler.HandleAsync(configFilename, _cancellationToken);
+            var exitCode = await handler.HandleAsync(configFilename, cancellationToken);
 
             setExitCode(exitCode);
         });
