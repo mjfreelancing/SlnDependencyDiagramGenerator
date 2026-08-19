@@ -14,6 +14,9 @@ using SlnDependencyStudio.Wpf.Features.EmptyState;
 using SlnDependencyStudio.Wpf.Features.Export;
 using SlnDependencyStudio.Wpf.Features.Output;
 using SlnDependencyStudio.Wpf.Features.Pipeline;
+using SlnDependencyStudio.Wpf.Features.Pipeline.PostGeneration;
+using SlnDependencyStudio.Wpf.Features.Pipeline.PreGeneration;
+using SlnDependencyStudio.Wpf.Features.Pipeline.RestoreSolution;
 using SlnDependencyStudio.Wpf.Features.Project;
 using SlnDependencyStudio.Wpf.Features.Settings;
 using SlnDependencyStudio.Wpf.Features.Solution;
@@ -122,6 +125,20 @@ public static class ServiceCollectionExtensions
 
             services.AddSingleton<IFileSystem, SystemFileSystem>();
             services.AddSingleton(typeof(IScopedOperationFactory<>), typeof(ScopedOperationFactory<>));
+
+            // Editors are auto-registered against their specific interfaces only (IStudioEditor is a pure
+            // constraint marker, deliberately not auto-registered). These explicit aliases expose each
+            // editor through the shared IStudioEditor marker - resolving the SAME singleton instance via
+            // the provider, since AllOverIt registers a separate instance per interface - which lets
+            // StudioEditorFactory receive the whole set as an injected collection.
+            services.AddSingleton<IStudioEditor>(provider => provider.GetRequiredService<IProjectMetadataEditor>());
+            services.AddSingleton<IStudioEditor>(provider => provider.GetRequiredService<ISolutionOptionsEditor>());
+            services.AddSingleton<IStudioEditor>(provider => provider.GetRequiredService<IExportOptionsEditor>());
+            services.AddSingleton<IStudioEditor>(provider => provider.GetRequiredService<IDiagramOptionsEditor>());
+            services.AddSingleton<IStudioEditor>(provider => provider.GetRequiredService<IPreGenerationConfigEditor>());
+            services.AddSingleton<IStudioEditor>(provider => provider.GetRequiredService<IRestoreSolutionEditor>());
+            services.AddSingleton<IStudioEditor>(provider => provider.GetRequiredService<IPostGenerationConfigEditor>());
+
             services.AddSingleton<IStudioEditorFactory, StudioEditorFactory>();
 
             services.AddSingleton<WpfAppBootstrapper>();

@@ -1,4 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
 using SlnDependencyStudio.Wpf.Editors;
 
@@ -17,26 +16,19 @@ public class StudioEditorFactoryFixture
     public class CreateEditor : StudioEditorFactoryFixture
     {
         [Fact]
-        public void Should_Resolve_Registered_Editor()
+        public void Should_Resolve_Injected_Editor()
         {
-            var services = new ServiceCollection();
-            services.AddSingleton<ITestEditor, TestEditor>();
-            using var provider = services.BuildServiceProvider();
+            var factory = new StudioEditorFactory([new TestEditor()]);
 
-            var factory = new StudioEditorFactory(provider);
             var editor = factory.CreateEditor<ITestEditor>();
 
             editor.ShouldBeOfType<TestEditor>();
         }
 
         [Fact]
-        public void Should_Return_Same_Instance_For_Singleton_Registration()
+        public void Should_Return_Same_Injected_Instance_On_Repeated_Calls()
         {
-            var services = new ServiceCollection();
-            services.AddSingleton<ITestEditor, TestEditor>();
-            using var provider = services.BuildServiceProvider();
-
-            var factory = new StudioEditorFactory(provider);
+            var factory = new StudioEditorFactory([new TestEditor()]);
 
             var first = factory.CreateEditor<ITestEditor>();
             var second = factory.CreateEditor<ITestEditor>();
