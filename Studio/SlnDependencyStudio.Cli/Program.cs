@@ -20,6 +20,8 @@ await GenericHost
         // Shared Studio services
         services.AddSlnDependencyStudio(validationRegistry);
 
+        services.AddSingleton(new CommandLineArguments(args));
+
         // CLI-specific services
         // Auto-register all classes implementing marker interfaces found in this assembly.
         services.AutoRegisterScoped<DependencyRegistrar, IStudioScopedDependency>(config =>

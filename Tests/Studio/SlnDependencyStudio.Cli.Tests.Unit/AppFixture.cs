@@ -37,6 +37,7 @@ public class AppFixture
             });
 
         var app = new App(
+            new CommandLineArguments([]),
             CreateScopeFactory(Substitute.For<ICommandLineValidateHandler>(), runHandler),
             new LoggingLevelSwitch(),
             Substitute.For<ILogger<App>>());
@@ -57,6 +58,7 @@ public class AppFixture
             .ThrowsAsync(new OperationCanceledException());
 
         var app = new App(
+            new CommandLineArguments([]),
             CreateScopeFactory(Substitute.For<ICommandLineValidateHandler>(), runHandler),
             new LoggingLevelSwitch(),
             Substitute.For<ILogger<App>>());
@@ -72,6 +74,7 @@ public class AppFixture
     public async Task Should_Not_Throw_And_Return_ParseFailed_When_Invoked_With_No_Arguments()
     {
         var app = new App(
+            new CommandLineArguments([]),
             CreateScopeFactory(Substitute.For<ICommandLineValidateHandler>(), Substitute.For<ICommandLineRunHandler>()),
             new LoggingLevelSwitch(),
             Substitute.For<ILogger<App>>());
@@ -82,6 +85,35 @@ public class AppFixture
         await app.StartAsync([], CancellationToken.None);
 
         app.ExitCode.ShouldBe((int)StudioCliExitCode.CommandLineParseFailed);
+    }
+
+    [Fact]
+    public async Task Should_Use_Injected_Args_When_Started_Via_Public_Override()
+    {
+        var runHandler = Substitute.For<ICommandLineRunHandler>();
+
+        runHandler
+            .HandleAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(0);
+
+        var configPath = @"C:\tmp\config.sds";
+
+        // The public override must consume the args injected via DI (the array the host builder was
+        // given), not re-read Environment.GetCommandLineArgs() - the latter would parse this test
+        // runner's argv instead of the configured command line.
+        var app = new App(
+            new CommandLineArguments(["run", "--cf", configPath]),
+            CreateScopeFactory(Substitute.For<ICommandLineValidateHandler>(), runHandler),
+            new LoggingLevelSwitch(),
+            Substitute.For<ILogger<App>>());
+
+        await app.StartAsync(CancellationToken.None);
+
+        // The handler receives the injected config path, proving the production args path is threaded
+        // through DI rather than read from the environment.
+        await runHandler.Received(1).HandleAsync(configPath, Arg.Any<CancellationToken>());
+
+        app.ExitCode.ShouldBe(0);
     }
 
     private static IServiceScopeFactory CreateScopeFactory(

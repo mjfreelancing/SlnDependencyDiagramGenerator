@@ -14,16 +14,19 @@ namespace SlnDependencyStudio.Cli;
 /// <summary>CLI entry point that parses commands and delegates to registered handlers.</summary>
 internal sealed class App : ConsoleAppBase
 {
+    private readonly CommandLineArguments _arguments;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly LoggingLevelSwitch _levelSwitch;
     private readonly ILogger<App> _logger;
 
     /// <summary>Initializes a new instance of <see cref="App"/>.</summary>
+    /// <param name="arguments">The command-line arguments (excluding the executable name).</param>
     /// <param name="scopeFactory">The service scope factory, used to resolve the scoped command handlers for each run.</param>
     /// <param name="levelSwitch">The logging level switch (registered by <c>UseStudioSerilog</c>).</param>
     /// <param name="logger">The logger instance.</param>
-    public App(IServiceScopeFactory scopeFactory, LoggingLevelSwitch levelSwitch, ILogger<App> logger)
+    public App(CommandLineArguments arguments, IServiceScopeFactory scopeFactory, LoggingLevelSwitch levelSwitch, ILogger<App> logger)
     {
+        _arguments = arguments;
         _scopeFactory = scopeFactory;
         _levelSwitch = levelSwitch;
         _logger = logger;
@@ -32,9 +35,7 @@ internal sealed class App : ConsoleAppBase
     /// <inheritdoc />
     public override Task StartAsync(CancellationToken cancellationToken)
     {
-        // The public override reads the process command line; the args are threaded through the
-        // internal overload (below) so tests can inject their own argv instead of the runner's.
-        return StartAsync(Environment.GetCommandLineArgs()[1..], cancellationToken);
+        return StartAsync(_arguments.Args, cancellationToken);
     }
 
     /// <summary>Runs the CLI with the given command-line arguments and shutdown token.</summary>
