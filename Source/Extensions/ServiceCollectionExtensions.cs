@@ -32,15 +32,18 @@ public static class ServiceCollectionExtensions
         /// <returns>The registration containing the service collection and validation registry, for chaining.</returns>
         public SlnDependencyDiagramGeneratorRegistration AddSlnDependencyDiagramGenerator()
         {
-            services.AddSingleton<ToolPathOverridesProvider>(() => []);
             services.AddScoped<IProjectAssetReader, ProjectAssetReader>();
             services.AddScoped<ISolutionProjectResolver, SlnSolutionProjectResolver>();
             services.AddScoped<ISolutionProjectResolver, SlnxSolutionProjectResolver>();
             services.AddScoped<ISolutionParser, SolutionParser>();
             services.AddScoped<IProjectDiscoveryService, ProjectDiscoveryService>();
-            services.AddScoped<IToolDetectionService, ToolDetectionService>();
-            services.AddScoped<IToolPathResolver, ToolPathResolver>();
             services.AddScoped<IDependencyGenerator, DependencyGenerator>();
+
+            // Tool detection and path resolution are stateless (path overrides are read from the singleton
+            // ToolPathOverridesProvider on every lookup), so they are singletons.
+            services.AddSingleton<ToolPathOverridesProvider>(() => []);
+            services.AddSingleton<IToolDetectionService, ToolDetectionService>();
+            services.AddSingleton<IToolPathResolver, ToolPathResolver>();
 
             var validationRegistry = services.AddValidationInvoker(validationRegistry =>
             {

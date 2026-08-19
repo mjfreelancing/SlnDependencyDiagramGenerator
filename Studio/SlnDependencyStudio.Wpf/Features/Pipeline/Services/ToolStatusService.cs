@@ -23,7 +23,6 @@ internal sealed class ToolStatusService : IToolStatusService, IDisposable
     public IObservable<IReadOnlyList<ToolStatusEntry>> ToolStatuses { get; }
 
     /// <summary>Initializes a new instance of <see cref="ToolStatusService"/>.</summary>
-    /// <param name="toolPathResolver">Resolves effective tool paths for external CLI tools.</param>
     /// <param name="toolDetection">The tool detection service.</param>
     /// <param name="logger">The logger instance.</param>
     public ToolStatusService(IToolDetectionService toolDetection, ILogger<ToolStatusService> logger)

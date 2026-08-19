@@ -7,7 +7,9 @@ namespace SlnDependencyStudio.Wpf.Features.Pipeline.Services;
 /// Detects and reports the availability of external CLI tools (d2, mmdc)
 /// required by diagram renderers.
 /// </summary>
-public interface IToolStatusService : IStudioScopedDependency
+/// <remarks>Singleton: the tool scan on the Pipeline page and the dry-run analysis must observe the same
+/// state, so the instance is app-wide shared rather than per-scope.</remarks>
+public interface IToolStatusService : IStudioSingletonDependency
 {
     // The observable replays the latest snapshot to late subscribers, so the Pipeline page
     // always receives the current state when it binds — no need to diff individual collection

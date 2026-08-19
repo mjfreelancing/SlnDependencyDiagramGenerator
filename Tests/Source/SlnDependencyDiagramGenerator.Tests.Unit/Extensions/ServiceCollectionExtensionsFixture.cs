@@ -44,13 +44,15 @@ public class ServiceCollectionExtensionsFixture
     }
 
     [Fact]
-    public void Should_Register_ToolDetectionService_As_Scoped()
+    public void Should_Register_ToolDetectionService_As_Singleton()
     {
-        var provider = CreateServiceProvider();
+        var services = new ServiceCollection();
+        services.AddSlnDependencyDiagramGenerator();
 
-        var instance = provider.GetService<IToolDetectionService>();
-        instance.ShouldNotBeNull();
-        instance.ShouldBeOfType<ToolDetectionService>();
+        var descriptor = services.Single(service => service.ServiceType == typeof(IToolDetectionService));
+
+        descriptor.Lifetime.ShouldBe(ServiceLifetime.Singleton);
+        descriptor.ImplementationType.ShouldBe(typeof(ToolDetectionService));
     }
 
     [Fact]
@@ -66,13 +68,15 @@ public class ServiceCollectionExtensionsFixture
     }
 
     [Fact]
-    public void Should_Register_ToolPathResolver_As_Scoped()
+    public void Should_Register_ToolPathResolver_As_Singleton()
     {
-        var provider = CreateServiceProvider();
+        var services = new ServiceCollection();
+        services.AddSlnDependencyDiagramGenerator();
 
-        var instance = provider.GetService<IToolPathResolver>();
-        instance.ShouldNotBeNull();
-        instance.ShouldBeOfType<ToolPathResolver>();
+        var descriptor = services.Single(service => service.ServiceType == typeof(IToolPathResolver));
+
+        descriptor.Lifetime.ShouldBe(ServiceLifetime.Singleton);
+        descriptor.ImplementationType.ShouldBe(typeof(ToolPathResolver));
     }
 
     [Fact]
