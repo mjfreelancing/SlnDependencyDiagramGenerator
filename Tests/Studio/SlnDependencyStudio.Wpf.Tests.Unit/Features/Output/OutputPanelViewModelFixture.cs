@@ -299,4 +299,35 @@ public class OutputPanelViewModelFixture
             capturedError.Message.ShouldContain("Write failed");
         }
     }
+
+    public class PersistSettingsError : OutputPanelViewModelFixture
+    {
+        [Fact]
+        public async Task Should_Show_Error_When_Save_Fails()
+        {
+            var errorDialog = ErrorDialogTestHelpers.CreateErrorDialogSubstitute(out var interaction);
+
+            var viewModel = new OutputPanelViewModel(_logBuffer, _appSettings, _fileSystem, errorDialog, _logger);
+
+            _appSettings
+                .SaveSettingsAsync(Arg.Any<CancellationToken>())
+                .ThrowsAsync(new InvalidOperationException("Access denied"));
+
+            var errorReceived = new TaskCompletionSource<ErrorInfo>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            interaction.RegisterHandler(context =>
+            {
+                errorReceived.TrySetResult(context.Input);
+                context.SetOutput(System.Reactive.Unit.Default);
+            });
+
+            // Toggling a preference triggers the background persist, which fails and surfaces the error.
+            viewModel.IsVerbose = true;
+
+            var capturedError = await ErrorDialogTestHelpers.WaitForCapturedErrorAsync(errorReceived.Task);
+
+            capturedError.Title.ShouldBe("Save Settings failed");
+            capturedError.Message.ShouldContain("Access denied");
+        }
+    }
 }

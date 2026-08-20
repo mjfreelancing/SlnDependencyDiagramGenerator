@@ -252,7 +252,35 @@ public sealed class OutputPanelViewModel : ReactiveObject, IStudioScopedDependen
         output.IsVerboseLogging = _isVerbose;
         output.AutoScroll = _autoScroll;
 
-        _ = _applicationSettings.SaveSettingsAsync();
+        _ = PersistSettingsAsync();
+    }
+
+    /// <summary>Persists the output panel preferences, surfacing a save failure to the user via the error
+    /// dialog. Each failed toggle is a distinct user action, so each gets feedback.</summary>
+    private async Task PersistSettingsAsync()
+    {
+        try
+        {
+            await _applicationSettings.SaveSettingsAsync();
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError("Failed to persist output panel settings: {ErrorMessage}", exception.Message);
+
+            try
+            {
+                await _errorDialog.ShowError.Handle(new ErrorInfo(
+                    "Save Settings failed",
+                    $"The output panel settings could not be saved.\n\n{exception.Message}"));
+            }
+            catch (Exception dialogException)
+            {
+                // PersistSettingsAsync is fire-and-forget, so this guard exists to ensure a failure in the
+                // dialog path (e.g. the registered handler or DialogHost itself throwing) is logged rather
+                // than escaping the discarded task as an unobserved exception.
+                _logger.LogError("Failed to show the error dialog for {Title}: {ErrorMessage}", "Save Settings failed", dialogException.Message);
+            }
+        }
     }
 
     /// <inheritdoc />
