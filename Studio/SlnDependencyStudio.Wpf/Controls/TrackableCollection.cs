@@ -1,4 +1,4 @@
-using DynamicData.Binding;
+﻿using DynamicData.Binding;
 using ReactiveUI;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
@@ -15,6 +15,7 @@ namespace SlnDependencyStudio.Wpf.Controls;
 public sealed class TrackableCollection<TValue> : ReactiveObject, IDisposable
 {
     private readonly ObservableCollectionExtended<TValue> _items;
+    private readonly IComparer<TValue> _comparer;
     private TValue[] _originalItems = [];
     private bool _isDirty;
 
@@ -34,8 +35,12 @@ public sealed class TrackableCollection<TValue> : ReactiveObject, IDisposable
     public bool IsDirty => _isDirty;
 
     /// <summary>Initializes a new instance with an empty collection.</summary>
-    public TrackableCollection()
+    /// <param name="comparer">An optional comparer used for the order-independent dirty comparison. When
+    /// omitted, <see cref="Comparer{T}.Default"/> is used, which requires <typeparamref name="TValue"/> to be
+    /// naturally comparable. Pass a comparer to support types that are not.</param>
+    public TrackableCollection(IComparer<TValue>? comparer = null)
     {
+        _comparer = comparer ?? Comparer<TValue>.Default;
         _items = [];
         _items.CollectionChanged += OnCollectionChanged;
     }
@@ -72,8 +77,11 @@ public sealed class TrackableCollection<TValue> : ReactiveObject, IDisposable
     private void OnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         _isDirty = _items.Count != _originalItems.Length ||
-                   !_items.OrderBy(item => item).SequenceEqual(_originalItems.OrderBy(item => item));
+                   !OrderedItems(_items).SequenceEqual(OrderedItems(_originalItems));
 
         this.RaisePropertyChanged(nameof(IsDirty));
     }
+
+    /// <summary>Sorts the given items by <see cref="_comparer"/> so the dirty comparison is order-independent.</summary>
+    private IEnumerable<TValue> OrderedItems(IEnumerable<TValue> items) => items.OrderBy(item => item, _comparer);
 }

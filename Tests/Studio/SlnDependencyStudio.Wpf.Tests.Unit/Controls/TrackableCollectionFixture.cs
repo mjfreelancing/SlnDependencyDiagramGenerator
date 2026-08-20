@@ -185,6 +185,40 @@ public class TrackableCollectionFixture : IDisposable
         }
     }
 
+    public class CustomComparer : TrackableCollectionFixture
+    {
+        private static IComparer<SampleValue> CreateComparer() =>
+            Comparer<SampleValue>.Create((first, second) => StringComparer.Ordinal.Compare(first.Name, second.Name));
+
+        [Fact]
+        public void Should_Ignore_Order_For_Non_Comparable_Values()
+        {
+            using var collection = new TrackableCollection<SampleValue>(CreateComparer());
+
+            collection.SetOriginalItems([new SampleValue("b"), new SampleValue("a")]);
+            collection.Items.Clear();
+            collection.Items.Add(new SampleValue("a"));
+            collection.Items.Add(new SampleValue("b"));
+
+            collection.IsDirty.ShouldBeFalse();
+        }
+
+        [Fact]
+        public void Should_Detect_Dirty_For_Non_Comparable_Values()
+        {
+            using var collection = new TrackableCollection<SampleValue>(CreateComparer());
+
+            collection.SetOriginalItems([new SampleValue("a")]);
+            collection.Items.Add(new SampleValue("b"));
+
+            collection.IsDirty.ShouldBeTrue();
+        }
+    }
+
+    /// <summary>A value type that is equatable (via record value equality) but not <see cref="IComparable{T}"/>,
+    /// used to verify the collection's optional custom comparer supports non-comparable types.</summary>
+    private sealed record SampleValue(string Name);
+
     public void Dispose()
     {
         _collection.Dispose();
