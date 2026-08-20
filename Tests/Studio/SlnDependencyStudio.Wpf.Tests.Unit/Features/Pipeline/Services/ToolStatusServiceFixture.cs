@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 using Shouldly;
 using SlnDependencyDiagramGenerator.Generator.ToolDetection;
 using SlnDependencyStudio.Wpf.Features.Pipeline.Services;
@@ -158,6 +159,28 @@ public class ToolStatusServiceFixture
             await _detectionService
                 .DidNotReceive()
                 .CheckToolAvailabilityAsync("mmdc", Arg.Any<CancellationToken>());
+        }
+
+        [Fact]
+        public async Task Should_Isolate_Tool_Check_Failure_And_Still_Publish()
+        {
+            _detectionService
+                .CheckToolAvailabilityAsync("d2", Arg.Any<CancellationToken>())
+                .ThrowsAsync(new InvalidOperationException("Detection failed"));
+
+            using var sut = CreateSut();
+
+            await sut.RescanAsync(CancellationToken.None);
+
+            var entries = await sut.ToolStatuses.FirstAsync();
+
+            // The failing tool is recorded as unavailable with the error, not skipped.
+            var d2 = entries.Single(entry => entry.ToolName == "d2");
+            d2.IsAvailable.ShouldBeFalse();
+            d2.ErrorMessage.ShouldBe("Detection failed");
+
+            // The remaining tool is still checked so the status list reflects the full rescan.
+            await _detectionService.Received(1).CheckToolAvailabilityAsync("mmdc", Arg.Any<CancellationToken>());
         }
     }
 

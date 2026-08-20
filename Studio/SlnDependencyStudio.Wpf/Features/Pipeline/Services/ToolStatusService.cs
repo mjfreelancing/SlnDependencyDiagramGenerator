@@ -62,17 +62,33 @@ internal sealed class ToolStatusService : IToolStatusService, IDisposable
 
         foreach (var entry in _entries)
         {
-            var status = await _toolDetection
-                .CheckToolAvailabilityAsync(entry.ToolName, cancellationToken)
-                .ConfigureAwait(true);
+            try
+            {
+                var status = await _toolDetection
+                    .CheckToolAvailabilityAsync(entry.ToolName, cancellationToken)
+                    .ConfigureAwait(true);
 
-            entry.IsAvailable = status.IsAvailable;
-            entry.ResolvedPath = status.ResolvedPath;
-            entry.ErrorMessage = status.ErrorMessage;
-            entry.LastChecked = now;
+                entry.IsAvailable = status.IsAvailable;
+                entry.ResolvedPath = status.ResolvedPath;
+                entry.ErrorMessage = status.ErrorMessage;
+                entry.LastChecked = now;
 
-            _logger.LogDebug("Tool {ToolName} available: {IsAvailable} (path: {ResolvedPath})",
-                entry.ToolName, entry.IsAvailable, entry.ResolvedPath ?? "<not found>");
+                _logger.LogDebug("Tool {ToolName} available: {IsAvailable} (path: {ResolvedPath})",
+                    entry.ToolName, entry.IsAvailable, entry.ResolvedPath ?? "<not found>");
+            }
+            catch (Exception exception) when (exception is not OperationCanceledException)
+            {
+                // A single tool failing to respond must not abort the whole rescan or leave the status
+                // list unpublished (subscribers wait on the OnNext below). Record the failure on the
+                // entry so the UI reflects it, then continue with the remaining tools. Cancellation is
+                // rethrown so a cancelled rescan aborts normally without showing an error.
+                _logger.LogError("Tool {ToolName} could not be checked: {ErrorMessage}", entry.ToolName, exception.Message);
+
+                entry.IsAvailable = false;
+                entry.ResolvedPath = null;
+                entry.ErrorMessage = exception.Message;
+                entry.LastChecked = now;
+            }
         }
 
         _logger.LogInformation("Tool rescan complete ({ToolCount} tools)", _entries.Count);
