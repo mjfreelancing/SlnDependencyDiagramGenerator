@@ -4,7 +4,7 @@ using SlnDependencyStudio.Shared.DependencyInjection;
 namespace SlnDependencyStudio.Wpf.Features.Project;
 
 /// <summary>Service for managing the lifecycle of a dependency project document.</summary>
-public interface IDependencyProjectService : IStudioScopedDependency
+public interface IDependencyProjectService : IStudioSingletonDependency
 {
     /// <summary>Creates a new dependency project document populated with application defaults.</summary>
     /// <returns>A <see cref="DependencyProjectDocument"/> with default values.</returns>
