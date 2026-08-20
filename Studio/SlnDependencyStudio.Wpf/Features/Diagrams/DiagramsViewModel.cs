@@ -1,3 +1,4 @@
+using AllOverIt.Extensions;
 using ReactiveUI;
 using ReactiveUI.Validation.Abstractions;
 using ReactiveUI.Validation.Contexts;
@@ -258,12 +259,12 @@ public sealed partial class DiagramsViewModel : ReactiveObject, IValidatableView
 
     private static bool IsValidHex(string? fill, Regex hexPattern)
     {
-        return string.IsNullOrEmpty(fill) || hexPattern.IsMatch(fill);
+        return fill.IsNullOrEmpty() || hexPattern.IsMatch(fill);
     }
 
     private static string? GetHexError(string? fill, string label, Regex hexPattern)
     {
-        return !string.IsNullOrEmpty(fill) && !hexPattern.IsMatch(fill)
+        return fill.IsNotNullOrEmpty() && !hexPattern.IsMatch(fill)
             ? $"{label} fill must be a valid hex color (e.g. #FF0000)."
             : null;
     }

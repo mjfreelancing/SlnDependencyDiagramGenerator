@@ -1,4 +1,5 @@
 ﻿using AllOverIt.Assertion;
+using AllOverIt.Extensions;
 using Microsoft.Extensions.Logging;
 using ReactiveUI;
 using SlnDependencyDiagramGenerator.Config;
@@ -229,7 +230,7 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
     {
         var oldDirectory = DocumentDirectory;
 
-        if (string.IsNullOrEmpty(oldDirectory))
+        if (oldDirectory.IsNullOrEmpty())
         {
             return;
         }

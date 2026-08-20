@@ -1,3 +1,4 @@
+using AllOverIt.Extensions;
 using System.Globalization;
 using System.Windows.Data;
 using System.Windows.Media;
@@ -15,7 +16,7 @@ public sealed class HexToColorConverter : IValueConverter
     {
         var hex = value as string;
 
-        if (string.IsNullOrWhiteSpace(hex))
+        if (hex.IsNullOrEmpty())
         {
             return Colors.Transparent;
         }

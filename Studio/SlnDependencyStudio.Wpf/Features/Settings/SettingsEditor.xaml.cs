@@ -1,3 +1,4 @@
+using AllOverIt.Extensions;
 using Microsoft.Win32;
 using ReactiveUI;
 using System.IO;
@@ -71,7 +72,7 @@ public partial class SettingsEditor : ReactiveUserControl<SettingsEditorViewMode
             CheckFileExists = true
         };
 
-        if (!string.IsNullOrWhiteSpace(initialPath))
+        if (initialPath.IsNotNullOrEmpty())
         {
             dialog.InitialDirectory = Path.GetDirectoryName(initialPath);
             dialog.FileName = Path.GetFileName(initialPath);

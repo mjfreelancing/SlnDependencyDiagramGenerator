@@ -1,3 +1,4 @@
+using AllOverIt.Extensions;
 using ReactiveUI;
 using ReactiveUI.Validation.Abstractions;
 using ReactiveUI.Validation.Contexts;
@@ -48,7 +49,7 @@ public sealed class ProjectViewModel : ReactiveObject, IValidatableViewModel, ID
 
         this.ValidationRule(
             viewModel => viewModel.ProjectName.Value,
-            name => !string.IsNullOrWhiteSpace(name),
+            name => name.IsNotNullOrEmpty(),
             "Project name must not be empty");
     }
 

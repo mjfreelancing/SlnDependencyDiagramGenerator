@@ -323,7 +323,7 @@ public sealed class PipelineViewModel : ReactiveObject, IValidatableViewModel, I
     {
         var path = workingDirectory.Value;
 
-        if (string.IsNullOrEmpty(path))
+        if (path.IsNullOrEmpty())
         {
             return;
         }
