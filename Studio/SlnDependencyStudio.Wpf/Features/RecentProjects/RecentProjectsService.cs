@@ -16,6 +16,10 @@ internal sealed class RecentProjectsService : IRecentProjectsService
     private readonly IApplicationSettingsService _settingsService;
     private readonly ILogger<RecentProjectsService> _logger;
 
+    /// <summary>Initializes a new instance of <see cref="RecentProjectsService"/>.</summary>
+    /// <param name="fileSystem">The file system abstraction used to check whether recent projects still exist.</param>
+    /// <param name="settingsService">The settings service that owns the recent projects list.</param>
+    /// <param name="logger">The logger instance.</param>
     public RecentProjectsService(IFileSystem fileSystem, IApplicationSettingsService settingsService,
         ILogger<RecentProjectsService> logger)
     {

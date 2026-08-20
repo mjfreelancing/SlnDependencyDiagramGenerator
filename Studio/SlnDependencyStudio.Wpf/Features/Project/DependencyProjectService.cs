@@ -5,11 +5,15 @@ using SlnDependencyStudio.Shared.Serialization;
 
 namespace SlnDependencyStudio.Wpf.Features.Project;
 
+/// <summary>Default implementation of <see cref="IDependencyProjectService"/>.</summary>
 internal sealed class DependencyProjectService : IDependencyProjectService
 {
     private readonly IDependencyProjectSerializer _serializer;
     private readonly ILogger<DependencyProjectService> _logger;
 
+    /// <summary>Initializes a new instance of <see cref="DependencyProjectService"/>.</summary>
+    /// <param name="serializer">The serializer used to load and save dependency project documents.</param>
+    /// <param name="logger">The logger instance.</param>
     public DependencyProjectService(IDependencyProjectSerializer serializer, ILogger<DependencyProjectService> logger)
     {
         _serializer = serializer;

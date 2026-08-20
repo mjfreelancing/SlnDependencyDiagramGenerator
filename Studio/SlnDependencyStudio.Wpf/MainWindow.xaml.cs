@@ -300,9 +300,11 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 
             _logger.LogDebug("Window placement saved ({State})", placement.State);
         }
-        catch
+        catch (Exception exception)
         {
-            // Swallow any errors so the app will close
+            // Swallow any errors so the app will close — the user has already chosen to close, so a
+            // failure here (e.g. persisting the window placement) must never block or crash the close.
+            _logger.LogWarning("Failed to persist state while closing the window: {ErrorMessage}", exception.Message);
         }
 
         _isClosing = true;
