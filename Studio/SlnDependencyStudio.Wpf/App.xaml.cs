@@ -132,5 +132,10 @@ public partial class App : Application
         _logger.LogInformation("SlnDependencyStudio exiting");
 
         base.OnExit(exitArgs);
+
+        // Stop hosted services and flush the Serilog sink. OnExit is synchronous (the process is exiting),
+        // so the host's synchronous Dispose — which stops the host internally — is used rather than awaiting
+        // StopAsync. Runs after base.OnExit so Exit handlers still have the host (and the logger) available.
+        _host.Dispose();
     }
 }
