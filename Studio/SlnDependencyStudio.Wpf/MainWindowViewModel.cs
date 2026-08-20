@@ -209,7 +209,7 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
 
         var outputPanelView = _viewFactory.CreateViewFor<OutputPanelViewModel>();
         OutputPanel = outputPanelView;
-        _outputPanelViewModel = (OutputPanelViewModel)outputPanelView.ViewModel!;
+        _outputPanelViewModel = outputPanelView.ViewModel!;
 
         _hasDocument = _store
             .WhenAnyValue(store => store.HasDocument)
@@ -983,7 +983,12 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
     public void Dispose()
     {
         _subscriptions.Dispose();
+        _pageValidationSubscriptions.Dispose();
         _hasDocument.Dispose();
         _hasRecentProjects.Dispose();
+
+        // The output panel view model is owned by this shell (created via the view factory); disposing it
+        // detaches its sink subscription from the shared application log buffer.
+        _outputPanelViewModel.Dispose();
     }
 }
