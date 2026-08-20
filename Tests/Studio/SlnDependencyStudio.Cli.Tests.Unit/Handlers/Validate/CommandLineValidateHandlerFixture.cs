@@ -1,14 +1,17 @@
 using FluentValidation;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 using Shouldly;
 using SlnDependencyDiagramGenerator.Config;
+using SlnDependencyDiagramGenerator.Extensions;
 using SlnDependencyDiagramGenerator.Tests.Shared;
 using SlnDependencyStudio.Cli.Enumerations;
 using SlnDependencyStudio.Cli.Handlers.Validate;
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Shared.Exceptions;
+using SlnDependencyStudio.Shared.Extensions;
 using SlnDependencyStudio.Shared.Serialization;
 using SlnDependencyStudio.Shared.Services;
 using System.Text.Json;
@@ -120,6 +123,68 @@ public class CommandLineValidateHandlerFixture
     }
 
     [Fact]
+    public async Task Should_Return_ValidateCommandFailed_When_Regex_Is_Invalid()
+    {
+        using var configFile = new DisposableTempFile(".sds", "{}");
+        using var solutionFile = new DisposableTempFile(".sln");
+
+        var document = new DependencyProjectDocument
+        {
+            SchemaVersion = 1,
+            Metadata = new DependencyProjectMetadata { ProjectName = "Test", Description = "" },
+            DiagramGenerator = new DependencyGeneratorConfig
+            {
+                Solution = new GeneratorSolutionOptions
+                {
+                    SolutionPath = solutionFile.FilePath,
+                    RegexToInclude = ["("],
+                    RegexToExclude = [],
+                    PackagesToExclude = [],
+                    FrameworksToExclude = [],
+                    Individual = new GeneratorSolutionOptions.ProjectScope { Enabled = true, TransitiveDepth = 0 },
+                    All = new GeneratorSolutionOptions.ProjectScope { Enabled = false, TransitiveDepth = 0 }
+                },
+                Diagram = new GeneratorDiagramOptions
+                {
+                    GroupName = "Test",
+                    GroupNameAlias = "test",
+                    FrameworkStyle = new GeneratorDiagramOptions.FillStyle { Fill = "#000", Opacity = 0.5 },
+                    PackageStyle = new GeneratorDiagramOptions.FillStyle { Fill = "#000", Opacity = 0.5 },
+                    TransitiveStyle = new GeneratorDiagramOptions.FillStyle { Fill = "#000", Opacity = 0.5 },
+                    Grouping = new GeneratorDiagramOptions.GroupingOptions
+                    {
+                        BackgroundStyle = new GeneratorDiagramOptions.FillStyle { Fill = "#000", Opacity = 1.0 }
+                    },
+                    Formats = [DiagramFormat.D2]
+                },
+                Export = new GeneratorExportOptions { RootPath = ".", ImageFormats = [] }
+            },
+            PreGeneration = new PreGenerationConfig { Enabled = false },
+            PostGeneration = new PostGenerationConfig { Enabled = false }
+        };
+
+        var serializer = Substitute.For<IDependencyProjectSerializer>();
+
+        serializer
+            .DeserializeAsync(configFile.FilePath, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(document));
+
+        // Uses the real validation chain: the invalid include pattern is turned into a ValidationException
+        // (GeneratorSolutionOptionsValidator.ValidateRegexPattern swallows the RegexParseException and reports
+        // a rule failure), which the handler maps to ValidateCommandFailed - the regex error never escapes the
+        // handler as an unexpected failure.
+        var projectValidator = CreateValidator();
+
+        var logger = Substitute.For<ILogger<CommandLineValidateHandler>>();
+
+        var handler = new CommandLineValidateHandler(serializer, projectValidator, logger);
+
+        var result = await handler.HandleAsync(configFile.FilePath, CancellationToken.None);
+
+        result.ShouldBe((int)StudioCliExitCode.ValidateCommandFailed);
+    }
+
+    [Fact]
     public async Task Should_Rethrow_OperationCanceledException_When_Cancelled()
     {
         var serializer = Substitute.For<IDependencyProjectSerializer>();
@@ -169,6 +234,19 @@ public class CommandLineValidateHandlerFixture
             },
             PreGeneration = new PreGenerationConfig { Enabled = false }
         };
+    }
+
+    private static IDependencyProjectValidator CreateValidator()
+    {
+        var services = new ServiceCollection();
+
+        services.AddLogging();
+        var (_, validationRegistry) = services.AddSlnDependencyDiagramGenerator();
+        services.AddSlnDependencyStudio(validationRegistry);
+
+        using var provider = services.BuildServiceProvider();
+
+        return provider.GetRequiredService<IDependencyProjectValidator>();
     }
 
 }

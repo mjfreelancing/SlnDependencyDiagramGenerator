@@ -50,7 +50,6 @@ internal sealed class CommandLineValidateHandler : CommandLineHandlerBase, IComm
             _projectValidator.Validate(document, configDirectory);
 
             _logger.LogInformation("Configuration is valid.");
-
             return 0;
         }
         catch (ValidationException exception)

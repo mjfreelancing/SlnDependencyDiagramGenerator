@@ -13,7 +13,6 @@ using SlnDependencyStudio.Shared.ProcessExecution.RestoreSolution;
 using SlnDependencyStudio.Shared.Serialization;
 using SlnDependencyStudio.Shared.Services;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 
 namespace SlnDependencyStudio.Cli.Handlers.Run;
 
@@ -93,11 +92,6 @@ internal sealed class CommandLineRunHandler : CommandLineHandlerBase, ICommandLi
         catch (ValidationException exception)
         {
             WriteValidationErrors(exception);
-            return (int)StudioCliExitCode.RunCommandFailed;
-        }
-        catch (RegexParseException exception)
-        {
-            _logger.LogError("Invalid regular expression: {Message}", exception.Message);
             return (int)StudioCliExitCode.RunCommandFailed;
         }
         catch (ToolNotFoundException exception)
