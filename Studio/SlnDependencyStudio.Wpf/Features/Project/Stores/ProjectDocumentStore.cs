@@ -143,25 +143,30 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
 
         IsTransitioning = true;
 
-        _document = await _projectService.OpenAsync(filePath, cancellationToken);
+        try
+        {
+            _document = await _projectService.OpenAsync(filePath, cancellationToken);
 
-        HasDocument = true;
-        DocumentFilePath = filePath;
-        DocumentEpoch++;
+            HasDocument = true;
+            DocumentFilePath = filePath;
+            DocumentEpoch++;
 
-        _metadataEditor.SetOriginalValues(_document.Metadata);
-        _solutionOptionsEditor.SetOriginalValues(_document.DiagramGenerator.Solution);
-        _exportOptionsEditor.SetOriginalValues(_document.DiagramGenerator.Export);
-        _diagramOptionsEditor.SetOriginalValues(_document.DiagramGenerator.Diagram);
-        _preGenerationEditor.SetOriginalValues(_document.PreGeneration);
-        _restoreSolutionEditor.SetOriginalValues(_document.RestoreSolution);
-        _postGenerationEditor.SetOriginalValues(_document.PostGeneration);
+            _metadataEditor.SetOriginalValues(_document.Metadata);
+            _solutionOptionsEditor.SetOriginalValues(_document.DiagramGenerator.Solution);
+            _exportOptionsEditor.SetOriginalValues(_document.DiagramGenerator.Export);
+            _diagramOptionsEditor.SetOriginalValues(_document.DiagramGenerator.Diagram);
+            _preGenerationEditor.SetOriginalValues(_document.PreGeneration);
+            _restoreSolutionEditor.SetOriginalValues(_document.RestoreSolution);
+            _postGenerationEditor.SetOriginalValues(_document.PostGeneration);
 
-        _logger.LogInformation("Project opened: {FilePath}", filePath);
+            _logger.LogInformation("Project opened: {FilePath}", filePath);
 
-        _recentProjects.Add(filePath);
-
-        IsTransitioning = false;
+            _recentProjects.Add(filePath);
+        }
+        finally
+        {
+            IsTransitioning = false;
+        }
     }
 
     /// <inheritdoc />
