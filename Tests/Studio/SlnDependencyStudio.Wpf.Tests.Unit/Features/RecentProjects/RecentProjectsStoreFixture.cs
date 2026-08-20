@@ -1,8 +1,9 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Shouldly;
 using SlnDependencyStudio.Wpf.Features.RecentProjects;
 using SlnDependencyStudio.Wpf.Features.RecentProjects.Models;
+using SlnDependencyStudio.Wpf.Tests.Unit.Support;
 
 namespace SlnDependencyStudio.Wpf.Tests.Unit.Features.RecentProjects;
 

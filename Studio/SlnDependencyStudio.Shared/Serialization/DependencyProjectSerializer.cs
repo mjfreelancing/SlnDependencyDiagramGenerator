@@ -64,7 +64,7 @@ internal sealed class DependencyProjectSerializer : IDependencyProjectSerializer
         // Cancellation is a normal shutdown path — do not log it as a failure.
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            _logger.LogError(exception, "Failed to serialize project to {FilePath}", filePath);
+            _logger.LogError("Failed to serialize project to {FilePath}: {ErrorMessage}", filePath, exception.Message);
             throw;
         }
     }
@@ -108,7 +108,7 @@ internal sealed class DependencyProjectSerializer : IDependencyProjectSerializer
         // Cancellation is a normal shutdown path — do not log it as a failure.
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            _logger.LogError(exception, "Failed to deserialize project from {ConfigFilename}", configFilename);
+            _logger.LogError("Failed to deserialize project from {ConfigFilename}: {ErrorMessage}", configFilename, exception.Message);
             throw;
         }
     }

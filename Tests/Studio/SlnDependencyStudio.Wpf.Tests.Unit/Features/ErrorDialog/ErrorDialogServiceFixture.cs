@@ -1,6 +1,7 @@
-using ReactiveUI;
+﻿using ReactiveUI;
 using Shouldly;
 using SlnDependencyStudio.Wpf.Features.ErrorDialog;
+using SlnDependencyStudio.Wpf.Tests.Unit.Support;
 using System.Reactive;
 using System.Reactive.Linq;
 

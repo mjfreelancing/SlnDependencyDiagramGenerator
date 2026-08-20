@@ -1,4 +1,4 @@
-using AllOverIt.Extensions;
+﻿using AllOverIt.Extensions;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
 using SlnDependencyDiagramGenerator.Exceptions;
@@ -123,9 +123,9 @@ internal sealed class PreGenerationAnalysisService : IPreGenerationAnalysisServi
             // via type + message; the stack trace adds noise for these expected outcomes.
             _logger.LogError("Analysis failed: {Message}", exception.Message);
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
-            _logger.LogError(ex, "Analysis failed");
+            _logger.LogError(exception, "Analysis failed unexpectedly");
         }
     }
 

@@ -1,8 +1,9 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Shouldly;
 using SlnDependencyDiagramGenerator.Generator.ToolDetection;
 using SlnDependencyStudio.Wpf.Features.Pipeline.Services;
+using SlnDependencyStudio.Wpf.Tests.Unit.Support;
 using System.Reactive.Linq;
 
 namespace SlnDependencyStudio.Wpf.Tests.Unit.Features.Pipeline.Services;

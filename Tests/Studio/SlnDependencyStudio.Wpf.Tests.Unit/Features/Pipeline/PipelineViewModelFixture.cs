@@ -1,6 +1,9 @@
+﻿using Microsoft.Extensions.Logging;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 using Shouldly;
 using SlnDependencyStudio.Wpf.Controls;
+using SlnDependencyStudio.Wpf.Features.ErrorDialog;
 using SlnDependencyStudio.Wpf.Features.Pipeline;
 using SlnDependencyStudio.Wpf.Features.Pipeline.Models;
 using SlnDependencyStudio.Wpf.Features.Pipeline.PostGeneration;
@@ -8,6 +11,7 @@ using SlnDependencyStudio.Wpf.Features.Pipeline.PreGeneration;
 using SlnDependencyStudio.Wpf.Features.Pipeline.RestoreSolution;
 using SlnDependencyStudio.Wpf.Features.Pipeline.Services;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
+using SlnDependencyStudio.Wpf.Tests.Unit.Support;
 using System.IO;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
@@ -73,7 +77,7 @@ public class PipelineViewModelFixture
 
         _toolStatus.ToolStatuses.Returns(_toolStatusSubject.AsObservable());
 
-        _viewModel = new PipelineViewModel(_store, _toolStatus);
+        _viewModel = new PipelineViewModel(_store, _toolStatus, Substitute.For<IErrorDialogService>(), Substitute.For<ILogger<PipelineViewModel>>());
     }
 
     public class Construction : PipelineViewModelFixture
@@ -320,7 +324,7 @@ public class PipelineViewModelFixture
             _workingDirectory.SetOriginalValue(@"C:\projects\src");
             _useRelativePath.SetOriginalValue(false);
 
-            var pageViewModel = new PipelineViewModel(_store, _toolStatus);
+            var pageViewModel = new PipelineViewModel(_store, _toolStatus, Substitute.For<IErrorDialogService>(), Substitute.For<ILogger<PipelineViewModel>>());
 
             _workingDirectory.Value.ShouldBe(@"C:\projects\src");
             pageViewModel.UseRelativePathForPreGenWorkingDirectory.Value.ShouldBeFalse();
@@ -334,7 +338,7 @@ public class PipelineViewModelFixture
             _postGenWorkingDirectory.SetOriginalValue(@"C:\projects\src");
             _postGenUseRelativePath.SetOriginalValue(false);
 
-            var pageViewModel = new PipelineViewModel(_store, _toolStatus);
+            var pageViewModel = new PipelineViewModel(_store, _toolStatus, Substitute.For<IErrorDialogService>(), Substitute.For<ILogger<PipelineViewModel>>());
 
             _postGenWorkingDirectory.Value.ShouldBe(@"C:\projects\src");
             pageViewModel.UseRelativePathForPostGenWorkingDirectory.Value.ShouldBeFalse();
@@ -372,7 +376,7 @@ public class PipelineViewModelFixture
             _editor.Enabled.Returns(enabled);
             _editor.Command.Returns(command);
 
-            var viewModel = new PipelineViewModel(_store, _toolStatus);
+            var viewModel = new PipelineViewModel(_store, _toolStatus, Substitute.For<IErrorDialogService>(), Substitute.For<ILogger<PipelineViewModel>>());
 
             viewModel.ValidationContext.IsValid.ShouldBeTrue();
         }
@@ -895,6 +899,39 @@ public class PipelineViewModelFixture
             await _viewModel.RescanToolsCommand.Execute();
 
             await _toolStatus.Received(1).RescanAsync(Arg.Any<CancellationToken>());
+        }
+    }
+
+    public class RescanCommandError : PipelineViewModelFixture
+    {
+        [Fact]
+        public async Task Should_Show_Error_Dialog()
+        {
+            var errorDialog = ErrorDialogTestHelpers.CreateErrorDialogSubstitute(out var interaction);
+
+            var viewModel = new PipelineViewModel(_store, _toolStatus, errorDialog, Substitute.For<ILogger<PipelineViewModel>>());
+
+            var exception = new InvalidOperationException("Rescan failed");
+
+            _toolStatus
+                .RescanAsync(Arg.Any<CancellationToken>())
+                .ThrowsAsync(exception);
+
+            var errorReceived = new TaskCompletionSource<ErrorInfo>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            interaction.RegisterHandler(context =>
+            {
+                errorReceived.TrySetResult(context.Input);
+                context.SetOutput(System.Reactive.Unit.Default);
+            });
+
+            // The failure is routed to the wired ThrownExceptions handler, which shows the error dialog.
+            await ErrorDialogTestHelpers.ObserveExecuteIgnoringOutcomeAsync(viewModel.RescanToolsCommand, System.Reactive.Unit.Default);
+
+            var capturedError = await ErrorDialogTestHelpers.WaitForCapturedErrorAsync(errorReceived.Task);
+
+            capturedError.Title.ShouldBe("Tool Rescan failed");
+            capturedError.Message.ShouldContain("Rescan failed");
         }
     }
 }

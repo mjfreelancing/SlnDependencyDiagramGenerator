@@ -1,8 +1,9 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Shouldly;
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Wpf.Features.Pipeline.PreGeneration;
+using SlnDependencyStudio.Wpf.Tests.Unit.Support;
 
 namespace SlnDependencyStudio.Wpf.Tests.Unit.Features.Pipeline.PreGeneration;
 

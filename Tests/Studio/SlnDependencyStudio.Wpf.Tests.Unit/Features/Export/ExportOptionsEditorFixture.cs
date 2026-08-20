@@ -1,9 +1,10 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Shouldly;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyStudio.Shared.Utils;
 using SlnDependencyStudio.Wpf.Features.Export;
+using SlnDependencyStudio.Wpf.Tests.Unit.Support;
 
 namespace SlnDependencyStudio.Wpf.Tests.Unit.Features.Export;
 

@@ -1,12 +1,15 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 using Serilog.Events;
 using Shouldly;
 using SlnDependencyStudio.Shared.Logging;
 using SlnDependencyStudio.Wpf.Abstractions.IO;
 using SlnDependencyStudio.Wpf.Features.Application;
 using SlnDependencyStudio.Wpf.Features.Application.Models;
+using SlnDependencyStudio.Wpf.Features.ErrorDialog;
 using SlnDependencyStudio.Wpf.Features.Output;
+using SlnDependencyStudio.Wpf.Tests.Unit.Support;
 using System.Globalization;
 using System.Reactive.Linq;
 
@@ -27,7 +30,7 @@ public class OutputPanelViewModelFixture
         _appSettings.CurrentSettings.Returns(_settings);
         _appSettings.CurrentState.Returns(new ApplicationState());
 
-        _viewModel = new OutputPanelViewModel(_logBuffer, _appSettings, _fileSystem, _logger);
+        _viewModel = new OutputPanelViewModel(_logBuffer, _appSettings, _fileSystem, Substitute.For<IErrorDialogService>(), _logger);
     }
 
     public class Construction : OutputPanelViewModelFixture
@@ -56,7 +59,7 @@ public class OutputPanelViewModelFixture
         {
             _settings.Output.WrapContent = true;
 
-            var vm = new OutputPanelViewModel(_logBuffer, _appSettings, _fileSystem, _logger);
+            var vm = new OutputPanelViewModel(_logBuffer, _appSettings, _fileSystem, Substitute.For<IErrorDialogService>(), _logger);
 
             vm.WrapContent.ShouldBeTrue();
         }
@@ -66,7 +69,7 @@ public class OutputPanelViewModelFixture
         {
             _settings.Output.IsVerboseLogging = false;
 
-            var vm = new OutputPanelViewModel(_logBuffer, _appSettings, _fileSystem, _logger);
+            var vm = new OutputPanelViewModel(_logBuffer, _appSettings, _fileSystem, Substitute.For<IErrorDialogService>(), _logger);
 
             vm.IsVerbose.ShouldBeFalse();
         }
@@ -139,7 +142,7 @@ public class OutputPanelViewModelFixture
             var logBuffer = new StudioLogBuffer();
             logBuffer.Add(CreateEntry(LogEventLevel.Information, "early message"));
 
-            var vm = new OutputPanelViewModel(logBuffer, _appSettings, _fileSystem, _logger);
+            var vm = new OutputPanelViewModel(logBuffer, _appSettings, _fileSystem, Substitute.For<IErrorDialogService>(), _logger);
 
             vm.Messages.Count.ShouldBe(1);
             vm.Messages[0].Text.ShouldEndWith("early message");
@@ -153,7 +156,7 @@ public class OutputPanelViewModelFixture
             var logBuffer = new StudioLogBuffer();
             logBuffer.Add(CreateEntry(LogEventLevel.Debug, "debug message"));
 
-            var vm = new OutputPanelViewModel(logBuffer, _appSettings, _fileSystem, _logger);
+            var vm = new OutputPanelViewModel(logBuffer, _appSettings, _fileSystem, Substitute.For<IErrorDialogService>(), _logger);
 
             vm.Messages.Count.ShouldBe(1);
             vm.Messages[0].Text.ShouldEndWith("debug message");
@@ -259,6 +262,41 @@ public class OutputPanelViewModelFixture
         private static StudioLogEntry CreateEntry(LogEventLevel level, string message)
         {
             return new StudioLogEntry(DateTimeOffset.Now, level, message, null);
+        }
+    }
+
+    public class SaveAsCommandError : OutputPanelViewModelFixture
+    {
+        [Fact]
+        public async Task Should_Show_Error_Dialog()
+        {
+            var errorDialog = ErrorDialogTestHelpers.CreateErrorDialogSubstitute(out var interaction);
+
+            var viewModel = new OutputPanelViewModel(_logBuffer, _appSettings, _fileSystem, errorDialog, _logger);
+
+            var exception = new InvalidOperationException("Write failed");
+
+            _fileSystem
+                .WriteAllTextAsync("output.txt", Arg.Any<string>(), Arg.Any<CancellationToken>())
+                .ThrowsAsync(exception);
+
+            var errorReceived = new TaskCompletionSource<ErrorInfo>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            interaction.RegisterHandler(context =>
+            {
+                errorReceived.TrySetResult(context.Input);
+                context.SetOutput(System.Reactive.Unit.Default);
+            });
+
+            viewModel.SaveFileDialog.RegisterHandler(context => context.SetOutput("output.txt"));
+
+            // The failure is routed to the wired ThrownExceptions handler, which shows the error dialog.
+            await ErrorDialogTestHelpers.ObserveExecuteIgnoringOutcomeAsync(viewModel.SaveAsCommand, System.Reactive.Unit.Default);
+
+            var capturedError = await ErrorDialogTestHelpers.WaitForCapturedErrorAsync(errorReceived.Task);
+
+            capturedError.Title.ShouldBe("Save Output failed");
+            capturedError.Message.ShouldContain("Write failed");
         }
     }
 }

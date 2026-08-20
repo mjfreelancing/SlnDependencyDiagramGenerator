@@ -1,5 +1,6 @@
-using Shouldly;
+﻿using Shouldly;
 using SlnDependencyStudio.Wpf.Components;
+using SlnDependencyStudio.Wpf.Tests.Unit.Support;
 using System.Collections.ObjectModel;
 
 namespace SlnDependencyStudio.Wpf.Tests.Unit.Components;

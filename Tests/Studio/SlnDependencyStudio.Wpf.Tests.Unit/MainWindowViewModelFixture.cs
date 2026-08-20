@@ -1,4 +1,4 @@
-using AllOverIt.ReactiveUI.Factories;
+﻿using AllOverIt.ReactiveUI.Factories;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
@@ -20,7 +20,6 @@ using SlnDependencyStudio.Wpf.Features.Pipeline;
 using SlnDependencyStudio.Wpf.Features.Pipeline.PostGeneration;
 using SlnDependencyStudio.Wpf.Features.Pipeline.PreGeneration;
 using SlnDependencyStudio.Wpf.Features.Pipeline.RestoreSolution;
-using SlnDependencyStudio.Wpf.Features.Pipeline.Services;
 using SlnDependencyStudio.Wpf.Features.Project;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
 using SlnDependencyStudio.Wpf.Features.RecentProjects;
@@ -32,6 +31,7 @@ using SlnDependencyStudio.Wpf.Models;
 using SlnDependencyStudio.Wpf.Utils;
 using System.IO;
 using System.Reactive.Linq;
+using SlnDependencyStudio.Wpf.Tests.Unit.Support;
 
 namespace SlnDependencyStudio.Wpf.Tests.Unit;
 
@@ -43,7 +43,6 @@ public class MainWindowViewModelFixture
     private readonly IRecentProjectsStore _recentProjects = Substitute.For<IRecentProjectsStore>();
     private readonly IErrorDialogService _errorDialog;
     private readonly IViewFactory _viewFactory = Substitute.For<IViewFactory>();
-    private readonly IToolStatusService _toolStatus = Substitute.For<IToolStatusService>();
     private readonly IPreGenerationAnalysisService _analysisService = Substitute.For<IPreGenerationAnalysisService>();
     private readonly IGenerationService _generationService = Substitute.For<IGenerationService>();
     private readonly MainWindowViewModel _viewModel;
@@ -70,6 +69,7 @@ public class MainWindowViewModelFixture
             new StudioLogBuffer(),
             appSettings,
             Substitute.For<IFileSystem>(),
+            Substitute.For<IErrorDialogService>(),
             Substitute.For<ILogger<OutputPanelViewModel>>());
 
         var outputPanelView = Substitute.For<IViewFor<OutputPanelViewModel>>();
@@ -99,7 +99,7 @@ public class MainWindowViewModelFixture
 
         _viewModel = new MainWindowViewModel(
             _store, _projectService, _recentProjects, _errorDialog, _viewFactory,
-            _toolStatus, _analysisService, _generationService, logger);
+            _analysisService, _generationService, logger);
 
         _store.HasDocument.Returns(true);
         _store.GetRelativePathFields().Returns([]);
@@ -631,7 +631,7 @@ public class MainWindowViewModelFixture
         private readonly Interaction<ErrorInfo, System.Reactive.Unit> _showErrorInteraction;
 
         public OpenRecentProjectError()
-            : base(CreateErrorDialogSubstitute(out var interaction))
+            : base(ErrorDialogTestHelpers.CreateErrorDialogSubstitute(out var interaction))
         {
             _showErrorInteraction = interaction;
         }
@@ -647,18 +647,23 @@ public class MainWindowViewModelFixture
                 .OpenAsync("recent.sds", Arg.Any<CancellationToken>())
                 .ThrowsAsync(exception);
 
-            ErrorInfo? capturedError = null;
+            var errorReceived = new TaskCompletionSource<ErrorInfo>(TaskCreationOptions.RunContinuationsAsynchronously);
 
             _showErrorInteraction.RegisterHandler(context =>
             {
-                capturedError = context.Input;
+                errorReceived.TrySetResult(context.Input);
                 context.SetOutput(System.Reactive.Unit.Default);
             });
 
-            await _viewModel.OpenRecentProjectCommand.Execute("recent.sds");
+            // The failure is routed to the wired ThrownExceptions handler, which shows the error
+            // dialog. The Execute task itself may fault or complete without a result depending on
+            // the ReactiveUI version, so its outcome is observed and ignored rather than awaited.
+            await ErrorDialogTestHelpers.ObserveExecuteIgnoringOutcomeAsync(_viewModel.OpenRecentProjectCommand, "recent.sds");
 
-            capturedError.ShouldNotBeNull();
-            capturedError!.Title.ShouldBe("Open Failed");
+            var capturedError = await ErrorDialogTestHelpers.WaitForCapturedErrorAsync(errorReceived.Task);
+
+            capturedError.Title.ShouldBe("Open Recent Project failed");
+            capturedError.Message.ShouldContain("moved or deleted");
             capturedError.Message.ShouldContain("File not found");
 
             _recentProjects.Received(1).Remove("recent.sds");
@@ -670,7 +675,7 @@ public class MainWindowViewModelFixture
         private readonly Interaction<ErrorInfo, System.Reactive.Unit> _showErrorInteraction;
 
         public OpenProjectError()
-            : base(CreateErrorDialogSubstitute(out var interaction))
+            : base(ErrorDialogTestHelpers.CreateErrorDialogSubstitute(out var interaction))
         {
             _showErrorInteraction = interaction;
         }
@@ -686,21 +691,293 @@ public class MainWindowViewModelFixture
                 .OpenAsync("test.sds", Arg.Any<CancellationToken>())
                 .ThrowsAsync(exception);
 
-            ErrorInfo? capturedError = null;
+            var errorReceived = new TaskCompletionSource<ErrorInfo>(TaskCreationOptions.RunContinuationsAsynchronously);
 
             _showErrorInteraction.RegisterHandler(context =>
             {
-                capturedError = context.Input;
+                errorReceived.TrySetResult(context.Input);
                 context.SetOutput(System.Reactive.Unit.Default);
             });
 
             _viewModel.OpenFileInteraction.RegisterHandler(context => context.SetOutput("test.sds"));
 
-            await _viewModel.OpenProjectCommand.Execute();
+            // The failure is routed to the wired ThrownExceptions handler, which shows the error
+            // dialog. The Execute task itself may fault or complete without a result depending on
+            // the ReactiveUI version, so its outcome is observed and ignored rather than awaited.
+            await ErrorDialogTestHelpers.ObserveExecuteIgnoringOutcomeAsync(_viewModel.OpenProjectCommand, System.Reactive.Unit.Default);
 
-            capturedError.ShouldNotBeNull();
-            capturedError!.Title.ShouldBe("Open Failed");
+            var capturedError = await ErrorDialogTestHelpers.WaitForCapturedErrorAsync(errorReceived.Task);
+
+            capturedError.Title.ShouldBe("Open Project failed");
             capturedError.Message.ShouldContain("Access denied");
+        }
+    }
+
+    public class NewProjectError : MainWindowViewModelFixture
+    {
+        private readonly Interaction<ErrorInfo, System.Reactive.Unit> _showErrorInteraction;
+
+        public NewProjectError()
+            : base(ErrorDialogTestHelpers.CreateErrorDialogSubstitute(out var interaction))
+        {
+            _showErrorInteraction = interaction;
+        }
+
+        [Fact]
+        public async Task Should_Show_Error_Dialog()
+        {
+            _store.IsDirty.Returns(false);
+
+            var exception = new InvalidOperationException("Save failed");
+
+            _projectService
+                .SaveAsync(Arg.Any<DependencyProjectDocument>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+                .ThrowsAsync(exception);
+
+            var errorReceived = new TaskCompletionSource<ErrorInfo>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            _showErrorInteraction.RegisterHandler(context =>
+            {
+                errorReceived.TrySetResult(context.Input);
+                context.SetOutput(System.Reactive.Unit.Default);
+            });
+
+            _viewModel.SaveFileInteraction.RegisterHandler(context => context.SetOutput("new.sds"));
+
+            await ErrorDialogTestHelpers.ObserveExecuteIgnoringOutcomeAsync(_viewModel.NewProjectCommand, System.Reactive.Unit.Default);
+
+            var capturedError = await ErrorDialogTestHelpers.WaitForCapturedErrorAsync(errorReceived.Task);
+
+            capturedError.Title.ShouldBe("New Project failed");
+            capturedError.Message.ShouldContain("Save failed");
+        }
+    }
+
+    public class NewFromExistingError : MainWindowViewModelFixture
+    {
+        private readonly Interaction<ErrorInfo, System.Reactive.Unit> _showErrorInteraction;
+
+        public NewFromExistingError()
+            : base(ErrorDialogTestHelpers.CreateErrorDialogSubstitute(out var interaction))
+        {
+            _showErrorInteraction = interaction;
+        }
+
+        [Fact]
+        public async Task Should_Show_Error_Dialog()
+        {
+            _store.IsDirty.Returns(false);
+
+            var exception = new InvalidOperationException("Open failed");
+
+            _projectService
+                .OpenAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+                .ThrowsAsync(exception);
+
+            var errorReceived = new TaskCompletionSource<ErrorInfo>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            _showErrorInteraction.RegisterHandler(context =>
+            {
+                errorReceived.TrySetResult(context.Input);
+                context.SetOutput(System.Reactive.Unit.Default);
+            });
+
+            _viewModel.OpenFileInteraction.RegisterHandler(context => context.SetOutput("source.sds"));
+
+            await ErrorDialogTestHelpers.ObserveExecuteIgnoringOutcomeAsync(_viewModel.NewFromExistingCommand, System.Reactive.Unit.Default);
+
+            var capturedError = await ErrorDialogTestHelpers.WaitForCapturedErrorAsync(errorReceived.Task);
+
+            capturedError.Title.ShouldBe("New from Existing failed");
+            capturedError.Message.ShouldContain("Open failed");
+        }
+    }
+
+    public class SaveError : MainWindowViewModelFixture
+    {
+        private readonly Interaction<ErrorInfo, System.Reactive.Unit> _showErrorInteraction;
+
+        public SaveError()
+            : base(ErrorDialogTestHelpers.CreateErrorDialogSubstitute(out var interaction))
+        {
+            _showErrorInteraction = interaction;
+        }
+
+        [Fact]
+        public async Task Should_Show_Error_Dialog()
+        {
+            var exception = new InvalidOperationException("Save failed");
+
+            _store
+                .SaveAsync(Arg.Any<CancellationToken>())
+                .ThrowsAsync(exception);
+
+            var errorReceived = new TaskCompletionSource<ErrorInfo>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            _showErrorInteraction.RegisterHandler(context =>
+            {
+                errorReceived.TrySetResult(context.Input);
+                context.SetOutput(System.Reactive.Unit.Default);
+            });
+
+            await ErrorDialogTestHelpers.ObserveExecuteIgnoringOutcomeAsync(_viewModel.SaveCommand, System.Reactive.Unit.Default);
+
+            var capturedError = await ErrorDialogTestHelpers.WaitForCapturedErrorAsync(errorReceived.Task);
+
+            capturedError.Title.ShouldBe("Save failed");
+            capturedError.Message.ShouldContain("Save failed");
+        }
+    }
+
+    public class SaveAsError : MainWindowViewModelFixture
+    {
+        private readonly Interaction<ErrorInfo, System.Reactive.Unit> _showErrorInteraction;
+
+        public SaveAsError()
+            : base(ErrorDialogTestHelpers.CreateErrorDialogSubstitute(out var interaction))
+        {
+            _showErrorInteraction = interaction;
+        }
+
+        [Fact]
+        public async Task Should_Show_Error_Dialog()
+        {
+            var exception = new InvalidOperationException("Save failed");
+
+            _store
+                .SaveAsAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+                .ThrowsAsync(exception);
+
+            var errorReceived = new TaskCompletionSource<ErrorInfo>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            _showErrorInteraction.RegisterHandler(context =>
+            {
+                errorReceived.TrySetResult(context.Input);
+                context.SetOutput(System.Reactive.Unit.Default);
+            });
+
+            _viewModel.SaveFileInteraction.RegisterHandler(context => context.SetOutput("test.sds"));
+
+            await ErrorDialogTestHelpers.ObserveExecuteIgnoringOutcomeAsync(_viewModel.SaveAsCommand, System.Reactive.Unit.Default);
+
+            var capturedError = await ErrorDialogTestHelpers.WaitForCapturedErrorAsync(errorReceived.Task);
+
+            capturedError.Title.ShouldBe("Save As failed");
+            capturedError.Message.ShouldContain("Save failed");
+        }
+    }
+
+    public class CloseProjectError : MainWindowViewModelFixture
+    {
+        private readonly Interaction<ErrorInfo, System.Reactive.Unit> _showErrorInteraction;
+
+        public CloseProjectError()
+            : base(ErrorDialogTestHelpers.CreateErrorDialogSubstitute(out var interaction))
+        {
+            _showErrorInteraction = interaction;
+        }
+
+        [Fact]
+        public async Task Should_Show_Error_Dialog()
+        {
+            _store.IsDirty.Returns(false);
+
+            var exception = new InvalidOperationException("Close failed");
+
+            _store
+                .When(store => store.Close())
+                .Throw(exception);
+
+            var errorReceived = new TaskCompletionSource<ErrorInfo>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            _showErrorInteraction.RegisterHandler(context =>
+            {
+                errorReceived.TrySetResult(context.Input);
+                context.SetOutput(System.Reactive.Unit.Default);
+            });
+
+            await ErrorDialogTestHelpers.ObserveExecuteIgnoringOutcomeAsync(_viewModel.CloseProjectCommand, System.Reactive.Unit.Default);
+
+            var capturedError = await ErrorDialogTestHelpers.WaitForCapturedErrorAsync(errorReceived.Task);
+
+            capturedError.Title.ShouldBe("Close Project failed");
+            capturedError.Message.ShouldContain("Close failed");
+        }
+    }
+
+    public class GenerateError : MainWindowViewModelFixture
+    {
+        private readonly Interaction<ErrorInfo, System.Reactive.Unit> _showErrorInteraction;
+
+        public GenerateError()
+            : base(ErrorDialogTestHelpers.CreateErrorDialogSubstitute(out var interaction))
+        {
+            _showErrorInteraction = interaction;
+        }
+
+        [Fact]
+        public async Task Should_Show_Error_Dialog()
+        {
+            _store.IsDirty.Returns(false);
+
+            var exception = new InvalidOperationException("Generation failed");
+
+            _generationService
+                .RunAsync(Arg.Any<CancellationToken>())
+                .ThrowsAsync(exception);
+
+            var errorReceived = new TaskCompletionSource<ErrorInfo>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            _showErrorInteraction.RegisterHandler(context =>
+            {
+                errorReceived.TrySetResult(context.Input);
+                context.SetOutput(System.Reactive.Unit.Default);
+            });
+
+            await ErrorDialogTestHelpers.ObserveExecuteIgnoringOutcomeAsync(_viewModel.GenerateCommand, System.Reactive.Unit.Default);
+
+            var capturedError = await ErrorDialogTestHelpers.WaitForCapturedErrorAsync(errorReceived.Task);
+
+            capturedError.Title.ShouldBe("Generation failed");
+            capturedError.Message.ShouldContain("Generation failed");
+        }
+    }
+
+    public class AnalyseError : MainWindowViewModelFixture
+    {
+        private readonly Interaction<ErrorInfo, System.Reactive.Unit> _showErrorInteraction;
+
+        public AnalyseError()
+            : base(ErrorDialogTestHelpers.CreateErrorDialogSubstitute(out var interaction))
+        {
+            _showErrorInteraction = interaction;
+        }
+
+        [Fact]
+        public async Task Should_Show_Error_Dialog()
+        {
+            _store.IsDirty.Returns(false);
+
+            var exception = new InvalidOperationException("Analysis failed");
+
+            _analysisService
+                .RunAsync(Arg.Any<CancellationToken>())
+                .ThrowsAsync(exception);
+
+            var errorReceived = new TaskCompletionSource<ErrorInfo>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            _showErrorInteraction.RegisterHandler(context =>
+            {
+                errorReceived.TrySetResult(context.Input);
+                context.SetOutput(System.Reactive.Unit.Default);
+            });
+
+            await ErrorDialogTestHelpers.ObserveExecuteIgnoringOutcomeAsync(_viewModel.AnalyseCommand, System.Reactive.Unit.Default);
+
+            var capturedError = await ErrorDialogTestHelpers.WaitForCapturedErrorAsync(errorReceived.Task);
+
+            capturedError.Title.ShouldBe("Analysis failed");
+            capturedError.Message.ShouldContain("Analysis failed");
         }
     }
 
@@ -818,7 +1095,7 @@ public class MainWindowViewModelFixture
 
             var vm = new MainWindowViewModel(
                 store, _projectService, _recentProjects, _errorDialog, _viewFactory,
-                _toolStatus, _analysisService, _generationService, Substitute.For<ILogger<MainWindowViewModel>>());
+                _analysisService, _generationService, Substitute.For<ILogger<MainWindowViewModel>>());
 
             var canExecute = vm.AnalyseCommand.CanExecute.FirstAsync().Wait();
 
@@ -835,7 +1112,7 @@ public class MainWindowViewModelFixture
 
             var vm = new MainWindowViewModel(
                 store, _projectService, _recentProjects, _errorDialog, _viewFactory,
-                _toolStatus, _analysisService, _generationService, Substitute.For<ILogger<MainWindowViewModel>>());
+                _analysisService, _generationService, Substitute.For<ILogger<MainWindowViewModel>>());
 
             var canExecute = vm.AnalyseCommand.CanExecute.FirstAsync().Wait();
 
@@ -889,7 +1166,7 @@ public class MainWindowViewModelFixture
 
             var vm = new MainWindowViewModel(
                 store, _projectService, _recentProjects, _errorDialog, _viewFactory,
-                _toolStatus, _analysisService, _generationService, Substitute.For<ILogger<MainWindowViewModel>>());
+                _analysisService, _generationService, Substitute.For<ILogger<MainWindowViewModel>>());
 
             var canExecute = vm.GenerateCommand.CanExecute.FirstAsync().Wait();
 
@@ -904,7 +1181,7 @@ public class MainWindowViewModelFixture
 
             var vm = new MainWindowViewModel(
                 store, _projectService, _recentProjects, _errorDialog, _viewFactory,
-                _toolStatus, _analysisService, _generationService, Substitute.For<ILogger<MainWindowViewModel>>());
+                _analysisService, _generationService, Substitute.For<ILogger<MainWindowViewModel>>());
 
             var canExecute = vm.GenerateCommand.CanExecute.FirstAsync().Wait();
 
@@ -996,7 +1273,7 @@ public class MainWindowViewModelFixture
 
             var vm = new MainWindowViewModel(
                 _store, _projectService, realStore, _errorDialog, _viewFactory,
-                _toolStatus, _analysisService, _generationService,
+                _analysisService, _generationService,
                 Substitute.For<ILogger<MainWindowViewModel>>());
 
             // Should start false — clean slate, no state.json yet
@@ -1032,7 +1309,7 @@ public class MainWindowViewModelFixture
 
             _shellViewModel = new MainWindowViewModel(
                 _realStore, _projectService, _recentProjects, _errorDialog, _viewFactory,
-                _toolStatus, _analysisService, _generationService, Substitute.For<ILogger<MainWindowViewModel>>());
+                _analysisService, _generationService, Substitute.For<ILogger<MainWindowViewModel>>());
 
             // Activate the ViewModel so the OnActivated subscriptions (including the
             // DocumentEpoch navigation pipeline) become live. Each test gets a fresh
@@ -1146,17 +1423,6 @@ public class MainWindowViewModelFixture
     private static IViewFor<T> CreateMockView<T>() where T : class
     {
         return Substitute.For<IViewFor<T>>();
-    }
-
-    private static IErrorDialogService CreateErrorDialogSubstitute(out Interaction<ErrorInfo, System.Reactive.Unit> interaction)
-    {
-        interaction = new();
-
-        var substitute = Substitute.For<IErrorDialogService>();
-
-        substitute.ShowError.Returns(interaction);
-
-        return substitute;
     }
 
     private static TrackableValue<string> CreateTrackableValue(string value)

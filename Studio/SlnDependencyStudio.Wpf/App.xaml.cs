@@ -8,6 +8,7 @@ using SlnDependencyStudio.Shared.Logging;
 using SlnDependencyStudio.Wpf.Extensions;
 using SlnDependencyStudio.Wpf.Features.Application;
 using System.IO;
+using System.Reactive;
 using System.Windows;
 
 namespace SlnDependencyStudio.Wpf;
@@ -25,13 +26,6 @@ public partial class App : Application
 
     public App()
     {
-        // ReactiveUI v23 requires explicit builder initialization before reactive mixins are used.
-        RxAppBuilder
-            .CreateReactiveUIBuilder()
-            .WithCoreServices()
-            .WithWpf()
-            .BuildApp();
-
         // Create the log buffer that captures events emitted before the output panel subscribes.
         // StudioLogBuffer: queues entries until the OutputPanelViewModel subscribes (during
         // main-window construction), then relays live events. Rooted for the app lifetime.
@@ -61,6 +55,49 @@ public partial class App : Application
             .Build();
 
         _logger = _host.Services.GetRequiredService<ILogger<App>>();
+
+        // ReactiveUI v23 requires explicit builder initialization before reactive mixins are used (the
+        // mixins are first exercised during Application_Startup, after the host is built). WithExceptionHandler
+        // installs the app-wide safety net for unhandled ReactiveUI exceptions: any command/observable
+        // exception with no targeted ThrownExceptions handler is logged and surfaced via a fallback message
+        // box instead of crashing the app. The error dialog service needs a registered View handler
+        // (MainWindow) and is not guaranteed here, so a plain message box is the deliberate fallback for the
+        // global handlers.
+        RxAppBuilder
+            .CreateReactiveUIBuilder()
+            .WithCoreServices()
+            .WithWpf()
+            .WithExceptionHandler(Observer.Create<Exception>(exception =>
+            {
+                try
+                {
+                    _logger.LogError(exception, "An unhandled ReactiveUI exception occurred.");
+
+                    Dispatcher.BeginInvoke(() => ShowUnexpectedError(exception.Message));
+                }
+                catch
+                {
+                    // Never let the fallback handler itself throw - it runs on the exception path.
+                }
+            }))
+            .BuildApp();
+
+        // Outermost WPF safety net for exceptions that escape everything else (event handlers, async void).
+        // Marked handled so the process does not terminate.
+        DispatcherUnhandledException += (_, args) =>
+        {
+            _logger.LogError(args.Exception, "An unhandled exception reached the dispatcher.");
+
+            ShowUnexpectedError(args.Exception.Message);
+            args.Handled = true;
+        };
+    }
+
+    /// <summary>Fallback error surface for the global handlers - a plain message box, since the
+    /// error dialog service requires a registered View handler (MainWindow) that is not guaranteed here.</summary>
+    private static void ShowUnexpectedError(string message)
+    {
+        MessageBox.Show(message, "Unexpected Error", MessageBoxButton.OK, MessageBoxImage.Error);
     }
 
     private async void Application_Startup(object sender, StartupEventArgs startupArgs)
@@ -80,7 +117,12 @@ public partial class App : Application
         {
             _logger.LogError(exception, "Application startup failed");
 
-            throw;
+            // Startup failed, potentially before the main window was shown, so ShutdownMode.OnLastWindowClose
+            // never fires (it only triggers when a window actually closes).
+            ShowUnexpectedError($"The application failed to start.\n\n{exception.Message}");
+
+            // Shut the app down explicitly with a non-zero exit code instead of leaving the dispatcher running with no UI.
+            Shutdown(1);
         }
     }
 

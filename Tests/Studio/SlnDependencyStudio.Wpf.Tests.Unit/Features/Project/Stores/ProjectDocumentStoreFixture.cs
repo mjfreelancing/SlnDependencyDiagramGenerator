@@ -14,6 +14,7 @@ using SlnDependencyStudio.Wpf.Features.Project;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
 using SlnDependencyStudio.Wpf.Features.RecentProjects;
 using SlnDependencyStudio.Wpf.Features.Solution;
+using SlnDependencyStudio.Wpf.Tests.Unit.Support;
 using System.IO;
 
 namespace SlnDependencyStudio.Wpf.Tests.Unit.Features.Project.Stores;

@@ -4,16 +4,17 @@ using AllOverIt.ReactiveUI.Factories;
 using Microsoft.Extensions.Logging;
 using ReactiveUI;
 using ReactiveUI.Validation.Abstractions;
+using SlnDependencyDiagramGenerator.Exceptions;
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Shared.Utils;
 using SlnDependencyStudio.Wpf.Enumerations;
+using SlnDependencyStudio.Wpf.Extensions;
 using SlnDependencyStudio.Wpf.Features.Diagrams;
 using SlnDependencyStudio.Wpf.Features.EmptyState;
 using SlnDependencyStudio.Wpf.Features.ErrorDialog;
 using SlnDependencyStudio.Wpf.Features.Export;
 using SlnDependencyStudio.Wpf.Features.Output;
 using SlnDependencyStudio.Wpf.Features.Pipeline;
-using SlnDependencyStudio.Wpf.Features.Pipeline.Services;
 using SlnDependencyStudio.Wpf.Features.Project;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
 using SlnDependencyStudio.Wpf.Features.RecentProjects;
@@ -42,7 +43,6 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
     private readonly IRecentProjectsStore _recentProjectsStore;
     private readonly IErrorDialogService _errorDialog;
     private readonly IViewFactory _viewFactory;
-    private readonly IToolStatusService _toolStatus;
     private readonly IPreGenerationAnalysisService _analysisService;
     private readonly IGenerationService _generationService;
     private readonly OutputPanelViewModel _outputPanelViewModel;
@@ -65,6 +65,11 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
     // Tracks per-page validation subscriptions so old subscriptions are cleaned
     // up when the user navigates to a different page.
     private readonly CompositeDisposable _pageValidationSubscriptions = [];
+
+    // Command exception-handling subscriptions, created alongside each command so the wiring stays
+    // co-located with command creation. Disposed with the ViewModel (the command source is the
+    // ViewModel's own, so the subscriptions cannot outlive it).
+    private readonly CompositeDisposable _subscriptions = [];
 
     /// <summary>The navigation items displayed in the left sidebar.</summary>
     public ObservableCollection<NavigationItemViewModel> NavigationItems { get; } = [];
@@ -191,15 +196,13 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
     /// <summary>Initializes a new instance of <see cref="MainWindowViewModel"/>.</summary>
     public MainWindowViewModel(IProjectDocumentStore store, IDependencyProjectService projectService,
         IRecentProjectsStore recentProjectsStore, IErrorDialogService errorDialog, IViewFactory viewFactory,
-        IToolStatusService toolStatus, IPreGenerationAnalysisService analysisService,
-        IGenerationService generationService, ILogger<MainWindowViewModel> logger)
+        IPreGenerationAnalysisService analysisService, IGenerationService generationService, ILogger<MainWindowViewModel> logger)
     {
         _store = store;
         _projectService = projectService;
         _recentProjectsStore = recentProjectsStore;
         _errorDialog = errorDialog;
         _viewFactory = viewFactory;
-        _toolStatus = toolStatus;
         _analysisService = analysisService;
         _generationService = generationService;
         _logger = logger;
@@ -217,15 +220,15 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
             .ToProperty(this, nameof(HasRecentProjects));
 
         OpenSettingsCommand = ReactiveCommand.Create(() => { });
-        OpenProjectCommand = ReactiveCommand.CreateFromTask(OpenProjectAsync);
-        NewProjectCommand = ReactiveCommand.CreateFromTask(NewProjectAsync);
-        NewFromExistingCommand = ReactiveCommand.CreateFromTask(NewFromExistingAsync);
+        OpenProjectCommand = CreateOpenProjectCommand();
+        NewProjectCommand = CreateNewProjectCommand();
+        NewFromExistingCommand = CreateNewFromExistingCommand();
         SaveCommand = CreateSaveCommand();
         SaveAsCommand = CreateSaveAsCommand();
         CloseProjectCommand = CreateCloseProjectCommand();
         ExitCommand = ReactiveCommand.Create(() => { });
         _cancelOperationCommand = CreateCancelOperationCommand();
-        OpenRecentProjectCommand = ReactiveCommand.CreateFromTask<string>(OpenRecentProjectAsync);
+        OpenRecentProjectCommand = CreateOpenRecentProjectCommand();
         RemoveRecentProjectCommand = ReactiveCommand.Create<string>(RemoveRecentProject);
 
         // Mutual exclusion between Analyse and Generate is handled by RunMenuEnabled
@@ -271,6 +274,14 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
     /// <inheritdoc />
     protected override void OnActivated(CompositeDisposable disposables)
     {
+        // Commands are deliberately NOT created here. Views bind to command properties
+        // (e.g. Command="{Binding SaveCommand}") as soon as the DataContext is set, which
+        // happens before activation. Those properties are get-only and never raise
+        // PropertyChanged, so a command created in OnActivated would resolve to null in
+        // the bindings and the buttons would stay permanently disabled. OnActivated also
+        // fires on every activation, so commands must live for the ViewModel's lifetime:
+        // they are created once in the constructor (via the CreateXxxCommand helpers) with
+        // their exception handling wired alongside, and disposed in Dispose().
         WireDocumentStateTracking(disposables);
         WireNavigation(disposables);
         WireCancelCommand(disposables);
@@ -444,7 +455,7 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
                 source
                     .WithLatestFrom(
                         _store.WhenAnyValue(store => store.IsTransitioning),
-                        (isDirty, isTransitioning) => isTransitioning ? false : isDirty)
+                        (isDirty, isTransitioning) => !isTransitioning && isDirty)
                     .Subscribe(isDirty => item.HasUnsavedChanges = isDirty)
                     .DisposeWith(disposables);
             }
@@ -469,14 +480,13 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
         {
             await _store.OpenAsync(filePath);
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
-            _logger.LogError(ex, "Failed to open project: {FilePath}", filePath);
+            // Log with the file path as a structured property so failures can be filtered by path in the
+            // logs, then rethrow so the command's wired ThrownExceptions handler surfaces the error dialog.
+            _logger.LogError("Failed to open project '{FilePath}': {ErrorMessage}", filePath, exception.Message);
 
-            await _errorDialog.ShowError.Handle(
-                new ErrorInfo("Open Failed", $"Could not open the project file.\n\n{ex.Message}"));
-
-            return;
+            throw;
         }
     }
 
@@ -617,11 +627,61 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
         // manually clear CurrentPage/SelectedNavigationItem here.
     }
 
+    private ReactiveCommand<Unit, Unit> CreateOpenProjectCommand()
+    {
+        var command = ReactiveCommand.CreateFromTask(OpenProjectAsync);
+
+        command
+            .WireThrownExceptionsToErrorDialog(_errorDialog, "Open Project failed", _logger)
+            .DisposeWith(_subscriptions);
+
+        return command;
+    }
+
+    private ReactiveCommand<Unit, Unit> CreateNewProjectCommand()
+    {
+        var command = ReactiveCommand.CreateFromTask(NewProjectAsync);
+
+        command
+            .WireThrownExceptionsToErrorDialog(_errorDialog, "New Project failed", _logger)
+            .DisposeWith(_subscriptions);
+
+        return command;
+    }
+
+    private ReactiveCommand<Unit, Unit> CreateNewFromExistingCommand()
+    {
+        var command = ReactiveCommand.CreateFromTask(NewFromExistingAsync);
+
+        command
+            .WireThrownExceptionsToErrorDialog(_errorDialog, "New from Existing failed", _logger)
+            .DisposeWith(_subscriptions);
+
+        return command;
+    }
+
+    private ReactiveCommand<string, Unit> CreateOpenRecentProjectCommand()
+    {
+        var command = ReactiveCommand.CreateFromTask<string>(OpenRecentProjectAsync);
+
+        command
+            .WireThrownExceptionsToErrorDialog(_errorDialog, "Open Recent Project failed", _logger)
+            .DisposeWith(_subscriptions);
+
+        return command;
+    }
+
     private ReactiveCommand<Unit, Unit> CreateGenerateCommand()
     {
         var canGenerate = _store.WhenAnyValue(store => store.HasDocument);
 
-        return ReactiveCommand.CreateFromTask(GenerateAsync, canGenerate);
+        var command = ReactiveCommand.CreateFromTask(GenerateAsync, canGenerate);
+
+        command
+            .WireThrownExceptionsToErrorDialog(_errorDialog, "Generation failed", _logger)
+            .DisposeWith(_subscriptions);
+
+        return command;
     }
 
     private async Task GenerateAsync(CancellationToken cancellationToken)
@@ -659,7 +719,13 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
     {
         var canAnalyse = _store.WhenAnyValue(store => store.HasDocument);
 
-        return ReactiveCommand.CreateFromTask(AnalyseAsync, canAnalyse);
+        var command = ReactiveCommand.CreateFromTask(AnalyseAsync, canAnalyse);
+
+        command
+            .WireThrownExceptionsToErrorDialog(_errorDialog, "Analysis failed", _logger)
+            .DisposeWith(_subscriptions);
+
+        return command;
     }
 
     private async Task AnalyseAsync(CancellationToken cancellationToken)
@@ -701,21 +767,39 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
     {
         var canSave = _store.WhenAnyValue(store => store.IsDirty);
 
-        return ReactiveCommand.CreateFromTask(SaveAsync, canSave);
+        var command = ReactiveCommand.CreateFromTask(SaveAsync, canSave);
+
+        command
+            .WireThrownExceptionsToErrorDialog(_errorDialog, "Save failed", _logger)
+            .DisposeWith(_subscriptions);
+
+        return command;
     }
 
     private ReactiveCommand<Unit, Unit> CreateSaveAsCommand()
     {
         var canSaveAs = _store.WhenAnyValue(store => store.HasDocument);
 
-        return ReactiveCommand.CreateFromTask(SaveAsAsync, canSaveAs);
+        var command = ReactiveCommand.CreateFromTask(SaveAsAsync, canSaveAs);
+
+        command
+            .WireThrownExceptionsToErrorDialog(_errorDialog, "Save As failed", _logger)
+            .DisposeWith(_subscriptions);
+
+        return command;
     }
 
     private ReactiveCommand<Unit, Unit> CreateCloseProjectCommand()
     {
         var canClose = _store.WhenAnyValue(store => store.HasDocument);
 
-        return ReactiveCommand.CreateFromTask(CloseProjectAsync, canClose);
+        var command = ReactiveCommand.CreateFromTask(CloseProjectAsync, canClose);
+
+        command
+            .WireThrownExceptionsToErrorDialog(_errorDialog, "Close Project failed", _logger)
+            .DisposeWith(_subscriptions);
+
+        return command;
     }
 
     /// <summary>Prompts the user to save or discard changes.</summary>
@@ -875,16 +959,18 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
         {
             await _store.OpenAsync(filePath);
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
-            _logger.LogError(ex, "Failed to open recent project, removing from list: {FilePath}", filePath);
+            // A failed open is expected when a recent entry has been moved or deleted. Prune the stale
+            // entry, log with the path, then rethrow a self-describing exception so the command's wired
+            // ThrownExceptions handler shows a friendly message.
+            _logger.LogError("Failed to open recent project '{FilePath}', removing from list: {ErrorMessage}", filePath, exception.Message);
 
             _recentProjectsStore.Remove(filePath);
 
-            await _errorDialog.ShowError.Handle(
-                new ErrorInfo("Open Failed", $"The recent project could not be opened. It may have been moved or deleted.\n\n{ex.Message}"));
-
-            return;
+            throw new DependencyGeneratorException(
+                $"The recent project could not be opened. It may have been moved or deleted.\n\n{exception.Message}",
+                exception);
         }
     }
 
@@ -896,6 +982,7 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
     /// <inheritdoc />
     public void Dispose()
     {
+        _subscriptions.Dispose();
         _hasDocument.Dispose();
         _hasRecentProjects.Dispose();
     }

@@ -1,6 +1,7 @@
-using AllOverIt.ReactiveUI.Factories;
+﻿using AllOverIt.ReactiveUI.Factories;
 using ReactiveUI;
 using Shouldly;
+using SlnDependencyStudio.Wpf.Tests.Unit.Support;
 using SlnDependencyStudio.Wpf.ViewModels;
 
 namespace SlnDependencyStudio.Wpf.Tests.Unit.ViewModels;

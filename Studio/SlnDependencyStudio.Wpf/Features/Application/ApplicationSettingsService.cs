@@ -75,7 +75,7 @@ internal sealed class ApplicationSettingsService : IApplicationSettingsService
         }
         catch (Exception exception)
         {
-            _logger.LogWarning(exception, "Failed to load settings from {SettingsFilePath}; falling back to defaults.", _settingsFilePath);
+            _logger.LogWarning("Failed to load settings from {SettingsFilePath}; falling back to defaults: {ErrorMessage}", _settingsFilePath, exception.Message);
             CurrentSettings = new ApplicationSettings();
         }
     }
@@ -97,7 +97,7 @@ internal sealed class ApplicationSettingsService : IApplicationSettingsService
         }
         catch (Exception exception)
         {
-            _logger.LogWarning(exception, "Failed to load application state from {StateFilePath}; falling back to defaults.", _stateFilePath);
+            _logger.LogWarning("Failed to load application state from {StateFilePath}; falling back to defaults: {ErrorMessage}", _stateFilePath, exception.Message);
             CurrentState = new ApplicationState();
         }
     }
@@ -122,7 +122,7 @@ internal sealed class ApplicationSettingsService : IApplicationSettingsService
         }
         catch (Exception exception)
         {
-            _logger.LogError(exception, "Failed to save settings to {SettingsFilePath}", _settingsFilePath);
+            _logger.LogError("Failed to save settings to {SettingsFilePath}: {ErrorMessage}", _settingsFilePath, exception.Message);
 
             throw;
         }
@@ -145,7 +145,7 @@ internal sealed class ApplicationSettingsService : IApplicationSettingsService
         }
         catch (Exception exception)
         {
-            _logger.LogError(exception, "Failed to save application state to {StateFilePath}", _stateFilePath);
+            _logger.LogError("Failed to save application state to {StateFilePath}: {ErrorMessage}", _stateFilePath, exception.Message);
             throw;
         }
     }

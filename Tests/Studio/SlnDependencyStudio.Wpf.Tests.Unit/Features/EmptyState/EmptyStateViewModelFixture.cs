@@ -1,8 +1,9 @@
-using NSubstitute;
+﻿using NSubstitute;
 using Shouldly;
 using SlnDependencyStudio.Wpf.Features.EmptyState;
 using SlnDependencyStudio.Wpf.Features.RecentProjects;
 using SlnDependencyStudio.Wpf.Features.RecentProjects.Models;
+using SlnDependencyStudio.Wpf.Tests.Unit.Support;
 using System.Collections.ObjectModel;
 using System.Reactive.Linq;
 

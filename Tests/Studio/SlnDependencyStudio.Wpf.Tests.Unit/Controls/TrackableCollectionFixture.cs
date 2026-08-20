@@ -1,5 +1,6 @@
-using Shouldly;
+﻿using Shouldly;
 using SlnDependencyStudio.Wpf.Controls;
+using SlnDependencyStudio.Wpf.Tests.Unit.Support;
 
 namespace SlnDependencyStudio.Wpf.Tests.Unit.Controls;
 

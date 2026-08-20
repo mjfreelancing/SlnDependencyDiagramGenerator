@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Shouldly;
 using SlnDependencyStudio.Wpf.Features.Application;
@@ -6,6 +6,7 @@ using SlnDependencyStudio.Wpf.Features.Application.Models;
 using SlnDependencyStudio.Wpf.Features.Settings;
 using SlnDependencyStudio.Wpf.Features.Theming;
 using SlnDependencyStudio.Wpf.Models;
+using SlnDependencyStudio.Wpf.Tests.Unit.Support;
 
 namespace SlnDependencyStudio.Wpf.Tests.Unit.Features.Settings;
 

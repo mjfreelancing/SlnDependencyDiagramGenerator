@@ -1,9 +1,7 @@
-using ReactiveUI;
-using ReactiveUI.Builder;
-using System;
+﻿using ReactiveUI.Builder;
 using System.Reactive.Concurrency;
 
-namespace SlnDependencyStudio.Wpf.Tests.Unit;
+namespace SlnDependencyStudio.Wpf.Tests.Unit.Support;
 
 /// <summary>Initializes ReactiveUI for the test process.</summary>
 public sealed class ReactiveUIInitializer : IDisposable

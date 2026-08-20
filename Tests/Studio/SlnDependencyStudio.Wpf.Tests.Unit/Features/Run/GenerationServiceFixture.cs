@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 using FluentValidation.Results;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
@@ -249,7 +249,7 @@ public class GenerationServiceFixture
             await CollectLogsAsync(CancellationToken.None);
 
             _logger.Records.ShouldContain(record =>
-                record.Level == LogLevel.Error && record.Message == "Generation failed");
+                record.Level == LogLevel.Error && record.Message == "Generation failed unexpectedly");
         }
 
         [Fact]

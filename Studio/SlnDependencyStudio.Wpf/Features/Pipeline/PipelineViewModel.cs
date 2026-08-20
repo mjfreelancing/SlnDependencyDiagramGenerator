@@ -1,10 +1,13 @@
 using AllOverIt.Extensions;
+using Microsoft.Extensions.Logging;
 using ReactiveUI;
 using ReactiveUI.Validation.Abstractions;
 using ReactiveUI.Validation.Contexts;
 using ReactiveUI.Validation.Extensions;
 using SlnDependencyStudio.Shared.Utils;
 using SlnDependencyStudio.Wpf.Controls;
+using SlnDependencyStudio.Wpf.Extensions;
+using SlnDependencyStudio.Wpf.Features.ErrorDialog;
 using SlnDependencyStudio.Wpf.Features.Pipeline.Models;
 using SlnDependencyStudio.Wpf.Features.Pipeline.Services;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
@@ -25,6 +28,8 @@ public sealed class PipelineViewModel : ReactiveObject, IValidatableViewModel, I
 
     private readonly IProjectDocumentStore _store;
     private readonly IToolStatusService _toolStatus;
+    private readonly IErrorDialogService _errorDialog;
+    private readonly ILogger<PipelineViewModel> _logger;
     private readonly ObservableCollection<ToolStatusEntry> _toolStatusEntries;
     private readonly CompositeDisposable _disposables = [];
 
@@ -148,10 +153,15 @@ public sealed class PipelineViewModel : ReactiveObject, IValidatableViewModel, I
     /// <summary>Initializes a new instance of <see cref="PipelineViewModel"/>.</summary>
     /// <param name="store">The project document store.</param>
     /// <param name="toolStatus">The tool status service.</param>
-    public PipelineViewModel(IProjectDocumentStore store, IToolStatusService toolStatus)
+    /// <param name="errorDialog">The error dialog service.</param>
+    /// <param name="logger">The logger instance.</param>
+    public PipelineViewModel(IProjectDocumentStore store, IToolStatusService toolStatus,
+        IErrorDialogService errorDialog, ILogger<PipelineViewModel> logger)
     {
         _store = store;
         _toolStatus = toolStatus;
+        _errorDialog = errorDialog;
+        _logger = logger;
 
         _toolStatusEntries = [];
         ToolStatusEntries = new ReadOnlyObservableCollection<ToolStatusEntry>(_toolStatusEntries);
@@ -170,6 +180,11 @@ public sealed class PipelineViewModel : ReactiveObject, IValidatableViewModel, I
         BrowsePostGenCommandCommand = CreateBrowseCommandCommand(PostGenCommand, PostGenWorkingDirectory);
         BrowsePostGenWorkingDirectoryCommand = CreateBrowseWorkingDirectoryCommand(PostGenWorkingDirectory, UseRelativePathForPostGenWorkingDirectory);
         RescanToolsCommand = CreateRescanToolsCommand();
+
+        // Route a failed tool rescan to the error dialog instead of the global fallback (message box).
+        RescanToolsCommand
+            .WireThrownExceptionsToErrorDialog(_errorDialog, "Tool Rescan failed", _logger)
+            .DisposeWith(_disposables);
     }
 
     private void WirePreGenError()

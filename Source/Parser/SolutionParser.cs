@@ -326,7 +326,7 @@ internal sealed partial class SolutionParser : ISolutionParser
         }
         catch (Exception exception)
         {
-            _logger.LogError(exception, "Failed to parse solution file {SolutionFilePath}", solutionFilePath);
+            _logger.LogError("Failed to parse solution file {SolutionFilePath}: {ErrorMessage}", solutionFilePath, exception.Message);
             throw CreateSolutionParseException(solutionFilePath, exception);
         }
 
@@ -368,8 +368,8 @@ internal sealed partial class SolutionParser : ISolutionParser
         }
         catch (Exception exception)
         {
-            _logger.LogError(exception, "Failed while evaluating SDK-style project {ProjectPath} for target framework {TargetFramework}",
-                projectPath, targetFramework);
+            _logger.LogError("Failed while evaluating SDK-style project {ProjectPath} for target framework {TargetFramework}: {ErrorMessage}",
+                projectPath, targetFramework, exception.Message);
 
             throw CreateMsBuildEvaluationException(projectPath, targetFramework, exception);
         }
@@ -384,8 +384,8 @@ internal sealed partial class SolutionParser : ISolutionParser
         }
         catch (Exception exception)
         {
-            _logger.LogError(exception, "Failed while evaluating SDK-style project {ProjectPath} for target framework {TargetFramework}",
-                projectPath, targetFramework);
+            _logger.LogError("Failed while evaluating SDK-style project {ProjectPath} for target framework {TargetFramework}: {ErrorMessage}",
+                projectPath, targetFramework, exception.Message);
 
             throw CreateMsBuildEvaluationException(projectPath, targetFramework, exception);
         }

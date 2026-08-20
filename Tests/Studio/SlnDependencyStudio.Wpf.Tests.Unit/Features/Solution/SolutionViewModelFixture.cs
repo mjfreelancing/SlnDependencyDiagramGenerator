@@ -1,8 +1,9 @@
-using NSubstitute;
+﻿using NSubstitute;
 using Shouldly;
 using SlnDependencyStudio.Wpf.Controls;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
 using SlnDependencyStudio.Wpf.Features.Solution;
+using SlnDependencyStudio.Wpf.Tests.Unit.Support;
 using System.IO;
 using System.Reactive.Linq;
 

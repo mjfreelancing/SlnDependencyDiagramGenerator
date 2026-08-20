@@ -4,11 +4,15 @@ using Serilog.Events;
 using SlnDependencyStudio.Shared.DependencyInjection;
 using SlnDependencyStudio.Shared.Logging;
 using SlnDependencyStudio.Wpf.Abstractions.IO;
+using SlnDependencyStudio.Wpf.Extensions;
 using SlnDependencyStudio.Wpf.Features.Application;
+using SlnDependencyStudio.Wpf.Features.ErrorDialog;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Globalization;
 using System.Reactive;
+using System.Reactive.Disposables;
+using System.Reactive.Disposables.Fluent;
 using System.Reactive.Linq;
 using System.Windows;
 
@@ -31,11 +35,12 @@ public sealed class OutputPanelViewModel : ReactiveObject, IStudioScopedDependen
     private readonly IStudioLogBuffer _logBuffer;
     private readonly IApplicationSettingsService _applicationSettings;
     private readonly IFileSystem _fileSystem;
+    private readonly IErrorDialogService _errorDialog;
     private readonly ILogger<OutputPanelViewModel> _logger;
-    private readonly IDisposable _sinkSubscription;
+
+    private readonly CompositeDisposable _disposables = [];
     private LogEventLevel _minDisplayLevel = LogEventLevel.Information;
     private bool _initializing;
-
     private bool _isVerbose;
     private bool _wrapContent;
     private bool _autoScroll;
@@ -134,13 +139,15 @@ public sealed class OutputPanelViewModel : ReactiveObject, IStudioScopedDependen
     /// <param name="logBuffer">The log buffer that captures and streams log events.</param>
     /// <param name="applicationSettings">The application settings service for persisting preferences.</param>
     /// <param name="fileSystem">The file system abstraction for saving output.</param>
+    /// <param name="errorDialog">The error dialog service.</param>
     /// <param name="logger">The logger instance.</param>
     public OutputPanelViewModel(IStudioLogBuffer logBuffer, IApplicationSettingsService applicationSettings,
-        IFileSystem fileSystem, ILogger<OutputPanelViewModel> logger)
+        IFileSystem fileSystem, IErrorDialogService errorDialog, ILogger<OutputPanelViewModel> logger)
     {
         _logBuffer = logBuffer;
         _applicationSettings = applicationSettings;
         _fileSystem = fileSystem;
+        _errorDialog = errorDialog;
         _logger = logger;
 
         // Self-referencing — Messages is owned by this ViewModel.
@@ -183,12 +190,17 @@ public sealed class OutputPanelViewModel : ReactiveObject, IStudioScopedDependen
                 }
                 catch (Exception exception)
                 {
-                    _logger.LogError(exception, "Failed to save output to {FilePath}", filePath);
+                    _logger.LogError("Failed to save output to {FilePath}: {ErrorMessage}", filePath, exception.Message);
 
                     throw;
                 }
             }
         }, hasContent);
+
+        // Route a failed save to the error dialog instead of the global fallback (message box).
+        SaveAsCommand
+            .WireThrownExceptionsToErrorDialog(_errorDialog, "Save Output failed", _logger)
+            .DisposeWith(_disposables);
 
         // Restore the persisted verbose preference before subscribing so the buffered snapshot is
         // filtered by the stored toggle.
@@ -197,9 +209,10 @@ public sealed class OutputPanelViewModel : ReactiveObject, IStudioScopedDependen
         // Subscribe to the log buffer. It replays the pre-subscription snapshot captured from
         // application start, then streams live events. The display filter (IsVerbose) controls
         // which levels are added to Messages — the buffer itself always captures at Debug.
-        _sinkSubscription = _logBuffer
+        _logBuffer
             .ObserveOn(RxSchedulers.MainThreadScheduler)
-            .Subscribe(OnLogEntry);
+            .Subscribe(OnLogEntry)
+            .DisposeWith(_disposables);
     }
 
     private void OnLogEntry(StudioLogEntry entry)
@@ -245,7 +258,7 @@ public sealed class OutputPanelViewModel : ReactiveObject, IStudioScopedDependen
     /// <inheritdoc />
     public void Dispose()
     {
-        _sinkSubscription.Dispose();
+        _disposables.Dispose();
     }
 
     private static OutputMessage MapToOutputMessage(StudioLogEntry entry)

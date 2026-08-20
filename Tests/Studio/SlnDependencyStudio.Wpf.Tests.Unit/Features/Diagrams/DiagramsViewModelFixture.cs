@@ -1,9 +1,10 @@
-using NSubstitute;
+﻿using NSubstitute;
 using Shouldly;
 using SlnDependencyDiagramGenerator.Config;
 using SlnDependencyStudio.Wpf.Controls;
 using SlnDependencyStudio.Wpf.Features.Diagrams;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
+using SlnDependencyStudio.Wpf.Tests.Unit.Support;
 
 namespace SlnDependencyStudio.Wpf.Tests.Unit.Features.Diagrams;
 

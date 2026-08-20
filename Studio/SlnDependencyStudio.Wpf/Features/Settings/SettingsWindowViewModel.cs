@@ -1,7 +1,9 @@
 ﻿using AllOverIt.Assertion;
 using Microsoft.Extensions.Logging;
 using ReactiveUI;
+using SlnDependencyStudio.Wpf.Extensions;
 using SlnDependencyStudio.Wpf.Features.Application;
+using SlnDependencyStudio.Wpf.Features.ErrorDialog;
 using SlnDependencyStudio.Wpf.Features.Theming;
 using System.Reactive;
 using System.Reactive.Disposables;
@@ -19,7 +21,11 @@ public sealed class SettingsWindowViewModel : ReactiveObject
 
     private readonly IApplicationSettingsService _settingsService;
     private readonly IThemeService _themeService;
+    private readonly IErrorDialogService _errorDialog;
     private readonly ILogger<SettingsWindowViewModel> _logger;
+
+    // Bounded by the ViewModel lifetime - the source is the ViewModel's own command, so it cannot outlive it.
+    private readonly IDisposable _saveCommandExceptionSubscription;
 
     private readonly RestartSensitiveSettings _originalRestartSettings;
 
@@ -55,12 +61,14 @@ public sealed class SettingsWindowViewModel : ReactiveObject
 
     /// <summary>Initializes a new instance of <see cref="SettingsWindowViewModel"/>.
     /// Captures the original restart-sensitive values for comparison during editing.</summary>
+    /// <param name="errorDialog">The error dialog service.</param>
     /// <param name="logger">The logger instance.</param>
     public SettingsWindowViewModel(IApplicationSettingsService settingsService, IThemeService themeService,
-        ILogger<SettingsWindowViewModel> logger)
+        IErrorDialogService errorDialog, ILogger<SettingsWindowViewModel> logger)
     {
         _settingsService = settingsService;
         _themeService = themeService;
+        _errorDialog = errorDialog;
         _logger = logger;
 
         _logger.LogDebug("Settings dialog opened");
@@ -70,6 +78,9 @@ public sealed class SettingsWindowViewModel : ReactiveObject
         // Save edited values back to the current settings and persist to disk.
         // The window code-behind subscribes to this command and closes the window when executed.
         SaveCommand = ReactiveCommand.CreateFromTask(SaveAsync);
+
+        // Route a failed save to the error dialog instead of the global fallback (message box).
+        _saveCommandExceptionSubscription = SaveCommand.WireThrownExceptionsToErrorDialog(_errorDialog, "Save Settings failed", _logger);
 
         // Revert the live-previewed theme to its original value, then close.
         CancelCommand = ReactiveCommand.Create(() =>
