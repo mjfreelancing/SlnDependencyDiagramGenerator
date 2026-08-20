@@ -211,8 +211,16 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
                 .Subscribe(_ => UpdateTitle())
                 .DisposeWith(disposables);
 
-            // Recent Projects menu — refresh on open (lazy, no manual refresh points).
-            RecentProjectsMenu.SubmenuOpened += (_, _) => ViewModel!.RefreshRecentProjects();
+            // Recent Projects menu — refresh on open (lazy, no manual refresh points). Subscribed as an
+            // observable so it is detached with the window, matching the surrounding DisposeWith discipline.
+            // SubmenuOpened is a RoutedEventHandler, so the conversion overload adapts the EventHandler<RoutedEventArgs>.
+            Observable
+                .FromEventPattern<RoutedEventHandler, RoutedEventArgs>(
+                    handler => new RoutedEventHandler((sender, args) => handler(sender, args)),
+                    handler => RecentProjectsMenu.SubmenuOpened += handler,
+                    handler => RecentProjectsMenu.SubmenuOpened -= handler)
+                .Subscribe(_ => ViewModel!.RefreshRecentProjects())
+                .DisposeWith(disposables);
         });
     }
 
@@ -369,14 +377,23 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 
         if (placement.State is not "Normal")
         {
-            Loaded += (_, _) =>
-            {
-                WindowState = placement.State switch
+            // WindowState can only be set after the window has loaded. Subscribed as a one-shot observable
+            // (Take(1)) so it unsubscribes after the single Loaded event — no manual unsubscribe needed.
+            // Loaded is a RoutedEventHandler, so the conversion overload adapts the EventHandler<RoutedEventArgs>.
+            Observable
+                .FromEventPattern<RoutedEventHandler, RoutedEventArgs>(
+                    handler => new RoutedEventHandler((sender, args) => handler(sender, args)),
+                    handler => Loaded += handler,
+                    handler => Loaded -= handler)
+                .Take(1)
+                .Subscribe(_ =>
                 {
-                    "Maximized" => WindowState.Maximized,
-                    _ => WindowState.Normal
-                };
-            };
+                    WindowState = placement.State switch
+                    {
+                        "Maximized" => WindowState.Maximized,
+                        _ => WindowState.Normal
+                    };
+                });
         }
     }
 }
