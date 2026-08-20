@@ -118,34 +118,28 @@
                         <MenuItem Header="_File">
                             <MenuItem
                                 x:Name="NewProjectMenuItem"
-                                Command="{Binding NewProjectCommand}"
                                 Header="_New Project"
                                 InputGestureText="Ctrl+N" />
                             <MenuItem
                                 x:Name="NewFromExistingMenuItem"
-                                Command="{Binding NewFromExistingCommand}"
                                 Header="New from _Existing..." />
                             <Separator />
                             <MenuItem
                                 x:Name="OpenProjectMenuItem"
-                                Command="{Binding OpenProjectCommand}"
                                 Header="_Open Project..."
                                 InputGestureText="Ctrl+O" />
                             <Separator />
                             <MenuItem
                                 x:Name="SaveMenuItem"
-                                Command="{Binding SaveCommand}"
                                 Header="_Save"
                                 InputGestureText="Ctrl+S" />
                             <MenuItem
                                 x:Name="SaveAsMenuItem"
-                                Command="{Binding SaveAsCommand}"
                                 Header="Save _As..."
                                 InputGestureText="Ctrl+Shift+S" />
                             <Separator />
                             <MenuItem
                                 x:Name="CloseProjectMenuItem"
-                                Command="{Binding CloseProjectCommand}"
                                 Header="_Close"
                                 InputGestureText="Ctrl+F4" />
                             <Separator />
@@ -226,7 +220,6 @@
                             <Separator />
                             <MenuItem
                                 x:Name="SettingsMenuItem"
-                                Command="{Binding OpenSettingsCommand}"
                                 Header="_Settings..." />
                             <Separator />
                             <MenuItem
