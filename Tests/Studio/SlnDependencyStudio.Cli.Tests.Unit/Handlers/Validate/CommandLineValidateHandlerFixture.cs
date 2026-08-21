@@ -40,7 +40,7 @@ public class CommandLineValidateHandlerFixture
     }
 
     [Fact]
-    public async Task Should_Return_ConfigFileNotFound_When_File_Does_Not_Exist()
+    public async Task Should_Return_ProjectFileNotFound_When_File_Does_Not_Exist()
     {
         var serializer = Substitute.For<IDependencyProjectSerializer>();
 
@@ -55,11 +55,11 @@ public class CommandLineValidateHandlerFixture
 
         var result = await handler.HandleAsync(@"X:\nonexistent\file.sds", CancellationToken.None);
 
-        result.ShouldBe((int)StudioCliExitCode.CannotLoadConfigFile);
+        result.ShouldBe((int)StudioCliExitCode.CannotLoadProjectFile);
     }
 
     [Fact]
-    public async Task Should_Return_CannotLoadConfigFile_When_Json_Is_Malformed()
+    public async Task Should_Return_CannotLoadProjectFile_When_Json_Is_Malformed()
     {
         var serializer = Substitute.For<IDependencyProjectSerializer>();
 
@@ -74,17 +74,17 @@ public class CommandLineValidateHandlerFixture
 
         var result = await handler.HandleAsync(Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None);
 
-        result.ShouldBe((int)StudioCliExitCode.CannotLoadConfigFile);
+        result.ShouldBe((int)StudioCliExitCode.CannotLoadProjectFile);
     }
 
     [Fact]
-    public async Task Should_Return_CannotLoadConfigFile_When_Project_Document_Is_Invalid()
+    public async Task Should_Return_CannotLoadProjectFile_When_Project_File_Is_Invalid()
     {
         var serializer = Substitute.For<IDependencyProjectSerializer>();
 
         serializer
             .DeserializeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .ThrowsAsync(new DependencyProjectException("The document is empty or not a valid dependency project document"));
+            .ThrowsAsync(new DependencyProjectException("The content is empty or not a valid dependency project file"));
 
         var projectValidator = Substitute.For<IDependencyProjectValidator>();
         var logger = Substitute.For<ILogger<CommandLineValidateHandler>>();
@@ -93,7 +93,7 @@ public class CommandLineValidateHandlerFixture
 
         var result = await handler.HandleAsync(Path.Combine(Path.GetTempPath(), "test.sds"), CancellationToken.None);
 
-        result.ShouldBe((int)StudioCliExitCode.CannotLoadConfigFile);
+        result.ShouldBe((int)StudioCliExitCode.CannotLoadProjectFile);
     }
 
     [Fact]
@@ -125,7 +125,7 @@ public class CommandLineValidateHandlerFixture
     [Fact]
     public async Task Should_Return_ValidateCommandFailed_When_Regex_Is_Invalid()
     {
-        using var configFile = new DisposableTempFile(".sds", "{}");
+        using var projectFile = new DisposableTempFile(".sds", "{}");
         using var solutionFile = new DisposableTempFile(".sln");
 
         var document = new DependencyProjectDocument
@@ -166,7 +166,7 @@ public class CommandLineValidateHandlerFixture
         var serializer = Substitute.For<IDependencyProjectSerializer>();
 
         serializer
-            .DeserializeAsync(configFile.FilePath, Arg.Any<CancellationToken>())
+            .DeserializeAsync(projectFile.FilePath, Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(document));
 
         // Uses the real validation chain: the invalid include pattern is turned into a ValidationException
@@ -179,7 +179,7 @@ public class CommandLineValidateHandlerFixture
 
         var handler = new CommandLineValidateHandler(serializer, projectValidator, logger);
 
-        var result = await handler.HandleAsync(configFile.FilePath, CancellationToken.None);
+        var result = await handler.HandleAsync(projectFile.FilePath, CancellationToken.None);
 
         result.ShouldBe((int)StudioCliExitCode.ValidateCommandFailed);
     }

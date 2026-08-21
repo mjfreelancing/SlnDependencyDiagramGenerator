@@ -12,11 +12,11 @@ public static class DependencyProjectDocumentExtensions
     extension(DependencyProjectDocument document)
     {
         /// <summary>Logs the pre-generation, diagram generation and post-generation configuration.</summary>
-        /// <param name="configFilename">The configuration file path.</param>
+        /// <param name="projectFilename">The path to the project file.</param>
         /// <param name="logger">The logger instance.</param>
-        public void LogConfiguration<T>(string configFilename, ILogger<T> logger)
+        public void LogConfiguration<T>(string projectFilename, ILogger<T> logger)
         {
-            logger.LogDebug("Configuration file: {ConfigFilePath}", Path.GetFullPath(configFilename));
+            logger.LogDebug("Project file: {ProjectFilePath}", Path.GetFullPath(projectFilename));
 
             LogPreGeneratorConfiguration(document.PreGeneration, logger);
             LogGeneratorConfiguration(document.DiagramGenerator, logger);

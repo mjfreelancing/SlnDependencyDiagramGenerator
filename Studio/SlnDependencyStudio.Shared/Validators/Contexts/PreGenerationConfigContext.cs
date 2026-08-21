@@ -4,5 +4,5 @@ namespace SlnDependencyStudio.Shared.Validators.Contexts;
 public sealed class PreGenerationConfigContext
 {
     /// <summary>The directory used to resolve relative working-directory paths during validation.</summary>
-    public string ConfigDirectory { get; init; } = string.Empty;
+    public string ProjectDirectory { get; init; } = string.Empty;
 }

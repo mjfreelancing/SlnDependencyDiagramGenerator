@@ -6,8 +6,8 @@ public enum StudioCliExitCode
     /// <summary>Command-line parsing failed.</summary>
     CommandLineParseFailed = 1001,
 
-    /// <summary>The config file path does not exist or the file is malformed.</summary>
-    CannotLoadConfigFile = 1002,
+    /// <summary>The project file path does not exist or the file is malformed.</summary>
+    CannotLoadProjectFile = 1002,
 
     /// <summary>The <c>validate</c> command failed.</summary>
     ValidateCommandFailed = 1003,

@@ -42,7 +42,7 @@ public class AppFixture
             new LoggingLevelSwitch(),
             Substitute.For<ILogger<App>>());
 
-        await app.StartAsync(["run", "--cf", @"C:\tmp\config.sds"], cts.Token);
+        await app.StartAsync(["run", "--pf", @"C:\tmp\project.sds"], cts.Token);
 
         // A user cancellation is distinct from a failure and must not exit 0.
         app.ExitCode.ShouldBe((int)StudioCliExitCode.UserCancelled);
@@ -63,7 +63,7 @@ public class AppFixture
             new LoggingLevelSwitch(),
             Substitute.For<ILogger<App>>());
 
-        await app.StartAsync(["run", "--cf", @"C:\tmp\config.sds"], CancellationToken.None);
+        await app.StartAsync(["run", "--pf", @"C:\tmp\project.sds"], CancellationToken.None);
 
         // An OCE that is not caused by the user's shutdown token is an internal operation cancellation,
         // distinct from a user-requested shutdown.
@@ -79,7 +79,7 @@ public class AppFixture
             new LoggingLevelSwitch(),
             Substitute.For<ILogger<App>>());
 
-        // A bare `studio` invocation (no --configFile, no subcommand) must surface as a parse error
+        // A bare `studio` invocation (no --projectFile, no subcommand) must surface as a parse error
         // (exit 1001), not throw InvalidOperationException out of StartAsync — a throw would be
         // reported by the host as an "Unhandled exception!" stack trace with exit code -1.
         await app.StartAsync([], CancellationToken.None);
@@ -96,13 +96,13 @@ public class AppFixture
             .HandleAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(0);
 
-        var configPath = @"C:\tmp\config.sds";
+        var configPath = @"C:\tmp\project.sds";
 
         // The public override must consume the args injected via DI (the array the host builder was
         // given), not re-read Environment.GetCommandLineArgs() - the latter would parse this test
         // runner's argv instead of the configured command line.
         var app = new App(
-            new CommandLineArguments(["run", "--cf", configPath]),
+            new CommandLineArguments(["run", "--pf", configPath]),
             CreateScopeFactory(Substitute.For<ICommandLineValidateHandler>(), runHandler),
             new LoggingLevelSwitch(),
             Substitute.For<ILogger<App>>());

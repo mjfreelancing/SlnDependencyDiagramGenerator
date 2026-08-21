@@ -61,21 +61,21 @@ internal sealed class CommandLineRunHandler : CommandLineHandlerBase, ICommandLi
     // generator's last cooperative check but before it returns - so we never spawn a fresh subprocess, or exit 0, for a run
     // the user already cancelled.
     /// <inheritdoc />
-    public override async Task<int> HandleAsync(string configFilename, CancellationToken cancellationToken)
+    public override async Task<int> HandleAsync(string projectFilename, CancellationToken cancellationToken)
     {
         try
         {
             // Will throw DirectoryNotFoundException if the associated directory cannot be found
-            var configDirectory = GetConfigDirectory(configFilename);
+            var projectDirectory = GetProjectDirectory(projectFilename);
 
-            var document = await LoadDependencyProjectDocumentAsync(configFilename, cancellationToken).ConfigureAwait(false);
+            var document = await LoadDependencyProjectDocumentAsync(projectFilename, cancellationToken).ConfigureAwait(false);
 
             // Log the configuration to help with troubleshooting any validation errors.
-            document.LogConfiguration(configFilename, _logger);
+            document.LogConfiguration(projectFilename, _logger);
 
             // Validate all configuration up front so failures are reported before any command or
             // generation work begins. The command runners themselves do not perform validation.
-            _projectValidator.Validate(document, configDirectory);
+            _projectValidator.Validate(document, projectDirectory);
 
             // Run the pipeline; it returns 0 on success or the exit code of the first step that failed or was cancelled.
             var pipelineExitCode = await RunPipelineAsync(document, cancellationToken);
@@ -129,18 +129,18 @@ internal sealed class CommandLineRunHandler : CommandLineHandlerBase, ICommandLi
         }
         catch (DependencyProjectException exception)
         {
-            _logger.LogError("The project document could not be loaded: {Message}", exception.Message);
-            return (int)StudioCliExitCode.CannotLoadConfigFile;
+            _logger.LogError("The project could not be loaded: {Message}", exception.Message);
+            return (int)StudioCliExitCode.CannotLoadProjectFile;
         }
         catch (JsonException exception)
         {
-            _logger.LogError("Failed to parse configuration file. Error on line {LineNumber} for Path {Path}.", exception.LineNumber + 1, exception.Path);
-            return (int)StudioCliExitCode.CannotLoadConfigFile;
+            _logger.LogError("Failed to parse the project file. Error on line {LineNumber} for Path {Path}.", exception.LineNumber + 1, exception.Path);
+            return (int)StudioCliExitCode.CannotLoadProjectFile;
         }
         catch (Exception exception) when (exception is DirectoryNotFoundException or FileNotFoundException)
         {
             _logger.LogError("Could not load file: {Message}", exception.Message);
-            return (int)StudioCliExitCode.CannotLoadConfigFile;
+            return (int)StudioCliExitCode.CannotLoadProjectFile;
         }
     }
 

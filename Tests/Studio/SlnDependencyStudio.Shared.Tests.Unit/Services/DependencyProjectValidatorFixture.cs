@@ -116,7 +116,7 @@ public class DependencyProjectValidatorFixture
     }
 
     [Fact]
-    public void Should_Throw_When_ConfigDirectory_Is_Null()
+    public void Should_Throw_When_ProjectDirectory_Is_Null()
     {
         var validator = CreateValidator();
         var document = CreateValidDocument(Path.Combine(Path.GetTempPath(), "sample.sln"));

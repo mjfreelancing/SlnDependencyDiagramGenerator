@@ -1,4 +1,4 @@
-using AllOverIt.Assertion;
+﻿using AllOverIt.Assertion;
 using Microsoft.Extensions.Logging;
 using SlnDependencyStudio.Shared.Config;
 using SlnDependencyStudio.Shared.Serialization;
@@ -33,7 +33,7 @@ internal sealed class DependencyProjectService : IDependencyProjectService
     {
         filePath.WhenNotNull();
 
-        _logger.LogDebug("Opening project from {FilePath}", filePath);
+        _logger.LogDebug("Deserialising project: {FilePath}", filePath);
 
         return _serializer.DeserializeAsync(filePath, cancellationToken);
     }
@@ -43,7 +43,7 @@ internal sealed class DependencyProjectService : IDependencyProjectService
     {
         filePath.WhenNotNull();
 
-        _logger.LogDebug("Saving project to {FilePath}", filePath);
+        _logger.LogDebug("Serialising project: {FilePath}", filePath);
 
         return _serializer.SerializeAsync(document, filePath, cancellationToken);
     }

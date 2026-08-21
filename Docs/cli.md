@@ -15,7 +15,7 @@ It is built for automation: it can validate configurations, restore the solution
   - [Shared Options](#shared-options)
   - [Validate Command](#validate-command)
   - [Run Command](#run-command)
-- [The Configuration File (.sds)](#the-configuration-file-sds)
+- [The Project File (.sds)](#the-project-file-sds)
 - [Path Resolution](#path-resolution)
 - [The Generation Pipeline](#the-generation-pipeline)
   - [Solution Restore](#solution-restore)
@@ -87,24 +87,24 @@ SlnDependencyStudio.Cli validate --help
 
 ## Commands
 
-The CLI has two commands: `validate` and `run`. Both require the `--configFile` (or `--cf`) option pointing to a `.sds` configuration file.
+The CLI has two commands: `validate` and `run`. Both require the `--projectFile` (or `--pf`) option pointing to a `.sds` project file.
 
 ### Shared Options
 
 | Option         | Alias  | Required | Description                                                                                                             |
 | -------------- | ------ | -------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `--configFile` | `--cf` | Yes      | Path to the `.sds` configuration file. Resolved relative to the current working directory (or used as-is if absolute).  |
+| `--projectFile` | `--pf` | Yes      | Path to the `.sds` project file. Resolved relative to the current working directory (or used as-is if absolute).        |
 | `--verbose`    | `-v`   | No       | Enable Debug-level logging on the console. Does not affect the rolling file log, which always captures Debug and above. |
 | `--help`       | `-h`   | No       | Show help and usage information.                                                                                        |
 
-> The `--verbose` flag works before or after the subcommand (e.g. `SlnDependencyStudio.Cli --verbose run --cf x.sds` or `SlnDependencyStudio.Cli run --verbose --cf x.sds`).
+> The `--verbose` flag works before or after the subcommand (e.g. `SlnDependencyStudio.Cli --verbose run --pf x.sds` or `SlnDependencyStudio.Cli run --verbose --pf x.sds`).
 
 ### Validate Command
 
-Checks a `.sds` configuration file for errors — missing values, invalid paths, malformed settings, invalid regex patterns — **without running any generation or pipeline commands**.
+Checks a `.sds` project file for errors — missing values, invalid paths, malformed settings, invalid regex patterns — **without running any generation or pipeline commands**.
 
 ```text
-SlnDependencyStudio.Cli validate --cf <path-to-sds-file>
+SlnDependencyStudio.Cli validate --pf <path-to-sds-file>
 ```
 
 **What it checks:**
@@ -122,17 +122,17 @@ SlnDependencyStudio.Cli validate --cf <path-to-sds-file>
 
 ### Run Command
 
-Loads a `.sds` configuration file, validates it, then executes the full generation pipeline:
+Loads a `.sds` project file, validates it, then executes the full generation pipeline:
 
 ```text
-SlnDependencyStudio.Cli run --cf <path-to-sds-file>
+SlnDependencyStudio.Cli run --pf <path-to-sds-file>
 ```
 
 **Pipeline:**
 
-1. Load and deserialize the `.sds` file and resolve relative paths
+1. Load and deserialise the `.sds` file and resolve relative paths
 2. Log the resolved configuration (for troubleshooting)
-3. Validate the whole document up front — failures are reported before any command or generation work begins
+3. Validate the whole project up front — failures are reported before any command or generation work begins
 4. Run the pre-generation command if enabled (aborts on failure unless `continueOnFailure`)
 5. Restore the solution if `restoreSolution` is enabled
 6. Generate diagrams (project discovery → dependency resolution → framework processing → diagram emission → optional image export)
@@ -141,7 +141,7 @@ SlnDependencyStudio.Cli run --cf <path-to-sds-file>
 
 ---
 
-## The Configuration File (.sds)
+## The Project File (.sds)
 
 A `.sds` file is a JSON document (the extension is just a convention). It describes what to analyse, how diagrams should look, where to write them, and which pipeline steps to run.
 
@@ -187,7 +187,7 @@ Key points:
 
 ## Path Resolution
 
-- The `--configFile` / `--cf` path is resolved relative to your current working directory (or used as-is if absolute).
+- The `--projectFile` / `--pf` path is resolved relative to your current working directory (or used as-is if absolute).
 - All paths inside the `.sds` file — `solutionPath`, `rootPath`, `workingDirectory` — are resolved relative to the folder containing the `.sds` file. This lets you store configs anywhere and move them without rewriting paths.
 
 ---
@@ -264,7 +264,7 @@ The CLI returns deterministic exit codes suitable for script automation.
 | --------- | ----------------------------- | --------------------------------------------------------------------------- |
 | `0`       | —                             | Success                                                                     |
 | `1001`    | `CommandLineParseFailed`      | Command-line argument parsing failed                                        |
-| `1002`    | `CannotLoadConfigFile`        | Config file not found, inaccessible, or malformed JSON                      |
+| `1002`    | `CannotLoadProjectFile`       | Project file not found, inaccessible, or malformed JSON                     |
 | `1003`    | `ValidateCommandFailed`       | The `validate` command found configuration errors                           |
 | `1004`    | `RunCommandFailed`            | The `run` command failed (validation errors, regex errors, etc.)            |
 | `1005`    | `PreGenerationCommandFailed`  | Pre-generation command failed and `continueOnFailure` is disabled           |
@@ -293,14 +293,14 @@ When a pre-generation or restore command fails, the log also reports the failure
 
 ### Console Output
 
-- Uses **Serilog** with an `AnsiConsoleTheme.Code`-based console sink for colorized output.
-- Log levels are color-coded: Error (red), Warning (yellow), Information (white), Debug (gray).
+- Uses **Serilog** with an `AnsiConsoleTheme.Code`-based console sink for colourised output.
+- Log levels are colour-coded: Error (red), Warning (yellow), Information (white), Debug (grey).
 - Standard output and error output use separate logging channels.
 
 ### Rolling File Logs
 
 - Logs are written to a `logs` subfolder **relative to the `.sds` file being processed**.
-- File naming pattern: `{configFileBaseName}-{Date}.txt` (e.g. `sample-2026-08-14.txt`).
+- File naming pattern: `{projectFileBaseName}-{Date}.txt` (e.g. `sample-2026-08-14.txt`).
 - Rolling file logs always capture **all log levels (Debug and above)** — the `--verbose` flag does not change what is written to the file.
 - This provides a persistent record for troubleshooting past runs.
 
@@ -333,22 +333,22 @@ SlnDependencyStudio.Cli --help
 SlnDependencyStudio.Cli run --help
 ```
 
-### 2. Validate a configuration
+### 2. Validate a project file
 
 ```shell
-SlnDependencyStudio.Cli validate --cf .\Studio\SlnDependencyStudio.Cli\sample.sds
+SlnDependencyStudio.Cli validate --pf .\Studio\SlnDependencyStudio.Cli\sample.sds
 ```
 
 ### 3. Run generation
 
 ```shell
-SlnDependencyStudio.Cli run --cf .\Studio\SlnDependencyStudio.Cli\sample.sds
+SlnDependencyStudio.Cli run --pf .\Studio\SlnDependencyStudio.Cli\sample.sds
 ```
 
 ### 4. Run with verbose logging
 
 ```shell
-SlnDependencyStudio.Cli run --cf my-project.sds --verbose
+SlnDependencyStudio.Cli run --pf my-project.sds --verbose
 ```
 
 ### 5. Run with automatic restore
@@ -356,7 +356,7 @@ SlnDependencyStudio.Cli run --cf my-project.sds --verbose
 With `"restoreSolution": true` in the `.sds` file (the default), the solution is restored as part of the pipeline, before diagram generation:
 
 ```shell
-SlnDependencyStudio.Cli run --cf my-project.sds
+SlnDependencyStudio.Cli run --pf my-project.sds
 ```
 
 ### 6. Run with a pre-generation command
@@ -376,7 +376,7 @@ A `.sds` configured to run `dotnet restore` before generation:
 ```
 
 ```shell
-SlnDependencyStudio.Cli run --cf my-project.sds
+SlnDependencyStudio.Cli run --pf my-project.sds
 ```
 
 ### 7. Run with a post-generation command
@@ -401,19 +401,19 @@ Store the `.sds` anywhere — paths inside it resolve relative to its own folder
 ```text
 C:\repos\my-solution\
 ├── SlnDependencyDiagramGenerator\
-│   └── config.sds        # solutionPath: "..\my-solution.sln", rootPath: "..\Output"
+│   └── project.sds      # solutionPath: "..\my-solution.sln", rootPath: "..\Output"
 ├── my-solution.sln
 └── Output\
 ```
 
 ```shell
-SlnDependencyStudio.Cli run --cf C:\repos\my-solution\SlnDependencyDiagramGenerator\config.sds
+SlnDependencyStudio.Cli run --pf C:\repos\my-solution\SlnDependencyDiagramGenerator\project.sds
 ```
 
 ### 9. Script automation (PowerShell)
 
 ```powershell
-$result = & SlnDependencyStudio.Cli run --cf project.sds
+$result = & SlnDependencyStudio.Cli run --pf project.sds
 if ($LASTEXITCODE -ne 0) {
     Write-Error "Generation failed with exit code $LASTEXITCODE"
     exit $LASTEXITCODE
@@ -423,7 +423,7 @@ if ($LASTEXITCODE -ne 0) {
 ### 10. Script automation (bash / CI)
 
 ```bash
-SlnDependencyStudio.Cli run --cf project.sds
+SlnDependencyStudio.Cli run --pf project.sds
 exit_code=$?
 if [ $exit_code -ne 0 ]; then
   echo "Generation failed with exit code $exit_code" >&2
@@ -434,7 +434,7 @@ fi
 ### 11. Gate on a specific failure
 
 ```bash
-SlnDependencyStudio.Cli run --cf project.sds
+SlnDependencyStudio.Cli run --pf project.sds
 case $? in
   0)   echo "Success" ;;
   1008) echo "A required diagram tool is missing (d2/mmdc)" >&2 ;;
@@ -462,7 +462,7 @@ esac
 | Empty diagrams / no dependencies  | Projects have no `obj/project.assets.json`               | Enable `restoreSolution`, or run `dotnet restore`/build first.                                                                                                |
 | Exit code `1008`                  | A required image-export tool is missing                  | Install [d2](https://d2lang.com/tour/install/) and/or [mmdc](https://github.com/mermaid-js/mermaid-cli#installation), or configure an explicit path override. |
 | Exit code `1009`                  | `dotnet restore` failed                                  | Check the solution path and network/feed access; review the streamed restore output in the log.                                                               |
-| Exit code `1002`                  | File not found or malformed JSON                         | Verify the `--cf` path and that the file is valid JSON (use `validate` for details).                                                                          |
+| Exit code `1002`                  | File not found or malformed JSON                         | Verify the `--pf` path and that the file is valid JSON (use `validate` for details).                                                                          |
 | Exit code `1003`                  | Configuration errors found by `validate`                 | Read the reported errors, fix the `.sds` file, and re-validate.                                                                                               |
 | "Invalid regular expression"      | A `regexToInclude`/`regexToExclude` pattern is malformed | Escape backslashes in JSON (e.g. `\\.*\\.csproj`) and check the pattern.                                                                                      |
 | Validation passes but `run` fails | The solution/repo state changed between validate and run | Re-run `validate`; confirm the solution path still exists and is restored.                                                                                    |

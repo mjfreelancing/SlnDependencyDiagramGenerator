@@ -103,15 +103,15 @@ dotnet run --project Samples/DiagramGeneratorSample
 # Publish the CLI
 dotnet publish Studio\SlnDependencyStudio.Cli -o D:\tools\SlnDependencyStudio
 
-# Validate a configuration file
-SlnDependencyStudio.Cli validate --cf sample.sds
+# Validate a project file
+SlnDependencyStudio.Cli validate --pf sample.sds
 
 # Run generation
-SlnDependencyStudio.Cli run --cf sample.sds
+SlnDependencyStudio.Cli run --pf sample.sds
 ```
 
 - **Commands:** `validate` (check a `.sds` file for configuration errors) and `run` (validate, optionally restore the solution, run optional pre/post-generation commands, and generate the diagrams).
-- **Key options:** `--configFile` / `--cf` (required) and `--verbose` / `-v` (Debug-level console logging).
+- **Key options:** `--projectFile` / `--pf` (required) and `--verbose` / `-v` (Debug-level console logging).
 - **Deterministic exit codes** (1001–1008, 1999) make scripting and CI integration predictable; rolling file logs are written to a `logs` subfolder beside the `.sds` file for troubleshooting past runs.
 
 > **Note:** Both frontends share the `.sds` document format via `SlnDependencyStudio.Shared`, so a project authored in the WPF application runs unchanged in the CLI and vice versa.

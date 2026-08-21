@@ -130,7 +130,7 @@ Each navigation item shows two status indicators:
 - A **red dot** when the section has validation errors.
 - A **hollow ring** when the section has unsaved changes.
 
-The sidebar is hidden automatically when no project is open. Opening a document selects the **Project** page by default.
+The sidebar is hidden automatically when no project is open. Opening a project selects the **Project** page by default.
 
 ---
 
@@ -185,7 +185,7 @@ Controls where and how diagram files and images are saved.
 
 | Field                   | Description                                                                                                                         | Effect on Output                                                                                                                                                                              |
 | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Export Root**         | The export root directory. You can browse using the folder button. Relative paths are resolved against the `.sds` file's directory. | Generated diagram files and images are written to sub-folders under this path, organized by target framework and then by renderer (e.g. `<RootPath>/net10.0/d2/`, `<RootPath>/net10.0/mmd/`). |
+| **Export Root**         | The export root directory. You can browse using the folder button. Relative paths are resolved against the `.sds` file's directory. | Generated diagram files and images are written to sub-folders under this path, organised by target framework and then by renderer (e.g. `<RootPath>/net10.0/d2/`, `<RootPath>/net10.0/mmd/`). |
 | **Use Relative Path**   | When enabled, the Browse button stores the path relative to the project file directory.                                             | Makes the `.sds` file portable across machines.                                                                                                                                               |
 | **Clear Output Folder** | When enabled, clears the output sub-folders for configured formats before writing new files.                                        | Prevents stale files from previous runs; only sub-folders for currently configured diagram formats are cleared.                                                                               |
 | **Image Formats**       | One or more of: PNG, SVG, PDF. Can be empty for text-only output (`.d2` / `.mmd` files plus the summary).                           | When selected, the corresponding image files are generated from the diagram text files using the D2 CLI and/or Mermaid CLI (mmdc).                                                            |
@@ -328,7 +328,7 @@ The output panel is docked at the bottom of the main window. It displays all non
 | Feature                 | Description                                                                                                                                                                                                                                               |
 | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Real-time streaming** | Messages appear as they are produced during analysis and generation.                                                                                                                                                                                      |
-| **Log level coloring**  | Error (red), Warning (yellow), Information (white), Debug (gray).                                                                                                                                                                                         |
+| **Log level colouring** | Error (red), Warning (yellow), Information (white), Debug (grey).                                                                                                                                                                                         |
 | **Verbose**             | When enabled, Debug-level application log events are also shown in the output panel; when disabled, only Information level and above are shown. This is a display filter only — it does not change what is written to the rolling log file. Default: off. |
 | **Wrap**                | Toggle to wrap long lines to the next line. Default: off.                                                                                                                                                                                                 |
 | **Auto-scroll**         | Automatically scrolls to the bottom when new messages arrive. Default: on.                                                                                                                                                                                |
@@ -367,7 +367,7 @@ Open **File > Settings…** to open the Settings dialog. Settings are stored in 
 The following application state is also persisted (separately from user settings):
 
 - **Recent projects** — Recently opened `.sds` file paths, most recent first, capped at 10. If a file no longer exists on disk, it is flagged as missing in the recent projects list.
-- **Window placement** — Last-known main window position, size, and state (normal, maximized, minimized).
+- **Window placement** — Last-known main window position, size, and state (normal, maximised, minimised).
 
 ---
 
@@ -420,7 +420,7 @@ SlnDependencyStudio uses `.sds` files (JSON format) for dependency projects. The
 }
 ```
 
-The `.sds` files produced by the WPF application are fully compatible with the CLI tool and vice versa. Unrecognized JSON fields are preserved when saving to maintain forward compatibility with newer schema versions.
+The `.sds` files produced by the WPF application are fully compatible with the CLI tool and vice versa. Unrecognised JSON fields are preserved when saving to maintain forward compatibility with newer schema versions.
 
 See the [Configuration Reference](./configuration.md) for the complete field-level documentation.
 

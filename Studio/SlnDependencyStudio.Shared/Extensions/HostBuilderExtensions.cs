@@ -23,12 +23,12 @@ public static class HostBuilderExtensions
         /// <remarks>
         /// <para>The log directory is resolved differently depending on the frontend:</para>
         /// <list type="bullet">
-        ///   <item><description><b>CLI:</b> The log file is written to a <c>logs</c> subfolder next to the config file
-        ///   being processed (read from <c>configuration["configFile"]</c> or <c>configuration["cf"]</c>),
-        ///   named <c>{configFileBaseName}-yyyyMMdd.txt</c>. If no config file path is available, it falls back
+        ///   <item><description><b>CLI:</b> The log file is written to a <c>logs</c> subfolder next to the project file
+        ///   being processed (read from <c>configuration["projectFile"]</c> or <c>configuration["pf"]</c>),
+        ///   named <c>{projectFileBaseName}-yyyyMMdd.txt</c>. If no project file path is available, it falls back
         ///   to <c>studio-yyyyMMdd.txt</c> under <see cref="AppContext.BaseDirectory"/>.</description></item>
         ///   <item><description><b>WPF:</b> Passes <paramref name="logDirectory"/> explicitly because there is no
-        ///   single config file — projects are opened/closed from arbitrary locations over a session. The WPF
+        ///   single project file — projects are opened/closed from arbitrary locations over a session. The WPF
         ///   frontend uses <c>%AppData%/SlnDependencyStudio/Logs</c> as the fixed log directory.</description></item>
         /// </list>
         /// <para>The rolling file sink always writes at <see cref="LogEventLevel.Debug"/>. A
@@ -39,7 +39,7 @@ public static class HostBuilderExtensions
         /// and the <see cref="LoggerConfiguration"/> so the caller can add frontend-specific sinks,
         /// enrichers, or filters (for example, a console sink for CLI, or the WPF log-buffer sink).</param>
         /// <param name="logDirectory">When specified (WPF), overrides the auto-resolved log directory.
-        /// When not specified (CLI), the directory is resolved relative to the config file path.</param>
+        /// When not specified (CLI), the directory is resolved relative to the project file path.</param>
         /// <param name="retentionDays">The number of days of rolling log files to retain (one file is written
         /// per day). When not specified, Serilog's default retention applies.</param>
         /// <returns>The host builder for chaining.</returns>
@@ -75,7 +75,7 @@ public static class HostBuilderExtensions
                 }
                 else
                 {
-                    // CLI: log relative to the config file being processed
+                    // CLI: log relative to the project file being processed
                     (resolvedBaseName, resolvedLogDirectory) = ResolveLogNaming(hostContext.Configuration);
                 }
 
@@ -90,11 +90,11 @@ public static class HostBuilderExtensions
 
     private static (string LogBaseName, string LogDirectory) ResolveLogNaming(IConfiguration configuration)
     {
-        var configFile = configuration["configFile"] ?? configuration["cf"];
+        var projectFile = configuration["projectFile"] ?? configuration["pf"];
 
-        if (configFile.IsNotNullOrEmpty())
+        if (projectFile.IsNotNullOrEmpty())
         {
-            var fullPath = Path.GetFullPath(configFile);
+            var fullPath = Path.GetFullPath(projectFile);
             var baseName = Path.GetFileNameWithoutExtension(fullPath);
             var logDir = Path.Combine(Path.GetDirectoryName(fullPath)!, "logs");
 

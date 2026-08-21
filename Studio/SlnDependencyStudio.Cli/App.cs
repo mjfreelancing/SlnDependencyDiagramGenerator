@@ -80,17 +80,17 @@ internal sealed class App : ConsoleAppBase
         _logger.LogDebug("Command line arguments: {Arguments}", string.Join(' ', args));
 
         // Only read parsed option values once parsing has succeeded. A required-but-missing option
-        // (e.g. `run` without --configFile) makes GetValue throw InvalidOperationException. That must
+        // (e.g. `run` without --projectFile) makes GetValue throw InvalidOperationException. That must
         // surface as a parse error (exit 1001) in the try block below, not escape StartAsync and be
         // reported as an unhandled stack trace by the host.
         if (parseResult.Errors.Count == 0)
         {
-            // Log the selected command and the config file path supplied on the command line (if any).
+            // Log the selected command and the project file path supplied on the command line (if any).
             // The value is resolved via the registered option instances (not by name) because each
-            // subcommand owns its own --configFile instance, while the root copy is non-required so a
+            // subcommand owns its own --projectFile instance, while the root copy is non-required so a
             // bare invocation parses cleanly and reaches the friendly root fallback.
-            _logger.LogDebug("Selected command: {Command}, config file: {ConfigFile}",
-                parseResult.CommandResult.Command.Name, setup.GetConfigFileValue(parseResult) ?? "<none>");
+            _logger.LogDebug("Selected command: {Command}, project file: {ProjectFile}",
+                parseResult.CommandResult.Command.Name, setup.GetProjectFileValue(parseResult) ?? "<none>");
         }
 
         try

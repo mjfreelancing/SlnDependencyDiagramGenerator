@@ -38,20 +38,20 @@ public class CommandLineSetupFixture
     }
 
     [Fact]
-    public void Build_Should_Include_ConfigFile_Option_On_Root()
+    public void Build_Should_Include_ProjectFile_Option_On_Root()
     {
         var root = new CommandLineSetup()
             .AddRun(Substitute.For<ICommandLineRunHandler>(), _ => { })
             .AddValidate(Substitute.For<ICommandLineValidateHandler>(), _ => { })
             .Build(Substitute.For<ILogger>(), out _);
 
-        // Verify --cf parses at the root level (reachable without a subcommand)
-        var parseResult = root.Parse("--cf file.sds");
+        // Verify --pf parses at the root level (reachable without a subcommand)
+        var parseResult = root.Parse("--pf file.sds");
         parseResult.Errors.ShouldBeEmpty();
     }
 
     [Fact]
-    public async Task Each_Command_Should_Have_ConfigFile_Option()
+    public async Task Each_Command_Should_Have_ProjectFile_Option()
     {
         var handler = Substitute.For<ICommandLineRunHandler>();
 
@@ -63,8 +63,8 @@ public class CommandLineSetupFixture
             .AddRun(handler, _ => { })
             .Build(Substitute.For<ILogger>(), out _);
 
-        // Verify --cf is recognised under the run subcommand
-        var parseResult = root.Parse("run --cf file.sds");
+        // Verify --pf is recognised under the run subcommand
+        var parseResult = root.Parse("run --pf file.sds");
         parseResult.Errors.ShouldBeEmpty();
 
         await parseResult.InvokeAsync(cancellationToken: TestContext.Current.CancellationToken);
@@ -72,7 +72,7 @@ public class CommandLineSetupFixture
     }
 
     [Fact]
-    public async Task Validate_Command_Should_Invoke_Handler_With_ConfigFile()
+    public async Task Validate_Command_Should_Invoke_Handler_With_ProjectFile()
     {
         var handler = Substitute.For<ICommandLineValidateHandler>();
         var exitCode = 0;
@@ -85,7 +85,7 @@ public class CommandLineSetupFixture
             .AddValidate(handler, code => exitCode = code)
             .Build(Substitute.For<ILogger>(), out _);
 
-        var parseResult = root.Parse("validate --cf other.sds");
+        var parseResult = root.Parse("validate --pf other.sds");
         await parseResult.InvokeAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         await handler.Received(1).HandleAsync("other.sds", Arg.Any<CancellationToken>());
@@ -93,7 +93,7 @@ public class CommandLineSetupFixture
     }
 
     [Fact]
-    public async Task Run_Command_Should_Invoke_Handler_With_ConfigFile()
+    public async Task Run_Command_Should_Invoke_Handler_With_ProjectFile()
     {
         var handler = Substitute.For<ICommandLineRunHandler>();
         var exitCode = 0;
@@ -106,7 +106,7 @@ public class CommandLineSetupFixture
             .AddRun(handler, code => exitCode = code)
             .Build(Substitute.For<ILogger>(), out _);
 
-        var parseResult = root.Parse("run --cf test.sds");
+        var parseResult = root.Parse("run --pf test.sds");
         await parseResult.InvokeAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         await handler.Received(1).HandleAsync("test.sds", Arg.Any<CancellationToken>());
@@ -133,7 +133,7 @@ public class CommandLineSetupFixture
             .AddRun(handler, _ => { })
             .Build(Substitute.For<ILogger>(), out _);
 
-        var parseResult = root.Parse("run --cf file.sds");
+        var parseResult = root.Parse("run --pf file.sds");
 
         // Cancel before invoking: the token-aware SetAction forwards the invocation's cancellation token
         // (System.CommandLine links it to the token passed to InvokeAsync), so the handler observes the
@@ -156,7 +156,7 @@ public class CommandLineSetupFixture
             .AddValidate(Substitute.For<ICommandLineValidateHandler>(), _ => { })
             .Build(logger, out _);
 
-        var parseResult = root.Parse("--cf test.sds");
+        var parseResult = root.Parse("--pf test.sds");
         await parseResult.InvokeAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         logger.Received(1).Log(
@@ -186,7 +186,7 @@ public class CommandLineSetupFixture
             .Build(Substitute.For<ILogger>(), out _);
 
         // Short form
-        root.Parse("validate -v --cf file.sds").Errors.ShouldBeEmpty();
+        root.Parse("validate -v --pf file.sds").Errors.ShouldBeEmpty();
     }
 
     [Fact]
@@ -197,7 +197,7 @@ public class CommandLineSetupFixture
             .Build(Substitute.For<ILogger>(), out _);
 
         // Long form
-        root.Parse("run --verbose --cf file.sds").Errors.ShouldBeEmpty();
+        root.Parse("run --verbose --pf file.sds").Errors.ShouldBeEmpty();
     }
 
     [Fact]
@@ -208,7 +208,7 @@ public class CommandLineSetupFixture
             .Build(Substitute.For<ILogger>(), out _);
 
         // --verbose is recursive on the root, so the global position (before the subcommand) parses too (CL-L2).
-        root.Parse("--verbose run --cf file.sds").Errors.ShouldBeEmpty();
+        root.Parse("--verbose run --pf file.sds").Errors.ShouldBeEmpty();
     }
 
     [Fact]
@@ -221,9 +221,9 @@ public class CommandLineSetupFixture
             .AddValidate(Substitute.For<ICommandLineValidateHandler>(), _ => { })
             .Build(logger, out _);
 
-        // A bare invocation (no --configFile, no subcommand) must parse cleanly - the root copy of
-        // --configFile is not required - so the friendly root fallback fires (CL-L1) instead of a terse
-        // "Option '--configFile' is required." parse error.
+        // A bare invocation (no --projectFile, no subcommand) must parse cleanly - the root copy of
+        // --projectFile is not required - so the friendly root fallback fires (CL-L1) instead of a terse
+        // "Option '--projectFile' is required." parse error.
         var parseResult = root.Parse("");
         parseResult.Errors.ShouldBeEmpty();
 
@@ -240,28 +240,28 @@ public class CommandLineSetupFixture
     }
 
     [Fact]
-    public void Run_Command_Should_Require_ConfigFile()
+    public void Run_Command_Should_Require_ProjectFile()
     {
         var root = new CommandLineSetup()
             .AddRun(Substitute.For<ICommandLineRunHandler>(), _ => { })
             .Build(Substitute.For<ILogger>(), out _);
 
-        // --configFile is required per-subcommand, so omitting it on `run` still reports the standard error.
+        // --projectFile is required per-subcommand, so omitting it on `run` still reports the standard error.
         root.Parse("run").Errors
             .Select(error => error.Message)
-            .ShouldContain("Option '--configFile' is required.");
+            .ShouldContain("Option '--projectFile' is required.");
     }
 
     [Fact]
-    public void Validate_Command_Should_Require_ConfigFile()
+    public void Validate_Command_Should_Require_ProjectFile()
     {
         var root = new CommandLineSetup()
             .AddValidate(Substitute.For<ICommandLineValidateHandler>(), _ => { })
             .Build(Substitute.For<ILogger>(), out _);
 
-        // --configFile is required per-subcommand, so omitting it on `validate` still reports the standard error.
+        // --projectFile is required per-subcommand, so omitting it on `validate` still reports the standard error.
         root.Parse("validate").Errors
             .Select(error => error.Message)
-            .ShouldContain("Option '--configFile' is required.");
+            .ShouldContain("Option '--projectFile' is required.");
     }
 }

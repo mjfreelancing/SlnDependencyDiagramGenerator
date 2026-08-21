@@ -41,7 +41,7 @@ Because conflict analysis is performed within the discovered graph per target fr
 - `net10.0` includes both projects -> conflict section appears.
 - `net8.0` and `net9.0` do not include `NugetConflictSample` -> no cross-project conflict table.
 
-This behavior is expected and useful for validating framework-specific graph differences.
+This behaviour is expected and useful for validating framework-specific graph differences.
 
 ## Configuration Model in the Sample
 
@@ -72,7 +72,7 @@ Why `diagram.formats` is empty in base:
 
 Set `SETTINGS_VARIANT` to load `appsettings.{variant}.json` in addition to base.
 
-| Variant value | File                    | Effective behavior              |
+| Variant value | File                    | Effective behaviour             |
 | ------------- | ----------------------- | ------------------------------- |
 | `d2`          | `appsettings.d2.json`   | D2 only, grouping enabled       |
 | `mmd`         | `appsettings.mmd.json`  | Mermaid only, grouping disabled |
@@ -103,7 +103,7 @@ dotnet run --project Samples/DiagramGeneratorSample -- --configFile Samples/Diag
 
 Notes:
 
-- Use a copied/custom file (for example `appsettings.custom.json`) when exercising `--configFile` so behavior is isolated from the shared base config.
+- Use a copied/custom file (for example `appsettings.custom.json`) when exercising `--configFile` so behaviour is isolated from the shared base config.
 - If `--configFile` is used, the specified file is loaded as primary configuration.
 - If `SETTINGS_VARIANT` is also set, variant overlay is still applied.
 - For fully predictable custom runs, unset `SETTINGS_VARIANT` when using `--configFile`.
@@ -118,7 +118,7 @@ Within each TFM folder:
 - `d2/` when D2 generation is enabled
 - `mmd/` when Mermaid generation is enabled
 
-File names for all-scope diagrams are normalized to lowercase, file-safe slugs.
+File names for all-scope diagrams are normalised to lowercase, file-safe slugs.
 Example: `Dependency Diagram Generator-All` -> `dependency-diagram-generator-all.*`.
 
 ## Tooling Prerequisites for Image Export
@@ -140,7 +140,7 @@ Text artifacts (`Dependency Summary.md`, `.d2`, `.mmd`) can still be used to ins
 - Set `projects.frameworksToExclude` to `[]` to include framework references like `Microsoft.NETCore.App`.
 - Set `projects.packagesToExclude` to `[]` to include tooling/build packages in output.
 - Toggle `diagram.grouping.enabled` to compare grouped vs flat diagrams.
-- Change `diagram.direction` (`LR`, `RL`, `TB`, `BT`) to optimize readability for your graph size.
+- Change `diagram.direction` (`LR`, `RL`, `TB`, `BT`) to optimise readability for your graph size.
 
 ## Troubleshooting
 

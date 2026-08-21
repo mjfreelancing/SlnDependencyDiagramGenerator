@@ -54,7 +54,7 @@ internal sealed class DependencyProjectSerializer : IDependencyProjectSerializer
     /// <returns>A task that completes when the file has been written.</returns>
     public async Task SerializeAsync(DependencyProjectDocument document, string filePath, CancellationToken cancellationToken = default)
     {
-        _logger.LogDebug("Serializing project to {FilePath}", filePath);
+        _logger.LogDebug("Writing content to {FilePath}", filePath);
 
         try
         {
@@ -64,7 +64,7 @@ internal sealed class DependencyProjectSerializer : IDependencyProjectSerializer
         // Cancellation is a normal shutdown path — do not log it as a failure.
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            _logger.LogError("Failed to serialize project to {FilePath}: {ErrorMessage}", filePath, exception.Message);
+            _logger.LogError("Failed to write content to {FilePath}: {ErrorMessage}", filePath, exception.Message);
             throw;
         }
     }
@@ -79,7 +79,7 @@ internal sealed class DependencyProjectSerializer : IDependencyProjectSerializer
         // System.Text.Json returns null for the JSON literal "null". Guard so an empty/invalid
         // document surfaces as a clear error.
         var document = _jsonSerializer.Deserialize<DependencyProjectDocument>(json)
-            ?? throw new DependencyProjectException("The document is empty or not a valid dependency project document.");
+            ?? throw new DependencyProjectException("The dependency project content is empty or invalid.");
 
         if (document.SchemaVersion > CurrentSchemaVersion)
         {
@@ -94,21 +94,21 @@ internal sealed class DependencyProjectSerializer : IDependencyProjectSerializer
     }
 
     /// <summary>Loads and deserializes a document from a JSON file.</summary>
-    /// <param name="configFilename">The configuration file path.</param>
+    /// <param name="filePath">The path to the project file.</param>
     /// <returns>A task that resolves to the deserialized document.</returns>
-    public async Task<DependencyProjectDocument> DeserializeAsync(string configFilename, CancellationToken cancellationToken = default)
+    public async Task<DependencyProjectDocument> DeserializeAsync(string filePath, CancellationToken cancellationToken = default)
     {
-        _logger.LogDebug("Deserializing project from {ConfigFilename}", configFilename);
+        _logger.LogDebug("Reading content from {FilePath}", filePath);
 
         try
         {
-            var json = await File.ReadAllTextAsync(configFilename, cancellationToken).ConfigureAwait(false);
+            var json = await File.ReadAllTextAsync(filePath, cancellationToken).ConfigureAwait(false);
             return Deserialize(json);
         }
         // Cancellation is a normal shutdown path — do not log it as a failure.
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            _logger.LogError("Failed to deserialize project from {ConfigFilename}: {ErrorMessage}", configFilename, exception.Message);
+            _logger.LogError("Failed to read content from {FilePath}: {ErrorMessage}", filePath, exception.Message);
             throw;
         }
     }

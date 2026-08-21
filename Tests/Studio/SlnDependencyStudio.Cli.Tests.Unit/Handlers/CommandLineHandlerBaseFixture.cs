@@ -21,26 +21,26 @@ public class CommandLineHandlerBaseFixture
         {
         }
 
-        public new Task<DependencyProjectDocument> LoadDependencyProjectDocumentAsync(string configFilename, CancellationToken cancellationToken)
-            => base.LoadDependencyProjectDocumentAsync(configFilename, cancellationToken);
+        public new Task<DependencyProjectDocument> LoadDependencyProjectDocumentAsync(string projectFilename, CancellationToken cancellationToken)
+            => base.LoadDependencyProjectDocumentAsync(projectFilename, cancellationToken);
 
         public new void WriteValidationErrors(ValidationException exception)
             => base.WriteValidationErrors(exception);
 
-        public static string CallGetConfigDirectory(string path) => GetConfigDirectory(path);
+        public static string CallGetProjectDirectory(string path) => GetProjectDirectory(path);
 
-        public override Task<int> HandleAsync(string configFilename, CancellationToken cancellationToken)
+        public override Task<int> HandleAsync(string projectFilename, CancellationToken cancellationToken)
             => Task.FromResult(0);
     }
 
-    public class GetConfigDirectory : CommandLineHandlerBaseFixture
+    public class GetProjectDirectory : CommandLineHandlerBaseFixture
     {
         [Fact]
-        public void Should_Get_Config_Directory_From_File_Path()
+        public void Should_Get_Project_Directory_From_File_Path()
         {
-            var path = Path.Combine("some", "directory", "config.sds");
+            var path = Path.Combine("some", "directory", "project.sds");
 
-            var directory = TestHandler.CallGetConfigDirectory(path);
+            var directory = TestHandler.CallGetProjectDirectory(path);
 
             directory.ShouldEndWith(Path.Combine("some", "directory"));
         }
@@ -50,15 +50,15 @@ public class CommandLineHandlerBaseFixture
         {
             // A root path like "C:\" has no directory component, which causes
             // Path.GetDirectoryName to return null.
-            Should.Throw<DirectoryNotFoundException>(() => TestHandler.CallGetConfigDirectory(@"C:\"));
+            Should.Throw<DirectoryNotFoundException>(() => TestHandler.CallGetProjectDirectory(@"C:\"));
         }
 
         [Fact]
         public void Should_Return_Absolute_Path_When_Given_One()
         {
-            var absolutePath = Path.Combine(Path.GetTempPath(), "config.sds");
+            var absolutePath = Path.Combine(Path.GetTempPath(), "project.sds");
 
-            var directory = TestHandler.CallGetConfigDirectory(absolutePath);
+            var directory = TestHandler.CallGetProjectDirectory(absolutePath);
 
             directory.ShouldBe(Path.GetTempPath().TrimEnd(Path.DirectorySeparatorChar));
         }

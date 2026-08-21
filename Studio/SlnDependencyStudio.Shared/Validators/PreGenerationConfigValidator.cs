@@ -31,7 +31,7 @@ internal sealed class PreGenerationConfigValidator : ValidatorBase<PreGeneration
                     {
                         var preGenerationContext = context.GetContextData<PreGenerationConfig, PreGenerationConfigContext>();
 
-                        var resolvedPath = PathUtils.ResolveAsAbsolutePath(workingDirectory, preGenerationContext.ConfigDirectory);
+                        var resolvedPath = PathUtils.ResolveAsAbsolutePath(workingDirectory, preGenerationContext.ProjectDirectory);
 
                         if (!Directory.Exists(resolvedPath))
                         {

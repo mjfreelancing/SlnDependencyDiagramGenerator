@@ -369,7 +369,7 @@ public sealed class MainWindowViewModel : ActivatableViewModel, IDisposable
 
         _store
             .WhenAnyValue(store => store.IsDirty)
-            .Where(_ => !_store.IsTransitioning)
+            .Where(_ => _store.DocumentFilePath is not null && !_store.IsTransitioning)
             .Subscribe(isDirty =>
             {
                 if (isDirty)

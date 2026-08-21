@@ -31,7 +31,7 @@ internal sealed class PostGenerationConfigValidator : ValidatorBase<PostGenerati
                     {
                         var postGenerationContext = context.GetContextData<PostGenerationConfig, PostGenerationConfigContext>();
 
-                        var resolvedPath = PathUtils.ResolveAsAbsolutePath(workingDirectory, postGenerationContext.ConfigDirectory);
+                        var resolvedPath = PathUtils.ResolveAsAbsolutePath(workingDirectory, postGenerationContext.ProjectDirectory);
 
                         if (!Directory.Exists(resolvedPath))
                         {

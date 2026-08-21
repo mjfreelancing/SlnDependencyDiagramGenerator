@@ -6,8 +6,8 @@ namespace SlnDependencyStudio.Cli.Handlers.Validate;
 internal interface ICommandLineValidateHandler : IStudioScopedDependency
 {
     /// <summary>Validates the configuration in the specified file.</summary>
-    /// <param name="configFilename">The path to the configuration file.</param>
+    /// <param name="projectFilename">The path to the project file.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A task that resolves to the exit code: 0 on success, or a <see cref="StudioCliExitCode"/> value on failure.</returns>
-    Task<int> HandleAsync(string configFilename, CancellationToken cancellationToken);
+    Task<int> HandleAsync(string projectFilename, CancellationToken cancellationToken);
 }

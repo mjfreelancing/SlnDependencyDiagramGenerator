@@ -22,27 +22,27 @@ internal sealed class DependencyProjectValidator : IDependencyProjectValidator
     }
 
     /// <inheritdoc />
-    public void Validate(DependencyProjectDocument document, string configDirectory)
+    public void Validate(DependencyProjectDocument document, string projectDirectory)
     {
         _ = document.WhenNotNull();
-        _ = configDirectory.WhenNotNull();
+        _ = projectDirectory.WhenNotNull();
 
         // All configuration is validated up front so failures are reported before any command or
         // generation work begins. The command runners themselves do not perform validation.
 
-        // Pre/post-generation working directories may be relative to the configuration file, so the
-        // config directory is supplied as validation context to resolve and verify them.
+        // Pre/post-generation working directories may be relative to the project file, so the
+        // project directory is supplied as validation context to resolve and verify them.
         Validate(
             "Pre-generation",
             document.PreGeneration,
-            new PreGenerationConfigContext { ConfigDirectory = configDirectory });
+            new PreGenerationConfigContext { ProjectDirectory = projectDirectory });
 
         Validate("Diagram generator", document.DiagramGenerator);
 
         Validate(
             "Post-generation",
             document.PostGeneration,
-            new PostGenerationConfigContext { ConfigDirectory = configDirectory });
+            new PostGenerationConfigContext { ProjectDirectory = projectDirectory });
     }
 
     private void Validate<TConfig>(string configType, TConfig config)

@@ -55,7 +55,7 @@ public class PostGenerationConfigValidatorFixture
 
         var context = new PostGenerationConfigContext
         {
-            ConfigDirectory = Environment.CurrentDirectory
+            ProjectDirectory = Environment.CurrentDirectory
         };
 
         var exception = Should.Throw<ValidationException>(() =>
@@ -79,7 +79,7 @@ public class PostGenerationConfigValidatorFixture
 
         var context = new PostGenerationConfigContext
         {
-            ConfigDirectory = Environment.CurrentDirectory
+            ProjectDirectory = Environment.CurrentDirectory
         };
 
         Should.NotThrow(() => invoker.AssertValidation(config, context));

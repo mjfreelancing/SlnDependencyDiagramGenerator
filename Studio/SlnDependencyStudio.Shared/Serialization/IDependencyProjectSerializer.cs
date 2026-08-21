@@ -24,8 +24,8 @@ public interface IDependencyProjectSerializer : IStudioScopedDependency
     DependencyProjectDocument Deserialize(string json);
 
     /// <summary>Loads and deserializes a document from a JSON file.</summary>
-    /// <param name="configFilename">The configuration file path.</param>
+    /// <param name="projectFilename">The path to the project file.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>A task that resolves to the deserialized document.</returns>
-    Task<DependencyProjectDocument> DeserializeAsync(string configFilename, CancellationToken cancellationToken = default);
+    Task<DependencyProjectDocument> DeserializeAsync(string projectFilename, CancellationToken cancellationToken = default);
 }

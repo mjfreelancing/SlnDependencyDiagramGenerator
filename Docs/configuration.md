@@ -1,6 +1,6 @@
 # Configuration Reference
 
-This document covers every configuration option available in `SlnDependencyDiagramGenerator`. Configuration is defined via `DependencyGeneratorConfig` (in code) or serialized as JSON in `.sds` files (used by SlnDependencyStudio CLI and WPF).
+This document covers every configuration option available in `SlnDependencyDiagramGenerator`. Configuration is defined via `DependencyGeneratorConfig` (in code) or serialised as JSON in `.sds` files (used by SlnDependencyStudio CLI and WPF).
 
 ---
 
@@ -56,7 +56,7 @@ Defined by `GeneratorSolutionOptions.ProjectScope`. Shared by both `Individual` 
 | `IncludeDependencies` | `bool` | `false` | Whether framework and package dependencies are included in the diagram.                                                          |
 | `TransitiveDepth`     | `int`  | `0`     | How many levels of transitive (indirect) package references to traverse. `0` means no transitive packages. Must be 0 or greater. |
 
-**Scope behavior:**
+**Scope behaviour:**
 
 - **Individual scope** (`Individual`): When enabled, the generator produces one diagram per matching project. Each diagram shows that project and its direct dependencies (framework references, explicit packages, and transitive packages up to the configured depth).
 - **All scope** (`All`): When enabled, the generator produces a single combined diagram showing all matching projects and their collective dependency graph. This is useful for understanding the full solution-level dependency picture.
@@ -75,7 +75,7 @@ Defined by `GeneratorDiagramOptions`.
 | `TransitiveStyle` | `FillStyle`        | —       | Fill style for transitive (implicit) package dependency nodes (see [Fill Style](#fill-style)).                                                                                                                         |
 | `GroupName`       | `string`           | `""`    | The display name (title) for the group of projects on the diagram.                                                                                                                                                     |
 | `GroupNameAlias`  | `string`           | `""`    | A short alias used in generated diagram files to represent the project group. This is a technical identifier (not visible in rendered image output) that enables visual grouping of projects in D2 and Mermaid syntax. |
-| `Grouping`        | `GroupingOptions`  | —       | Grouping behavior and style for diagram containers (see [Grouping Options](#grouping-options)).                                                                                                                        |
+| `Grouping`        | `GroupingOptions`  | —       | Grouping behaviour and style for diagram containers (see [Grouping Options](#grouping-options)).                                                                                                                       |
 | `Formats`         | `DiagramFormat[]`  | `[]`    | Diagram formats to generate. Must contain at least one format. Options: `D2`, `Mermaid`.                                                                                                                               |
 
 #### Fill Style
@@ -84,7 +84,7 @@ Defined by `GeneratorDiagramOptions.FillStyle`. Used by `FrameworkStyle`, `Packa
 
 | Property  | Type     | Description                                                           |
 | --------- | -------- | --------------------------------------------------------------------- |
-| `Fill`    | `string` | CSS or RGB fill color (e.g. `"#ECCBC0"`, `"#ADD8E6"`).                |
+| `Fill`    | `string` | CSS or RGB fill colour (e.g. `"#ECCBC0"`, `"#ADD8E6"`).               |
 | `Opacity` | `double` | Opacity value between 0.0 (fully transparent) and 1.0 (fully opaque). |
 
 #### Grouping Options
@@ -96,7 +96,7 @@ Defined by `GeneratorDiagramOptions.GroupingOptions`.
 | `Enabled`         | `bool`      | `true`                        | When `true`, project and multi-version package grouping containers are rendered. When `false`, all nodes are rendered without group containers. |
 | `BackgroundStyle` | `FillStyle` | Fill `#E7EBFC`, Opacity `1.0` | The fill style used for grouping container backgrounds.                                                                                         |
 
-**Grouping behavior:**
+**Grouping behaviour:**
 
 When grouping is enabled, the generator creates visual containers that group:
 
@@ -136,7 +136,7 @@ The `Dependency Summary.md` file is also written to each target-framework folder
 
 **File naming:**
 
-Generated diagram and image files use normalized file-safe base names. For example, a project named `My.Project` with the Individual scope becomes `my-project-Individual.d2`. The solution-scope All diagram becomes `my-solution-all.d2`.
+Generated diagram and image files use normalised file-safe base names. For example, a project named `My.Project` with the Individual scope becomes `my-project-Individual.d2`. The solution-scope All diagram becomes `my-solution-all.d2`.
 
 ---
 
@@ -248,7 +248,7 @@ Both `preGeneration` and `postGeneration` share a common base shape (`ProcessCom
 
 ## Path Resolution
 
-- **CLI:** Relative paths inside the `.sds` file (`solutionPath`, `rootPath`, `workingDirectory`) are resolved relative to the folder containing the `.sds` file. The `--configFile` / `--cf` argument itself is resolved relative to the current working directory.
+- **CLI:** Relative paths inside the `.sds` file (`solutionPath`, `rootPath`, `workingDirectory`) are resolved relative to the folder containing the `.sds` file. The `--projectFile` / `--pf` argument itself is resolved relative to the current working directory.
 - **WPF:** The user can choose whether to store paths as absolute or relative to the `.sds` file directory (the **Use relative path** checkbox on the Solution and Export pages).
 
 ---
@@ -309,7 +309,7 @@ Dependency Resolution → Graph Model → Intermediate Representation → Render
 4. **Solution parsing** — For each target framework, solution projects are parsed, MSBuild items are evaluated, and package graphs are resolved from assets data.
 5. **Graph model construction** — A `DependencyGraphModel` is built for each enabled scope (individual/all), including multi-version package grouping metadata.
 6. **Intermediate representation** — Each renderer produces a renderer-neutral intermediate representation (nodes, edges, styles, groups).
-7. **Renderer emission** — `D2DiagramRenderer` and `MermaidDiagramRenderer` serialize the IR into `.d2` and `.mmd` files.
+7. **Renderer emission** — `D2DiagramRenderer` and `MermaidDiagramRenderer` serialise the IR into `.d2` and `.mmd` files.
 8. **Optional image export** — If image formats are configured, the generated diagram files are rendered via the D2 CLI and/or Mermaid CLI into PNG, SVG, and/or PDF.
 
 The generator, all renderers, and all supporting services use `ILogger<T>` (from `Microsoft.Extensions.Logging`) as the logging abstraction, with `NullLogger<T>.Instance` as the no-op fallback when no logger is registered.

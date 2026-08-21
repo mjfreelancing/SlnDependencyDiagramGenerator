@@ -259,7 +259,7 @@ public class DependencyProjectSerializerFixture
             // System.Text.Json returns null for the JSON literal "null", which previously became a raw NRE.
             var exception = Should.Throw<DependencyProjectException>(() => serializer.Deserialize("null"));
 
-            exception.Message.ShouldContain("empty or not a valid dependency project document");
+            exception.Message.ShouldContain("empty or not a valid dependency project file");
         }
 
         [Fact]
@@ -268,7 +268,7 @@ public class DependencyProjectSerializerFixture
             var serializer = CreateSerializer();
 
             // Empty input is a parse failure (System.Text.Json), not a null result — the CLI already
-            // maps JsonException to CannotLoadConfigFile, so empty files surface a clear error too.
+            // maps JsonException to CannotLoadProjectFile, so empty files surface a clear error too.
             Should.Throw<JsonException>(() => serializer.Deserialize(string.Empty));
         }
 

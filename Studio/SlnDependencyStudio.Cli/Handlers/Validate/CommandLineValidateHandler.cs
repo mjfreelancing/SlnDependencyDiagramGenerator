@@ -33,21 +33,21 @@ internal sealed class CommandLineValidateHandler : CommandLineHandlerBase, IComm
     // and rethrown so App owns the exit-code mapping. Unlike CommandLineRunHandler, there is no subprocess at stake in the tail,
     // so no post-step IsCancellationRequested check is needed.
     /// <inheritdoc />
-    public override async Task<int> HandleAsync(string configFilename, CancellationToken cancellationToken)
+    public override async Task<int> HandleAsync(string projectFilename, CancellationToken cancellationToken)
     {
         try
         {
             // Will throw DirectoryNotFoundException if the associated directory cannot be found
-            var configDirectory = GetConfigDirectory(configFilename);
+            var projectDirectory = GetProjectDirectory(projectFilename);
 
-            var document = await LoadDependencyProjectDocumentAsync(configFilename, cancellationToken).ConfigureAwait(false);
+            var document = await LoadDependencyProjectDocumentAsync(projectFilename, cancellationToken).ConfigureAwait(false);
 
             // Log the configuration to help with troubleshooting any validation errors.
-            document.LogConfiguration(configFilename, _logger);
+            document.LogConfiguration(projectFilename, _logger);
 
             // Validate all configuration up front so failures are reported before any command or
             // generation work begins. The command runners themselves do not perform validation.
-            _projectValidator.Validate(document, configDirectory);
+            _projectValidator.Validate(document, projectDirectory);
 
             _logger.LogInformation("Configuration is valid.");
             return 0;
@@ -67,18 +67,18 @@ internal sealed class CommandLineValidateHandler : CommandLineHandlerBase, IComm
         }
         catch (DependencyProjectException exception)
         {
-            _logger.LogError("The project document could not be loaded: {Message}", exception.Message);
-            return (int)StudioCliExitCode.CannotLoadConfigFile;
+            _logger.LogError("The project could not be loaded: {Message}", exception.Message);
+            return (int)StudioCliExitCode.CannotLoadProjectFile;
         }
         catch (JsonException exception)
         {
-            _logger.LogError("Failed to parse configuration file. Error on line {LineNumber} for Path {Path}.", exception.LineNumber + 1, exception.Path);
-            return (int)StudioCliExitCode.CannotLoadConfigFile;
+            _logger.LogError("Failed to parse the project file. Error on line {LineNumber} for Path {Path}.", exception.LineNumber + 1, exception.Path);
+            return (int)StudioCliExitCode.CannotLoadProjectFile;
         }
         catch (Exception exception) when (exception is DirectoryNotFoundException or FileNotFoundException)
         {
             _logger.LogError("Could not load file: {Message}", exception.Message);
-            return (int)StudioCliExitCode.CannotLoadConfigFile;
+            return (int)StudioCliExitCode.CannotLoadProjectFile;
         }
     }
 }

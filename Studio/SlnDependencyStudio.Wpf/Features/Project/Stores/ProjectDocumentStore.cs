@@ -268,7 +268,7 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
     /// <summary>Flushes all editor wrappers to the underlying document.</summary>
     private void FlushAllEditors()
     {
-        _logger.LogDebug("Flushing editor values to the document");
+        _logger.LogDebug("Flushing editor values to the project");
 
         _metadataEditor.FlushTo(_document!.Metadata);
         _solutionOptionsEditor.FlushTo(_document!.DiagramGenerator.Solution);
@@ -306,7 +306,7 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
     {
         Throw<InvalidOperationException>.WhenNull(_document, "No project is loaded");
 
-        _logger.LogDebug("Building document from current editor state");
+        _logger.LogDebug("Building project from current editor state");
 
         FlushAllEditors();
 
