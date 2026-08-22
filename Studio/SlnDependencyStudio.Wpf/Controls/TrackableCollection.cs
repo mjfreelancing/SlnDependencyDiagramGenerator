@@ -52,7 +52,13 @@ public sealed class TrackableCollection<TValue> : ReactiveObject, IDisposable
         var itemsArray = items.ToArray();
 
         _originalItems = itemsArray;
-        _items.Load(itemsArray);
+
+        // Load mutates the live collection; SuppressNotifications guarantees our dirty handler
+        // is not invoked mid-mutation (which would transiently report the collection as dirty).
+        using (_items.SuspendNotifications())
+        {
+            _items.Load(itemsArray);
+        }
 
         _isDirty = false;
         this.RaisePropertyChanged(nameof(IsDirty));

@@ -11,6 +11,7 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Globalization;
 using System.Reactive;
+using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Reactive.Disposables.Fluent;
 using System.Reactive.Linq;
@@ -161,7 +162,14 @@ public sealed class OutputPanelViewModel : ReactiveObject, IStudioScopedDependen
         ClearCommand = ReactiveCommand.Create(() =>
         {
             _logger.LogDebug("Output panel cleared");
-            Messages.Clear();
+
+            // Clearing the messages must be scheduled because log entries are delivered to Messages
+            // asynchronously on the main thread (the buffer subscription uses ObserveOn with
+            // RxSchedulers.MainThreadScheduler). The 'Output panel cleared' entry is therefore queued
+            // and would be added after a synchronous clear. Scheduling the clear on the same scheduler
+            // queues it behind that delivery, so the entry lands and is then removed — the panel stays
+            // empty while the message still reaches the log file.
+            RxSchedulers.MainThreadScheduler.Schedule(() => Messages.Clear());
         }, hasContent);
 
         var canCancel = this.WhenAnyValue(vm => vm.CanCancel);

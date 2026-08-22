@@ -160,7 +160,7 @@ internal sealed class ProjectDocumentStore : ReactiveObject, IProjectDocumentSto
             _restoreSolutionEditor.SetOriginalValues(_document.RestoreSolution);
             _postGenerationEditor.SetOriginalValues(_document.PostGeneration);
 
-            _logger.LogInformation("Project opened: {FilePath}", filePath);
+            _logger.LogDebug("Project opened: {FilePath}", filePath);
 
             _recentProjects.Add(filePath);
         }
