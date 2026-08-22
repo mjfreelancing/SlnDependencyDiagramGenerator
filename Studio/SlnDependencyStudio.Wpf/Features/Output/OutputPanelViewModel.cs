@@ -101,7 +101,7 @@ public sealed class OutputPanelViewModel : ReactiveObject, IStudioScopedDependen
                 ? LogEventLevel.Debug
                 : LogEventLevel.Information;
 
-            _logger.LogDebug("Verbose logging {State}", value ? "enabled" : "disabled");
+            _logger.LogInformation("Verbose logging enabled: {Verbose}", value);
 
             PersistIfNotInitializing();
         }

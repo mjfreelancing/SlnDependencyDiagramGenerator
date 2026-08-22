@@ -111,7 +111,7 @@ public partial class App : Application
             var bootstrapper = _host.Services.GetRequiredService<WpfAppBootstrapper>();
             await bootstrapper.RunAsync();
 
-            _logger.LogInformation("SlnDependencyStudio bootstrapper initialised");
+            _logger.LogDebug("SlnDependencyStudio bootstrapper initialised");
         }
         catch (Exception exception)
         {

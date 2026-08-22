@@ -75,7 +75,7 @@ internal sealed class App : ConsoleAppBase
             _levelSwitch.MinimumLevel = LogEventLevel.Debug;
         }
 
-        _logger.LogDebug("Verbose logging enabled: {Verbose}", isVerbose);
+        _logger.LogInformation("Verbose logging enabled: {Verbose}", isVerbose);
 
         _logger.LogDebug("Command line arguments: {Arguments}", string.Join(' ', args));
 
