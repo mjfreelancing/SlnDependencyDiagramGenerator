@@ -663,8 +663,7 @@ public class MainWindowViewModelFixture
             var capturedError = await ErrorDialogTestHelpers.WaitForCapturedErrorAsync(errorReceived.Task);
 
             capturedError.Title.ShouldBe("Open Recent Project failed");
-            capturedError.Message.ShouldContain("moved or deleted");
-            capturedError.Message.ShouldContain("File not found");
+            capturedError.Message.ShouldBe("The recent project could not be opened. It may have been moved or deleted.\n\nFile not found");
 
             _recentProjects.Received(1).Remove("recent.sds");
         }
@@ -709,7 +708,7 @@ public class MainWindowViewModelFixture
             var capturedError = await ErrorDialogTestHelpers.WaitForCapturedErrorAsync(errorReceived.Task);
 
             capturedError.Title.ShouldBe("Open Project failed");
-            capturedError.Message.ShouldContain("Access denied");
+            capturedError.Message.ShouldBe("Access denied");
         }
     }
 
@@ -749,7 +748,7 @@ public class MainWindowViewModelFixture
             var capturedError = await ErrorDialogTestHelpers.WaitForCapturedErrorAsync(errorReceived.Task);
 
             capturedError.Title.ShouldBe("New Project failed");
-            capturedError.Message.ShouldContain("Save failed");
+            capturedError.Message.ShouldBe("Save failed");
         }
     }
 
@@ -789,7 +788,7 @@ public class MainWindowViewModelFixture
             var capturedError = await ErrorDialogTestHelpers.WaitForCapturedErrorAsync(errorReceived.Task);
 
             capturedError.Title.ShouldBe("New from Existing failed");
-            capturedError.Message.ShouldContain("Open failed");
+            capturedError.Message.ShouldBe("Open failed");
         }
     }
 
@@ -825,7 +824,7 @@ public class MainWindowViewModelFixture
             var capturedError = await ErrorDialogTestHelpers.WaitForCapturedErrorAsync(errorReceived.Task);
 
             capturedError.Title.ShouldBe("Save failed");
-            capturedError.Message.ShouldContain("Save failed");
+            capturedError.Message.ShouldBe("Save failed");
         }
     }
 
@@ -863,7 +862,7 @@ public class MainWindowViewModelFixture
             var capturedError = await ErrorDialogTestHelpers.WaitForCapturedErrorAsync(errorReceived.Task);
 
             capturedError.Title.ShouldBe("Save As failed");
-            capturedError.Message.ShouldContain("Save failed");
+            capturedError.Message.ShouldBe("Save failed");
         }
     }
 
@@ -901,7 +900,7 @@ public class MainWindowViewModelFixture
             var capturedError = await ErrorDialogTestHelpers.WaitForCapturedErrorAsync(errorReceived.Task);
 
             capturedError.Title.ShouldBe("Close Project failed");
-            capturedError.Message.ShouldContain("Close failed");
+            capturedError.Message.ShouldBe("Close failed");
         }
     }
 
@@ -939,7 +938,7 @@ public class MainWindowViewModelFixture
             var capturedError = await ErrorDialogTestHelpers.WaitForCapturedErrorAsync(errorReceived.Task);
 
             capturedError.Title.ShouldBe("Generation failed");
-            capturedError.Message.ShouldContain("Generation failed");
+            capturedError.Message.ShouldBe("Generation failed");
         }
     }
 
@@ -977,7 +976,7 @@ public class MainWindowViewModelFixture
             var capturedError = await ErrorDialogTestHelpers.WaitForCapturedErrorAsync(errorReceived.Task);
 
             capturedError.Title.ShouldBe("Analysis failed");
-            capturedError.Message.ShouldContain("Analysis failed");
+            capturedError.Message.ShouldBe("Analysis failed");
         }
     }
 

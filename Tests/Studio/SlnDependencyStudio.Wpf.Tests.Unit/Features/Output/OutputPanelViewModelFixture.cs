@@ -296,7 +296,7 @@ public class OutputPanelViewModelFixture
             var capturedError = await ErrorDialogTestHelpers.WaitForCapturedErrorAsync(errorReceived.Task);
 
             capturedError.Title.ShouldBe("Save Output failed");
-            capturedError.Message.ShouldContain("Write failed");
+            capturedError.Message.ShouldBe("Write failed");
         }
     }
 
@@ -327,7 +327,7 @@ public class OutputPanelViewModelFixture
             var capturedError = await ErrorDialogTestHelpers.WaitForCapturedErrorAsync(errorReceived.Task);
 
             capturedError.Title.ShouldBe("Save Settings failed");
-            capturedError.Message.ShouldContain("Access denied");
+            capturedError.Message.ShouldBe("The output panel settings could not be saved.\n\nAccess denied");
         }
     }
 }

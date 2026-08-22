@@ -201,7 +201,7 @@ public class CommandLineRunHandlerFixture
 
         serializer
             .DeserializeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .ThrowsAsync(new DependencyProjectException("The content is empty or not a valid dependency project file"));
+            .ThrowsAsync(new DependencyProjectException("The dependency project content is empty or invalid."));
 
         var dependencyGenerator = Substitute.For<IDependencyGenerator>();
         var preGenRunner = Substitute.For<IPreGenerationCommandRunner>();

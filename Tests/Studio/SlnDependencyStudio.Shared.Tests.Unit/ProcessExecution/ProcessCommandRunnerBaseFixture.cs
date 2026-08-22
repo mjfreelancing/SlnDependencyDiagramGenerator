@@ -21,7 +21,7 @@ public class ProcessCommandRunnerBaseFixture
         [Fact]
         public async Task Should_Succeed_When_Command_Exits_Zero()
         {
-            using var runner = CreateRunner();
+            var (runner, logger) = CreateRunnerWithLogger();
 
             var result = await runner.RunAsync("cmd.exe", ["/c", "exit 0"], null, CancellationToken.None);
 
@@ -29,6 +29,13 @@ public class ProcessCommandRunnerBaseFixture
             result.ErrorCode.ShouldBe(CommandErrorCode.None);
             result.ExitCode.ShouldBe(0);
             result.ErrorMessage.ShouldBeNull();
+
+            logger.Received(1).Log(
+                Arg.Is<LogLevel>(level => level == LogLevel.Information),
+                Arg.Any<EventId>(),
+                Arg.Is<object>(obj => obj.ToString()!.Contains("completed successfully")),
+                null,
+                Arg.Any<Func<object, Exception?, string>>());
         }
     }
 
@@ -37,7 +44,7 @@ public class ProcessCommandRunnerBaseFixture
         [Fact]
         public async Task Should_Fail_With_Actual_Exit_Code_When_Command_Exits_NonZero()
         {
-            using var runner = CreateRunner();
+            var (runner, logger) = CreateRunnerWithLogger();
 
             var result = await runner.RunAsync("cmd.exe", ["/c", "exit 42"], null, CancellationToken.None);
 
@@ -45,6 +52,13 @@ public class ProcessCommandRunnerBaseFixture
             result.ErrorCode.ShouldBe(CommandErrorCode.ProcessExitedWithFailure);
             result.ExitCode.ShouldBe(42);
             result.ErrorMessage.ShouldBe("Test command exited with code 42.");
+
+            logger.Received(1).Log(
+                Arg.Is<LogLevel>(level => level == LogLevel.Error),
+                Arg.Any<EventId>(),
+                Arg.Is<object>(obj => obj.ToString()!.Contains("exited with code 42")),
+                null,
+                Arg.Any<Func<object, Exception?, string>>());
         }
     }
 
@@ -164,6 +178,13 @@ public class ProcessCommandRunnerBaseFixture
     private static TestCommandRunner CreateRunner()
     {
         return new TestCommandRunner(Substitute.For<ILogger>());
+    }
+
+    private static (TestCommandRunner Runner, ILogger Logger) CreateRunnerWithLogger()
+    {
+        var logger = Substitute.For<ILogger>();
+
+        return (new TestCommandRunner(logger), logger);
     }
 
     private static async Task WaitUntilAsync(Func<bool> predicate, TimeSpan? timeout = null)

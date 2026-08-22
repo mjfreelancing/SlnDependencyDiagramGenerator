@@ -95,7 +95,7 @@ public class GenerationServiceFixture
             result.ShouldBeTrue();
             _logger.Records.ShouldHaveSingleItem();
             _logger.Records[0].Level.ShouldBe(LogLevel.Debug);
-            _logger.Records[0].Message.ShouldContain("skipping");
+            _logger.Records[0].Message.ShouldBe("Pre-generation command disabled or has no command — skipping");
         }
 
         [Fact]
@@ -108,7 +108,7 @@ public class GenerationServiceFixture
             result.ShouldBeTrue();
             _logger.Records.ShouldHaveSingleItem();
             _logger.Records[0].Level.ShouldBe(LogLevel.Debug);
-            _logger.Records[0].Message.ShouldContain("skipping");
+            _logger.Records[0].Message.ShouldBe("Pre-generation command disabled or has no command — skipping");
         }
 
         [Fact]
@@ -125,9 +125,6 @@ public class GenerationServiceFixture
             var result = await _service.RunPreGenerationAsync(CancellationToken.None);
 
             result.ShouldBeTrue();
-
-            _logger.Records.ShouldContain(record =>
-                record.Level == LogLevel.Information && record.Message == "Pre-generation command completed successfully");
         }
 
         [Fact]
@@ -304,7 +301,6 @@ public class GenerationServiceFixture
 
             await CollectLogsAsync(CancellationToken.None);
 
-            _logger.Records.ShouldContain(record => record.Message == "Pre-generation command completed successfully");
             _logger.Records.ShouldContain(record => record.Message == "Generating diagrams...");
             _logger.Records.ShouldContain(record => record.Message.StartsWith("Generation completed ("));
         }
@@ -325,9 +321,6 @@ public class GenerationServiceFixture
             });
 
             await CollectLogsAsync(CancellationToken.None);
-
-            _logger.Records.ShouldContain(record =>
-                record.Level == LogLevel.Error && record.Message == "Pre-generation command failed: Build failed");
 
             _logger.Records.ShouldNotContain(record => record.Message == "Generating diagrams...");
 
@@ -354,7 +347,7 @@ public class GenerationServiceFixture
 
             await CollectLogsAsync(CancellationToken.None);
 
-            _logger.Records.ShouldContain(record => record.Message.Contains("continuing"));
+            _logger.Records.ShouldContain(record => record.Message == "Pre-generation command failed (continuing): Build failed");
             _logger.Records.ShouldContain(record => record.Message == "Generating diagrams...");
             _logger.Records.ShouldContain(record => record.Message.StartsWith("Generation completed ("));
         }
@@ -386,9 +379,6 @@ public class GenerationServiceFixture
 
             await CollectLogsAsync(CancellationToken.None);
 
-            _logger.Records.ShouldContain(record =>
-                record.Level == LogLevel.Error && record.Message == "Solution restore failed: Restore failed");
-
             _logger.Records.ShouldNotContain(record => record.Message == "Generating diagrams...");
             _ = _generatorFactory.DidNotReceiveWithAnyArgs().ExecuteAsync(default!, TestContext.Current.CancellationToken);
         }
@@ -405,7 +395,6 @@ public class GenerationServiceFixture
 
             await CollectLogsAsync(CancellationToken.None);
 
-            _logger.Records.ShouldContain(record => record.Message == "Solution restore completed successfully");
             _logger.Records.ShouldContain(record => record.Message == "Generating diagrams...");
             _logger.Records.ShouldContain(record => record.Message.StartsWith("Generation completed ("));
         }
@@ -424,11 +413,10 @@ public class GenerationServiceFixture
             await CollectLogsAsync(CancellationToken.None);
 
             _logger.Records.ShouldContain(record => record.Message == "Generating diagrams...");
-            _logger.Records.ShouldContain(record => record.Message == "Post-generation command completed successfully");
         }
 
         [Fact]
-        public async Task Should_Report_PostGeneration_Failure_As_Warning()
+        public async Task Should_Continue_After_PostGeneration_Failure()
         {
             SetupStoreConfig();
 
@@ -446,9 +434,7 @@ public class GenerationServiceFixture
 
             await CollectLogsAsync(CancellationToken.None);
 
-            _logger.Records.ShouldContain(record =>
-                record.Level == LogLevel.Warning && record.Message == "Post-generation command failed: Deploy failed");
-
+            // The failure itself is logged by the runner; the pipeline continues regardless.
             _logger.Records.ShouldContain(record => record.Message.StartsWith("Generation completed ("));
         }
 
@@ -534,7 +520,7 @@ public class GenerationServiceFixture
 
             _logger.Records.ShouldHaveSingleItem();
             _logger.Records[0].Level.ShouldBe(LogLevel.Debug);
-            _logger.Records[0].Message.ShouldContain("skipping");
+            _logger.Records[0].Message.ShouldBe("Solution restore disabled — skipping");
         }
 
         [Fact]
@@ -547,9 +533,6 @@ public class GenerationServiceFixture
             var result = await _service.RunRestoreSolutionAsync(@"C:\Projects\test.sln", CancellationToken.None);
 
             result.ShouldBeTrue();
-
-            _logger.Records.ShouldContain(record =>
-                record.Level == LogLevel.Information && record.Message == "Solution restore completed successfully");
         }
 
         [Fact]
@@ -580,9 +563,6 @@ public class GenerationServiceFixture
             var result = await _service.RunRestoreSolutionAsync(@"C:\Projects\test.sln", CancellationToken.None);
 
             result.ShouldBeFalse();
-
-            _logger.Records.ShouldContain(record =>
-                record.Level == LogLevel.Error && record.Message == "Solution restore failed: Restore failed");
         }
     }
 
@@ -595,42 +575,9 @@ public class GenerationServiceFixture
 
             _logger.Records.ShouldHaveSingleItem();
             _logger.Records[0].Level.ShouldBe(LogLevel.Debug);
-            _logger.Records[0].Message.ShouldContain("skipping");
+            _logger.Records[0].Message.ShouldBe("Post-generation command disabled or has no command — skipping");
 
             await _postGenRunnerFactory.DidNotReceiveWithAnyArgs().ExecuteAsync(default!, TestContext.Current.CancellationToken);
-        }
-
-        [Fact]
-        public async Task Should_Report_Success_When_Command_Succeeds()
-        {
-            _postGenEnabled.Value = true;
-            _postGenCommand.Value = "deploy.cmd";
-
-            SetupPostGenRunner(new PostGenerationCommandResult { ExitCode = 0 });
-
-            await _service.RunPostGenerationAsync(CancellationToken.None);
-
-            _logger.Records.ShouldContain(record =>
-                record.Level == LogLevel.Information && record.Message == "Post-generation command completed successfully");
-        }
-
-        [Fact]
-        public async Task Should_Report_Failure_As_Warning()
-        {
-            _postGenEnabled.Value = true;
-            _postGenCommand.Value = "deploy.cmd";
-
-            SetupPostGenRunner(new PostGenerationCommandResult
-            {
-                ErrorCode = CommandErrorCode.ProcessExitedWithFailure,
-                ExitCode = 6,
-                ErrorMessage = "Deploy failed"
-            });
-
-            await _service.RunPostGenerationAsync(CancellationToken.None);
-
-            _logger.Records.ShouldContain(record =>
-                record.Level == LogLevel.Warning && record.Message == "Post-generation command failed: Deploy failed");
         }
     }
 

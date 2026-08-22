@@ -69,7 +69,7 @@ public class DependencyGeneratorFixture
 
             var exception = await Should.ThrowAsync<ToolNotFoundException>(() => sut.CreateDiagramsAsync(config, CancellationToken.None));
 
-            exception.Message.ShouldContain("d2");
+            exception.Message.ShouldBe("Required external tools are not available: d2");
         }
 
         [Fact]

@@ -931,7 +931,7 @@ public class PipelineViewModelFixture
             var capturedError = await ErrorDialogTestHelpers.WaitForCapturedErrorAsync(errorReceived.Task);
 
             capturedError.Title.ShouldBe("Tool Rescan failed");
-            capturedError.Message.ShouldContain("Rescan failed");
+            capturedError.Message.ShouldBe("Rescan failed");
         }
     }
 }

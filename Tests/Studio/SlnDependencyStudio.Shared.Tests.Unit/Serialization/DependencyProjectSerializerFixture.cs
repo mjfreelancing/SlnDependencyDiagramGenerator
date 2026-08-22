@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Shouldly;
 using SlnDependencyDiagramGenerator.Config;
@@ -225,9 +225,9 @@ public class DependencyProjectSerializerFixture
 
             var exception = Should.Throw<InvalidOperationException>(() => serializer.Deserialize(json));
 
-            exception.Message.ShouldContain("999");
-            exception.Message.ShouldContain("1");
-            exception.Message.ShouldContain("Update the application");
+            exception.Message.ShouldBe(
+                "The document schema version 999 is not supported by this version of " +
+                "SlnDependencyStudio (latest supported: 1). Update the application to open this file.");
         }
 
         [Fact]
@@ -259,7 +259,7 @@ public class DependencyProjectSerializerFixture
             // System.Text.Json returns null for the JSON literal "null", which previously became a raw NRE.
             var exception = Should.Throw<DependencyProjectException>(() => serializer.Deserialize("null"));
 
-            exception.Message.ShouldContain("empty or not a valid dependency project file");
+            exception.Message.ShouldBe("The dependency project content is empty or invalid.");
         }
 
         [Fact]
@@ -288,7 +288,7 @@ public class DependencyProjectSerializerFixture
             // clear message instead of silently loading at a stale version.
             var exception = Should.Throw<InvalidOperationException>(() => serializer.Deserialize(json));
 
-            exception.Message.ShouldContain("schema version 0");
+            exception.Message.ShouldBe("No migration is defined from schema version 0 to 1. A migration step is missing.");
         }
     }
 
@@ -372,7 +372,7 @@ public class DependencyProjectSerializerFixture
             var exception = Should.Throw<InvalidOperationException>(() =>
                 DependencyProjectSerializer.MigrateToCurrent(document, migrations));
 
-            exception.Message.ShouldContain("did not advance the document to the declared version 1");
+            exception.Message.ShouldBe("The migration from schema version 0 did not advance the document to the declared version 1.");
         }
     }
 

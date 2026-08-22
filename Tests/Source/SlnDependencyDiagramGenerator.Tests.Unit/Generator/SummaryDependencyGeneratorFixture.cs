@@ -218,7 +218,7 @@ public class SummaryDependencyGeneratorFixture
             var exception = Should.Throw<DependencyGraphException>(() =>
                 SummaryDependencyGenerator.CreateContent(solutionProjects));
 
-            exception.Message.ShouldContain("MissingLib");
+            exception.Message.ShouldBe("The dependency project 'MissingLib' was not found using the provided regex paths.");
         }
 
         [Fact]
@@ -241,7 +241,7 @@ public class SummaryDependencyGeneratorFixture
             var exception = Should.Throw<DependencyGraphException>(() =>
                 SummaryDependencyGenerator.CreateContent(solutionProjects));
 
-            exception.Message.ShouldContain("circular");
+            exception.Message.ShouldBe("A circular project reference was detected while building the dependency summary for 'LibB'.");
         }
 
         private static IDictionary<string, SolutionProject> CreateSolutionProjects(params SolutionProject[] projects)

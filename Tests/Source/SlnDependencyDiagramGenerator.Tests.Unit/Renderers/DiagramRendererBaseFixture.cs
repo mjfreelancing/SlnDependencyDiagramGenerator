@@ -310,7 +310,7 @@ public class DiagramRendererBaseFixture
 
             var exception = Should.Throw<DependencyGraphException>(() => sut.BuildIntermediateRepresentation(model));
 
-            exception.Message.ShouldContain("circular");
+            exception.Message.ShouldBe("A circular project reference was detected while building the diagram for 'LibA'.");
         }
     }
 

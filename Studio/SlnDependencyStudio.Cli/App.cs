@@ -153,14 +153,6 @@ internal sealed class App : ConsoleAppBase
             ExitCode = (int)StudioCliExitCode.UnhandledCliFailure;
         }
 
-        _logger.LogInformation("SlnDependencyStudio CLI completed with exit code {ExitCode}.", ExitCode);
-    }
-
-    /// <inheritdoc />
-    public override void OnStopping()
-    {
-        // Fired by the host when Ctrl+C / SIGTERM triggers shutdown. The token handed to StartAsync
-        // (linked against ApplicationStopping) is cancelled, so any in-flight command is cancelled.
-        _logger.LogInformation("Shutdown requested - cancelling any in-flight command.");
+        _logger.LogDebug("SlnDependencyStudio CLI completed with exit code {ExitCode}.", ExitCode);
     }
 }

@@ -95,15 +95,14 @@ public abstract class ProcessCommandRunnerBase<TResult> : IDisposable
 
                 var result = await executor.ExecuteAsync(cancellationToken).ConfigureAwait(false);
 
-                Logger.LogInformation(
-                    "{OperationName} completed with exit code {ExitCode}.",
-                    OperationName,
-                    result.ExitCode);
-
                 if (result.ExitCode == 0)
                 {
+                    Logger.LogInformation("{OperationName} completed successfully.", OperationName);
+
                     return CreateResult(CommandErrorCode.None, result.ExitCode, null);
                 }
+
+                Logger.LogError("{OperationName} exited with code {ExitCode}.", OperationName, result.ExitCode);
 
                 return CreateResult(CommandErrorCode.ProcessExitedWithFailure, result.ExitCode,
                     $"{OperationName} exited with code {result.ExitCode}.");

@@ -84,7 +84,7 @@ public class CommandLineValidateHandlerFixture
 
         serializer
             .DeserializeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .ThrowsAsync(new DependencyProjectException("The content is empty or not a valid dependency project file"));
+            .ThrowsAsync(new DependencyProjectException("The dependency project content is empty or invalid."));
 
         var projectValidator = Substitute.For<IDependencyProjectValidator>();
         var logger = Substitute.For<ILogger<CommandLineValidateHandler>>();

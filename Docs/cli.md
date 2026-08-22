@@ -91,11 +91,11 @@ The CLI has two commands: `validate` and `run`. Both require the `--projectFile`
 
 ### Shared Options
 
-| Option         | Alias  | Required | Description                                                                                                             |
-| -------------- | ------ | -------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Option          | Alias  | Required | Description                                                                                                             |
+| --------------- | ------ | -------- | ----------------------------------------------------------------------------------------------------------------------- |
 | `--projectFile` | `--pf` | Yes      | Path to the `.sds` project file. Resolved relative to the current working directory (or used as-is if absolute).        |
-| `--verbose`    | `-v`   | No       | Enable Debug-level logging on the console. Does not affect the rolling file log, which always captures Debug and above. |
-| `--help`       | `-h`   | No       | Show help and usage information.                                                                                        |
+| `--verbose`     | `-v`   | No       | Enable Debug-level logging on the console. Does not affect the rolling file log, which always captures Debug and above. |
+| `--help`        | `-h`   | No       | Show help and usage information.                                                                                        |
 
 > The `--verbose` flag works before or after the subcommand (e.g. `SlnDependencyStudio.Cli --verbose run --pf x.sds` or `SlnDependencyStudio.Cli run --verbose --pf x.sds`).
 

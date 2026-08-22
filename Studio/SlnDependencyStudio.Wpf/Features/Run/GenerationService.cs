@@ -167,8 +167,6 @@ internal sealed class GenerationService : IGenerationService
 
         if (preGenResult.Succeeded)
         {
-            _logger.LogInformation("Pre-generation command completed successfully");
-
             return true;
         }
 
@@ -194,8 +192,7 @@ internal sealed class GenerationService : IGenerationService
             return true;
         }
 
-        _logger.LogError("Pre-generation command failed: {Message}", preGenResult.ErrorMessage);
-
+        // Non-zero exit / unexpected failure — logged by the runner; abort the pipeline.
         return false;
     }
 
@@ -231,16 +228,8 @@ internal sealed class GenerationService : IGenerationService
             }, cancellationToken)
             .ConfigureAwait(false);
 
-        if (restoreResult.Succeeded)
-        {
-            _logger.LogInformation("Solution restore completed successfully");
-
-            return true;
-        }
-
-        _logger.LogError("Solution restore failed: {Message}", restoreResult.ErrorMessage);
-
-        return false;
+        // The success/failure outcome is logged by the runner; this step only reports the decision.
+        return restoreResult.Succeeded;
     }
 
     /// <summary>Runs the post-generation command if enabled in the store.</summary>
@@ -274,7 +263,7 @@ internal sealed class GenerationService : IGenerationService
             WorkingDirectory = workingDirectory
         };
 
-        var postGenResult = await _postGenRunnerFactory
+        await _postGenRunnerFactory
             .ExecuteAsync(async (runner, token) =>
             {
                 using var stdoutSub = runner.StdOut.Subscribe(line => _logger.LogInformation("{Line}", line));
@@ -284,13 +273,6 @@ internal sealed class GenerationService : IGenerationService
             }, cancellationToken)
             .ConfigureAwait(false);
 
-        if (postGenResult.Succeeded)
-        {
-            _logger.LogInformation("Post-generation command completed successfully");
-
-            return;
-        }
-
-        _logger.LogWarning("Post-generation command failed: {Message}", postGenResult.ErrorMessage);
+        // The success/failure outcome is logged by the runner; the pipeline continues regardless.
     }
 }

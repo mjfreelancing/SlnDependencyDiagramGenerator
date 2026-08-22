@@ -219,12 +219,8 @@ internal sealed class CommandLineRunHandler : CommandLineHandlerBase, ICommandLi
 
         if (!preGenResult.Succeeded)
         {
-            _logger.LogError(
-                "Pre-generation command failed ({ErrorCode}, exit code {ExitCode}, error: {ErrorMessage}).",
-                preGenResult.ErrorCode,
-                preGenResult.ExitCode,
-                preGenResult.ErrorMessage);
-
+            // The failure itself (non-zero exit / cancelled / unexpected) is logged by the runner;
+            // only the continue-on-failure policy decision is logged here.
             if (!preGenConfig.ContinueOnFailure)
             {
                 _logger.LogError("Pre-generation command failed and continue-on-failure is disabled. Aborting.");
@@ -266,19 +262,8 @@ internal sealed class CommandLineRunHandler : CommandLineHandlerBase, ICommandLi
 
         var restoreResult = await _restoreSolutionRunner.RunAsync(solutionPath, cancellationToken);
 
-        if (restoreResult.Succeeded)
-        {
-            _logger.LogInformation("Solution restore completed successfully.");
-            return true;
-        }
-
-        _logger.LogError(
-            "Solution restore failed ({ErrorCode}, exit code {ExitCode}, error: {ErrorMessage}).",
-            restoreResult.ErrorCode,
-            restoreResult.ExitCode,
-            restoreResult.ErrorMessage);
-
-        return false;
+        // The success/failure outcome is logged by the runner; this step only reports the decision.
+        return restoreResult.Succeeded;
     }
 
     /// <summary>Runs the post-generation command if enabled. Returns <see langword="false"/> if the command failed.</summary>
@@ -303,19 +288,8 @@ internal sealed class CommandLineRunHandler : CommandLineHandlerBase, ICommandLi
 
         var postGenResult = await _postGenerationCommandRunner.RunAsync(postGenConfig, cancellationToken);
 
-        if (postGenResult.Succeeded)
-        {
-            _logger.LogInformation("Post-generation command completed successfully.");
-            return true;
-        }
-
-        _logger.LogError(
-            "Post-generation command failed ({ErrorCode}, exit code {ExitCode}, error: {ErrorMessage}).",
-            postGenResult.ErrorCode,
-            postGenResult.ExitCode,
-            postGenResult.ErrorMessage);
-
-        return false;
+        // The success/failure outcome is logged by the runner; this step only reports the decision.
+        return postGenResult.Succeeded;
     }
 
     /// <summary>Initiates diagram generation via the dependency generator.</summary>

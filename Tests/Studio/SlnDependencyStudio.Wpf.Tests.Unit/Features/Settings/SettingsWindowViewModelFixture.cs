@@ -52,7 +52,7 @@ public class SettingsWindowViewModelFixture
             var capturedError = await ErrorDialogTestHelpers.WaitForCapturedErrorAsync(errorReceived.Task);
 
             capturedError.Title.ShouldBe("Save Settings failed");
-            capturedError.Message.ShouldContain("Save failed");
+            capturedError.Message.ShouldBe("Save failed");
         }
     }
 }

@@ -98,7 +98,7 @@ public class DiagramIntermediateRepresentationFixture
             var model = new DiagramIntermediateRepresentation();
 
             Should.Throw<InvalidOperationException>(() => model.AddNodeToGroup("missing-group", "node-a"))
-                .Message.ShouldContain("Group 'missing-group' was not created before assigning node 'node-a'.");
+                .Message.ShouldBe("Group 'missing-group' was not created before assigning node 'node-a'.");
         }
     }
 }
