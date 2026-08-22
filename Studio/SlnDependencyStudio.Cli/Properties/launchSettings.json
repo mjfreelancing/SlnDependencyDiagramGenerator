@@ -3,8 +3,9 @@
     "SlnDependencyStudio.Cli": {
         "commandName": "Project",
         "commandLineArgs": "validate -v --pf ..\\..\\..\\sample.sds"
+        //"commandLineArgs": "validate --pf ..\\..\\..\\sample.sds"
         //"commandLineArgs": "run -v --pf ..\\..\\..\\sample.sds"
-        //"commandLineArgs": "run -v --pf ..\\..\\..\\alloverit.sds"
+        //"commandLineArgs": "run --pf ..\\..\\..\\sample.sds"
     }
   }
 }
