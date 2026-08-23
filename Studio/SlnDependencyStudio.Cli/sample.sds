@@ -11,11 +11,17 @@
         "\\.*\\.csproj"
       ],
       "regexToExclude": [
-        "Tests|Studio"
+        ".*Samples*\\.csproj",
+        ".*Tests.*\\.csproj"
       ],
       "packagesToExclude": [
-        "Microsoft.Build",
-        "Microsoft.SourceLink.GitHub"
+        "Microsoft.NET.Test.Sdk",
+        "xunit",
+        "NUnit",
+        "FluentAssertions",
+        "NSubstitute",
+        "Shouldly",
+        "coverlet.collector"
       ],
       "frameworksToExclude": [
         "Microsoft.NETCore.App"
@@ -23,12 +29,12 @@
       "individual": {
         "enabled": true,
         "includeDependencies": true,
-        "transitiveDepth": 2
+        "transitiveDepth": 1
       },
       "all": {
         "enabled": true,
-        "includeDependencies": true,
-        "transitiveDepth": 1
+        "includeDependencies": false,
+        "transitiveDepth": 0
       }
     },
     "diagram": {
@@ -45,8 +51,8 @@
         "fill": "#FFEC96",
         "opacity": 0.8
       },
-      "groupName": "Dependency Diagram Generator",
-      "groupNameAlias": "ddg",
+      "groupName": "SlnDependencyStudio",
+      "groupNameAlias": "sds",
       "grouping": {
         "enabled": false,
         "backgroundStyle": {
@@ -61,7 +67,7 @@
     },
     "export": {
       "clearContents": true,
-      "rootPath": "..\\..\\Output",
+      "rootPath": "Output",
       "imageFormats": [
         "Png",
         "Svg",

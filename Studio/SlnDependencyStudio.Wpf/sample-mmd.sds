@@ -8,7 +8,7 @@
     "solution": {
       "solutionPath": "..\\..\\SlnDependencyDiagramGenerator.sln",
       "regexToInclude": [
-        "\\\\.*\\.csproj"
+        "\\.*\\.csproj"
       ],
       "regexToExclude": [
         ".*Samples*\\.csproj",
@@ -51,8 +51,8 @@
         "fill": "#FFEC96",
         "opacity": 0.8
       },
-      "groupName": "SlnDependencyDiagram",
-      "groupNameAlias": "ddg",
+      "groupName": "SlnDependencyStudio",
+      "groupNameAlias": "sds",
       "grouping": {
         "enabled": false,
         "backgroundStyle": {
