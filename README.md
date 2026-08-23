@@ -63,25 +63,130 @@ Key capabilities:
 - Supports regex include/exclude filters plus package and framework exclusions.
 - Produces a `Dependency Summary.md` and can export PNG, SVG, and/or PDF images via the [D2 CLI](https://d2lang.com/tour/install/) and [Mermaid CLI (mmdc)](https://github.com/mermaid-js/mermaid-cli#installation).
 
-**Public API:** The main entry point is `IDependencyGenerator`, registered in DI and available from the `SlnDependencyDiagramGenerator.Generator` namespace:
+### Getting started
+
+Using the library is a four-step process: **register** the services, **build** a `DependencyGeneratorConfig`, **validate** it, and **generate** the diagrams. A complete example showing all four steps is included at the end of this section.
+
+**Step 1 — Register all required services**
+
+Install the NuGet package, then register everything the library needs with a single call to `AddSlnDependencyDiagramGenerator()`:
+
+```shell
+dotnet add package SlnDependencyDiagramGenerator
+```
+
+```csharp
+using Microsoft.Extensions.DependencyInjection;
+using SlnDependencyDiagramGenerator.Extensions;
+
+var services = new ServiceCollection();
+services.AddSlnDependencyDiagramGenerator();
+```
+
+That one call registers `IDependencyGenerator` — the main entry point — and every other service the library needs. It returns an `SlnDependencyDiagramGeneratorRegistration` (containing the service collection and a validation registry), which you only need if you want to chain additional registrations:
+
+```csharp
+var (serviceCollection, validationRegistry) = services.AddSlnDependencyDiagramGenerator();
+```
+
+**Step 2 — Build a `DependencyGeneratorConfig`**
+
+A `DependencyGeneratorConfig` (namespace `SlnDependencyDiagramGenerator.Config`) holds every option for a run. At minimum it needs a solution path. You can build it in code:
+
+```csharp
+using SlnDependencyDiagramGenerator.Config;
+
+var config = new DependencyGeneratorConfig
+{
+    Solution = new GeneratorSolutionOptions
+    {
+        SolutionPath = @"C:\dev\MySolution\MySolution.sln"
+    }
+};
+```
+
+or bind it from `appsettings.json`, which is what the bundled sample does. The JSON properties live under an `options` section:
+
+```json
+{
+  "options": {
+    "solution": {
+      "solutionPath": "MySolution.sln"
+    }
+  }
+}
+```
+
+```csharp
+using Microsoft.Extensions.Configuration;
+using SlnDependencyDiagramGenerator.Config;
+
+var configuration = new ConfigurationBuilder()
+    .AddJsonFile("appsettings.json")
+    .Build();
+
+var config = new DependencyGeneratorConfig();
+configuration.Bind("options", config);
+```
+
+`DependencyGeneratorConfig` exposes three option classes: `GeneratorSolutionOptions` (solution path, filters, exclusions, scopes), `GeneratorDiagramOptions` (direction, styles, grouping, formats), and `GeneratorExportOptions` (root path, clear behaviour, image formats). See [configuration.md](./Docs/configuration.md) for the complete reference.
+
+> **Note:** JSON binding uses the standard `Microsoft.Extensions.Configuration` packages — `Microsoft.Extensions.Configuration.Json` for `AddJsonFile()` and `Microsoft.Extensions.Configuration.Binder` for `Bind()`.
+
+**Step 3 — Validate the configuration**
+
+Resolve `IDependencyGenerator` from the service provider and call `ValidateConfiguration()`. It throws a `FluentValidation.ValidationException` if any validation rule is violated:
+
+```csharp
+using SlnDependencyDiagramGenerator.Generator;
+
+var serviceProvider = services.BuildServiceProvider();
+var generator = serviceProvider.GetRequiredService<IDependencyGenerator>();
+generator.ValidateConfiguration(config);
+```
+
+**Step 4 — Generate the diagrams**
+
+```csharp
+await generator.CreateDiagramsAsync(config, CancellationToken.None);
+```
+
+This generates the dependency summary and diagram files for every discovered target framework, plus optional PNG/SVG/PDF images when the D2 and Mermaid CLIs are installed and image formats are configured.
+
+**Complete example**
+
+```csharp
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using SlnDependencyDiagramGenerator.Config;
+using SlnDependencyDiagramGenerator.Extensions;
+using SlnDependencyDiagramGenerator.Generator;
+
+var services = new ServiceCollection();
+services.AddSlnDependencyDiagramGenerator();                            // 1. Register all services
+await using var serviceProvider = services.BuildServiceProvider();
+
+var configuration = new ConfigurationBuilder()
+    .AddJsonFile("appsettings.json")
+    .Build();
+
+var config = new DependencyGeneratorConfig();
+configuration.Bind("options", config);                                  // 2. Build the configuration
+
+var generator = serviceProvider.GetRequiredService<IDependencyGenerator>();
+generator.ValidateConfiguration(config);                                // 3. Validate the configuration
+
+await generator.CreateDiagramsAsync(config, CancellationToken.None);     // 4. Generate the diagrams
+```
+
+**Public API**
 
 | Member                                                                                                   | Description                                                                                    |
 | -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | `void ValidateConfiguration(DependencyGeneratorConfig configuration)`                                    | Validates a configuration, throwing `FluentValidation.ValidationException` on any violation.   |
 | `Task CreateDiagramsAsync(DependencyGeneratorConfig configuration, CancellationToken cancellationToken)` | Generates summaries, diagram files, and optional images for every discovered target framework. |
-
-Configuration is modelled by three option classes exposed on `DependencyGeneratorConfig` — `GeneratorSolutionOptions` (solution path, filters, exclusions, scopes), `GeneratorDiagramOptions` (direction, styles, grouping, formats), and `GeneratorExportOptions` (root path, clear behaviour, image formats). See [configuration.md](./Docs/configuration.md) for the complete reference.
-
-**Dependency Injection:** Register all services with a single call:
-
-```csharp
-using SlnDependencyDiagramGenerator.Extensions;
-
-var services = new ServiceCollection();
-var (serviceCollection, validationRegistry) = services.AddSlnDependencyDiagramGenerator();
-```
-
-`AddSlnDependencyDiagramGenerator()` returns an `SlnDependencyDiagramGeneratorRegistration` containing the service collection and a validation registry, so additional registrations can be chained.
 
 **Sample project:** [`Samples/DiagramGeneratorSample`](./Samples/DiagramGeneratorSample/) is a thin console app that binds `DependencyGeneratorConfig` from `appsettings.json` (plus optional `SETTINGS_VARIANT` overlays), resolves `IDependencyGenerator` from DI, and calls `CreateDiagramsAsync()`:
 
@@ -100,7 +205,7 @@ dotnet run --project Samples/DiagramGeneratorSample
 ### Quick Start
 
 ```shell
-# Publish the CLI
+# Publish the CLI (to a location of your choice)
 dotnet publish Studio\SlnDependencyStudio.Cli -o D:\tools\SlnDependencyStudio
 
 # Validate a project file
@@ -112,7 +217,7 @@ SlnDependencyStudio.Cli run --pf sample.sds
 
 - **Commands:** `validate` (check a `.sds` file for configuration errors) and `run` (validate, optionally restore the solution, run optional pre/post-generation commands, and generate the diagrams).
 - **Key options:** `--projectFile` / `--pf` (required) and `--verbose` / `-v` (Debug-level console logging).
-- **Deterministic exit codes** (1001–1008, 1999) make scripting and CI integration predictable; rolling file logs are written to a `logs` subfolder beside the `.sds` file for troubleshooting past runs.
+- **Deterministic exit codes** (`1001`–`1014`, `1999` — see the [Exit Codes](./Docs/cli.md#exit-codes) reference) make scripting and CI integration predictable; rolling file logs are written to a `logs` subfolder beside the `.sds` file for troubleshooting past runs.
 
 > **Note:** Both frontends share the `.sds` document format via `SlnDependencyStudio.Shared`, so a project authored in the WPF application runs unchanged in the CLI and vice versa.
 
@@ -158,7 +263,7 @@ See the [WPF User Guide](./Docs/wpf-user-guide.md) for a full walkthrough with s
 │   ├── Source/                           Core library unit + integration tests
 │   └── Studio/                           Shared, CLI, and WPF unit + integration tests
 ├── Docs/                                 User documentation
-└── Output/                               Generated diagram output (when running the sample)
+└── Studio Diagrams/                      Generated diagram output (per target framework)
 ```
 
 ---

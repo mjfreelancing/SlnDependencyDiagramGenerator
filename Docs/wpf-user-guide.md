@@ -12,6 +12,7 @@ SlnDependencyStudio WPF is a Windows desktop application for authoring, editing,
 - [Application Shell](#application-shell)
 - [Empty State](#empty-state)
 - [Navigation Sidebar](#navigation-sidebar)
+- [Dirty Tracking and Validation](#dirty-tracking-and-validation)
 - [Project Page](#project-page)
 - [Solution Page](#solution-page)
 - [Export Page](#export-page)
@@ -22,6 +23,7 @@ SlnDependencyStudio WPF is a Windows desktop application for authoring, editing,
 - [Application Settings](#application-settings)
 - [Keyboard Shortcuts](#keyboard-shortcuts)
 - [File Format](#file-format)
+- [Sample Files](#sample-files)
 - [Troubleshooting](#troubleshooting)
 - [Screenshot Checklist](#screenshot-checklist)
 
@@ -46,16 +48,14 @@ SlnDependencyStudio WPF is a Windows desktop application for authoring, editing,
 
 ## Application Shell
 
+<img src="images/wpf/shell.png" alt="Main window — application shell" width="1024" style="display: block; margin: 24px 0;" />
+
 The main window follows an IDE-style layout:
 
 - **Top:** Menu bar with **File** and **Run** menus.
 - **Left sidebar:** Navigation panel with an item for each configuration page.
 - **Centre:** Configuration editor for the currently selected navigation item.
 - **Bottom:** Output panel displaying real-time generation and analysis logs.
-
-![Main window — application shell](images/wpf/shell.png)
-
-> 📷 **Screenshot needed:** `shell.png` — the main window with a project open, showing the menu bar, sidebar navigation, a configuration page, and the output panel.
 
 ### Menu Bar
 
@@ -83,11 +83,9 @@ While an operation (Analyse or Generate) is running:
 
 ### Closing with Unsaved Changes
 
-Closing the project (`Ctrl+F4`) or the main window (`Alt+F4`) while there are unsaved changes shows a save-before-discard prompt:
+<img src="images/wpf/confirm-discard.png" alt="Confirm discard prompt" width="1024" style="display: block; margin: 24px 0;" />
 
-![Confirm discard prompt](images/wpf/confirm-discard.png)
-
-> 📷 **Screenshot needed:** `confirm-discard.png` — the confirm-discard prompt shown when closing with unsaved changes.
+Closing the project (`Ctrl+F4`) or the main window (`Alt+F4`) while there are unsaved changes shows a save changes prompt:
 
 | Button      | Action                                                  |
 | ----------- | ------------------------------------------------------- |
@@ -99,17 +97,13 @@ Closing the project (`Ctrl+F4`) or the main window (`Alt+F4`) while there are un
 
 ## Empty State
 
+<img src="images/wpf/empty-state.png" alt="Empty state — no project loaded" width="1024" style="display: block; margin: 24px 0;" />
+
 When no project is loaded, the centre workspace shows an empty state with the following options:
 
 - **New Project** — Creates a new dependency project from application defaults.
-- **New from Existing…** — Creates a new project by loading an existing `.sds` file as a starting point, allowing you to clone and modify a configuration.
 - **Open Project** — Opens a file browser to select an existing `.sds` file.
-- **Recent Projects** — Lists recently opened projects for quick access. Entries whose files no longer exist are flagged as missing.
-- **Settings…** (via the File menu) — Opens the application settings dialog.
-
-![Empty state — no project loaded](images/wpf/empty-state.png)
-
-> 📷 **Screenshot needed:** `empty-state.png` — the empty state with the New Project and Open Project cards and the Recent Projects list.
+- **Recent Projects** — Lists recently opened projects for quick access. Each item can be removed by clicking its **X**, and entries whose files no longer exist are shown in red.
 
 ---
 
@@ -134,7 +128,30 @@ The sidebar is hidden automatically when no project is open. Opening a project s
 
 ---
 
+## Dirty Tracking and Validation
+
+<img src="images/wpf/modified-validation.png" alt="Dirty tracking and validation" style="display: block; margin: 24px 0;" />
+
+Each configuration page tracks two independent states — unsaved changes and validation errors — surfaced through the navigation sidebar and the window title.
+
+- **A - Unsaved changes (dirty)** — A **hollow ring** appears on the navigation item, and the window title appends a filled circle (e.g. `SlnDependencyStudio — sample-d2 ●`). A page becomes dirty as soon as any of its fields differ from the last saved version, and returns to clean when the project is saved.
+- **B - Validation errors** — A **solid red dot** appears on the navigation item, and the page shows a red message under the offending field. For example, pointing the Solution page at a solution file that does not exist shows:
+
+  ```text
+  Solution file not found at the specified path.
+  ```
+
+  Validation errors must be resolved before you can run **Analyse** or **Generate** (see [Application Shell](#application-shell)).
+
+- **C - Both together** — When a section has unsaved changes **and** validation errors, the navigation item shows a **red dot with a thin ring** hinting at the unsaved changes.
+
+Hovering a navigation item shows a tooltip with its combined status: _"This section has unsaved changes"_, _"This section has validation errors"_, or _"This section has validation errors and unsaved changes"_.
+
+---
+
 ## Project Page
+
+<img src="images/wpf/project.png" alt="Project page" width="1024" style="display: block; margin: 24px 0;" />
 
 The top-level metadata for your dependency project.
 
@@ -146,13 +163,11 @@ The top-level metadata for your dependency project.
 
 _Validation:_ Project name must not be empty.
 
-![Project page](images/wpf/project.png)
-
-> 📷 **Screenshot needed:** `project.png` — the Project page with a project name and description entered.
-
 ---
 
 ## Solution Page
+
+<img src="images/wpf/solution.png" alt="Solution page" width="1024" style="display: block; margin: 24px 0;" />
 
 Configures which solution to analyse, which projects to include or exclude, and per-scope dependency depth.
 
@@ -173,13 +188,37 @@ Configures which solution to analyse, which projects to include or exclude, and 
 
 _Validation:_ Solution path must not be empty and must point to an existing file. At least one scope (Individual or All) must be enabled.
 
-![Solution page](images/wpf/solution.png)
+---
 
-> 📷 **Screenshot needed:** `solution.png` — the Solution page with a solution path, some include/exclude patterns, and both scopes configured.
+## Diagrams Page
+
+<img src="images/wpf/diagrams.png" alt="Diagrams page" width="1024" style="display: block; margin: 24px 0;" />
+
+Controls how the diagram is styled and which diagram formats are generated.
+
+| Section                 | Field              | Description                                                                                                            | Effect on Output                                                                                                                                     |
+| ----------------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Diagram Formats**     | D2 / Mermaid       | Toggle to enable D2 (`.d2`) and/or Mermaid (`.mmd`) output.                                                            | At least one format must be selected.                                                                                                                |
+| **Direction**           | Direction          | Flow direction of the diagram: Left-to-Right (`LR`), Right-to-Left (`RL`), Top-to-Bottom (`TB`), Bottom-to-Top (`BT`). | Controls the layout orientation of nodes and edges in generated diagrams.                                                                            |
+| **Styles — Framework**  | Fill               | RGB hex colour for framework dependency nodes (e.g. `#ECCBC0`).                                                        | Sets the background colour of framework nodes in the diagram.                                                                                        |
+|                         | Opacity            | Opacity value between 0.0 and 1.0.                                                                                     | Controls the transparency of framework node fills.                                                                                                   |
+| **Styles — Package**    | Fill               | RGB hex colour for explicit package dependency nodes.                                                                  | Sets the background colour of package nodes in the diagram.                                                                                          |
+|                         | Opacity            | Opacity for package nodes.                                                                                             | Controls transparency of package node fills.                                                                                                         |
+| **Styles — Transitive** | Fill               | RGB hex colour for transitive (indirect) package dependency nodes.                                                     | Sets the background colour of transitive package nodes, helping them stand out from explicit packages.                                               |
+|                         | Opacity            | Opacity for transitive nodes.                                                                                          | Controls transparency of transitive node fills.                                                                                                      |
+| **Grouping**            | Enabled            | Whether project and multi-version package grouping containers are rendered.                                            | When enabled, projects are grouped in a visual container and multi-version packages get their own sub-containers. When disabled, all nodes are flat. |
+|                         | Background Fill    | RGB hex colour for group container backgrounds.                                                                        | Sets the background colour of grouping containers.                                                                                                   |
+|                         | Background Opacity | Opacity for group container backgrounds.                                                                               | Controls transparency of grouping container backgrounds.                                                                                             |
+|                         | Name               | The display title for the group of projects on the diagram.                                                            | Appears as a heading/label in the diagram.                                                                                                           |
+|                         | Alias              | A short alias used in generated diagram files.                                                                         | A technical identifier for the group container in D2/Mermaid syntax. Not visible in rendered image output.                                           |
+
+_Validation:_ Fill colours are validated against the `#RRGGBB` hex format (or `#RGB` shorthand).
 
 ---
 
 ## Export Page
+
+<img src="images/wpf/export.png" alt="Export page" width="1024" style="display: block; margin: 24px 0;" />
 
 Controls where and how diagram files and images are saved.
 
@@ -192,41 +231,11 @@ Controls where and how diagram files and images are saved.
 
 _Validation:_ Export root must not be empty.
 
-![Export page](images/wpf/export.png)
-
-> 📷 **Screenshot needed:** `export.png` — the Export page with an export root path and image formats selected.
-
----
-
-## Diagrams Page
-
-Controls how the diagram is styled and which diagram formats are generated.
-
-| Section                 | Field              | Description                                                                                                            | Effect on Output                                                                                                                                     |
-| ----------------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Diagram Formats**     | D2 / Mermaid       | Toggle to enable D2 (`.d2`) and/or Mermaid (`.mmd`) output.                                                            | At least one format must be selected.                                                                                                                |
-| **Direction**           | Direction          | Flow direction of the diagram: Left-to-Right (`LR`), Right-to-Left (`RL`), Top-to-Bottom (`TB`), Bottom-to-Top (`BT`). | Controls the layout orientation of nodes and edges in generated diagrams.                                                                            |
-| **Styles — Framework**  | Fill               | CSS hex colour for framework dependency nodes (e.g. `#ECCBC0`).                                                        | Sets the background colour of framework nodes in the diagram.                                                                                        |
-|                         | Opacity            | Opacity value between 0.0 and 1.0.                                                                                     | Controls the transparency of framework node fills.                                                                                                   |
-| **Styles — Package**    | Fill               | CSS hex colour for explicit package dependency nodes.                                                                  | Sets the background colour of package nodes in the diagram.                                                                                          |
-|                         | Opacity            | Opacity for package nodes.                                                                                             | Controls transparency of package node fills.                                                                                                         |
-| **Styles — Transitive** | Fill               | CSS hex colour for transitive (indirect) package dependency nodes.                                                     | Sets the background colour of transitive package nodes, helping them stand out from explicit packages.                                               |
-|                         | Opacity            | Opacity for transitive nodes.                                                                                          | Controls transparency of transitive node fills.                                                                                                      |
-| **Grouping**            | Enabled            | Whether project and multi-version package grouping containers are rendered.                                            | When enabled, projects are grouped in a visual container and multi-version packages get their own sub-containers. When disabled, all nodes are flat. |
-|                         | Background Fill    | CSS hex colour for group container backgrounds.                                                                        | Sets the background colour of grouping containers.                                                                                                   |
-|                         | Background Opacity | Opacity for group container backgrounds.                                                                               | Controls transparency of grouping container backgrounds.                                                                                             |
-|                         | Name               | The display title for the group of projects on the diagram.                                                            | Appears as a heading/label in the diagram.                                                                                                           |
-|                         | Alias              | A short alias used in generated diagram files.                                                                         | A technical identifier for the group container in D2/Mermaid syntax. Not visible in rendered image output.                                           |
-
-_Validation:_ Fill colours are validated against the `#RRGGBB` hex format (or `#RGB` shorthand).
-
-![Diagrams page](images/wpf/diagrams.png)
-
-> 📷 **Screenshot needed:** `diagrams.png` — the Diagrams page with formats, direction, styles, and grouping configured.
-
 ---
 
 ## Pipeline Page
+
+<img src="images/wpf/pipeline.png" alt="Pipeline page" width="1024" style="display: block; margin: 24px 0;" />
 
 The **Diagram Generation Processing Pipeline** page controls the steps that run around diagram generation and shows the status of external tools.
 
@@ -268,25 +277,23 @@ Each tool entry shows:
 
 - **Tool name** (d2 or mmdc)
 - **Status** (Available / Not Found), e.g. `Found at <path>` or `Not found — install the tool or set a path override`
-- **Resolved path** (executable location when found)
-- **Last checked** timestamp
-- **Error message** (when not found)
+- **Resolved path** (executable location when found) or **Error message** (when not found)
 
 Click **Re-scan** to re-check tool availability without restarting the application. A scan also runs automatically when you open the Pipeline page.
 
 > **Note:** You can configure dependency projects regardless of tool availability. Missing tools only affect image export capabilities — diagram text files (`.d2`, `.mmd`) and the dependency summary are still generated.
 
-![Pipeline page](images/wpf/pipeline.png)
-
-> 📷 **Screenshot needed:** `pipeline.png` — the Pipeline page showing the Restore Solution toggle, pre/post-generation sections, and the tool status list with d2/mmdc availability.
-
 ---
 
 ## Analyse vs Generate
 
-Both actions run on a background thread, stream output to the output panel, and support cancellation via the **Cancel** button or the overlay. If the project has unsaved changes, both save first.
+Both actions stream their output to the output panel, and support cancellation via the **Cancel** button or the overlay. If the project has unsaved changes, both save first.
 
 ### Analyse (dry run)
+
+<img src="images/wpf/analyse-output.png" alt="Analyse (dry run) output" width="1024" style="display: block; margin: 24px 0;" />
+
+> 📷 **Screenshot needed:** `analyse-output.png` — the output panel after an Analyse run, showing discovered/included/excluded projects and tool readiness.
 
 Press `Shift+F5` or select **Run > Analyse**. This runs a **pre-flight analysis** that:
 
@@ -296,10 +303,6 @@ Press `Shift+F5` or select **Run > Analyse**. This runs a **pre-flight analysis*
 4. Checks **tool readiness** for the configured export types (d2/mmdc), showing ✓/✗ per tool.
 
 Analysis does **not** generate anything and does **not** run any pipeline commands. Use it before Generate to confirm the configuration will behave as expected.
-
-![Analyse (dry run) output](images/wpf/analyse-output.png)
-
-> 📷 **Screenshot needed:** `analyse-output.png` — the output panel after an Analyse run, showing discovered/included/excluded projects and tool readiness.
 
 ### Generate
 
@@ -311,11 +314,7 @@ Press `F5` or select **Run > Generate** to run the full pipeline:
 4. **Diagram generation** — project discovery, dependency resolution, framework processing, diagram emission, and optional image export.
 5. **Post-generation command** (if enabled).
 
-After generation completes, the output panel shows the completion status, elapsed time, and the export root path. You can open the export folder in Windows File Explorer from the output panel.
-
-![Generate output](images/wpf/generate-output.png)
-
-> 📷 **Screenshot needed:** `generate-output.png` — the output panel after a Generate run, showing completion status and elapsed time.
+After generation completes, the output panel shows the completion status upon success, or error message if there was a problem.
 
 ---
 
@@ -328,7 +327,7 @@ The output panel is docked at the bottom of the main window. It displays all non
 | Feature                 | Description                                                                                                                                                                                                                                               |
 | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Real-time streaming** | Messages appear as they are produced during analysis and generation.                                                                                                                                                                                      |
-| **Log level colouring** | Error (red), Warning (yellow), Information (white), Debug (grey).                                                                                                                                                                                         |
+| **Log level colouring** | Error (red), Warning (orange), Debug (grey); Information uses the default theme foreground.                                                                                                                                                               |
 | **Verbose**             | When enabled, Debug-level application log events are also shown in the output panel; when disabled, only Information level and above are shown. This is a display filter only — it does not change what is written to the rolling log file. Default: off. |
 | **Wrap**                | Toggle to wrap long lines to the next line. Default: off.                                                                                                                                                                                                 |
 | **Auto-scroll**         | Automatically scrolls to the bottom when new messages arrive. Default: on.                                                                                                                                                                                |
@@ -345,6 +344,8 @@ Output panel preferences (Verbose, Wrap, Auto-scroll) are persisted across sessi
 
 ## Application Settings
 
+<img src="images/wpf/settings.png" alt="Settings dialog" style="display: block; margin: 24px 0;" />
+
 Open **File > Settings…** to open the Settings dialog. Settings are stored in file-based AppData storage (not the Windows registry).
 
 | Setting                    | Description                                                                                                                                              |
@@ -355,18 +356,16 @@ Open **File > Settings…** to open the Settings dialog. Settings are stored in 
 | **Log retention (days)**   | Number of days to retain rolling log files (default: 31 days; range 1–90). A restart is required for changes to take effect.                             |
 | **Theme**                  | Choose between **Light** and **Dark** themes. The active theme preference is persisted across restarts; changes preview live and are reverted on Cancel. |
 
-- Rolling log files are written to `%APPDATA%\SlnDependencyStudio\Logs\` with the naming pattern `{projectFileBaseName}-{Date}.txt`.
-- Rolling logs always capture **all log levels (Debug and above)**, independent of the output panel's Verbose toggle.
+### Rolling File Logs
 
-![Settings dialog](images/wpf/settings.png)
-
-> 📷 **Screenshot needed:** `settings.png` — the Settings dialog with the default project folder, d2/mmdc paths, log retention, and theme controls.
+- Rolling log files are written to `%APPDATA%\SlnDependencyStudio\Logs\`, one file per day, with the naming pattern `studio-yyyyMMdd.txt` (e.g. `studio-20260814.txt`).
+- Rolling logs are retained for the number of days configured in **Settings > Log retention (days)** (default: 31 days; range 1–90) and always capture **all log levels (Debug and above)**, independent of the output panel's Verbose toggle.
 
 ### State Persistence
 
 The following application state is also persisted (separately from user settings):
 
-- **Recent projects** — Recently opened `.sds` file paths, most recent first, capped at 10. If a file no longer exists on disk, it is flagged as missing in the recent projects list.
+- **Recent projects** — Recently opened `.sds` file paths, most recent first, capped at 10. Each item can be removed by clicking its **X**, and items whose files no longer exist on disk are shown in red.
 - **Window placement** — Last-known main window position, size, and state (normal, maximised, minimised).
 
 ---
@@ -399,9 +398,53 @@ SlnDependencyStudio uses `.sds` files (JSON format) for dependency projects. The
     "description": "Description of the project"
   },
   "diagramGenerator": {
-    "solution": { ... },
-    "diagram": { ... },
-    "export": { ... }
+    "solution": {
+      "solutionPath": "MySolution.sln",
+      "regexToInclude": ["\\.*\\.csproj"],
+      "regexToExclude": ["\\.*Tests\\.csproj"],
+      "packagesToExclude": ["Some.Package"],
+      "frameworksToExclude": ["Microsoft.NETCore.App"],
+      "individual": {
+        "enabled": true,
+        "includeDependencies": true,
+        "transitiveDepth": 1
+      },
+      "all": {
+        "enabled": true,
+        "includeDependencies": true,
+        "transitiveDepth": 1
+      }
+    },
+    "diagram": {
+      "direction": "LR",
+      "frameworkStyle": {
+        "fill": "#ECCBC0",
+        "opacity": 0.8
+      },
+      "packageStyle": {
+        "fill": "#ADD8E6",
+        "opacity": 0.8
+      },
+      "transitiveStyle": {
+        "fill": "#FFEC96",
+        "opacity": 0.8
+      },
+      "groupName": "My Project",
+      "groupNameAlias": "my",
+      "grouping": {
+        "enabled": true,
+        "backgroundStyle": {
+          "fill": "#E7EBFC",
+          "opacity": 1
+        }
+      },
+      "formats": ["D2", "Mermaid"]
+    },
+    "export": {
+      "clearContents": true,
+      "rootPath": "output",
+      "imageFormats": ["Png", "Svg", "Pdf"]
+    }
   },
   "restoreSolution": true,
   "preGeneration": {
@@ -426,35 +469,14 @@ See the [Configuration Reference](./configuration.md) for the complete field-lev
 
 ---
 
-## Troubleshooting
+## Sample Files
 
-| Symptom                          | Likely cause                                             | Fix                                                                                                                        |
-| -------------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| Empty diagrams / no dependencies | Projects have no `obj/project.assets.json`               | Enable **Restore Solution** on the Pipeline page, or run `dotnet restore`/build first.                                     |
-| Image formats produce no images  | d2/mmdc not installed                                    | Install the tool, or set an explicit path in **File > Settings…**; check the **Tool Status** section on the Pipeline page. |
-| Red dot on a navigation item     | That section has validation errors                       | Open the section and fix the highlighted fields.                                                                           |
-| Hollow ring on a navigation item | That section has unsaved changes                         | Save the project (`Ctrl+S`) or discard via the close prompt.                                                               |
-| Can't close the window           | An operation is running                                  | Wait for completion or click **Cancel** in the output panel.                                                               |
-| Restart banner in Settings       | A restart-sensitive setting (e.g. log retention) changed | Save, restart, and re-open your project.                                                                                   |
+The repository includes ready-to-use sample `.sds` files in `Studio\SlnDependencyStudio.Wpf\`, configured for the `SlnDependencyDiagramGenerator` solution (restore enabled, PNG export to `Studio Diagrams`, and test/studio projects excluded):
 
----
+| File             | Formats      | Grouping | Notes                                                                       |
+| ---------------- | ------------ | -------- | --------------------------------------------------------------------------- |
+| `sample.sds`     | D2 + Mermaid | Enabled  | General-purpose example covering both formats.                              |
+| `sample-d2.sds`  | D2 only      | Enabled  | D2 renders group containers well, so grouping stays on.                     |
+| `sample-mmd.sds` | Mermaid only | Disabled | Mermaid lays out flat diagrams better, so grouping is off to avoid clutter. |
 
-## Screenshot Checklist
-
-The following screenshots are referenced in this guide. Capture them and drop them into `Docs/images/wpf/` using the file names below — the guide will pick them up automatically.
-
-| #   | File                  | Section                                                       | What to capture                                                          |
-| --- | --------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| 1   | `empty-state.png`     | [Empty State](#empty-state)                                   | No project loaded: New Project + Open Project cards, Recent Projects     |
-| 2   | `shell.png`           | [Application Shell](#application-shell)                       | Main window with a project open: menu bar, sidebar, editor, output panel |
-| 3   | `project.png`         | [Project Page](#project-page)                                 | Project page with name/description                                       |
-| 4   | `solution.png`        | [Solution Page](#solution-page)                               | Solution path, filters, both scopes                                      |
-| 5   | `export.png`          | [Export Page](#export-page)                                   | Export root + image formats                                              |
-| 6   | `diagrams.png`        | [Diagrams Page](#diagrams-page)                               | Formats, direction, styles, grouping                                     |
-| 7   | `pipeline.png`        | [Pipeline Page](#pipeline-page)                               | Restore toggle, pre/post-generation, tool status                         |
-| 8   | `analyse-output.png`  | [Analyse vs Generate](#analyse-vs-generate)                   | Output after a dry-run Analyse                                           |
-| 9   | `generate-output.png` | [Analyse vs Generate](#analyse-vs-generate)                   | Output after a full Generate                                             |
-| 10  | `settings.png`        | [Application Settings](#application-settings)                 | Settings dialog                                                          |
-| 11  | `confirm-discard.png` | [Closing with Unsaved Changes](#closing-with-unsaved-changes) | The confirm-discard prompt shown when closing with unsaved changes       |
-
-> **Tip:** The Light theme is the default and is recommended for most screenshots. Add a Dark-theme example (e.g. `settings-dark.png`) if you want to showcase theming.
+Open any of these with **Open Project…** (or clone them with **New from Existing…**) as a starting point. The `sample-d2.sds` and `sample-mmd.sds` files exist because grouping behaves differently per format: D2 handles group containers gracefully, whereas Mermaid's layout engine produces cleaner output with grouping disabled — see the [Mermaid grouping hint](./configuration.md#mermaid-diagrams) in the Configuration Reference.

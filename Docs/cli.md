@@ -36,9 +36,9 @@ It is built for automation: it can validate configurations, restore the solution
 
 1. **.NET SDK** — The CLI targets `net10.0` (a matching .NET SDK is required to publish or run it).
 2. **Solution restore** — The target solution must be restored or built so each project has `obj/project.assets.json`. The CLI can do this for you automatically (see [Solution Restore](#solution-restore)) or via a pre-generation command.
-3. **External tools for image export** (optional):
-   - [D2 CLI](https://d2lang.com/tour/install/) — required when generating D2 images (PNG/SVG/PDF).
-   - [Mermaid CLI (mmdc)](https://github.com/mermaid-js/mermaid-cli#installation) — required when generating Mermaid images.
+3. **External tools for image export** (optional: PNG/SVG/PDF):
+   - [D2 CLI](https://d2lang.com/tour/install/) — required when rendering D2 images.
+   - [Mermaid CLI (mmdc)](https://github.com/mermaid-js/mermaid-cli#installation) — required when rendering Mermaid images.
 
 ---
 
@@ -46,7 +46,7 @@ It is built for automation: it can validate configurations, restore the solution
 
 ### Download a Pre-Built Binary
 
-Pre-built versions of the CLI are distributed as part of the **SlnDependencyStudio** application on the [Releases page](https://github.com/mjfreelancing/SlnDependencyDiagramGenerator/releases). Download the latest release, extract it to a folder of your choice, and add that folder to your PATH — no .NET SDK is required.
+Pre-built versions of the CLI are distributed as part of the **SlnDependencyStudio** application on the [Releases page](https://github.com/mjfreelancing/SlnDependencyDiagramGenerator/releases). The release is an **installer** that installs SlnDependencyStudio — both the WPF application and the CLI — to a location of your choice; no .NET SDK is required. After installing, add the folder containing the CLI executable to your PATH so you can invoke it as `SlnDependencyStudio.Cli` from anywhere (the CLI is installed in a `CLI` sub-folder under your chosen install location).
 
 Alternatively, build it yourself:
 
@@ -91,11 +91,11 @@ The CLI has two commands: `validate` and `run`. Both require the `--projectFile`
 
 ### Shared Options
 
-| Option          | Alias  | Required | Description                                                                                                             |
-| --------------- | ------ | -------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `--projectFile` | `--pf` | Yes      | Path to the `.sds` project file. Resolved relative to the current working directory (or used as-is if absolute).        |
-| `--verbose`     | `-v`   | No       | Enable Debug-level logging on the console. Does not affect the rolling file log, which always captures Debug and above. |
-| `--help`        | `-h`   | No       | Show help and usage information.                                                                                        |
+| Option          | Alias  | Required | Description                                                                                                                                                           |
+| --------------- | ------ | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--projectFile` | `--pf` | Yes      | Path to the `.sds` project file. Resolved relative to the current working directory (or used as-is if absolute).                                                      |
+| `--verbose`     | `-v`   | No       | Enable Debug-level logging on the console. Does not affect the rolling file log, which always captures Debug and above (see [Rolling File Logs](#rolling-file-logs)). |
+| `--help`        | `-h`   | No       | Show help and usage information.                                                                                                                                      |
 
 > The `--verbose` flag works before or after the subcommand (e.g. `SlnDependencyStudio.Cli --verbose run --pf x.sds` or `SlnDependencyStudio.Cli run --verbose --pf x.sds`).
 
@@ -116,7 +116,19 @@ SlnDependencyStudio.Cli validate --pf <path-to-sds-file>
 - Export configuration (root path set)
 - Pre/post-generation command configuration (command non-empty when enabled, working directory exists)
 
-**Exit codes:** `0` when valid; `1002` if the file cannot be loaded; `1003` if validation fails.
+**Exit codes:**
+
+| Exit Code | Meaning                                                                          |
+| --------- | -------------------------------------------------------------------------------- |
+| `0`       | Valid — the configuration passed validation.                                     |
+| `1001`    | Command-line argument parsing failed.                                            |
+| `1002`    | The project file could not be loaded (missing, inaccessible, or malformed JSON). |
+| `1003`    | Validation failed.                                                               |
+| `1013`    | Cancelled by the user (**Ctrl+C** / SIGTERM).                                    |
+| `1014`    | Operation cancelled internally.                                                  |
+| `1999`    | An unexpected failure occurred.                                                  |
+
+See [Exit Codes](#exit-codes) for the full reference (including the additional codes the `run` command can return).
 
 **Typical use:** Run this first when setting up a new configuration or troubleshooting an existing one, before attempting a full `run`.
 
@@ -145,7 +157,7 @@ SlnDependencyStudio.Cli run --pf <path-to-sds-file>
 
 A `.sds` file is a JSON document (the extension is just a convention). It describes what to analyse, how diagrams should look, where to write them, and which pipeline steps to run.
 
-The complete field-level reference is in [configuration.md](./configuration.md). A summary of the document shape:
+The complete field-level reference is in [configuration.md](./configuration.md). A fully populated example of the document shape:
 
 ```json
 {
@@ -155,9 +167,53 @@ The complete field-level reference is in [configuration.md](./configuration.md).
     "description": "Dependency diagrams for My Solution"
   },
   "diagramGenerator": {
-    "solution": {},
-    "diagram": {},
-    "export": {}
+    "solution": {
+      "solutionPath": "MySolution.sln",
+      "regexToInclude": ["\\.*\\.csproj"],
+      "regexToExclude": ["\\.*Tests\\.csproj"],
+      "packagesToExclude": ["Some.Package"],
+      "frameworksToExclude": ["Microsoft.NETCore.App"],
+      "individual": {
+        "enabled": true,
+        "includeDependencies": true,
+        "transitiveDepth": 1
+      },
+      "all": {
+        "enabled": true,
+        "includeDependencies": true,
+        "transitiveDepth": 1
+      }
+    },
+    "diagram": {
+      "direction": "LR",
+      "frameworkStyle": {
+        "fill": "#ECCBC0",
+        "opacity": 0.8
+      },
+      "packageStyle": {
+        "fill": "#ADD8E6",
+        "opacity": 0.8
+      },
+      "transitiveStyle": {
+        "fill": "#FFEC96",
+        "opacity": 0.8
+      },
+      "groupName": "My Solution",
+      "groupNameAlias": "my",
+      "grouping": {
+        "enabled": true,
+        "backgroundStyle": {
+          "fill": "#E7EBFC",
+          "opacity": 1
+        }
+      },
+      "formats": ["D2", "Mermaid"]
+    },
+    "export": {
+      "clearContents": true,
+      "rootPath": "output",
+      "imageFormats": ["Png", "Svg", "Pdf"]
+    }
   },
   "restoreSolution": true,
   "preGeneration": {
@@ -188,7 +244,7 @@ Key points:
 ## Path Resolution
 
 - The `--projectFile` / `--pf` path is resolved relative to your current working directory (or used as-is if absolute).
-- All paths inside the `.sds` file — `solutionPath`, `rootPath`, `workingDirectory` — are resolved relative to the folder containing the `.sds` file. This lets you store configs anywhere and move them without rewriting paths.
+- Paths inside the `.sds` file — `solutionPath`, `rootPath`, `workingDirectory` — are resolved relative to the folder containing the `.sds` file **when stored as relative paths**. This keeps the file portable: you can move the whole project tree (the `.sds` plus its solution and output) to a new location or machine without rewriting paths. Absolute paths point to fixed disk locations instead, so they keep working if only the `.sds` file moves, but they do not follow the solution/output if the project is relocated.
 
 ---
 
@@ -203,7 +259,7 @@ Runs before the solution restore and diagram generation — the earliest user ho
   "preGeneration": {
     "enabled": true,
     "command": "dotnet",
-    "arguments": "restore MySolution.sln",
+    "arguments": "nuget add source C:\\packages\\my-feed --name MyFeed",
     "workingDirectory": "",
     "continueOnFailure": false
   }
@@ -299,10 +355,13 @@ When a pre-generation or restore command fails, the log also reports the failure
 
 ### Rolling File Logs
 
-- Logs are written to a `logs` subfolder **relative to the `.sds` file being processed**.
-- File naming pattern: `{projectFileBaseName}-{Date}.txt` (e.g. `sample-2026-08-14.txt`).
-- Rolling file logs always capture **all log levels (Debug and above)** — the `--verbose` flag does not change what is written to the file.
-- This provides a persistent record for troubleshooting past runs.
+Every run also writes to a rolling file log, independent of the console's `--verbose` filter.
+
+- **Location:** A `logs` subfolder **next to the `.sds` file being processed** (e.g. `<sds-folder>\logs\`). If no project file is available, the log falls back to a `logs` subfolder under the CLI's own directory.
+- **Naming:** One file per day, using the pattern `{projectFileBaseName}-yyyyMMdd.txt` — for example, a project named `sample.sds` produces `sample-20260814.txt`. A fallback log (no project file) uses `studio-yyyyMMdd.txt`.
+- **Retention:** Log files are kept for **31 days** by default (Serilog's default retention; this is not configurable in the CLI).
+- **Verbosity:** Rolling file logs always capture **all log levels (Debug and above)** — the `--verbose` flag changes only the console output, not what is written to the file.
+- **Purpose:** This provides a persistent record for troubleshooting past runs.
 
 ### Verbosity
 
@@ -361,14 +420,14 @@ SlnDependencyStudio.Cli run --pf my-project.sds
 
 ### 6. Run with a pre-generation command
 
-A `.sds` configured to run `dotnet restore` before generation:
+Restore is handled by the built-in `restoreSolution` step, so a pre-generation command is best reserved for setup the restore depends on. For example, adding a NuGet package source before restore runs:
 
 ```json
 {
   "preGeneration": {
     "enabled": true,
     "command": "dotnet",
-    "arguments": "restore MySolution.sln",
+    "arguments": "nuget add source C:\\packages\\my-feed --name MyFeed",
     "workingDirectory": "",
     "continueOnFailure": false
   }
@@ -396,7 +455,7 @@ A `.sds` configured to open the output folder after generation (Windows):
 
 ### 8. Portable paths
 
-Store the `.sds` anywhere — paths inside it resolve relative to its own folder, so moving the file (and its solution/output) keeps working:
+Store the `.sds` anywhere, as long as the paths inside it are stored as **relative** paths — they resolve relative to the `.sds` file's own folder, so you can move the whole project tree (`.sds`, solution, and output) to a new location or machine and it keeps working. Absolute paths point to fixed disk locations, so they keep working when only the `.sds` moves, but they will be left pointing at the old paths if you relocate the project.
 
 ```text
 C:\repos\my-solution\
@@ -410,69 +469,17 @@ C:\repos\my-solution\
 SlnDependencyStudio.Cli run --pf C:\repos\my-solution\SlnDependencyDiagramGenerator\project.sds
 ```
 
-### 9. Script automation (PowerShell)
-
-```powershell
-$result = & SlnDependencyStudio.Cli run --pf project.sds
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "Generation failed with exit code $LASTEXITCODE"
-    exit $LASTEXITCODE
-}
-```
-
-### 10. Script automation (bash / CI)
-
-```bash
-SlnDependencyStudio.Cli run --pf project.sds
-exit_code=$?
-if [ $exit_code -ne 0 ]; then
-  echo "Generation failed with exit code $exit_code" >&2
-  exit $exit_code
-fi
-```
-
-### 11. Gate on a specific failure
-
-```bash
-SlnDependencyStudio.Cli run --pf project.sds
-case $? in
-  0)   echo "Success" ;;
-  1008) echo "A required diagram tool is missing (d2/mmdc)" >&2 ;;
-  1009) echo "dotnet restore failed" >&2 ;;
-  *)   echo "Generation failed" >&2 ;;
-esac
-```
-
 ---
 
-## Scripting and CI
+## Sample File
 
-- Prefer the `validate` command in a fast feedback loop (e.g. on pull requests) before committing `.sds` files.
-- Use the deterministic exit codes above rather than parsing console text.
-- Enable `--verbose` in logs only when diagnosing; keep CI output at the default Information level for readability.
-- Let the CLI restore the solution itself (`restoreSolution: true`) so CI does not need a separate restore step.
-- Check the rolling log in the `logs/` folder beside the `.sds` file when a run fails.
+The repository includes a ready-to-use sample `.sds` file:
 
----
+`Studio\SlnDependencyStudio.Cli\sample.sds` — Configuration for the `SlnDependencyDiagramGenerator` solution:
 
-## Troubleshooting
-
-| Symptom                           | Likely cause                                             | Fix                                                                                                                                                           |
-| --------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Empty diagrams / no dependencies  | Projects have no `obj/project.assets.json`               | Enable `restoreSolution`, or run `dotnet restore`/build first.                                                                                                |
-| Exit code `1008`                  | A required image-export tool is missing                  | Install [d2](https://d2lang.com/tour/install/) and/or [mmdc](https://github.com/mermaid-js/mermaid-cli#installation), or configure an explicit path override. |
-| Exit code `1009`                  | `dotnet restore` failed                                  | Check the solution path and network/feed access; review the streamed restore output in the log.                                                               |
-| Exit code `1002`                  | File not found or malformed JSON                         | Verify the `--pf` path and that the file is valid JSON (use `validate` for details).                                                                          |
-| Exit code `1003`                  | Configuration errors found by `validate`                 | Read the reported errors, fix the `.sds` file, and re-validate.                                                                                               |
-| "Invalid regular expression"      | A `regexToInclude`/`regexToExclude` pattern is malformed | Escape backslashes in JSON (e.g. `\\.*\\.csproj`) and check the pattern.                                                                                      |
-| Validation passes but `run` fails | The solution/repo state changed between validate and run | Re-run `validate`; confirm the solution path still exists and is restored.                                                                                    |
-
----
-
-## Sample Files
-
-The repository includes a ready-to-use sample `.sds` file in `Studio\SlnDependencyStudio.Cli\`:
-
-- **`sample.sds`** — Configuration for the `SlnDependencyDiagramGenerator` solution: D2 + Mermaid output, PNG + SVG + PDF export, restore enabled, and test/studio projects excluded.
+- Restore enabled
+- Test/Studio projects excluded.
+- D2 + Mermaid output
+- PNG + SVG + PDF export
 
 Use it as a reference when creating your own `.sds` files.

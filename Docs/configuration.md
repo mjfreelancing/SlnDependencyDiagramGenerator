@@ -61,8 +61,6 @@ Defined by `GeneratorSolutionOptions.ProjectScope`. Shared by both `Individual` 
 - **Individual scope** (`Individual`): When enabled, the generator produces one diagram per matching project. Each diagram shows that project and its direct dependencies (framework references, explicit packages, and transitive packages up to the configured depth).
 - **All scope** (`All`): When enabled, the generator produces a single combined diagram showing all matching projects and their collective dependency graph. This is useful for understanding the full solution-level dependency picture.
 
-Both scopes can be enabled simultaneously. The generator uses the maximum transitive depth across enabled scopes when resolving the package graph.
-
 ### Diagram Options
 
 Defined by `GeneratorDiagramOptions`.
@@ -84,7 +82,7 @@ Defined by `GeneratorDiagramOptions.FillStyle`. Used by `FrameworkStyle`, `Packa
 
 | Property  | Type     | Description                                                           |
 | --------- | -------- | --------------------------------------------------------------------- |
-| `Fill`    | `string` | CSS or RGB fill colour (e.g. `"#ECCBC0"`, `"#ADD8E6"`).               |
+| `Fill`    | `string` | RGB fill colour (e.g. `"#ECCBC0"`, `"#ADD8E6"`).                      |
 | `Opacity` | `double` | Opacity value between 0.0 (fully transparent) and 1.0 (fully opaque). |
 
 #### Grouping Options
@@ -102,6 +100,8 @@ When grouping is enabled, the generator creates visual containers that group:
 
 1. **Projects** — All projects in the current scope are rendered inside a group container labelled with `GroupName`.
 2. **Multi-version packages** — When the same package appears with different resolved versions across projects, a grouping container is created for that package to highlight the version conflict.
+
+> **Note:** Grouping renders as containers in both formats, but the visual result differs. D2 handles group containers well, whereas Mermaid wraps projects in nested `subgraph`s that its layout engine can render cluttered on larger solutions — for Mermaid output, consider setting `grouping.enabled: false`. See [Mermaid Diagrams](#mermaid-diagrams).
 
 ### Export Options
 
@@ -152,9 +152,53 @@ The `.sds` file is the saved dependency project document format used by SlnDepen
     "description": "Dependency diagrams for My Solution"
   },
   "diagramGenerator": {
-    "solution": { ... },
-    "diagram": { ... },
-    "export": { ... }
+    "solution": {
+      "solutionPath": "MySolution.sln",
+      "regexToInclude": ["\\.*\\.csproj"],
+      "regexToExclude": ["\\.*Tests\\.csproj"],
+      "packagesToExclude": ["Some.Package"],
+      "frameworksToExclude": ["Microsoft.NETCore.App"],
+      "individual": {
+        "enabled": true,
+        "includeDependencies": true,
+        "transitiveDepth": 1
+      },
+      "all": {
+        "enabled": true,
+        "includeDependencies": true,
+        "transitiveDepth": 1
+      }
+    },
+    "diagram": {
+      "direction": "LR",
+      "frameworkStyle": {
+        "fill": "#ECCBC0",
+        "opacity": 0.8
+      },
+      "packageStyle": {
+        "fill": "#ADD8E6",
+        "opacity": 0.8
+      },
+      "transitiveStyle": {
+        "fill": "#FFEC96",
+        "opacity": 0.8
+      },
+      "groupName": "My Solution",
+      "groupNameAlias": "my",
+      "grouping": {
+        "enabled": true,
+        "backgroundStyle": {
+          "fill": "#E7EBFC",
+          "opacity": 1
+        }
+      },
+      "formats": ["D2", "Mermaid"]
+    },
+    "export": {
+      "clearContents": true,
+      "rootPath": "output",
+      "imageFormats": ["Png", "Svg", "Pdf"]
+    }
   },
   "restoreSolution": true,
   "preGeneration": {
@@ -173,14 +217,14 @@ The `.sds` file is the saved dependency project document format used by SlnDepen
 }
 ```
 
-| Property           | Type     | Default | Description                                                                                                        |
-| ------------------ | -------- | ------- | ------------------------------------------------------------------------------------------------------------------ |
-| `schemaVersion`    | `int`    | `1`     | Schema version for forward compatibility. Currently `1`.                                                           |
-| `metadata`         | `object` | —       | User-facing project metadata (see [Metadata](#metadata)).                                                          |
-| `diagramGenerator` | `object` | —       | The `DependencyGeneratorConfig` payload (see [Diagram Generator Configuration](#diagram-generator-configuration)). |
-| `restoreSolution`  | `bool`   | `true`  | When `true`, the solution is restored (via `dotnet restore`) before generation starts.                             |
-| `preGeneration`    | `object` | —       | Optional command that runs before generation (see [Pre-Generation Command](#pre-generation-command)).              |
-| `postGeneration`   | `object` | —       | Optional command that runs after generation (see [Post-Generation Command](#post-generation-command)).             |
+| Property           | Type                        | Default | Description                                                                                                        |
+| ------------------ | --------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------ |
+| `schemaVersion`    | `int`                       | `1`     | Schema version for forward compatibility. Currently `1`.                                                           |
+| `metadata`         | `DependencyProjectMetadata` | —       | User-facing project metadata (see [Metadata](#metadata)).                                                          |
+| `diagramGenerator` | `DependencyGeneratorConfig` | —       | The `DependencyGeneratorConfig` payload (see [Diagram Generator Configuration](#diagram-generator-configuration)). |
+| `restoreSolution`  | `bool`                      | `true`  | When `true`, the solution is restored (via `dotnet restore`) before generation starts.                             |
+| `preGeneration`    | `PreGenerationConfig`       | —       | Optional command that runs before generation (see [Pre-Generation Command](#pre-generation-command)).              |
+| `postGeneration`   | `PostGenerationConfig`      | —       | Optional command that runs after generation (see [Post-Generation Command](#post-generation-command)).             |
 
 **Forward compatibility:** Unknown JSON fields are preserved via `[JsonExtensionData]`. Editing a document with a newer schema version does not strip data from unknown fields.
 
@@ -285,31 +329,31 @@ Target frameworks are **auto-discovered** from each matching project's `obj/proj
 - **Diagram generation** (`.mmd` files): No external tools required.
 - **Image export** (PNG, SVG, PDF): Requires [Mermaid CLI (mmdc)](https://github.com/mermaid-js/mermaid-cli#installation) to be available on PATH (or configured via an explicit path override).
 
+**Grouping hint:** Mermaid's layout engine generally produces cleaner diagrams when grouping is disabled (`grouping.enabled: false`). With grouping enabled, projects and conflicting packages are wrapped in nested `subgraph` containers, which Mermaid can struggle to lay out — the output becomes cluttered and harder to read on larger solutions. D2 handles the same containers more gracefully, so it is common to keep grouping enabled for D2 output but disable it for Mermaid. The bundled sample does exactly this: `Samples/DiagramGeneratorSample/appsettings.d2.json` enables grouping while `appsettings.mmd.json` disables it. The difference is visible in the generated [D2 example](../Studio%20Diagrams/net10.0/d2/slndependencydiagramgenerator.d2) (projects inside a group container) versus the [Mermaid example](../Studio%20Diagrams/net10.0/mmd/slndependencydiagramgenerator.mmd) (flat).
+
+With grouping **enabled**, projects are rendered inside a subgraph:
+
+```mermaid
+flowchart LR
+  subgraph ddg["My Solution"]
+    project-a["Project A"]
+    project-b["Project B"]
+  end
+  project-a --> project-b
+```
+
+With grouping **disabled**, the same projects render flat:
+
+```mermaid
+flowchart LR
+  project-a["Project A"]
+  project-b["Project B"]
+  project-a --> project-b
+```
+
 ### Tool Detection
 
 Tool detection uses a layered resolution strategy:
 
 1. **Explicit path override** — If configured (in WPF application settings or via code), the override path is used directly.
 2. **PATH discovery** — Uses platform-appropriate commands (`where` on Windows, `which` on non-Windows) via `AllOverIt.Process` to locate the tool on the system PATH.
-
----
-
-## Architecture Overview
-
-The generator uses a staged pipeline:
-
-```
-Configuration → Validation → Framework Discovery → Solution Parse →
-Dependency Resolution → Graph Model → Intermediate Representation → Renderer Emission → Optional Image Export
-```
-
-1. **Configuration load and bind** — The host application loads configuration and binds it to `DependencyGeneratorConfig`.
-2. **Validation** — Configuration is validated using FluentValidation rules, throwing on violations.
-3. **Target framework discovery** — Target frameworks are discovered from each project's `project.assets.json`.
-4. **Solution parsing** — For each target framework, solution projects are parsed, MSBuild items are evaluated, and package graphs are resolved from assets data.
-5. **Graph model construction** — A `DependencyGraphModel` is built for each enabled scope (individual/all), including multi-version package grouping metadata.
-6. **Intermediate representation** — Each renderer produces a renderer-neutral intermediate representation (nodes, edges, styles, groups).
-7. **Renderer emission** — `D2DiagramRenderer` and `MermaidDiagramRenderer` serialise the IR into `.d2` and `.mmd` files.
-8. **Optional image export** — If image formats are configured, the generated diagram files are rendered via the D2 CLI and/or Mermaid CLI into PNG, SVG, and/or PDF.
-
-The generator, all renderers, and all supporting services use `ILogger<T>` (from `Microsoft.Extensions.Logging`) as the logging abstraction, with `NullLogger<T>.Instance` as the no-op fallback when no logger is registered.
