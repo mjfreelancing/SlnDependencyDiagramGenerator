@@ -1,0 +1,77 @@
+flowchart LR
+  slndependencydiagramgenerator["SlnDependencyDiagramGenerator"]
+  alloverit_9-4-0["AllOverIt<br>v9.4.0"]
+  alloverit-assertion_9-4-0["AllOverIt.Assertion<br>v9.4.0"]
+  alloverit-validation_9-4-0["AllOverIt.Validation<br>v9.4.0"]
+  fluentvalidation_12-1-1["FluentValidation<br>v12.1.1"]
+  microsoft-extensions-dependencyinjection-abstractions_10-0-9["Microsoft.Extensions.DependencyInjection.Abstractions<br>v10.0.9"]
+  microsoft-build_18-6-3["Microsoft.Build<br>v18.6.3"]
+  microsoft-build-framework_18-6-3["Microsoft.Build.Framework<br>v18.6.3"]
+  system-configuration-configurationmanager_10-0-3["System.Configuration.ConfigurationManager<br>v10.0.3"]
+  system-diagnostics-eventlog_10-0-3["System.Diagnostics.EventLog<br>v10.0.3"]
+  system-reflection-metadataloadcontext_10-0-3["System.Reflection.MetadataLoadContext<br>v10.0.3"]
+  system-security-cryptography-protecteddata_10-0-3["System.Security.Cryptography.ProtectedData<br>v10.0.3"]
+  microsoft-build-locator_1-11-2["Microsoft.Build.Locator<br>v1.11.2"]
+  microsoft-extensions-logging-abstractions_10-0-8["Microsoft.Extensions.Logging.Abstractions<br>v10.0.8"]
+  microsoft-sourcelink-github_10-0-300["Microsoft.SourceLink.GitHub<br>v10.0.300"]
+  microsoft-build-tasks-git_10-0-300["Microsoft.Build.Tasks.Git<br>v10.0.300"]
+  microsoft-sourcelink-common_10-0-300["Microsoft.SourceLink.Common<br>v10.0.300"]
+  system-io-hashing_10-0-8["System.IO.Hashing<br>v10.0.8"]
+  microsoft-visualstudio-solutionpersistence_1-0-52["Microsoft.VisualStudio.SolutionPersistence<br>v1.0.52"]
+  nuget-frameworks_7-6-0["NuGet.Frameworks<br>v7.6.0"]
+  nuget-projectmodel_7-6-0["NuGet.ProjectModel<br>v7.6.0"]
+  nuget-dependencyresolver-core_7-6-0["NuGet.DependencyResolver.Core<br>v7.6.0"]
+  nuget-protocol_7-6-0["NuGet.Protocol<br>v7.6.0"]
+  nuget-packaging_7-6-0["NuGet.Packaging<br>v7.6.0"]
+  system-reactive_6-1-0["System.Reactive<br>v6.1.0"]
+  slndependencydiagramgenerator --> alloverit_9-4-0
+  alloverit_9-4-0 --> alloverit-assertion_9-4-0
+  slndependencydiagramgenerator --> alloverit-validation_9-4-0
+  alloverit-validation_9-4-0 --> alloverit_9-4-0
+  alloverit-validation_9-4-0 --> fluentvalidation_12-1-1
+  alloverit-validation_9-4-0 --> microsoft-extensions-dependencyinjection-abstractions_10-0-9
+  slndependencydiagramgenerator --> microsoft-build_18-6-3
+  microsoft-build_18-6-3 --> microsoft-build-framework_18-6-3
+  microsoft-build_18-6-3 --> system-configuration-configurationmanager_10-0-3
+  microsoft-build_18-6-3 --> system-diagnostics-eventlog_10-0-3
+  microsoft-build_18-6-3 --> system-reflection-metadataloadcontext_10-0-3
+  microsoft-build_18-6-3 --> system-security-cryptography-protecteddata_10-0-3
+  slndependencydiagramgenerator --> microsoft-build-locator_1-11-2
+  slndependencydiagramgenerator --> microsoft-extensions-dependencyinjection-abstractions_10-0-9
+  slndependencydiagramgenerator --> microsoft-extensions-logging-abstractions_10-0-8
+  microsoft-extensions-logging-abstractions_10-0-8 --> microsoft-extensions-dependencyinjection-abstractions_10-0-9
+  slndependencydiagramgenerator --> microsoft-sourcelink-github_10-0-300
+  microsoft-sourcelink-github_10-0-300 --> microsoft-build-tasks-git_10-0-300
+  microsoft-sourcelink-github_10-0-300 --> microsoft-sourcelink-common_10-0-300
+  microsoft-sourcelink-github_10-0-300 --> system-io-hashing_10-0-8
+  slndependencydiagramgenerator --> microsoft-visualstudio-solutionpersistence_1-0-52
+  slndependencydiagramgenerator --> nuget-frameworks_7-6-0
+  slndependencydiagramgenerator --> nuget-projectmodel_7-6-0
+  nuget-projectmodel_7-6-0 --> nuget-dependencyresolver-core_7-6-0
+  slndependencydiagramgenerator --> nuget-protocol_7-6-0
+  nuget-protocol_7-6-0 --> nuget-packaging_7-6-0
+  slndependencydiagramgenerator --> system-reactive_6-1-0
+  style alloverit_9-4-0 fill:#ADD8E6,opacity:0.8
+  style alloverit-assertion_9-4-0 fill:#FFEC96,opacity:0.8
+  style alloverit-validation_9-4-0 fill:#ADD8E6,opacity:0.8
+  style fluentvalidation_12-1-1 fill:#FFEC96,opacity:0.8
+  style microsoft-extensions-dependencyinjection-abstractions_10-0-9 fill:#ADD8E6,opacity:0.8
+  style microsoft-build_18-6-3 fill:#ADD8E6,opacity:0.8
+  style microsoft-build-framework_18-6-3 fill:#FFEC96,opacity:0.8
+  style system-configuration-configurationmanager_10-0-3 fill:#FFEC96,opacity:0.8
+  style system-diagnostics-eventlog_10-0-3 fill:#FFEC96,opacity:0.8
+  style system-reflection-metadataloadcontext_10-0-3 fill:#FFEC96,opacity:0.8
+  style system-security-cryptography-protecteddata_10-0-3 fill:#FFEC96,opacity:0.8
+  style microsoft-build-locator_1-11-2 fill:#ADD8E6,opacity:0.8
+  style microsoft-extensions-logging-abstractions_10-0-8 fill:#ADD8E6,opacity:0.8
+  style microsoft-sourcelink-github_10-0-300 fill:#ADD8E6,opacity:0.8
+  style microsoft-build-tasks-git_10-0-300 fill:#FFEC96,opacity:0.8
+  style microsoft-sourcelink-common_10-0-300 fill:#FFEC96,opacity:0.8
+  style system-io-hashing_10-0-8 fill:#FFEC96,opacity:0.8
+  style microsoft-visualstudio-solutionpersistence_1-0-52 fill:#ADD8E6,opacity:0.8
+  style nuget-frameworks_7-6-0 fill:#ADD8E6,opacity:0.8
+  style nuget-projectmodel_7-6-0 fill:#ADD8E6,opacity:0.8
+  style nuget-dependencyresolver-core_7-6-0 fill:#FFEC96,opacity:0.8
+  style nuget-protocol_7-6-0 fill:#ADD8E6,opacity:0.8
+  style nuget-packaging_7-6-0 fill:#FFEC96,opacity:0.8
+  style system-reactive_6-1-0 fill:#ADD8E6,opacity:0.8

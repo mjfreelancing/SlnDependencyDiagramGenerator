@@ -61,8 +61,7 @@
         }
       },
       "formats": [
-        "D2",
-        "Mermaid"
+        "D2"
       ]
     },
     "export": {

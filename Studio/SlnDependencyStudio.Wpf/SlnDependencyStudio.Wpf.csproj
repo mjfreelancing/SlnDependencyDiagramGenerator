@@ -40,6 +40,12 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <None Update="sample-d2.sds">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Update="sample-mmd.sds">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
 	  <None Update="sample.sds">
 	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	  </None>

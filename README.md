@@ -23,7 +23,7 @@ The repository ships three deliverables around a shared core:
 
 Pre-built versions of the **SlnDependencyStudio CLI** and **WPF** application are distributed together as **SlnDependencyStudio** — download them from the [Releases page](https://github.com/mjfreelancing/SlnDependencyDiagramGenerator/releases).
 
-This [example](./Samples/Output/net9.0/d2/slndependencydiagramgenerator.png) was produced from the solution in this repository.
+This [D2 example](./Studio%20Diagrams/net10.0/d2/slndependencydiagramgenerator.png) and [Mermaid example](./Studio%20Diagrams/net10.0/mmd/slndependencydiagramgenerator.png) were produced from the solution in this repository.
 
 ---
 

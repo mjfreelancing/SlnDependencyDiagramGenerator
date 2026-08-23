@@ -54,14 +54,13 @@
       "groupName": "SlnDependencyDiagram",
       "groupNameAlias": "ddg",
       "grouping": {
-        "enabled": true,
+        "enabled": false,
         "backgroundStyle": {
           "fill": "#E7EBFC",
           "opacity": 1
         }
       },
       "formats": [
-        "D2",
         "Mermaid"
       ]
     },

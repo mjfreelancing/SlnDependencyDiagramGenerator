@@ -1,0 +1,255 @@
+direction: left
+
+ddg: SlnDependencyDiagram
+microsoft-extensions-logging-abstractions-group: ""
+ddg.slndependencystudio-cli: SlnDependencyStudio.Cli
+alloverit-generichost_9-4-0: AllOverIt.GenericHost\nv9.4.0
+alloverit_9-4-0: AllOverIt\nv9.4.0
+microsoft-extensions-hosting_10-0-9: Microsoft.Extensions.Hosting\nv10.0.9
+microsoft-extensions-configuration-binder_10-0-9: Microsoft.Extensions.Configuration.Binder\nv10.0.9
+microsoft-extensions-configuration_10-0-9: Microsoft.Extensions.Configuration\nv10.0.9
+microsoft-extensions-configuration-abstractions_10-0-9: Microsoft.Extensions.Configuration.Abstractions\nv10.0.9
+microsoft-extensions-configuration-json_10-0-9: Microsoft.Extensions.Configuration.Json\nv10.0.9
+microsoft-extensions-configuration-fileextensions_10-0-9: Microsoft.Extensions.Configuration.FileExtensions\nv10.0.9
+microsoft-extensions-fileproviders-abstractions_10-0-9: Microsoft.Extensions.FileProviders.Abstractions\nv10.0.9
+serilog-sinks-console_6-1-1: Serilog.Sinks.Console\nv6.1.1
+serilog_4-3-0: Serilog\nv4.3.0
+system-commandline_2-0-8: System.CommandLine\nv2.0.8
+ddg.slndependencydiagramgenerator: SlnDependencyDiagramGenerator
+alloverit-assertion_9-4-0: AllOverIt.Assertion\nv9.4.0
+alloverit-validation_9-4-0: AllOverIt.Validation\nv9.4.0
+fluentvalidation_12-1-1: FluentValidation\nv12.1.1
+microsoft-extensions-dependencyinjection-abstractions_10-0-9: Microsoft.Extensions.DependencyInjection.Abstractions\nv10.0.9
+microsoft-build_18-6-3: Microsoft.Build\nv18.6.3
+microsoft-build-framework_18-6-3: Microsoft.Build.Framework\nv18.6.3
+system-configuration-configurationmanager_10-0-3: System.Configuration.ConfigurationManager\nv10.0.3
+system-diagnostics-eventlog_10-0-3: System.Diagnostics.EventLog\nv10.0.3
+system-reflection-metadataloadcontext_10-0-3: System.Reflection.MetadataLoadContext\nv10.0.3
+system-security-cryptography-protecteddata_10-0-3: System.Security.Cryptography.ProtectedData\nv10.0.3
+microsoft-build-locator_1-11-2: Microsoft.Build.Locator\nv1.11.2
+microsoft-extensions-logging-abstractions-group.microsoft-extensions-logging-abstractions_10-0-8: Microsoft.Extensions.Logging.Abstractions\nv10.0.8
+microsoft-sourcelink-github_10-0-300: Microsoft.SourceLink.GitHub\nv10.0.300
+microsoft-build-tasks-git_10-0-300: Microsoft.Build.Tasks.Git\nv10.0.300
+microsoft-sourcelink-common_10-0-300: Microsoft.SourceLink.Common\nv10.0.300
+system-io-hashing_10-0-8: System.IO.Hashing\nv10.0.8
+microsoft-visualstudio-solutionpersistence_1-0-52: Microsoft.VisualStudio.SolutionPersistence\nv1.0.52
+nuget-frameworks_7-6-0: NuGet.Frameworks\nv7.6.0
+nuget-projectmodel_7-6-0: NuGet.ProjectModel\nv7.6.0
+nuget-dependencyresolver-core_7-6-0: NuGet.DependencyResolver.Core\nv7.6.0
+nuget-protocol_7-6-0: NuGet.Protocol\nv7.6.0
+nuget-packaging_7-6-0: NuGet.Packaging\nv7.6.0
+system-reactive_6-1-0: System.Reactive\nv6.1.0
+ddg.slndependencystudio-shared: SlnDependencyStudio.Shared
+alloverit-dependencyinjection_9-4-0: AllOverIt.DependencyInjection\nv9.4.0
+microsoft-extensions-configuration-commandline_10-0-9: Microsoft.Extensions.Configuration.CommandLine\nv10.0.9
+microsoft-extensions-configuration-environmentvariables_10-0-9: Microsoft.Extensions.Configuration.EnvironmentVariables\nv10.0.9
+microsoft-extensions-configuration-usersecrets_10-0-9: Microsoft.Extensions.Configuration.UserSecrets\nv10.0.9
+microsoft-extensions-dependencyinjection_10-0-9: Microsoft.Extensions.DependencyInjection\nv10.0.9
+microsoft-extensions-diagnostics_10-0-9: Microsoft.Extensions.Diagnostics\nv10.0.9
+microsoft-extensions-fileproviders-physical_10-0-9: Microsoft.Extensions.FileProviders.Physical\nv10.0.9
+microsoft-extensions-hosting-abstractions_10-0-9: Microsoft.Extensions.Hosting.Abstractions\nv10.0.9
+microsoft-extensions-logging_10-0-9: Microsoft.Extensions.Logging\nv10.0.9
+microsoft-extensions-logging-abstractions-group.microsoft-extensions-logging-abstractions_10-0-9: Microsoft.Extensions.Logging.Abstractions\nv10.0.9
+microsoft-extensions-logging-configuration_10-0-9: Microsoft.Extensions.Logging.Configuration\nv10.0.9
+microsoft-extensions-logging-console_10-0-9: Microsoft.Extensions.Logging.Console\nv10.0.9
+microsoft-extensions-logging-debug_10-0-9: Microsoft.Extensions.Logging.Debug\nv10.0.9
+microsoft-extensions-logging-eventlog_10-0-9: Microsoft.Extensions.Logging.EventLog\nv10.0.9
+microsoft-extensions-logging-eventsource_10-0-9: Microsoft.Extensions.Logging.EventSource\nv10.0.9
+microsoft-extensions-options_10-0-9: Microsoft.Extensions.Options\nv10.0.9
+serilog-extensions-hosting_10-0-0: Serilog.Extensions.Hosting\nv10.0.0
+serilog-extensions-logging_10-0-0: Serilog.Extensions.Logging\nv10.0.0
+serilog-sinks-file_7-0-0: Serilog.Sinks.File\nv7.0.0
+alloverit-generichost_9-4-0 <- ddg.slndependencystudio-cli
+alloverit_9-4-0 <- alloverit-generichost_9-4-0
+microsoft-extensions-hosting_10-0-9 <- alloverit-generichost_9-4-0
+microsoft-extensions-configuration-binder_10-0-9 <- ddg.slndependencystudio-cli
+microsoft-extensions-configuration_10-0-9 <- microsoft-extensions-configuration-binder_10-0-9
+microsoft-extensions-configuration-abstractions_10-0-9 <- microsoft-extensions-configuration-binder_10-0-9
+microsoft-extensions-configuration-json_10-0-9 <- ddg.slndependencystudio-cli
+microsoft-extensions-configuration_10-0-9 <- microsoft-extensions-configuration-json_10-0-9
+microsoft-extensions-configuration-abstractions_10-0-9 <- microsoft-extensions-configuration-json_10-0-9
+microsoft-extensions-configuration-fileextensions_10-0-9 <- microsoft-extensions-configuration-json_10-0-9
+microsoft-extensions-fileproviders-abstractions_10-0-9 <- microsoft-extensions-configuration-json_10-0-9
+serilog-sinks-console_6-1-1 <- ddg.slndependencystudio-cli
+serilog_4-3-0 <- serilog-sinks-console_6-1-1
+system-commandline_2-0-8 <- ddg.slndependencystudio-cli
+ddg.slndependencydiagramgenerator <- ddg.slndependencystudio-cli
+alloverit_9-4-0 <- ddg.slndependencydiagramgenerator
+alloverit-assertion_9-4-0 <- alloverit_9-4-0
+alloverit-validation_9-4-0 <- ddg.slndependencydiagramgenerator
+alloverit_9-4-0 <- alloverit-validation_9-4-0
+fluentvalidation_12-1-1 <- alloverit-validation_9-4-0
+microsoft-extensions-dependencyinjection-abstractions_10-0-9 <- alloverit-validation_9-4-0
+microsoft-build_18-6-3 <- ddg.slndependencydiagramgenerator
+microsoft-build-framework_18-6-3 <- microsoft-build_18-6-3
+system-configuration-configurationmanager_10-0-3 <- microsoft-build_18-6-3
+system-diagnostics-eventlog_10-0-3 <- microsoft-build_18-6-3
+system-reflection-metadataloadcontext_10-0-3 <- microsoft-build_18-6-3
+system-security-cryptography-protecteddata_10-0-3 <- microsoft-build_18-6-3
+microsoft-build-locator_1-11-2 <- ddg.slndependencydiagramgenerator
+microsoft-extensions-dependencyinjection-abstractions_10-0-9 <- ddg.slndependencydiagramgenerator
+microsoft-extensions-logging-abstractions-group.microsoft-extensions-logging-abstractions_10-0-8 <- ddg.slndependencydiagramgenerator
+microsoft-extensions-dependencyinjection-abstractions_10-0-9 <- microsoft-extensions-logging-abstractions-group.microsoft-extensions-logging-abstractions_10-0-8
+microsoft-sourcelink-github_10-0-300 <- ddg.slndependencydiagramgenerator
+microsoft-build-tasks-git_10-0-300 <- microsoft-sourcelink-github_10-0-300
+microsoft-sourcelink-common_10-0-300 <- microsoft-sourcelink-github_10-0-300
+system-io-hashing_10-0-8 <- microsoft-sourcelink-github_10-0-300
+microsoft-visualstudio-solutionpersistence_1-0-52 <- ddg.slndependencydiagramgenerator
+nuget-frameworks_7-6-0 <- ddg.slndependencydiagramgenerator
+nuget-projectmodel_7-6-0 <- ddg.slndependencydiagramgenerator
+nuget-dependencyresolver-core_7-6-0 <- nuget-projectmodel_7-6-0
+nuget-protocol_7-6-0 <- ddg.slndependencydiagramgenerator
+nuget-packaging_7-6-0 <- nuget-protocol_7-6-0
+system-reactive_6-1-0 <- ddg.slndependencydiagramgenerator
+ddg.slndependencystudio-shared <- ddg.slndependencystudio-cli
+alloverit-dependencyinjection_9-4-0 <- ddg.slndependencystudio-shared
+alloverit_9-4-0 <- alloverit-dependencyinjection_9-4-0
+microsoft-extensions-dependencyinjection-abstractions_10-0-9 <- alloverit-dependencyinjection_9-4-0
+microsoft-extensions-configuration-json_10-0-9 <- ddg.slndependencystudio-shared
+microsoft-extensions-dependencyinjection-abstractions_10-0-9 <- ddg.slndependencystudio-shared
+microsoft-extensions-hosting_10-0-9 <- ddg.slndependencystudio-shared
+microsoft-extensions-configuration_10-0-9 <- microsoft-extensions-hosting_10-0-9
+microsoft-extensions-configuration-abstractions_10-0-9 <- microsoft-extensions-hosting_10-0-9
+microsoft-extensions-configuration-binder_10-0-9 <- microsoft-extensions-hosting_10-0-9
+microsoft-extensions-configuration-commandline_10-0-9 <- microsoft-extensions-hosting_10-0-9
+microsoft-extensions-configuration-environmentvariables_10-0-9 <- microsoft-extensions-hosting_10-0-9
+microsoft-extensions-configuration-fileextensions_10-0-9 <- microsoft-extensions-hosting_10-0-9
+microsoft-extensions-configuration-json_10-0-9 <- microsoft-extensions-hosting_10-0-9
+microsoft-extensions-configuration-usersecrets_10-0-9 <- microsoft-extensions-hosting_10-0-9
+microsoft-extensions-dependencyinjection_10-0-9 <- microsoft-extensions-hosting_10-0-9
+microsoft-extensions-dependencyinjection-abstractions_10-0-9 <- microsoft-extensions-hosting_10-0-9
+microsoft-extensions-diagnostics_10-0-9 <- microsoft-extensions-hosting_10-0-9
+microsoft-extensions-fileproviders-abstractions_10-0-9 <- microsoft-extensions-hosting_10-0-9
+microsoft-extensions-fileproviders-physical_10-0-9 <- microsoft-extensions-hosting_10-0-9
+microsoft-extensions-hosting-abstractions_10-0-9 <- microsoft-extensions-hosting_10-0-9
+microsoft-extensions-logging_10-0-9 <- microsoft-extensions-hosting_10-0-9
+microsoft-extensions-logging-abstractions-group.microsoft-extensions-logging-abstractions_10-0-9 <- microsoft-extensions-hosting_10-0-9
+microsoft-extensions-logging-configuration_10-0-9 <- microsoft-extensions-hosting_10-0-9
+microsoft-extensions-logging-console_10-0-9 <- microsoft-extensions-hosting_10-0-9
+microsoft-extensions-logging-debug_10-0-9 <- microsoft-extensions-hosting_10-0-9
+microsoft-extensions-logging-eventlog_10-0-9 <- microsoft-extensions-hosting_10-0-9
+microsoft-extensions-logging-eventsource_10-0-9 <- microsoft-extensions-hosting_10-0-9
+microsoft-extensions-options_10-0-9 <- microsoft-extensions-hosting_10-0-9
+serilog-extensions-hosting_10-0-0 <- ddg.slndependencystudio-shared
+microsoft-extensions-dependencyinjection-abstractions_10-0-9 <- serilog-extensions-hosting_10-0-0
+microsoft-extensions-hosting-abstractions_10-0-9 <- serilog-extensions-hosting_10-0-0
+microsoft-extensions-logging-abstractions-group.microsoft-extensions-logging-abstractions_10-0-9 <- serilog-extensions-hosting_10-0-0
+serilog_4-3-0 <- serilog-extensions-hosting_10-0-0
+serilog-extensions-logging_10-0-0 <- serilog-extensions-hosting_10-0-0
+serilog-sinks-file_7-0-0 <- ddg.slndependencystudio-shared
+serilog_4-3-0 <- serilog-sinks-file_7-0-0
+system-reactive_6-1-0 <- ddg.slndependencystudio-shared
+ddg.slndependencydiagramgenerator <- ddg.slndependencystudio-shared
+alloverit-generichost_9-4-0.style.fill: "#ADD8E6"
+alloverit-generichost_9-4-0.style.opacity: 0.8
+alloverit_9-4-0.style.fill: "#ADD8E6"
+alloverit_9-4-0.style.opacity: 0.8
+microsoft-extensions-hosting_10-0-9.style.fill: "#ADD8E6"
+microsoft-extensions-hosting_10-0-9.style.opacity: 0.8
+microsoft-extensions-configuration-binder_10-0-9.style.fill: "#ADD8E6"
+microsoft-extensions-configuration-binder_10-0-9.style.opacity: 0.8
+microsoft-extensions-configuration_10-0-9.style.fill: "#FFEC96"
+microsoft-extensions-configuration_10-0-9.style.opacity: 0.8
+microsoft-extensions-configuration-abstractions_10-0-9.style.fill: "#FFEC96"
+microsoft-extensions-configuration-abstractions_10-0-9.style.opacity: 0.8
+microsoft-extensions-configuration-json_10-0-9.style.fill: "#ADD8E6"
+microsoft-extensions-configuration-json_10-0-9.style.opacity: 0.8
+microsoft-extensions-configuration-fileextensions_10-0-9.style.fill: "#FFEC96"
+microsoft-extensions-configuration-fileextensions_10-0-9.style.opacity: 0.8
+microsoft-extensions-fileproviders-abstractions_10-0-9.style.fill: "#FFEC96"
+microsoft-extensions-fileproviders-abstractions_10-0-9.style.opacity: 0.8
+serilog-sinks-console_6-1-1.style.fill: "#ADD8E6"
+serilog-sinks-console_6-1-1.style.opacity: 0.8
+serilog_4-3-0.style.fill: "#FFEC96"
+serilog_4-3-0.style.opacity: 0.8
+system-commandline_2-0-8.style.fill: "#ADD8E6"
+system-commandline_2-0-8.style.opacity: 0.8
+alloverit-assertion_9-4-0.style.fill: "#FFEC96"
+alloverit-assertion_9-4-0.style.opacity: 0.8
+alloverit-validation_9-4-0.style.fill: "#ADD8E6"
+alloverit-validation_9-4-0.style.opacity: 0.8
+fluentvalidation_12-1-1.style.fill: "#FFEC96"
+fluentvalidation_12-1-1.style.opacity: 0.8
+microsoft-extensions-dependencyinjection-abstractions_10-0-9.style.fill: "#ADD8E6"
+microsoft-extensions-dependencyinjection-abstractions_10-0-9.style.opacity: 0.8
+microsoft-build_18-6-3.style.fill: "#ADD8E6"
+microsoft-build_18-6-3.style.opacity: 0.8
+microsoft-build-framework_18-6-3.style.fill: "#FFEC96"
+microsoft-build-framework_18-6-3.style.opacity: 0.8
+system-configuration-configurationmanager_10-0-3.style.fill: "#FFEC96"
+system-configuration-configurationmanager_10-0-3.style.opacity: 0.8
+system-diagnostics-eventlog_10-0-3.style.fill: "#FFEC96"
+system-diagnostics-eventlog_10-0-3.style.opacity: 0.8
+system-reflection-metadataloadcontext_10-0-3.style.fill: "#FFEC96"
+system-reflection-metadataloadcontext_10-0-3.style.opacity: 0.8
+system-security-cryptography-protecteddata_10-0-3.style.fill: "#FFEC96"
+system-security-cryptography-protecteddata_10-0-3.style.opacity: 0.8
+microsoft-build-locator_1-11-2.style.fill: "#ADD8E6"
+microsoft-build-locator_1-11-2.style.opacity: 0.8
+microsoft-extensions-logging-abstractions-group.microsoft-extensions-logging-abstractions_10-0-8.style.fill: "#ADD8E6"
+microsoft-extensions-logging-abstractions-group.microsoft-extensions-logging-abstractions_10-0-8.style.opacity: 0.8
+microsoft-sourcelink-github_10-0-300.style.fill: "#ADD8E6"
+microsoft-sourcelink-github_10-0-300.style.opacity: 0.8
+microsoft-build-tasks-git_10-0-300.style.fill: "#FFEC96"
+microsoft-build-tasks-git_10-0-300.style.opacity: 0.8
+microsoft-sourcelink-common_10-0-300.style.fill: "#FFEC96"
+microsoft-sourcelink-common_10-0-300.style.opacity: 0.8
+system-io-hashing_10-0-8.style.fill: "#FFEC96"
+system-io-hashing_10-0-8.style.opacity: 0.8
+microsoft-visualstudio-solutionpersistence_1-0-52.style.fill: "#ADD8E6"
+microsoft-visualstudio-solutionpersistence_1-0-52.style.opacity: 0.8
+nuget-frameworks_7-6-0.style.fill: "#ADD8E6"
+nuget-frameworks_7-6-0.style.opacity: 0.8
+nuget-projectmodel_7-6-0.style.fill: "#ADD8E6"
+nuget-projectmodel_7-6-0.style.opacity: 0.8
+nuget-dependencyresolver-core_7-6-0.style.fill: "#FFEC96"
+nuget-dependencyresolver-core_7-6-0.style.opacity: 0.8
+nuget-protocol_7-6-0.style.fill: "#ADD8E6"
+nuget-protocol_7-6-0.style.opacity: 0.8
+nuget-packaging_7-6-0.style.fill: "#FFEC96"
+nuget-packaging_7-6-0.style.opacity: 0.8
+system-reactive_6-1-0.style.fill: "#ADD8E6"
+system-reactive_6-1-0.style.opacity: 0.8
+alloverit-dependencyinjection_9-4-0.style.fill: "#ADD8E6"
+alloverit-dependencyinjection_9-4-0.style.opacity: 0.8
+microsoft-extensions-configuration-commandline_10-0-9.style.fill: "#FFEC96"
+microsoft-extensions-configuration-commandline_10-0-9.style.opacity: 0.8
+microsoft-extensions-configuration-environmentvariables_10-0-9.style.fill: "#FFEC96"
+microsoft-extensions-configuration-environmentvariables_10-0-9.style.opacity: 0.8
+microsoft-extensions-configuration-usersecrets_10-0-9.style.fill: "#FFEC96"
+microsoft-extensions-configuration-usersecrets_10-0-9.style.opacity: 0.8
+microsoft-extensions-dependencyinjection_10-0-9.style.fill: "#FFEC96"
+microsoft-extensions-dependencyinjection_10-0-9.style.opacity: 0.8
+microsoft-extensions-diagnostics_10-0-9.style.fill: "#FFEC96"
+microsoft-extensions-diagnostics_10-0-9.style.opacity: 0.8
+microsoft-extensions-fileproviders-physical_10-0-9.style.fill: "#FFEC96"
+microsoft-extensions-fileproviders-physical_10-0-9.style.opacity: 0.8
+microsoft-extensions-hosting-abstractions_10-0-9.style.fill: "#FFEC96"
+microsoft-extensions-hosting-abstractions_10-0-9.style.opacity: 0.8
+microsoft-extensions-logging_10-0-9.style.fill: "#FFEC96"
+microsoft-extensions-logging_10-0-9.style.opacity: 0.8
+microsoft-extensions-logging-abstractions-group.microsoft-extensions-logging-abstractions_10-0-9.style.fill: "#FFEC96"
+microsoft-extensions-logging-abstractions-group.microsoft-extensions-logging-abstractions_10-0-9.style.opacity: 0.8
+microsoft-extensions-logging-configuration_10-0-9.style.fill: "#FFEC96"
+microsoft-extensions-logging-configuration_10-0-9.style.opacity: 0.8
+microsoft-extensions-logging-console_10-0-9.style.fill: "#FFEC96"
+microsoft-extensions-logging-console_10-0-9.style.opacity: 0.8
+microsoft-extensions-logging-debug_10-0-9.style.fill: "#FFEC96"
+microsoft-extensions-logging-debug_10-0-9.style.opacity: 0.8
+microsoft-extensions-logging-eventlog_10-0-9.style.fill: "#FFEC96"
+microsoft-extensions-logging-eventlog_10-0-9.style.opacity: 0.8
+microsoft-extensions-logging-eventsource_10-0-9.style.fill: "#FFEC96"
+microsoft-extensions-logging-eventsource_10-0-9.style.opacity: 0.8
+microsoft-extensions-options_10-0-9.style.fill: "#FFEC96"
+microsoft-extensions-options_10-0-9.style.opacity: 0.8
+serilog-extensions-hosting_10-0-0.style.fill: "#ADD8E6"
+serilog-extensions-hosting_10-0-0.style.opacity: 0.8
+serilog-extensions-logging_10-0-0.style.fill: "#FFEC96"
+serilog-extensions-logging_10-0-0.style.opacity: 0.8
+serilog-sinks-file_7-0-0.style.fill: "#ADD8E6"
+serilog-sinks-file_7-0-0.style.opacity: 0.8
+ddg.style.fill: "#E7EBFC"
+ddg.style.opacity: 1
+microsoft-extensions-logging-abstractions-group.style.fill: "#E7EBFC"
+microsoft-extensions-logging-abstractions-group.style.opacity: 1
+
