@@ -179,6 +179,16 @@ public class OutputPanelViewModelFixture
         }
 
         [Fact]
+        public void Should_Color_Debug_As_Debug()
+        {
+            _viewModel.IsVerbose = true;
+
+            _logBuffer.Add(CreateEntry(LogEventLevel.Debug, "Debug message"));
+
+            _viewModel.Messages[0].Level.ShouldBe(OutputMessageLevel.Debug);
+        }
+
+        [Fact]
         public void Should_Hide_Debug_When_Verbose_Off()
         {
             _logBuffer.Add(CreateEntry(LogEventLevel.Debug, "Debug message"));

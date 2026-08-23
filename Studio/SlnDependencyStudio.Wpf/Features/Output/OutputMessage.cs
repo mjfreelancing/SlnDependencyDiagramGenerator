@@ -1,5 +1,4 @@
-using ReactiveUI;
-using System.Collections.ObjectModel;
+﻿using ReactiveUI;
 
 namespace SlnDependencyStudio.Wpf.Features.Output;
 
@@ -24,17 +23,4 @@ public sealed class OutputMessage : ReactiveObject
         get => _level;
         set => this.RaiseAndSetIfChanged(ref _level, value);
     }
-}
-
-/// <summary>Severity level for output messages.</summary>
-public enum OutputMessageLevel
-{
-    /// <summary>An informational message.</summary>
-    Information,
-
-    /// <summary>A warning message.</summary>
-    Warning,
-
-    /// <summary>An error message.</summary>
-    Error
 }

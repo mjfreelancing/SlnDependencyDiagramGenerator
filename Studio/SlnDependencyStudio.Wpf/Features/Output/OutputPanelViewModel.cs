@@ -303,6 +303,7 @@ public sealed class OutputPanelViewModel : ReactiveObject, IStudioScopedDependen
         {
             LogEventLevel.Error or LogEventLevel.Fatal => OutputMessageLevel.Error,
             LogEventLevel.Warning => OutputMessageLevel.Warning,
+            LogEventLevel.Debug => OutputMessageLevel.Debug,
             _ => OutputMessageLevel.Information
         };
 

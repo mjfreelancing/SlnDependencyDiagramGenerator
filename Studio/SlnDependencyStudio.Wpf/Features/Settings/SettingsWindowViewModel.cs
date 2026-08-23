@@ -131,6 +131,7 @@ public sealed class SettingsWindowViewModel : ReactiveObject
                 /* vm => vm.SettingsEditorViewModel!.SomeOtherProp */
                 (retentionDays /* , string someOtherProp */) => new RestartSensitiveSettings(retentionDays /* , string someOtherProp */))
             .Select(settings => settings != _originalRestartSettings)
+            .DistinctUntilChanged()
             .Do(restartRequired => _logger.LogDebug("Restart required: {RestartRequired}", restartRequired))
             .BindTo(this, vm => vm.IsRestartRequired);
     }

@@ -135,6 +135,9 @@
                                 <Style TargetType="TextBlock">
                                     <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
                                     <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Level}" Value="Debug">
+                                            <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.ForegroundLight}" />
+                                        </DataTrigger>
                                         <DataTrigger Binding="{Binding Level}" Value="Warning">
                                             <Setter Property="Foreground" Value="Goldenrod" />
                                         </DataTrigger>
