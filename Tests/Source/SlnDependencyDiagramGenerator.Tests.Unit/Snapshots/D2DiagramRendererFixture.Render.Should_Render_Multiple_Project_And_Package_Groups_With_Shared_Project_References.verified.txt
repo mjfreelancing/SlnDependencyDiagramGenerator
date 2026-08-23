@@ -1,0 +1,31 @@
+﻿direction: left
+
+test: All Projects
+newtonsoft-json-group: ""
+serilog-group: ""
+test.appconsole: AppConsole
+newtonsoft-json-group.newtonsoft-json_13-0-3: Newtonsoft.Json\nv13.0.3
+newtonsoft-json-group.newtonsoft-json_12-0-3: Newtonsoft.Json\nv12.0.3
+test.libcore: LibCore
+serilog-group.serilog_3-1-1: Serilog\nv3.1.1
+serilog-group.serilog_2-12-0: Serilog\nv2.12.0
+newtonsoft-json-group.newtonsoft-json_13-0-3 <- test.appconsole
+newtonsoft-json-group.newtonsoft-json_12-0-3 <- newtonsoft-json-group.newtonsoft-json_13-0-3
+test.libcore <- test.appconsole
+serilog-group.serilog_3-1-1 <- test.libcore
+serilog-group.serilog_2-12-0 <- serilog-group.serilog_3-1-1
+newtonsoft-json-group.newtonsoft-json_13-0-3.style.fill: "#405060"
+newtonsoft-json-group.newtonsoft-json_13-0-3.style.opacity: 0.8
+newtonsoft-json-group.newtonsoft-json_12-0-3.style.fill: "#708090"
+newtonsoft-json-group.newtonsoft-json_12-0-3.style.opacity: 0.8
+serilog-group.serilog_3-1-1.style.fill: "#405060"
+serilog-group.serilog_3-1-1.style.opacity: 0.8
+serilog-group.serilog_2-12-0.style.fill: "#708090"
+serilog-group.serilog_2-12-0.style.opacity: 0.8
+test.style.fill: "#DDEEFF"
+test.style.opacity: 0.75
+newtonsoft-json-group.style.fill: "#DDEEFF"
+newtonsoft-json-group.style.opacity: 0.75
+serilog-group.style.fill: "#DDEEFF"
+serilog-group.style.opacity: 0.75
+

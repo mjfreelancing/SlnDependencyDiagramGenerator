@@ -1,0 +1,370 @@
+<reactiveui:ReactiveUserControl
+    x:Class="SlnDependencyStudio.Wpf.Features.Pipeline.PipelineView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:pipeline="clr-namespace:SlnDependencyStudio.Wpf.Features.Pipeline"
+    xmlns:reactiveui="http://reactiveui.net"
+    xmlns:studioControls="clr-namespace:SlnDependencyStudio.Wpf.Controls"
+    d:DesignHeight="400"
+    d:DesignWidth="600"
+    x:TypeArguments="pipeline:PipelineViewModel"
+    mc:Ignorable="d">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="24">
+
+            <!--  Header  -->
+            <StackPanel Margin="0,0,0,24" Orientation="Horizontal">
+                <materialDesign:PackIcon
+                    Width="28"
+                    Height="28"
+                    Margin="0,0,12,0"
+                    VerticalAlignment="Center"
+                    Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+                    Kind="Pipe" />
+                <StackPanel>
+                    <TextBlock
+                        FontSize="22"
+                        FontWeight="SemiBold"
+                        Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+                        Text="Pipeline" />
+                    <TextBlock
+                        Margin="0,2,0,0"
+                        FontSize="12"
+                        Foreground="{DynamicResource MaterialDesign.Brush.ForegroundLight}"
+                        Text="Diagram Generation Processing Pipeline" />
+                </StackPanel>
+            </StackPanel>
+
+            <!--  Restore Solution  -->
+            <studioControls:FormField
+                Title="Restore Solution"
+                Margin="0,0,0,24"
+                Description="Run 'dotnet restore' on the solution before generation so project assets are available.">
+                <Border
+                    Padding="16,12"
+                    Background="{DynamicResource MaterialDesign.Brush.Chip.Background}"
+                    CornerRadius="8">
+                    <CheckBox
+                        VerticalAlignment="Center"
+                        Content="Restore Solution"
+                        IsChecked="{Binding RestoreSolution.Value}" />
+                </Border>
+            </studioControls:FormField>
+
+            <!--  Pre-Generation Command  -->
+            <studioControls:FormField
+                Title="Pre-generation command"
+                Margin="0,0,0,24"
+                Description="An optional command to run before diagram generation starts.">
+                <Border
+                    Padding="16,12"
+                    Background="{DynamicResource MaterialDesign.Brush.Chip.Background}"
+                    CornerRadius="8">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <ToggleButton
+                            Grid.Row="0"
+                            Grid.RowSpan="6"
+                            Grid.Column="0"
+                            VerticalAlignment="Top"
+                            IsChecked="{Binding Enabled.Value}"
+                            Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+
+                        <!--  Row 0: Command FormField  -->
+                        <studioControls:FormField
+                            Title="Command"
+                            Grid.Row="0"
+                            Grid.Column="1"
+                            Margin="16,0,0,0"
+                            ValidationError="{Binding PreGenError}">
+                            <Grid IsEnabled="{Binding Enabled.Value}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox Grid.Column="0" Text="{Binding Command.Value, UpdateSourceTrigger=PropertyChanged}" />
+                                <Button
+                                    Grid.Column="1"
+                                    Command="{Binding BrowseCommandCommand}"
+                                    Content="Browse"
+                                    Style="{StaticResource ActionButtonStyle}" />
+                            </Grid>
+                        </studioControls:FormField>
+
+                        <!--  Row 1: Arguments label  -->
+                        <TextBlock
+                            Grid.Row="1"
+                            Grid.Column="1"
+                            Margin="16,24,0,0"
+                            FontWeight="SemiBold"
+                            IsEnabled="{Binding Enabled.Value}"
+                            Text="Arguments" />
+
+                        <!--  Row 2: Arguments  -->
+                        <TextBox
+                            Grid.Row="2"
+                            Grid.Column="1"
+                            Margin="16,6,0,0"
+                            IsEnabled="{Binding Enabled.Value}"
+                            Text="{Binding Arguments.Value, UpdateSourceTrigger=PropertyChanged}" />
+
+                        <!--  Rows 3-4: Working directory  -->
+                        <studioControls:FormField
+                            Title="Working directory"
+                            Grid.Row="3"
+                            Grid.RowSpan="2"
+                            Grid.Column="1"
+                            Margin="16,24,0,0"
+                            ValidationError="{Binding PreGenWorkingDirectoryError}">
+                            <Grid Margin="0,6,0,0" IsEnabled="{Binding Enabled.Value}">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox
+                                    Grid.Row="0"
+                                    Grid.Column="0"
+                                    Text="{Binding WorkingDirectory.Value, UpdateSourceTrigger=PropertyChanged}" />
+                                <Button
+                                    Grid.Row="0"
+                                    Grid.Column="1"
+                                    Command="{Binding BrowseWorkingDirectoryCommand}"
+                                    Content="Browse"
+                                    Style="{StaticResource ActionButtonStyle}" />
+                                <CheckBox
+                                    Grid.Row="1"
+                                    Grid.ColumnSpan="2"
+                                    Margin="0,6,0,0"
+                                    VerticalAlignment="Center"
+                                    Content="Use relative path"
+                                    IsChecked="{Binding UseRelativePathForPreGenWorkingDirectory.Value}" />
+                            </Grid>
+                        </studioControls:FormField>
+
+                        <!--  Row 5: Continue on Failure  -->
+                        <CheckBox
+                            Grid.Row="5"
+                            Grid.Column="1"
+                            Margin="16,24,0,0"
+                            Content="Continue on failure"
+                            IsChecked="{Binding ContinueOnFailure.Value}"
+                            IsEnabled="{Binding Enabled.Value}" />
+                    </Grid>
+                </Border>
+            </studioControls:FormField>
+
+            <!--  Post-Generation Command  -->
+            <studioControls:FormField
+                Title="Post-generation command"
+                Margin="0,0,0,24"
+                Description="An optional command to run after diagram generation completes.">
+                <Border
+                    Padding="16,12"
+                    Background="{DynamicResource MaterialDesign.Brush.Chip.Background}"
+                    CornerRadius="8">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <ToggleButton
+                            Grid.Row="0"
+                            Grid.RowSpan="5"
+                            Grid.Column="0"
+                            VerticalAlignment="Top"
+                            IsChecked="{Binding PostGenEnabled.Value}"
+                            Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+
+                        <!--  Row 0: Command FormField  -->
+                        <studioControls:FormField
+                            Title="Command"
+                            Grid.Row="0"
+                            Grid.Column="1"
+                            Margin="16,0,0,0"
+                            ValidationError="{Binding PostGenError}">
+                            <Grid IsEnabled="{Binding PostGenEnabled.Value}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox Grid.Column="0" Text="{Binding PostGenCommand.Value, UpdateSourceTrigger=PropertyChanged}" />
+                                <Button
+                                    Grid.Column="1"
+                                    Command="{Binding BrowsePostGenCommandCommand}"
+                                    Content="Browse"
+                                    Style="{StaticResource ActionButtonStyle}" />
+                            </Grid>
+                        </studioControls:FormField>
+
+                        <!--  Row 1: Arguments label  -->
+                        <TextBlock
+                            Grid.Row="1"
+                            Grid.Column="1"
+                            Margin="16,24,0,0"
+                            FontWeight="SemiBold"
+                            IsEnabled="{Binding PostGenEnabled.Value}"
+                            Text="Arguments" />
+
+                        <!--  Row 2: Arguments  -->
+                        <TextBox
+                            Grid.Row="2"
+                            Grid.Column="1"
+                            Margin="16,6,0,0"
+                            IsEnabled="{Binding PostGenEnabled.Value}"
+                            Text="{Binding PostGenArguments.Value, UpdateSourceTrigger=PropertyChanged}" />
+
+                        <!--  Rows 3-4: Working directory  -->
+                        <studioControls:FormField
+                            Title="Working directory"
+                            Grid.Row="3"
+                            Grid.RowSpan="2"
+                            Grid.Column="1"
+                            Margin="16,24,0,0"
+                            ValidationError="{Binding PostGenWorkingDirectoryError}">
+                            <Grid Margin="0,6,0,0" IsEnabled="{Binding PostGenEnabled.Value}">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox
+                                    Grid.Row="0"
+                                    Grid.Column="0"
+                                    Text="{Binding PostGenWorkingDirectory.Value, UpdateSourceTrigger=PropertyChanged}" />
+                                <Button
+                                    Grid.Row="0"
+                                    Grid.Column="1"
+                                    Command="{Binding BrowsePostGenWorkingDirectoryCommand}"
+                                    Content="Browse"
+                                    Style="{StaticResource ActionButtonStyle}" />
+                                <CheckBox
+                                    Grid.Row="1"
+                                    Grid.ColumnSpan="2"
+                                    Margin="0,6,0,0"
+                                    VerticalAlignment="Center"
+                                    Content="Use relative path"
+                                    IsChecked="{Binding UseRelativePathForPostGenWorkingDirectory.Value}" />
+                            </Grid>
+                        </studioControls:FormField>
+                    </Grid>
+                </Border>
+            </studioControls:FormField>
+
+            <!--  Tool Status  -->
+            <studioControls:FormField
+                Title="Tool status"
+                Margin="0,0,0,24"
+                Description="Diagram CLI tool detection status.">
+                <Border
+                    Padding="16,12"
+                    Background="{DynamicResource MaterialDesign.Brush.Chip.Background}"
+                    CornerRadius="8">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <!--  Tool entries  -->
+                        <ItemsControl Grid.Column="0" ItemsSource="{Binding ToolStatusEntries}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,0,0,12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+
+                                        <!--  Availability icon  -->
+                                        <materialDesign:PackIcon
+                                            Grid.Row="0"
+                                            Grid.RowSpan="2"
+                                            Grid.Column="0"
+                                            Width="22"
+                                            Height="22"
+                                            Margin="0,0,12,0"
+                                            VerticalAlignment="Center">
+                                            <materialDesign:PackIcon.Style>
+                                                <Style TargetType="materialDesign:PackIcon">
+                                                    <Setter Property="Foreground" Value="Green" />
+                                                    <Setter Property="Kind" Value="CheckCircle" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsAvailable}" Value="False">
+                                                            <Setter Property="Foreground" Value="Red" />
+                                                            <Setter Property="Kind" Value="CloseCircle" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </materialDesign:PackIcon.Style>
+                                        </materialDesign:PackIcon>
+
+                                        <!--  Tool name + status text  -->
+                                        <TextBlock
+                                            Grid.Row="0"
+                                            Grid.Column="1"
+                                            FontSize="14"
+                                            FontWeight="SemiBold"
+                                            Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+                                            Text="{Binding ToolName, StringFormat={}{0} tool}" />
+
+                                        <TextBlock
+                                            Grid.Row="1"
+                                            Grid.Column="1"
+                                            Margin="0,2,0,0"
+                                            FontSize="12"
+                                            Foreground="{DynamicResource MaterialDesign.Brush.ForegroundLight}"
+                                            Text="{Binding StatusText}"
+                                            TextTrimming="CharacterEllipsis" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!--  ReScan button (top-right)  -->
+                        <Button
+                            Grid.Column="1"
+                            VerticalAlignment="Top"
+                            Command="{Binding RescanToolsCommand}"
+                            Content="Re-scan" />
+                    </Grid>
+                </Border>
+            </studioControls:FormField>
+
+        </StackPanel>
+    </ScrollViewer>
+</reactiveui:ReactiveUserControl>

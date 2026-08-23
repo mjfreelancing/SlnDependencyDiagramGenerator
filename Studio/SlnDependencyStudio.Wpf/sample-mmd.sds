@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "projectName": "SlnDependencyDiagramGenerator",
+    "description": "Generates dependency diagrams for the SlnDependencyDiagramGenerator solution"
+  },
+  "diagramGenerator": {
+    "solution": {
+      "solutionPath": "..\\..\\SlnDependencyDiagramGenerator.sln",
+      "regexToInclude": [
+        "\\.*\\.csproj"
+      ],
+      "regexToExclude": [
+        ".*Samples*\\.csproj",
+        ".*Tests.*\\.csproj"
+      ],
+      "packagesToExclude": [
+        "Microsoft.NET.Test.Sdk",
+        "xunit",
+        "NUnit",
+        "FluentAssertions",
+        "NSubstitute",
+        "Shouldly",
+        "coverlet.collector"
+      ],
+      "frameworksToExclude": [
+        "Microsoft.NETCore.App"
+      ],
+      "individual": {
+        "enabled": true,
+        "includeDependencies": true,
+        "transitiveDepth": 1
+      },
+      "all": {
+        "enabled": true,
+        "includeDependencies": false,
+        "transitiveDepth": 0
+      }
+    },
+    "diagram": {
+      "direction": "LR",
+      "frameworkStyle": {
+        "fill": "#ECCBC0",
+        "opacity": 0.8
+      },
+      "packageStyle": {
+        "fill": "#ADD8E6",
+        "opacity": 0.8
+      },
+      "transitiveStyle": {
+        "fill": "#FFEC96",
+        "opacity": 0.8
+      },
+      "groupName": "SlnDependencyStudio",
+      "groupNameAlias": "sds",
+      "grouping": {
+        "enabled": false,
+        "backgroundStyle": {
+          "fill": "#E7EBFC",
+          "opacity": 1
+        }
+      },
+      "formats": [
+        "Mermaid"
+      ]
+    },
+    "export": {
+      "clearContents": true,
+      "rootPath": "..\\..\\Studio Diagrams",
+      "imageFormats": [
+        "Png"
+      ]
+    }
+  },
+  "preGeneration": {
+    "continueOnFailure": false,
+    "enabled": false,
+    "command": "",
+    "arguments": "",
+    "workingDirectory": ""
+  },
+  "restoreSolution": true,
+  "postGeneration": {
+    "enabled": false,
+    "command": "",
+    "arguments": "",
+    "workingDirectory": ""
+  }
+}

@@ -1,0 +1,5 @@
+<Project>
+  <ItemGroup Condition="'$(MSBuildProjectName)' == 'DiagramGeneratorSample'">
+    <ProjectReference Include="..\..\Source\SlnDependencyDiagramGenerator.csproj" />
+  </ItemGroup>
+</Project>

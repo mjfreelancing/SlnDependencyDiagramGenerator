@@ -1,9 +1,10 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFrameworks>net10.0;net9.0;net8.0</TargetFrameworks>
         <LangVersion>Latest</LangVersion>
-        <Version>3.0.0</Version>
+        <Nullable>enable</Nullable>
+        <Version>4.0.0</Version>
         <Description>This package contains a Visual Studio Dependency Generator.</Description>
         <Authors>Malcolm Smith</Authors>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -17,6 +18,12 @@
         <CheckEolTargetFramework>false</CheckEolTargetFramework>
         <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
 
+        <!--
+            NU1903: Microsoft.Build 17.11.4 (net8.0/net9.0) — pre-existing vulnerability in a
+            build-time dependency that only reads trusted local files; not exploitable at runtime.
+        -->
+        <NoWarn>NU1903</NoWarn>
+
         <!-- devblogs.microsoft.com/dotnet/producing-packages-with-source-link/ -->
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <EmbedUntrackedSources>true</EmbedUntrackedSources>
@@ -29,18 +36,37 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="AllOverIt" Version="9.0.0" />
-        <PackageReference Include="AllOverIt.Validation" Version="9.0.0" />
-        <PackageReference Include="NuGet.Protocol" Version="7.0.1" />
-        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+        <PackageReference Include="AllOverIt" />
+        <PackageReference Include="AllOverIt.Validation" />
+        <PackageReference Include="Microsoft.Build.Locator" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+
+        <!--
+            MSBuildLocator loads a compatible MSBuild toolset at runtime.
+            - ExcludeAssets="runtime" prevents NuGet.Frameworks runtime binaries from being copied into this app output where they can conflict with the located MSBuild assemblies.
+            - PrivateAssets="all" keeps this package as an implementation detail so it does not flow transitively to consumers of this library.
+        -->
+        <PackageReference Include="NuGet.Frameworks" ExcludeAssets="runtime" PrivateAssets="all" />
+
+        <PackageReference Include="NuGet.ProjectModel" />
+        <PackageReference Include="NuGet.Protocol" />
+        <PackageReference Include="Microsoft.VisualStudio.SolutionPersistence" />
+        <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All" />
+        <PackageReference Include="System.Reactive" />
     </ItemGroup>
 
+    <!--
+        Same runtime-asset rule for Microsoft.Build: compile against the package, but do not
+        copy runtime MSBuild binaries. Runtime loading is handled by MSBuildLocator.
+    -->
+    
     <ItemGroup Condition=" '$(TargetFramework)' == 'net8.0' or '$(TargetFramework)' == 'net9.0' ">
-        <PackageReference Include="Microsoft.Build" Version="17.11.4" />
+        <PackageReference Include="Microsoft.Build" ExcludeAssets="runtime" />
     </ItemGroup>
 
     <ItemGroup Condition=" '$(TargetFramework)' == 'net10.0' ">
-        <PackageReference Include="Microsoft.Build" Version="18.0.2" />
+        <PackageReference Include="Microsoft.Build" ExcludeAssets="runtime" />
     </ItemGroup>
 
     <ItemGroup>
@@ -52,5 +78,16 @@
             <Pack>True</Pack>
             <PackagePath>\</PackagePath>
         </None>
-    </ItemGroup>    
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Renderers\D2\" />
+      <Folder Include="Renderers\Mermaid\" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="SlnDependencyDiagramGenerator.Tests.Unit" />
+        <InternalsVisibleTo Include="SlnDependencyDiagramGenerator.Tests.Integration" />
+        <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
+    </ItemGroup>
 </Project>

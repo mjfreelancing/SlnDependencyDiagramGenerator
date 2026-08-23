@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0-windows10.0.19041</TargetFramework>
+        <Nullable>enable</Nullable>
+        <IsPackable>false</IsPackable>
+        <UseWPF>true</UseWPF>
+        <ImplicitUsings>enable</ImplicitUsings>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="coverlet.collector" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" />
+        <PackageReference Include="NSubstitute" />
+        <PackageReference Include="Shouldly" />
+        <PackageReference Include="xunit.v3" />
+        <PackageReference Include="xunit.runner.visualstudio" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Using Include="Xunit" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Include="..\..\Shared\DisposableTempDirectory.cs" Link="Support\DisposableTempDirectory.cs" />
+        <Compile Include="..\..\Shared\DisposableTempFile.cs" Link="Support\DisposableTempFile.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\Studio\SlnDependencyStudio.Wpf\SlnDependencyStudio.Wpf.csproj" />
+        <ProjectReference Include="..\..\..\Studio\SlnDependencyStudio.Shared\SlnDependencyStudio.Shared.csproj" />
+        <ProjectReference Include="..\..\..\Source\SlnDependencyDiagramGenerator.csproj" />
+    </ItemGroup>
+
+    <!-- Fixture files (.sds) under Fixtures/ are found at runtime via
+         AppContext.BaseDirectory, which resolves to the build output directory.
+         Without CopyToOutputDirectory, these files would not be available when tests execute. -->
+    <ItemGroup>
+        <None Include="Fixtures\**\*" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
+
+</Project>

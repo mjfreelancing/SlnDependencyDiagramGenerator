@@ -1,0 +1,334 @@
+<reactiveui:ReactiveUserControl
+    x:Class="SlnDependencyStudio.Wpf.Features.EmptyState.EmptyStateView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:emptyState="clr-namespace:SlnDependencyStudio.Wpf.Features.EmptyState"
+    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:models="clr-namespace:SlnDependencyStudio.Wpf.Features.RecentProjects.Models"
+    xmlns:reactiveui="http://reactiveui.net"
+    x:Name="Root"
+    Margin="0,16,0,16"
+    d:DesignHeight="600"
+    d:DesignWidth="800"
+    x:TypeArguments="emptyState:EmptyStateViewModel"
+    mc:Ignorable="d">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+
+        <Style x:Key="CardButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Stretch" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <ContentPresenter />
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="RecentRowButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="12,10" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border
+                            x:Name="RowBorder"
+                            Padding="{TemplateBinding Padding}"
+                            Background="Transparent"
+                            CornerRadius="4">
+                            <ContentPresenter />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="RowBorder" Property="Background" Value="{DynamicResource MaterialDesign.Brush.Separator.Background}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid
+        MaxWidth="640"
+        Margin="48,0,48,0"
+        HorizontalAlignment="Center"
+        VerticalAlignment="Center">
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!--  Header  -->
+        <StackPanel Grid.Row="0" HorizontalAlignment="Center">
+            <Image
+                Width="72"
+                Height="72"
+                HorizontalAlignment="Center"
+                Source="pack://application:,,,/app.ico" />
+
+            <TextBlock
+                Margin="0,20,0,0"
+                HorizontalAlignment="Center"
+                FontSize="28"
+                FontWeight="SemiBold"
+                Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+                Text="SlnDependencyStudio" />
+
+            <TextBlock
+                Margin="0,6,0,0"
+                HorizontalAlignment="Center"
+                FontSize="14"
+                Foreground="{DynamicResource MaterialDesign.Brush.ForegroundLight}"
+                Text="Dependency diagram generator for .NET solutions"
+                TextWrapping="Wrap" />
+        </StackPanel>
+
+        <!--  Primary CTA cards  -->
+        <Grid Grid.Row="1" Margin="0,36,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="8" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!--  New Project  -->
+            <Button
+                Grid.Column="0"
+                Padding="0"
+                Command="{Binding NewProjectCommand}"
+                Style="{StaticResource CardButtonStyle}"
+                ToolTip="Create a new project from default settings (Ctrl+N)">
+                <materialDesign:Card Padding="0" Background="{DynamicResource MaterialDesign.Brush.Background}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Border
+                            Grid.Row="0"
+                            Height="4"
+                            Background="{DynamicResource MaterialDesign.Brush.Primary}"
+                            CornerRadius="4,4,0,0" />
+                        <StackPanel Grid.Row="1" Margin="20,20,20,24">
+                            <materialDesign:PackIcon
+                                Width="32"
+                                Height="32"
+                                Foreground="{DynamicResource MaterialDesign.Brush.Primary}"
+                                Kind="FileDocumentPlus" />
+                            <TextBlock
+                                Margin="0,10,0,0"
+                                FontSize="15"
+                                FontWeight="SemiBold"
+                                Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+                                Text="New Project" />
+                            <TextBlock
+                                Margin="0,4,0,0"
+                                FontSize="12"
+                                Foreground="{DynamicResource MaterialDesign.Brush.ForegroundLight}"
+                                Text="Start from defaults"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Grid>
+                </materialDesign:Card>
+            </Button>
+
+            <!--  Open Project  -->
+            <Button
+                Grid.Column="2"
+                Padding="0"
+                Command="{Binding OpenProjectCommand}"
+                Style="{StaticResource CardButtonStyle}"
+                ToolTip="Browse for an existing .sds project file (Ctrl+O)">
+                <materialDesign:Card Padding="0" Background="{DynamicResource MaterialDesign.Brush.Background}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Border
+                            Grid.Row="0"
+                            Height="4"
+                            Background="{DynamicResource MaterialDesign.Brush.Primary}"
+                            CornerRadius="4,4,0,0" />
+                        <StackPanel Grid.Row="1" Margin="20,20,20,24">
+                            <materialDesign:PackIcon
+                                Width="32"
+                                Height="32"
+                                Foreground="{DynamicResource MaterialDesign.Brush.Primary}"
+                                Kind="FolderOpen" />
+                            <TextBlock
+                                Margin="0,10,0,0"
+                                FontSize="15"
+                                FontWeight="SemiBold"
+                                Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+                                Text="Open Project" />
+                            <TextBlock
+                                Margin="0,4,0,0"
+                                FontSize="12"
+                                Foreground="{DynamicResource MaterialDesign.Brush.ForegroundLight}"
+                                Text="Browse for an .sds file"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Grid>
+                </materialDesign:Card>
+            </Button>
+
+        </Grid>
+
+        <!--  Recent projects title  -->
+        <TextBlock
+            Grid.Row="2"
+            Margin="0,32,0,8"
+            FontSize="11"
+            FontWeight="SemiBold"
+            Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+            Text="RECENT PROJECTS"
+            Visibility="{Binding HasRecentProjects, Converter={StaticResource BoolToVisibility}}" />
+
+        <!--  Recent projects list — scrollable  -->
+        <ScrollViewer
+            Grid.Row="3"
+            VerticalScrollBarVisibility="Auto"
+            Visibility="{Binding HasRecentProjects, Converter={StaticResource BoolToVisibility}}">
+            <ScrollViewer.Resources>
+                <Style BasedOn="{StaticResource MaterialDesignScrollBarMinimal}" TargetType="ScrollBar" />
+            </ScrollViewer.Resources>
+            <ItemsControl ItemsSource="{Binding RecentProjects}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type models:RecentProjectEntry}">
+                        <Grid Margin="0,1,0,1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <Button
+                                Grid.Column="0"
+                                Command="{Binding DataContext.OpenRecentProjectCommand, ElementName=Root}"
+                                CommandParameter="{Binding FilePath}"
+                                IsEnabled="{Binding Exists}"
+                                Style="{StaticResource RecentRowButtonStyle}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+
+                                    <materialDesign:PackIcon
+                                        Grid.RowSpan="2"
+                                        Width="20"
+                                        Height="20"
+                                        Margin="0,0,12,0"
+                                        VerticalAlignment="Center">
+                                        <materialDesign:PackIcon.Style>
+                                            <Style TargetType="materialDesign:PackIcon">
+                                                <Setter Property="Kind" Value="FolderOpen" />
+                                                <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.ForegroundLight}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Exists}" Value="False">
+                                                        <Setter Property="Kind" Value="FileRemoveOutline" />
+                                                        <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.ValidationError}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </materialDesign:PackIcon.Style>
+                                    </materialDesign:PackIcon>
+
+                                    <TextBlock
+                                        Grid.Row="0"
+                                        Grid.Column="1"
+                                        FontSize="13"
+                                        FontWeight="Medium"
+                                        Text="{Binding DisplayName}">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Exists}" Value="False">
+                                                        <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.ForegroundLight}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+
+                                    <TextBlock
+                                        Grid.Row="1"
+                                        Grid.Column="1"
+                                        Margin="0,2,0,0"
+                                        FontSize="11"
+                                        Text="{Binding FilePath}"
+                                        TextTrimming="CharacterEllipsis">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.ForegroundLight}" />
+                                                <Setter Property="ToolTip" Value="{Binding FilePath}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Exists}" Value="False">
+                                                        <Setter Property="ToolTip" Value="File not found" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </Grid>
+                            </Button>
+
+                            <!--  Always-visible remove affordance — shown for existing and missing items alike.
+                                  Theme-coloured so it reads as an action rather than an error.  -->
+                            <Button
+                                Grid.Column="1"
+                                Width="28"
+                                Height="28"
+                                Margin="4,0,0,0"
+                                Padding="0"
+                                VerticalAlignment="Center"
+                                Command="{Binding DataContext.RemoveRecentProjectCommand, ElementName=Root}"
+                                CommandParameter="{Binding FilePath}"
+                                Style="{StaticResource MaterialDesignFlatButton}"
+                                ToolTip="Remove from recent projects">
+                                <materialDesign:PackIcon
+                                    Width="14"
+                                    Height="14"
+                                    Kind="Close">
+                                    <materialDesign:PackIcon.Style>
+                                        <Style TargetType="materialDesign:PackIcon">
+                                            <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.ForegroundLight}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Exists}" Value="False">
+                                                    <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.ValidationError}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </materialDesign:PackIcon.Style>
+                                </materialDesign:PackIcon>
+                            </Button>
+                        </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+
+    </Grid>
+
+</reactiveui:ReactiveUserControl>

@@ -1,0 +1,67 @@
+direction: left
+
+slndependencydiagramgenerator: SlnDependencyDiagramGenerator
+alloverit_9-4-0: AllOverIt\nv9.4.0
+alloverit-assertion_9-4-0: AllOverIt.Assertion\nv9.4.0
+alloverit-validation_9-4-0: AllOverIt.Validation\nv9.4.0
+fluentvalidation_12-1-1: FluentValidation\nv12.1.1
+microsoft-extensions-dependencyinjection-abstractions_10-0-9: Microsoft.Extensions.DependencyInjection.Abstractions\nv10.0.9
+microsoft-build-locator_1-11-2: Microsoft.Build.Locator\nv1.11.2
+microsoft-extensions-logging-abstractions_10-0-8: Microsoft.Extensions.Logging.Abstractions\nv10.0.8
+system-diagnostics-diagnosticsource_10-0-8: System.Diagnostics.DiagnosticSource\nv10.0.8
+microsoft-visualstudio-solutionpersistence_1-0-52: Microsoft.VisualStudio.SolutionPersistence\nv1.0.52
+nuget-frameworks_7-6-0: NuGet.Frameworks\nv7.6.0
+nuget-projectmodel_7-6-0: NuGet.ProjectModel\nv7.6.0
+nuget-dependencyresolver-core_7-6-0: NuGet.DependencyResolver.Core\nv7.6.0
+nuget-protocol_7-6-0: NuGet.Protocol\nv7.6.0
+nuget-packaging_7-6-0: NuGet.Packaging\nv7.6.0
+system-reactive_6-1-0: System.Reactive\nv6.1.0
+alloverit_9-4-0 <- slndependencydiagramgenerator
+alloverit-assertion_9-4-0 <- alloverit_9-4-0
+alloverit-validation_9-4-0 <- slndependencydiagramgenerator
+alloverit_9-4-0 <- alloverit-validation_9-4-0
+fluentvalidation_12-1-1 <- alloverit-validation_9-4-0
+microsoft-extensions-dependencyinjection-abstractions_10-0-9 <- alloverit-validation_9-4-0
+microsoft-build-locator_1-11-2 <- slndependencydiagramgenerator
+microsoft-extensions-dependencyinjection-abstractions_10-0-9 <- slndependencydiagramgenerator
+microsoft-extensions-logging-abstractions_10-0-8 <- slndependencydiagramgenerator
+microsoft-extensions-dependencyinjection-abstractions_10-0-9 <- microsoft-extensions-logging-abstractions_10-0-8
+system-diagnostics-diagnosticsource_10-0-8 <- microsoft-extensions-logging-abstractions_10-0-8
+microsoft-visualstudio-solutionpersistence_1-0-52 <- slndependencydiagramgenerator
+nuget-frameworks_7-6-0 <- slndependencydiagramgenerator
+nuget-projectmodel_7-6-0 <- slndependencydiagramgenerator
+nuget-dependencyresolver-core_7-6-0 <- nuget-projectmodel_7-6-0
+nuget-protocol_7-6-0 <- slndependencydiagramgenerator
+nuget-packaging_7-6-0 <- nuget-protocol_7-6-0
+system-reactive_6-1-0 <- slndependencydiagramgenerator
+alloverit_9-4-0.style.fill: "#ADD8E6"
+alloverit_9-4-0.style.opacity: 0.8
+alloverit-assertion_9-4-0.style.fill: "#FFEC96"
+alloverit-assertion_9-4-0.style.opacity: 0.8
+alloverit-validation_9-4-0.style.fill: "#ADD8E6"
+alloverit-validation_9-4-0.style.opacity: 0.8
+fluentvalidation_12-1-1.style.fill: "#FFEC96"
+fluentvalidation_12-1-1.style.opacity: 0.8
+microsoft-extensions-dependencyinjection-abstractions_10-0-9.style.fill: "#ADD8E6"
+microsoft-extensions-dependencyinjection-abstractions_10-0-9.style.opacity: 0.8
+microsoft-build-locator_1-11-2.style.fill: "#ADD8E6"
+microsoft-build-locator_1-11-2.style.opacity: 0.8
+microsoft-extensions-logging-abstractions_10-0-8.style.fill: "#ADD8E6"
+microsoft-extensions-logging-abstractions_10-0-8.style.opacity: 0.8
+system-diagnostics-diagnosticsource_10-0-8.style.fill: "#FFEC96"
+system-diagnostics-diagnosticsource_10-0-8.style.opacity: 0.8
+microsoft-visualstudio-solutionpersistence_1-0-52.style.fill: "#ADD8E6"
+microsoft-visualstudio-solutionpersistence_1-0-52.style.opacity: 0.8
+nuget-frameworks_7-6-0.style.fill: "#ADD8E6"
+nuget-frameworks_7-6-0.style.opacity: 0.8
+nuget-projectmodel_7-6-0.style.fill: "#ADD8E6"
+nuget-projectmodel_7-6-0.style.opacity: 0.8
+nuget-dependencyresolver-core_7-6-0.style.fill: "#FFEC96"
+nuget-dependencyresolver-core_7-6-0.style.opacity: 0.8
+nuget-protocol_7-6-0.style.fill: "#ADD8E6"
+nuget-protocol_7-6-0.style.opacity: 0.8
+nuget-packaging_7-6-0.style.fill: "#FFEC96"
+nuget-packaging_7-6-0.style.opacity: 0.8
+system-reactive_6-1-0.style.fill: "#ADD8E6"
+system-reactive_6-1-0.style.opacity: 0.8
+

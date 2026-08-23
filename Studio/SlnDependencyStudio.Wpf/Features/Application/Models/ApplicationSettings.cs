@@ -1,0 +1,44 @@
+using SlnDependencyStudio.Wpf.Models;
+
+namespace SlnDependencyStudio.Wpf.Features.Application.Models;
+
+/// <summary>Durable application settings persisted to disk across sessions.</summary>
+public sealed class ApplicationSettings
+{
+    internal const int DefaultLogRetentionDays = 31;
+
+    /// <summary>The default folder for Open/Save file dialogs when no project is loaded.</summary>
+    public string DefaultProjectFolder { get; set; } = string.Empty;
+
+    /// <summary>Explicit path overrides for external tools (d2, mmdc).
+    /// Key is the tool name, value is the full path to the executable.</summary>
+    public Dictionary<string, string> ToolPathOverrides { get; set; } = [];
+
+    /// <summary>Number of days to retain log files. Defaults to 31.</summary>
+    public int LogRetentionDays { get; set; } = DefaultLogRetentionDays;
+
+    /// <summary>The application theme. Defaults to <see cref="StudioTheme.Light"/>.</summary>
+    public StudioTheme Theme { get; set; } = StudioTheme.Light;
+
+    /// <summary>Output panel preferences.</summary>
+    public OutputSettings Output { get; set; } = new();
+
+    /// <summary>Creates a deep copy of the current settings.</summary>
+    /// <returns>A new <see cref="ApplicationSettings"/> instance with copied values.</returns>
+    public ApplicationSettings Clone()
+    {
+        return new ApplicationSettings
+        {
+            DefaultProjectFolder = DefaultProjectFolder,
+            ToolPathOverrides = new Dictionary<string, string>(ToolPathOverrides),
+            LogRetentionDays = LogRetentionDays,
+            Theme = Theme,
+            Output = new OutputSettings
+            {
+                WrapContent = Output.WrapContent,
+                IsVerboseLogging = Output.IsVerboseLogging,
+                AutoScroll = Output.AutoScroll
+            }
+        };
+    }
+}

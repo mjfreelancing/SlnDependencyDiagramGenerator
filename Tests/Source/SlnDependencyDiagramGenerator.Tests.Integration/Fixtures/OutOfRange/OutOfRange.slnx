@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="App/App.csproj" />
+  <Project Path="LibV1/LibV1.csproj" />
+  <Project Path="LibV2/LibV2.csproj" />
+</Solution>

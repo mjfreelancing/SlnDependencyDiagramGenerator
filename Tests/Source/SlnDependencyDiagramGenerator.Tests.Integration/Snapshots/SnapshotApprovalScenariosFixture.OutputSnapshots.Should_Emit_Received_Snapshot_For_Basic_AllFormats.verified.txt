@@ -1,0 +1,560 @@
+﻿{
+  net10.0/d2/appconsole.d2:
+direction: left
+
+basic: Basic Group
+basic.appconsole: AppConsole
+microsoft-netcore-app: Microsoft.NETCore.App
+dapper_2-1-35: Dapper\nv2.1.35
+basic.liba: LibA
+newtonsoft-json_13-0-3: Newtonsoft.Json\nv13.0.3
+basic.libb: LibB
+serilog_3-1-1: Serilog\nv3.1.1
+microsoft-netcore-app <- basic.appconsole
+dapper_2-1-35 <- basic.appconsole
+basic.liba <- basic.appconsole
+newtonsoft-json_13-0-3 <- basic.liba
+basic.libb <- basic.appconsole
+serilog_3-1-1 <- basic.libb
+basic.liba <- basic.libb
+microsoft-netcore-app <- basic.liba
+microsoft-netcore-app <- basic.libb
+microsoft-netcore-app.style.fill: "#102030"
+microsoft-netcore-app.style.opacity: 0.8
+dapper_2-1-35.style.fill: "#405060"
+dapper_2-1-35.style.opacity: 0.8
+newtonsoft-json_13-0-3.style.fill: "#405060"
+newtonsoft-json_13-0-3.style.opacity: 0.8
+serilog_3-1-1.style.fill: "#405060"
+serilog_3-1-1.style.opacity: 0.8
+basic.style.fill: "#DDEEFF"
+basic.style.opacity: 0.75
+
+,
+  net10.0/d2/basic-group-all.d2:
+direction: left
+
+basic: Basic Group
+basic.appconsole: AppConsole
+microsoft-netcore-app: Microsoft.NETCore.App
+dapper_2-1-35: Dapper\nv2.1.35
+basic.liba: LibA
+newtonsoft-json_13-0-3: Newtonsoft.Json\nv13.0.3
+basic.libb: LibB
+serilog_3-1-1: Serilog\nv3.1.1
+microsoft-netcore-app <- basic.appconsole
+dapper_2-1-35 <- basic.appconsole
+basic.liba <- basic.appconsole
+newtonsoft-json_13-0-3 <- basic.liba
+basic.libb <- basic.appconsole
+serilog_3-1-1 <- basic.libb
+basic.liba <- basic.libb
+microsoft-netcore-app <- basic.liba
+microsoft-netcore-app <- basic.libb
+microsoft-netcore-app.style.fill: "#102030"
+microsoft-netcore-app.style.opacity: 0.8
+dapper_2-1-35.style.fill: "#405060"
+dapper_2-1-35.style.opacity: 0.8
+newtonsoft-json_13-0-3.style.fill: "#405060"
+newtonsoft-json_13-0-3.style.opacity: 0.8
+serilog_3-1-1.style.fill: "#405060"
+serilog_3-1-1.style.opacity: 0.8
+basic.style.fill: "#DDEEFF"
+basic.style.opacity: 0.75
+
+,
+  net10.0/d2/liba.d2:
+direction: left
+
+basic: Basic Group
+basic.liba: LibA
+microsoft-netcore-app: Microsoft.NETCore.App
+newtonsoft-json_13-0-3: Newtonsoft.Json\nv13.0.3
+microsoft-netcore-app <- basic.liba
+newtonsoft-json_13-0-3 <- basic.liba
+microsoft-netcore-app.style.fill: "#102030"
+microsoft-netcore-app.style.opacity: 0.8
+newtonsoft-json_13-0-3.style.fill: "#405060"
+newtonsoft-json_13-0-3.style.opacity: 0.8
+basic.style.fill: "#DDEEFF"
+basic.style.opacity: 0.75
+
+,
+  net10.0/d2/libb.d2:
+direction: left
+
+basic: Basic Group
+basic.libb: LibB
+microsoft-netcore-app: Microsoft.NETCore.App
+serilog_3-1-1: Serilog\nv3.1.1
+basic.liba: LibA
+newtonsoft-json_13-0-3: Newtonsoft.Json\nv13.0.3
+microsoft-netcore-app <- basic.libb
+serilog_3-1-1 <- basic.libb
+basic.liba <- basic.libb
+newtonsoft-json_13-0-3 <- basic.liba
+microsoft-netcore-app <- basic.liba
+microsoft-netcore-app.style.fill: "#102030"
+microsoft-netcore-app.style.opacity: 0.8
+serilog_3-1-1.style.fill: "#405060"
+serilog_3-1-1.style.opacity: 0.8
+newtonsoft-json_13-0-3.style.fill: "#405060"
+newtonsoft-json_13-0-3.style.opacity: 0.8
+basic.style.fill: "#DDEEFF"
+basic.style.opacity: 0.75
+
+,
+  net10.0/Dependency Summary.md:
+# Dependency Summary
+
+## AppConsole
+
+![](https://img.shields.io/badge/.NET-10.0-55A9EE.svg)
+
+### Dependencies
+
+* Dapper v2.1.35
+* LibA
+* LibB
+* Microsoft.NETCore.App
+* Newtonsoft.Json v13.0.3
+* Serilog v3.1.1
+
+<br>
+
+---
+
+<br>
+
+## LibA
+
+![](https://img.shields.io/badge/.NET-10.0-55A9EE.svg) ![](https://img.shields.io/badge/.NET-8.0-6EBE50.svg) ![](https://img.shields.io/badge/.NET-9.0-C56EE0.svg)
+
+### Dependencies
+
+* Microsoft.NETCore.App
+* Newtonsoft.Json v13.0.3
+
+<br>
+
+---
+
+<br>
+
+## LibB
+
+![](https://img.shields.io/badge/.NET-10.0-55A9EE.svg) ![](https://img.shields.io/badge/.NET-8.0-6EBE50.svg) ![](https://img.shields.io/badge/.NET-9.0-C56EE0.svg)
+
+### Dependencies
+
+* LibA
+* Microsoft.NETCore.App
+* Newtonsoft.Json v13.0.3
+* Serilog v3.1.1
+
+<br>
+
+---
+
+<br>
+
+,
+  net10.0/mmd/appconsole.mmd:
+flowchart LR
+  subgraph basic["Basic Group"]
+    direction LR
+    basic_appconsole["AppConsole"]
+    basic_liba["LibA"]
+    basic_libb["LibB"]
+  end
+  microsoft-netcore-app["Microsoft.NETCore.App"]
+  dapper_2-1-35["Dapper<br>v2.1.35"]
+  newtonsoft-json_13-0-3["Newtonsoft.Json<br>v13.0.3"]
+  serilog_3-1-1["Serilog<br>v3.1.1"]
+  basic_appconsole --> microsoft-netcore-app
+  basic_appconsole --> dapper_2-1-35
+  basic_appconsole --> basic_liba
+  basic_liba --> newtonsoft-json_13-0-3
+  basic_appconsole --> basic_libb
+  basic_libb --> serilog_3-1-1
+  basic_libb --> basic_liba
+  basic_liba --> microsoft-netcore-app
+  basic_libb --> microsoft-netcore-app
+  style basic fill:#DDEEFF,stroke:#DDEEFF,stroke-width:1px,opacity:0.75
+  style microsoft-netcore-app fill:#102030,opacity:0.8
+  style dapper_2-1-35 fill:#405060,opacity:0.8
+  style newtonsoft-json_13-0-3 fill:#405060,opacity:0.8
+  style serilog_3-1-1 fill:#405060,opacity:0.8
+,
+  net10.0/mmd/basic-group-all.mmd:
+flowchart LR
+  subgraph basic["Basic Group"]
+    direction LR
+    basic_appconsole["AppConsole"]
+    basic_liba["LibA"]
+    basic_libb["LibB"]
+  end
+  microsoft-netcore-app["Microsoft.NETCore.App"]
+  dapper_2-1-35["Dapper<br>v2.1.35"]
+  newtonsoft-json_13-0-3["Newtonsoft.Json<br>v13.0.3"]
+  serilog_3-1-1["Serilog<br>v3.1.1"]
+  basic_appconsole --> microsoft-netcore-app
+  basic_appconsole --> dapper_2-1-35
+  basic_appconsole --> basic_liba
+  basic_liba --> newtonsoft-json_13-0-3
+  basic_appconsole --> basic_libb
+  basic_libb --> serilog_3-1-1
+  basic_libb --> basic_liba
+  basic_liba --> microsoft-netcore-app
+  basic_libb --> microsoft-netcore-app
+  style basic fill:#DDEEFF,stroke:#DDEEFF,stroke-width:1px,opacity:0.75
+  style microsoft-netcore-app fill:#102030,opacity:0.8
+  style dapper_2-1-35 fill:#405060,opacity:0.8
+  style newtonsoft-json_13-0-3 fill:#405060,opacity:0.8
+  style serilog_3-1-1 fill:#405060,opacity:0.8
+,
+  net10.0/mmd/liba.mmd:
+flowchart LR
+  subgraph basic["Basic Group"]
+    direction LR
+    basic_liba["LibA"]
+  end
+  microsoft-netcore-app["Microsoft.NETCore.App"]
+  newtonsoft-json_13-0-3["Newtonsoft.Json<br>v13.0.3"]
+  basic_liba --> microsoft-netcore-app
+  basic_liba --> newtonsoft-json_13-0-3
+  style basic fill:#DDEEFF,stroke:#DDEEFF,stroke-width:1px,opacity:0.75
+  style microsoft-netcore-app fill:#102030,opacity:0.8
+  style newtonsoft-json_13-0-3 fill:#405060,opacity:0.8
+,
+  net10.0/mmd/libb.mmd:
+flowchart LR
+  subgraph basic["Basic Group"]
+    direction LR
+    basic_libb["LibB"]
+    basic_liba["LibA"]
+  end
+  microsoft-netcore-app["Microsoft.NETCore.App"]
+  serilog_3-1-1["Serilog<br>v3.1.1"]
+  newtonsoft-json_13-0-3["Newtonsoft.Json<br>v13.0.3"]
+  basic_libb --> microsoft-netcore-app
+  basic_libb --> serilog_3-1-1
+  basic_libb --> basic_liba
+  basic_liba --> newtonsoft-json_13-0-3
+  basic_liba --> microsoft-netcore-app
+  style basic fill:#DDEEFF,stroke:#DDEEFF,stroke-width:1px,opacity:0.75
+  style microsoft-netcore-app fill:#102030,opacity:0.8
+  style serilog_3-1-1 fill:#405060,opacity:0.8
+  style newtonsoft-json_13-0-3 fill:#405060,opacity:0.8
+,
+  net8.0/d2/basic-group-all.d2:
+direction: left
+
+basic: Basic Group
+basic.liba: LibA
+microsoft-netcore-app: Microsoft.NETCore.App
+newtonsoft-json_13-0-3: Newtonsoft.Json\nv13.0.3
+basic.libb: LibB
+serilog_3-1-1: Serilog\nv3.1.1
+microsoft-netcore-app <- basic.liba
+newtonsoft-json_13-0-3 <- basic.liba
+microsoft-netcore-app <- basic.libb
+serilog_3-1-1 <- basic.libb
+basic.liba <- basic.libb
+microsoft-netcore-app.style.fill: "#102030"
+microsoft-netcore-app.style.opacity: 0.8
+newtonsoft-json_13-0-3.style.fill: "#405060"
+newtonsoft-json_13-0-3.style.opacity: 0.8
+serilog_3-1-1.style.fill: "#405060"
+serilog_3-1-1.style.opacity: 0.8
+basic.style.fill: "#DDEEFF"
+basic.style.opacity: 0.75
+
+,
+  net8.0/d2/liba.d2:
+direction: left
+
+basic: Basic Group
+basic.liba: LibA
+microsoft-netcore-app: Microsoft.NETCore.App
+newtonsoft-json_13-0-3: Newtonsoft.Json\nv13.0.3
+microsoft-netcore-app <- basic.liba
+newtonsoft-json_13-0-3 <- basic.liba
+microsoft-netcore-app.style.fill: "#102030"
+microsoft-netcore-app.style.opacity: 0.8
+newtonsoft-json_13-0-3.style.fill: "#405060"
+newtonsoft-json_13-0-3.style.opacity: 0.8
+basic.style.fill: "#DDEEFF"
+basic.style.opacity: 0.75
+
+,
+  net8.0/d2/libb.d2:
+direction: left
+
+basic: Basic Group
+basic.libb: LibB
+microsoft-netcore-app: Microsoft.NETCore.App
+serilog_3-1-1: Serilog\nv3.1.1
+basic.liba: LibA
+newtonsoft-json_13-0-3: Newtonsoft.Json\nv13.0.3
+microsoft-netcore-app <- basic.libb
+serilog_3-1-1 <- basic.libb
+basic.liba <- basic.libb
+newtonsoft-json_13-0-3 <- basic.liba
+microsoft-netcore-app <- basic.liba
+microsoft-netcore-app.style.fill: "#102030"
+microsoft-netcore-app.style.opacity: 0.8
+serilog_3-1-1.style.fill: "#405060"
+serilog_3-1-1.style.opacity: 0.8
+newtonsoft-json_13-0-3.style.fill: "#405060"
+newtonsoft-json_13-0-3.style.opacity: 0.8
+basic.style.fill: "#DDEEFF"
+basic.style.opacity: 0.75
+
+,
+  net8.0/Dependency Summary.md:
+# Dependency Summary
+
+## LibA
+
+![](https://img.shields.io/badge/.NET-10.0-55A9EE.svg) ![](https://img.shields.io/badge/.NET-8.0-6EBE50.svg) ![](https://img.shields.io/badge/.NET-9.0-C56EE0.svg)
+
+### Dependencies
+
+* Microsoft.NETCore.App
+* Newtonsoft.Json v13.0.3
+
+<br>
+
+---
+
+<br>
+
+## LibB
+
+![](https://img.shields.io/badge/.NET-10.0-55A9EE.svg) ![](https://img.shields.io/badge/.NET-8.0-6EBE50.svg) ![](https://img.shields.io/badge/.NET-9.0-C56EE0.svg)
+
+### Dependencies
+
+* LibA
+* Microsoft.NETCore.App
+* Newtonsoft.Json v13.0.3
+* Serilog v3.1.1
+
+<br>
+
+---
+
+<br>
+
+,
+  net8.0/mmd/basic-group-all.mmd:
+flowchart LR
+  subgraph basic["Basic Group"]
+    direction LR
+    basic_liba["LibA"]
+    basic_libb["LibB"]
+  end
+  microsoft-netcore-app["Microsoft.NETCore.App"]
+  newtonsoft-json_13-0-3["Newtonsoft.Json<br>v13.0.3"]
+  serilog_3-1-1["Serilog<br>v3.1.1"]
+  basic_liba --> microsoft-netcore-app
+  basic_liba --> newtonsoft-json_13-0-3
+  basic_libb --> microsoft-netcore-app
+  basic_libb --> serilog_3-1-1
+  basic_libb --> basic_liba
+  style basic fill:#DDEEFF,stroke:#DDEEFF,stroke-width:1px,opacity:0.75
+  style microsoft-netcore-app fill:#102030,opacity:0.8
+  style newtonsoft-json_13-0-3 fill:#405060,opacity:0.8
+  style serilog_3-1-1 fill:#405060,opacity:0.8
+,
+  net8.0/mmd/liba.mmd:
+flowchart LR
+  subgraph basic["Basic Group"]
+    direction LR
+    basic_liba["LibA"]
+  end
+  microsoft-netcore-app["Microsoft.NETCore.App"]
+  newtonsoft-json_13-0-3["Newtonsoft.Json<br>v13.0.3"]
+  basic_liba --> microsoft-netcore-app
+  basic_liba --> newtonsoft-json_13-0-3
+  style basic fill:#DDEEFF,stroke:#DDEEFF,stroke-width:1px,opacity:0.75
+  style microsoft-netcore-app fill:#102030,opacity:0.8
+  style newtonsoft-json_13-0-3 fill:#405060,opacity:0.8
+,
+  net8.0/mmd/libb.mmd:
+flowchart LR
+  subgraph basic["Basic Group"]
+    direction LR
+    basic_libb["LibB"]
+    basic_liba["LibA"]
+  end
+  microsoft-netcore-app["Microsoft.NETCore.App"]
+  serilog_3-1-1["Serilog<br>v3.1.1"]
+  newtonsoft-json_13-0-3["Newtonsoft.Json<br>v13.0.3"]
+  basic_libb --> microsoft-netcore-app
+  basic_libb --> serilog_3-1-1
+  basic_libb --> basic_liba
+  basic_liba --> newtonsoft-json_13-0-3
+  basic_liba --> microsoft-netcore-app
+  style basic fill:#DDEEFF,stroke:#DDEEFF,stroke-width:1px,opacity:0.75
+  style microsoft-netcore-app fill:#102030,opacity:0.8
+  style serilog_3-1-1 fill:#405060,opacity:0.8
+  style newtonsoft-json_13-0-3 fill:#405060,opacity:0.8
+,
+  net9.0/d2/basic-group-all.d2:
+direction: left
+
+basic: Basic Group
+basic.liba: LibA
+microsoft-netcore-app: Microsoft.NETCore.App
+newtonsoft-json_13-0-3: Newtonsoft.Json\nv13.0.3
+basic.libb: LibB
+serilog_3-1-1: Serilog\nv3.1.1
+microsoft-netcore-app <- basic.liba
+newtonsoft-json_13-0-3 <- basic.liba
+microsoft-netcore-app <- basic.libb
+serilog_3-1-1 <- basic.libb
+basic.liba <- basic.libb
+microsoft-netcore-app.style.fill: "#102030"
+microsoft-netcore-app.style.opacity: 0.8
+newtonsoft-json_13-0-3.style.fill: "#405060"
+newtonsoft-json_13-0-3.style.opacity: 0.8
+serilog_3-1-1.style.fill: "#405060"
+serilog_3-1-1.style.opacity: 0.8
+basic.style.fill: "#DDEEFF"
+basic.style.opacity: 0.75
+
+,
+  net9.0/d2/liba.d2:
+direction: left
+
+basic: Basic Group
+basic.liba: LibA
+microsoft-netcore-app: Microsoft.NETCore.App
+newtonsoft-json_13-0-3: Newtonsoft.Json\nv13.0.3
+microsoft-netcore-app <- basic.liba
+newtonsoft-json_13-0-3 <- basic.liba
+microsoft-netcore-app.style.fill: "#102030"
+microsoft-netcore-app.style.opacity: 0.8
+newtonsoft-json_13-0-3.style.fill: "#405060"
+newtonsoft-json_13-0-3.style.opacity: 0.8
+basic.style.fill: "#DDEEFF"
+basic.style.opacity: 0.75
+
+,
+  net9.0/d2/libb.d2:
+direction: left
+
+basic: Basic Group
+basic.libb: LibB
+microsoft-netcore-app: Microsoft.NETCore.App
+serilog_3-1-1: Serilog\nv3.1.1
+basic.liba: LibA
+newtonsoft-json_13-0-3: Newtonsoft.Json\nv13.0.3
+microsoft-netcore-app <- basic.libb
+serilog_3-1-1 <- basic.libb
+basic.liba <- basic.libb
+newtonsoft-json_13-0-3 <- basic.liba
+microsoft-netcore-app <- basic.liba
+microsoft-netcore-app.style.fill: "#102030"
+microsoft-netcore-app.style.opacity: 0.8
+serilog_3-1-1.style.fill: "#405060"
+serilog_3-1-1.style.opacity: 0.8
+newtonsoft-json_13-0-3.style.fill: "#405060"
+newtonsoft-json_13-0-3.style.opacity: 0.8
+basic.style.fill: "#DDEEFF"
+basic.style.opacity: 0.75
+
+,
+  net9.0/Dependency Summary.md:
+# Dependency Summary
+
+## LibA
+
+![](https://img.shields.io/badge/.NET-10.0-55A9EE.svg) ![](https://img.shields.io/badge/.NET-8.0-6EBE50.svg) ![](https://img.shields.io/badge/.NET-9.0-C56EE0.svg)
+
+### Dependencies
+
+* Microsoft.NETCore.App
+* Newtonsoft.Json v13.0.3
+
+<br>
+
+---
+
+<br>
+
+## LibB
+
+![](https://img.shields.io/badge/.NET-10.0-55A9EE.svg) ![](https://img.shields.io/badge/.NET-8.0-6EBE50.svg) ![](https://img.shields.io/badge/.NET-9.0-C56EE0.svg)
+
+### Dependencies
+
+* LibA
+* Microsoft.NETCore.App
+* Newtonsoft.Json v13.0.3
+* Serilog v3.1.1
+
+<br>
+
+---
+
+<br>
+
+,
+  net9.0/mmd/basic-group-all.mmd:
+flowchart LR
+  subgraph basic["Basic Group"]
+    direction LR
+    basic_liba["LibA"]
+    basic_libb["LibB"]
+  end
+  microsoft-netcore-app["Microsoft.NETCore.App"]
+  newtonsoft-json_13-0-3["Newtonsoft.Json<br>v13.0.3"]
+  serilog_3-1-1["Serilog<br>v3.1.1"]
+  basic_liba --> microsoft-netcore-app
+  basic_liba --> newtonsoft-json_13-0-3
+  basic_libb --> microsoft-netcore-app
+  basic_libb --> serilog_3-1-1
+  basic_libb --> basic_liba
+  style basic fill:#DDEEFF,stroke:#DDEEFF,stroke-width:1px,opacity:0.75
+  style microsoft-netcore-app fill:#102030,opacity:0.8
+  style newtonsoft-json_13-0-3 fill:#405060,opacity:0.8
+  style serilog_3-1-1 fill:#405060,opacity:0.8
+,
+  net9.0/mmd/liba.mmd:
+flowchart LR
+  subgraph basic["Basic Group"]
+    direction LR
+    basic_liba["LibA"]
+  end
+  microsoft-netcore-app["Microsoft.NETCore.App"]
+  newtonsoft-json_13-0-3["Newtonsoft.Json<br>v13.0.3"]
+  basic_liba --> microsoft-netcore-app
+  basic_liba --> newtonsoft-json_13-0-3
+  style basic fill:#DDEEFF,stroke:#DDEEFF,stroke-width:1px,opacity:0.75
+  style microsoft-netcore-app fill:#102030,opacity:0.8
+  style newtonsoft-json_13-0-3 fill:#405060,opacity:0.8
+,
+  net9.0/mmd/libb.mmd:
+flowchart LR
+  subgraph basic["Basic Group"]
+    direction LR
+    basic_libb["LibB"]
+    basic_liba["LibA"]
+  end
+  microsoft-netcore-app["Microsoft.NETCore.App"]
+  serilog_3-1-1["Serilog<br>v3.1.1"]
+  newtonsoft-json_13-0-3["Newtonsoft.Json<br>v13.0.3"]
+  basic_libb --> microsoft-netcore-app
+  basic_libb --> serilog_3-1-1
+  basic_libb --> basic_liba
+  basic_liba --> newtonsoft-json_13-0-3
+  basic_liba --> microsoft-netcore-app
+  style basic fill:#DDEEFF,stroke:#DDEEFF,stroke-width:1px,opacity:0.75
+  style microsoft-netcore-app fill:#102030,opacity:0.8
+  style serilog_3-1-1 fill:#405060,opacity:0.8
+  style newtonsoft-json_13-0-3 fill:#405060,opacity:0.8
+
+}

@@ -1,0 +1,72 @@
+using AllOverIt.Assertion;
+using Microsoft.Extensions.Logging;
+using SlnDependencyStudio.Wpf.Abstractions.IO;
+using SlnDependencyStudio.Wpf.Features.Application;
+using SlnDependencyStudio.Wpf.Features.RecentProjects.Models;
+using System.IO;
+
+namespace SlnDependencyStudio.Wpf.Features.RecentProjects;
+
+/// <summary>Default implementation of <see cref="IRecentProjectsService"/>.</summary>
+internal sealed class RecentProjectsService : IRecentProjectsService
+{
+    private const int MaxEntries = 10;
+
+    private readonly IFileSystem _fileSystem;
+    private readonly IApplicationSettingsService _settingsService;
+    private readonly ILogger<RecentProjectsService> _logger;
+
+    /// <summary>Initializes a new instance of <see cref="RecentProjectsService"/>.</summary>
+    /// <param name="fileSystem">The file system abstraction used to check whether recent projects still exist.</param>
+    /// <param name="settingsService">The settings service that owns the recent projects list.</param>
+    /// <param name="logger">The logger instance.</param>
+    public RecentProjectsService(IFileSystem fileSystem, IApplicationSettingsService settingsService,
+        ILogger<RecentProjectsService> logger)
+    {
+        _fileSystem = fileSystem;
+        _settingsService = settingsService;
+        _logger = logger;
+    }
+
+    /// <inheritdoc />
+    public void Add(string filePath)
+    {
+        filePath.WhenNotNull();
+
+        _logger.LogDebug("Adding recent project: {FilePath}", filePath);
+
+        var recentProjects = _settingsService.CurrentState.RecentProjects;
+
+        recentProjects.Remove(filePath);
+        recentProjects.Insert(0, filePath);
+
+        if (recentProjects.Count > MaxEntries)
+        {
+            recentProjects.RemoveRange(MaxEntries, recentProjects.Count - MaxEntries);
+        }
+
+        _settingsService.SaveState();
+    }
+
+    /// <inheritdoc />
+    public RecentProjectEntry[] GetRecent()
+    {
+        return [.. _settingsService.CurrentState.RecentProjects
+            .Select(filePath =>
+            {
+                var exists = _fileSystem.FileExists(filePath);
+                return new RecentProjectEntry(filePath, Path.GetFileNameWithoutExtension(filePath), exists);
+            })];
+    }
+
+    /// <inheritdoc />
+    public void Remove(string filePath)
+    {
+        filePath.WhenNotNull();
+
+        _logger.LogDebug("Removing recent project: {FilePath}", filePath);
+
+        _settingsService.CurrentState.RecentProjects.Remove(filePath);
+        _settingsService.SaveState();
+    }
+}

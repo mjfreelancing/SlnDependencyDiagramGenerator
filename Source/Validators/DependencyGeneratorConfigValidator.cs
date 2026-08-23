@@ -1,30 +1,28 @@
-﻿using AllOverIt.Extensions;
-using AllOverIt.Validation;
-using AllOverIt.Validation.Extensions;
+﻿using AllOverIt.Validation;
+using FluentValidation;
 using SlnDependencyDiagramGenerator.Config;
 
-namespace SlnDependencyDiagramGenerator.Validators
+namespace SlnDependencyDiagramGenerator.Validators;
+
+/// <summary>Validates <see cref="DependencyGeneratorConfig"/> options.</summary>
+internal sealed class DependencyGeneratorConfigValidator : ValidatorBase<DependencyGeneratorConfig>
 {
-    internal sealed class DependencyGeneratorConfigValidator : ValidatorBase<DependencyGeneratorConfig>
+    /// <summary>Initializes static validator configuration.</summary>
+    static DependencyGeneratorConfigValidator()
     {
-        static DependencyGeneratorConfigValidator()
-        {
-            DisablePropertyNameSplitting();
-        }
+        DisablePropertyNameSplitting();
+    }
 
-        public DependencyGeneratorConfigValidator()
-        {
-            RuleFor(model => model.PackageFeeds).IsNotEmpty();
+    /// <summary>Initializes validation rules.</summary>
+    public DependencyGeneratorConfigValidator()
+    {
+        RuleFor(model => model.Solution).NotNull();
+        RuleFor(model => model.Solution).SetValidator(new GeneratorSolutionOptionsValidator());
 
-            When(model => model.PackageFeeds.IsNotNullOrEmpty(), () =>
-            {
-                RuleForEach(model => model.PackageFeeds).SetValidator(new PackageFeedValidator());
-            });
+        RuleFor(model => model.Diagram).NotNull();
+        RuleFor(model => model.Diagram).SetValidator(new GeneratorDiagramOptionsValidator());
 
-            RuleFor(model => model.Projects).SetValidator(new GeneratorProjectOptionsValidator());
-            RuleFor(model => model.Diagram).SetValidator(new GeneratorDiagramOptionsValidator());
-            RuleFor(model => model.TargetFrameworks).IsNotEmpty();
-            RuleFor(model => model.Export).SetValidator(new GeneratorExportOptionsValidator());
-        }
+        RuleFor(model => model.Export).NotNull();
+        RuleFor(model => model.Export).SetValidator(new GeneratorExportOptionsValidator());
     }
 }

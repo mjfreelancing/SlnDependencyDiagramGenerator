@@ -1,0 +1,54 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net10.0-windows10.0.19041</TargetFramework>
+		<UseWPF>true</UseWPF>
+		<LangVersion>Latest</LangVersion>
+		<RootNamespace>SlnDependencyStudio.Wpf</RootNamespace>
+		<AssemblyName>SlnDependencyStudio.Wpf</AssemblyName>
+		<ApplicationIcon>app.ico</ApplicationIcon>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<InternalsVisibleTo Include="SlnDependencyStudio.Wpf.Tests.Unit" />
+		<InternalsVisibleTo Include="SlnDependencyStudio.Wpf.Tests.Integration" />
+		<InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Resource Include="app.ico" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="DynamicData" />
+		<PackageReference Include="ReactiveUI" />
+		<PackageReference Include="ReactiveUI.Validation" />
+		<PackageReference Include="ReactiveUI.WPF" />
+		<PackageReference Include="MaterialDesignThemes" />
+		<PackageReference Include="AllOverIt.ReactiveUI" />
+		<PackageReference Include="AllOverIt.ReactiveUI.Wpf" />
+		<PackageReference Include="AllOverIt.DependencyInjection" />
+		<PackageReference Include="Microsoft.Extensions.Hosting" />
+		<PackageReference Include="Serilog.Extensions.Hosting" />
+		<PackageReference Include="Serilog.Sinks.File" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\Source\SlnDependencyDiagramGenerator.csproj" />
+		<ProjectReference Include="..\SlnDependencyStudio.Shared\SlnDependencyStudio.Shared.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Update="sample-d2.sds">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Update="sample-mmd.sds">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Update="sample.sds">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	</ItemGroup>
+
+</Project>

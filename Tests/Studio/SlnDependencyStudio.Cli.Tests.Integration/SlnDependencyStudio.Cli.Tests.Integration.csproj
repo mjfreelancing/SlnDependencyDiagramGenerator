@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="coverlet.collector" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+        <PackageReference Include="Microsoft.Extensions.Logging" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" />
+        <PackageReference Include="NSubstitute" />
+        <PackageReference Include="Shouldly" />
+        <PackageReference Include="System.CommandLine" />
+        <PackageReference Include="xunit.v3" />
+        <PackageReference Include="xunit.runner.visualstudio" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Using Include="Xunit" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\Studio\SlnDependencyStudio.Cli\SlnDependencyStudio.Cli.csproj" />
+        <ProjectReference Include="..\..\..\Studio\SlnDependencyStudio.Shared\SlnDependencyStudio.Shared.csproj" />
+        <ProjectReference Include="..\..\..\Source\SlnDependencyDiagramGenerator.csproj" />
+    </ItemGroup>
+
+    <!-- Fixture files (.sds, .slnx, .csproj) under Fixtures/ are found at runtime via
+         AppContext.BaseDirectory, which resolves to the build output directory.
+         Without CopyToOutputDirectory, these files would not be available when tests execute. -->
+    <ItemGroup>
+        <None Include="Fixtures\**\*" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
+
+</Project>

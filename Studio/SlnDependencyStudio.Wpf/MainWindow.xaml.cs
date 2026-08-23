@@ -1,0 +1,408 @@
+﻿using AllOverIt.ReactiveUI.Factories;
+using MaterialDesignThemes.Wpf;
+using Microsoft.Extensions.Logging;
+using Microsoft.Win32;
+using ReactiveUI;
+using SlnDependencyStudio.Wpf.Abstractions.IO;
+using SlnDependencyStudio.Wpf.Enumerations;
+using SlnDependencyStudio.Wpf.Features.Application;
+using SlnDependencyStudio.Wpf.Features.Application.Extensions;
+using SlnDependencyStudio.Wpf.Features.Application.Models;
+using SlnDependencyStudio.Wpf.Features.ErrorDialog;
+using SlnDependencyStudio.Wpf.Features.Project.Stores;
+using SlnDependencyStudio.Wpf.Features.Settings;
+using SlnDependencyStudio.Wpf.Models;
+using SlnDependencyStudio.Wpf.Utils;
+using System.ComponentModel;
+using System.IO;
+using System.Reactive;
+using System.Reactive.Disposables.Fluent;
+using System.Reactive.Linq;
+using System.Windows;
+using System.Windows.Input;
+
+namespace SlnDependencyStudio.Wpf;
+
+/// <summary>The main application window.</summary>
+public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
+{
+    private const string ApplicationName = "SlnDependencyStudio";
+
+    private readonly IViewFactory _viewFactory;
+    private readonly IApplicationSettingsService _settingsService;
+    private readonly IFileSystem _fileSystem;
+    private readonly IProjectDocumentStore _store;
+    private readonly IErrorDialogService _errorDialog;
+    private readonly ILogger<MainWindow> _logger;
+    private bool _isClosing;
+
+    /// <summary>Initializes a new instance of <see cref="MainWindow"/>.</summary>
+    public MainWindow(MainWindowViewModel viewModel, IViewFactory viewFactory, IApplicationSettingsService settingsService,
+        IFileSystem fileSystem, IProjectDocumentStore store, IErrorDialogService errorDialog, ILogger<MainWindow> logger)
+    {
+        _viewFactory = viewFactory;
+        _settingsService = settingsService;
+        _fileSystem = fileSystem;
+        _store = store;
+        _errorDialog = errorDialog;
+        _logger = logger;
+
+        ViewModel = viewModel;
+        DataContext = viewModel;
+
+        InitializeComponent();
+
+        RestorePlacement(_settingsService.CurrentState.WindowPlacement);
+
+        UpdateTitle();
+
+        this.WhenActivated(disposables =>
+        {
+            // Open the settings dialog when the Settings menu item is clicked.
+            this.BindCommand(ViewModel, vm => vm.OpenSettingsCommand, view => view.SettingsMenuItem)
+                .DisposeWith(disposables);
+
+            ViewModel!
+                .OpenSettingsCommand
+                .Subscribe(_ => OpenSettingsDialog())
+                .DisposeWith(disposables);
+
+            // Open Project menu item (also triggered by Ctrl+O).
+            this.BindCommand(ViewModel, vm => vm.OpenProjectCommand, view => view.OpenProjectMenuItem)
+                .DisposeWith(disposables);
+
+            // New Project menu item (Ctrl+N).
+            this.BindCommand(ViewModel, vm => vm.NewProjectCommand, view => view.NewProjectMenuItem)
+                .DisposeWith(disposables);
+
+            // New from Existing menu item.
+            this.BindCommand(ViewModel, vm => vm.NewFromExistingCommand, view => view.NewFromExistingMenuItem)
+                .DisposeWith(disposables);
+
+            // Save menu item (Ctrl+S).
+            this.BindCommand(ViewModel, vm => vm.SaveCommand, view => view.SaveMenuItem)
+                .DisposeWith(disposables);
+
+            // Save As menu item.
+            this.BindCommand(ViewModel, vm => vm.SaveAsCommand, view => view.SaveAsMenuItem)
+                .DisposeWith(disposables);
+
+            // Close Project menu item.
+            this.BindCommand(ViewModel, vm => vm.CloseProjectCommand, view => view.CloseProjectMenuItem)
+                .DisposeWith(disposables);
+
+            // Analyse menu item (Run → Analyse).
+            this.BindCommand(ViewModel, vm => vm.AnalyseCommand, view => view.AnalyseMenuItem)
+                .DisposeWith(disposables);
+
+            // Generate menu item (Run → Generate).
+            this.BindCommand(ViewModel, vm => vm.GenerateCommand, view => view.GenerateMenuItem)
+                .DisposeWith(disposables);
+
+            // Open-file dialog interaction.
+            ViewModel!
+                .OpenFileInteraction
+                .RegisterHandler(context =>
+                {
+                    var dialog = new OpenFileDialog
+                    {
+                        Title = "Open Dependency Project",
+                        Filter = context.Input,
+                        CheckFileExists = true,
+                        InitialDirectory = _settingsService.ResolveProjectFolder(_fileSystem)
+                    };
+
+                    var output = dialog.ShowDialog() == true ? dialog.FileName : null;
+
+                    context.SetOutput(output);
+                })
+                .DisposeWith(disposables);
+
+            // Save-file dialog interaction.
+            ViewModel!
+                .SaveFileInteraction
+                .RegisterHandler(context =>
+                {
+                    var dialog = new SaveFileDialog
+                    {
+                        Title = "Save Dependency Project As",
+                        Filter = context.Input,
+                        DefaultExt = ".sds",
+                        AddExtension = true,
+                        InitialDirectory = _settingsService.ResolveProjectFolder(_fileSystem)
+                    };
+
+                    var output = dialog.ShowDialog() == true ? dialog.FileName : null;
+
+                    context.SetOutput(output);
+                })
+                .DisposeWith(disposables);
+
+            // Save-before-discard confirmation dialog.
+            ViewModel!
+                .ConfirmDiscardInteraction
+                .RegisterHandler(async context =>
+                {
+                    var projectName = context.Input;
+
+                    var dialog = new Views.ConfirmDiscardDialog
+                    {
+                        Title = "Save changes?"
+                    };
+
+                    // CloseOnClickAway is disabled on the dialog host, so the dialog always returns a button's CommandParameter and never null.
+                    // The buttons in the dialog are bound to the DiscardAction enum values — see the CommandParameter bindings in the XAML.
+                    var result = await DialogHost.Show(dialog, DialogHostIdentifiers.MainDialogHost);
+
+                    context.SetOutput((DiscardAction)result!);
+                })
+                .DisposeWith(disposables);
+
+            // Relative-path Save As dialog — prompts how document-relative paths should be re-written
+            // when saving to a different folder.
+            ViewModel!
+                .RelativePathSaveAsInteraction
+                .RegisterHandler(async context =>
+                {
+                    var dialog = new Views.RelativePathsDialog
+                    {
+                        RelativePaths = context.Input.RelativePaths
+                    };
+
+                    var result = await DialogHost.Show(dialog, DialogHostIdentifiers.MainDialogHost);
+
+                    // CloseOnClickAway is disabled on the dialog host, so the dialog always returns a button's CommandParameter and never null.
+                    context.SetOutput((SaveAsRelativePathAction)result!);
+                })
+                .DisposeWith(disposables);
+
+            // Error dialog handler.
+            _errorDialog
+                .ShowError
+                .RegisterHandler(async context =>
+                {
+                    var error = context.Input;
+
+                    var dialog = new Views.MessageDialog
+                    {
+                        Title = error.Title,
+                        Message = error.Message,
+                        IconKind = PackIconKind.ErrorOutline,
+                        IconForeground = "MaterialDesign.Brush.ValidationError"
+                    };
+
+                    await DialogHost.Show(dialog, DialogHostIdentifiers.MainDialogHost);
+
+                    context.SetOutput(Unit.Default);
+                })
+                .DisposeWith(disposables);
+
+            // Exit menu item.
+            this.BindCommand(ViewModel, vm => vm.ExitCommand, view => view.ExitMenuItem)
+                .DisposeWith(disposables);
+
+            ViewModel!
+                .ExitCommand
+                .Subscribe(_ => Close())
+                .DisposeWith(disposables);
+
+            _store
+                .WhenAnyValue(store => store.DocumentFilePath)
+                .Subscribe(_ => UpdateTitle())
+                .DisposeWith(disposables);
+
+            _store
+                .WhenAnyValue(store => store.IsDirty)
+                .Subscribe(_ => UpdateTitle())
+                .DisposeWith(disposables);
+
+            // Recent Projects menu — refresh on open (lazy, no manual refresh points). Subscribed as an
+            // observable so it is detached with the window, matching the surrounding DisposeWith discipline.
+            // SubmenuOpened is a RoutedEventHandler, so the conversion overload adapts the EventHandler<RoutedEventArgs>.
+            Observable
+                .FromEventPattern<RoutedEventHandler, RoutedEventArgs>(
+                    handler => new RoutedEventHandler((sender, args) => handler(sender, args)),
+                    handler => RecentProjectsMenu.SubmenuOpened += handler,
+                    handler => RecentProjectsMenu.SubmenuOpened -= handler)
+                .Subscribe(_ => ViewModel!.RefreshRecentProjects())
+                .DisposeWith(disposables);
+        });
+    }
+
+    /// <summary>Handles the window close flow: blocks close while an operation is running, prompts to
+    /// save or discard unsaved changes, and persists the window placement to application state before closing.</summary>
+    protected override async void OnClosing(CancelEventArgs e)
+    {
+        base.OnClosing(e);
+
+        // Allow the close to proceed when re-triggered programmatically.
+        if (_isClosing)
+        {
+            return;
+        }
+
+        // Cancel immediately — WPF does not await async void, so any async work
+        // after the first await would be skipped and the window would close prematurely.
+        e.Cancel = true;
+
+        _logger.LogDebug("Main window closing");
+
+        // Do not close while a modal dialog is open — the user must dismiss it first, otherwise the
+        // dialog would be left dangling over a closed window (or closed project). IsOpen is the library's
+        // authoritative open-state signal and is always correct after a normal dismissal.
+        if (MainDialogHost.IsOpen)
+        {
+            _logger.LogDebug("Close blocked: a modal dialog is open");
+            return;
+        }
+
+        if (ViewModel is not null && !ViewModel.CanClose)
+        {
+            _logger.LogDebug("Close blocked: an operation is in progress");
+
+            var messageDialog = new Views.MessageDialog
+            {
+                Title = "Operation in Progress",
+                Message = "An operation is currently running.\n\nPlease wait for it to complete or cancel\nit before closing the application.",
+                IconKind = PackIconKind.InformationOutline
+            };
+
+            await DialogHost.Show(messageDialog, DialogHostIdentifiers.MainDialogHost);
+            return;
+        }
+
+        try
+        {
+            // Prompt before discarding unsaved changes.
+            if (_store.IsDirty)
+            {
+                var action = await ViewModel!.PromptDiscardAsync();
+
+                if (action == DiscardAction.Cancel)
+                {
+                    _logger.LogDebug("Close cancelled by user");
+
+                    return;
+                }
+
+                if (action == DiscardAction.Save)
+                {
+                    await ViewModel.SaveCommand.Execute();
+                }
+            }
+
+            var placement = new WindowPlacement
+            {
+                Left = RestoreBounds.Left,
+                Top = RestoreBounds.Top,
+                Width = RestoreBounds.Width,
+                Height = RestoreBounds.Height,
+                State = WindowState.ToString()
+            };
+
+            _settingsService.CurrentState.WindowPlacement = placement;
+            _settingsService.SaveState();
+
+            _logger.LogDebug("Window placement saved ({State})", placement.State);
+        }
+        catch (Exception exception)
+        {
+            // Swallow any errors so the app will close — the user has already chosen to close, so a
+            // failure here (e.g. persisting the window placement) must never block or crash the close.
+            _logger.LogWarning("Failed to persist state while closing the window: {ErrorMessage}", exception.Message);
+        }
+
+        _isClosing = true;
+
+        // Close must be deferred — calling it directly while still inside the Closing
+        // event sequence throws InvalidOperationException.
+        await Dispatcher.InvokeAsync(Close);
+    }
+
+    /// <summary>Suppresses the close shortcuts (Ctrl+F4 and Alt+F4) while a modal dialog is open, so the dialog
+    /// cannot be dismissed or the window closed out from under an awaiting operation — the user must dismiss the
+    /// dialog via its buttons first. <see cref="OnClosing"/> is a second layer for the Alt+F4 window-close path.</summary>
+    protected override void OnPreviewKeyDown(KeyEventArgs e)
+    {
+        base.OnPreviewKeyDown(e);
+
+        if (!MainDialogHost.IsOpen)
+        {
+            return;
+        }
+
+        var isCloseProjectShortcut = e.Key == Key.F4 && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
+        var isCloseWindowShortcut = e.Key == Key.System && e.SystemKey == Key.F4;
+
+        if (isCloseProjectShortcut || isCloseWindowShortcut)
+        {
+            e.Handled = true;
+        }
+    }
+
+    private void OpenSettingsDialog()
+    {
+        _logger.LogDebug("Opening settings dialog");
+
+        var view = (Window)_viewFactory.CreateViewFor<SettingsWindowViewModel>();
+        view.Owner = this;
+        view.ShowDialog();
+    }
+
+    private void UpdateTitle()
+    {
+        var baseTitle = $"{ApplicationName} v{ApplicationVersion.Value}";
+
+        if (_store.DocumentFilePath is null)
+        {
+            Title = baseTitle;
+        }
+        else
+        {
+            var name = Path.GetFileNameWithoutExtension(_store.DocumentFilePath);
+
+            Title = _store.IsDirty
+                ? $"{baseTitle} — {name} ●"
+                : $"{baseTitle} — {name}";
+        }
+    }
+
+    private void RestorePlacement(WindowPlacement? placement)
+    {
+        if (placement is null || !placement.IsOnScreen())
+        {
+            _logger.LogDebug("No usable window placement to restore; using default");
+
+            return;
+        }
+
+        _logger.LogDebug("Restoring window placement ({State})", placement.State);
+
+        WindowStartupLocation = WindowStartupLocation.Manual;
+        Left = placement.Left;
+        Top = placement.Top;
+        Width = placement.Width;
+        Height = placement.Height;
+
+        if (placement.State is not "Normal")
+        {
+            // WindowState can only be set after the window has loaded. Subscribed as a one-shot observable
+            // (Take(1)) so it unsubscribes after the single Loaded event — no manual unsubscribe needed.
+            // Loaded is a RoutedEventHandler, so the conversion overload adapts the EventHandler<RoutedEventArgs>.
+            Observable
+                .FromEventPattern<RoutedEventHandler, RoutedEventArgs>(
+                    handler => new RoutedEventHandler((sender, args) => handler(sender, args)),
+                    handler => Loaded += handler,
+                    handler => Loaded -= handler)
+                .Take(1)
+                .Subscribe(_ =>
+                {
+                    WindowState = placement.State switch
+                    {
+                        "Maximized" => WindowState.Maximized,
+                        _ => WindowState.Normal
+                    };
+                });
+        }
+    }
+}

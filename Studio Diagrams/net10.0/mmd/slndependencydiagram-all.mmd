@@ -1,0 +1,10 @@
+flowchart LR
+  slndependencydiagramgenerator["SlnDependencyDiagramGenerator"]
+  slndependencystudio-cli["SlnDependencyStudio.Cli"]
+  slndependencystudio-shared["SlnDependencyStudio.Shared"]
+  slndependencystudio-wpf["SlnDependencyStudio.Wpf"]
+  slndependencystudio-cli --> slndependencydiagramgenerator
+  slndependencystudio-cli --> slndependencystudio-shared
+  slndependencystudio-shared --> slndependencydiagramgenerator
+  slndependencystudio-wpf --> slndependencydiagramgenerator
+  slndependencystudio-wpf --> slndependencystudio-shared

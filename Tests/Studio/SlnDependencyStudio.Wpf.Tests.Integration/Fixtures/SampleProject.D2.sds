@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "projectName": "D2 Only",
+    "description": "D2-only format test"
+  },
+  "diagramGenerator": {
+    "solution": {
+      "solutionPath": "C:\\Projects\\D2Only\\D2Only.sln",
+      "regexToInclude": [],
+      "regexToExclude": [],
+      "packagesToExclude": [],
+      "frameworksToExclude": [],
+      "individual": { "enabled": true, "includeDependencies": true, "transitiveDepth": 1 },
+      "all": { "enabled": false, "includeDependencies": false, "transitiveDepth": 0 }
+    },
+    "diagram": {
+      "formats": ["D2"],
+      "direction": "BT",
+      "groupName": "D2 Group",
+      "groupNameAlias": "d2group",
+      "grouping": { "enabled": true },
+      "fillStyle": {
+        "framework": { "color": "#E8E8E8", "opacity": 1.0 },
+        "packageExplicit": { "color": "#D4E6F1", "opacity": 1.0 },
+        "packageTransitive": { "color": "#FADBD8", "opacity": 1.0 }
+      }
+    },
+    "export": {
+      "rootPath": "%TEMP%\\SlnDependencyGenTest\\D2Only",
+      "imageFormats": ["svg"],
+      "clearContents": true
+    }
+  },
+  "preGeneration": {
+    "enabled": false,
+    "command": "",
+    "arguments": "",
+    "workingDirectory": "",
+    "continueOnFailure": false
+  },
+  "restoreSolution": false,
+  "postGeneration": {
+    "enabled": false,
+    "command": "",
+    "arguments": "",
+    "workingDirectory": ""
+  }
+}

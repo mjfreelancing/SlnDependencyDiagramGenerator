@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="AllOverIt.Assertion" />
+        <PackageReference Include="coverlet.collector" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" />
+        <PackageReference Include="NSubstitute" />
+        <PackageReference Include="Shouldly" />
+        <PackageReference Include="Verify.XunitV3" />
+        <PackageReference Include="xunit.v3" />
+        <PackageReference Include="xunit.runner.visualstudio" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Using Include="Xunit" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Include="..\..\Shared\DisposableTempDirectory.cs" Link="Support\DisposableTempDirectory.cs" />
+        <Compile Include="..\..\Shared\DisposableTempFile.cs" Link="Support\DisposableTempFile.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\Source\SlnDependencyDiagramGenerator.csproj" />
+        <ProjectReference Include="..\..\..\Studio\SlnDependencyStudio.Shared\SlnDependencyStudio.Shared.csproj" />
+    </ItemGroup>
+
+    <!-- Fixture directories under Fixtures/ are real projects (they build and restore as part of the solution).
+         Without this, their .cs files would be compiled into the integration test assembly,
+         causing duplicate type/assembly-attribute and top-level-statement errors. -->
+    <ItemGroup>
+        <Compile Remove="Fixtures\**\*.cs" />
+    </ItemGroup>
+
+</Project>

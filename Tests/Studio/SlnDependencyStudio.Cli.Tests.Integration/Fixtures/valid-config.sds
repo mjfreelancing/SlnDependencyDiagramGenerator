@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "projectName": "CLI Test",
+    "description": "Config for CLI integration tests"
+  },
+  "diagramGenerator": {
+    "solution": {
+      "solutionPath": ".",
+      "regexToInclude": [],
+      "regexToExclude": [],
+      "packagesToExclude": [],
+      "frameworksToExclude": [],
+      "individual": { "enabled": true, "includeDependencies": false, "transitiveDepth": 0 },
+      "all": { "enabled": false, "includeDependencies": false, "transitiveDepth": 0 }
+    },
+    "diagram": {
+      "formats": ["Mermaid"],
+      "direction": "LR",
+      "groupName": "CLI Test Group",
+      "groupNameAlias": "clitest",
+      "grouping": { "enabled": true },
+      "fillStyle": {
+        "framework": { "color": "#E8E8E8", "opacity": 1.0 },
+        "packageExplicit": { "color": "#D4E6F1", "opacity": 1.0 },
+        "packageTransitive": { "color": "#FADBD8", "opacity": 1.0 }
+      }
+    },
+    "export": {
+      "rootPath": "%TEMP%\\SlnDependencyGenTest\\CLI",
+      "imageFormats": [],
+      "clearContents": true
+    }
+  },
+  "preGeneration": {
+    "enabled": false,
+    "command": "",
+    "arguments": "",
+    "workingDirectory": "",
+    "continueOnFailure": false
+  },
+  "restoreSolution": false,
+  "postGeneration": {
+    "enabled": false,
+    "command": "",
+    "arguments": "",
+    "workingDirectory": ""
+  }
+}

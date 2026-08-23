@@ -1,0 +1,284 @@
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
+using SlnDependencyDiagramGenerator.Config;
+using SlnDependencyDiagramGenerator.Extensions;
+using SlnDependencyDiagramGenerator.Generator;
+using SlnDependencyDiagramGenerator.Generator.Discovery;
+using SlnDependencyDiagramGenerator.Parser;
+using SlnDependencyDiagramGenerator.Parser.Resolvers;
+using SlnDependencyDiagramGenerator.Tests.Shared;
+using System.Threading;
+
+namespace SlnDependencyDiagramGenerator.Tests.Integration.Support;
+
+internal static class IntegrationTestHarness
+{
+    internal sealed class GeneratorScenarioOptions
+    {
+        public string FixtureName { get; set; } = "Basic";
+        public string SolutionExtension { get; set; } = ".slnx";
+        public string GroupName { get; set; } = "Test Group";
+        public string GroupNameAlias { get; set; } = "test";
+        public GeneratorDiagramOptions.DiagramDirection Direction { get; set; } = GeneratorDiagramOptions.DiagramDirection.LR;
+        public bool GroupingEnabled { get; set; } = true;
+        public string FrameworkFill { get; set; } = "#102030";
+        public string PackageFill { get; set; } = "#405060";
+        public string TransitiveFill { get; set; } = "#708090";
+        public string GroupFill { get; set; } = "#DDEEFF";
+        public double FrameworkOpacity { get; set; } = 0.8;
+        public double PackageOpacity { get; set; } = 0.8;
+        public double TransitiveOpacity { get; set; } = 0.8;
+        public double GroupOpacity { get; set; } = 0.75;
+        public DiagramFormat[] Formats { get; set; } = [DiagramFormat.D2, DiagramFormat.Mermaid];
+        public bool ClearContents { get; set; } = true;
+        public bool IncludeIndividual { get; set; } = true;
+        public bool IncludeAll { get; set; } = true;
+        public bool IncludeDependencies { get; set; } = true;
+        public int IndividualTransitiveDepth { get; set; } = 3;
+        public int AllTransitiveDepth { get; set; } = 3;
+        public string[] RegexToInclude { get; set; } = [@"^.*\.csproj$"];
+        public string[] RegexToExclude { get; set; } = [];
+        public string[] PackagesToExclude { get; set; } = [];
+        public string[] FrameworksToExclude { get; set; } = [];
+    }
+
+    internal sealed class ScenarioRunResult : IDisposable
+    {
+        private readonly DisposableTempDirectory _tempDirectory;
+
+        public ScenarioRunResult(DisposableTempDirectory tempDirectory)
+        {
+            _tempDirectory = tempDirectory;
+        }
+
+        public string ExportRoot => _tempDirectory.DirectoryPath;
+
+        public void Dispose()
+        {
+            _tempDirectory.Dispose();
+        }
+    }
+
+    public static string GetFixtureSolutionPath(string fixtureName, string extension)
+    {
+        return Path.Combine(FixtureLocator.GetFixtureDirectory(fixtureName), $"{fixtureName}{extension}");
+    }
+
+    public static GeneratorScenarioOptions CreateScenarioOptions(string fixtureName, string groupName, string groupNameAlias)
+    {
+        return new GeneratorScenarioOptions
+        {
+            FixtureName = fixtureName,
+            GroupName = groupName,
+            GroupNameAlias = groupNameAlias
+        };
+    }
+
+    public static IDependencyGenerator CreateGenerator()
+    {
+        var services = new ServiceCollection();
+
+        services.AddLogging();
+        services.AddSlnDependencyDiagramGenerator();
+
+        var provider = services.BuildServiceProvider();
+
+        return provider.GetRequiredService<IDependencyGenerator>();
+    }
+
+    public static async Task<ScenarioRunResult> RunGeneratorAsync(GeneratorScenarioOptions options)
+    {
+        var tempDirectory = new DisposableTempDirectory(options.FixtureName.ToLowerInvariant());
+        var solutionPath = GetFixtureSolutionPath(options.FixtureName, options.SolutionExtension);
+        var configuration = CreateConfig(solutionPath, tempDirectory.DirectoryPath, options);
+
+        var generator = CreateGenerator();
+
+        await generator.CreateDiagramsAsync(configuration, CancellationToken.None);
+
+        return new ScenarioRunResult(tempDirectory);
+    }
+
+    public static DependencyGeneratorConfig CreateConfig(string solutionPath, string exportRoot, GeneratorScenarioOptions options)
+    {
+        return new DependencyGeneratorConfig
+        {
+            Solution = new GeneratorSolutionOptions
+            {
+                SolutionPath = solutionPath,
+                RegexToInclude = options.RegexToInclude,
+                RegexToExclude = options.RegexToExclude,
+                PackagesToExclude = options.PackagesToExclude,
+                FrameworksToExclude = options.FrameworksToExclude,
+                Individual = new GeneratorSolutionOptions.ProjectScope
+                {
+                    Enabled = options.IncludeIndividual,
+                    IncludeDependencies = options.IncludeDependencies,
+                    TransitiveDepth = options.IndividualTransitiveDepth
+                },
+                All = new GeneratorSolutionOptions.ProjectScope
+                {
+                    Enabled = options.IncludeAll,
+                    IncludeDependencies = options.IncludeDependencies,
+                    TransitiveDepth = options.AllTransitiveDepth
+                }
+            },
+            Diagram = new GeneratorDiagramOptions
+            {
+                Direction = options.Direction,
+                GroupName = options.GroupName,
+                GroupNameAlias = options.GroupNameAlias,
+                FrameworkStyle = new GeneratorDiagramOptions.FillStyle
+                {
+                    Fill = options.FrameworkFill,
+                    Opacity = options.FrameworkOpacity
+                },
+                PackageStyle = new GeneratorDiagramOptions.FillStyle
+                {
+                    Fill = options.PackageFill,
+                    Opacity = options.PackageOpacity
+                },
+                TransitiveStyle = new GeneratorDiagramOptions.FillStyle
+                {
+                    Fill = options.TransitiveFill,
+                    Opacity = options.TransitiveOpacity
+                },
+                Grouping = new GeneratorDiagramOptions.GroupingOptions
+                {
+                    Enabled = options.GroupingEnabled,
+                    BackgroundStyle = new GeneratorDiagramOptions.FillStyle
+                    {
+                        Fill = options.GroupFill,
+                        Opacity = options.GroupOpacity
+                    }
+                },
+                Formats = options.Formats
+            },
+            Export = new GeneratorExportOptions
+            {
+                ClearContents = options.ClearContents,
+                RootPath = exportRoot,
+                ImageFormats = []
+            }
+        };
+    }
+
+    public static string[] GetTargetFrameworkDirectories(string exportRoot)
+    {
+        return [.. Directory.GetDirectories(exportRoot)
+            .Select(directory => Path.GetFileName(directory) ?? string.Empty)
+            .OrderBy(directory => directory, StringComparer.OrdinalIgnoreCase)];
+    }
+
+    public static string ReadSummaryFile(string exportRoot, string targetFramework)
+    {
+        return File.ReadAllText(Path.Combine(exportRoot, targetFramework, SummaryDependencyGenerator.MarkdownFilename));
+    }
+
+    public static string ReadDiagramFile(string exportRoot, string targetFramework, string formatFolder, string fileName)
+    {
+        return File.ReadAllText(Path.Combine(exportRoot, targetFramework, formatFolder, fileName));
+    }
+
+    public static string[] GetDiagramFiles(string exportRoot, string targetFramework, string formatFolder, string extension)
+    {
+        var folderPath = Path.Combine(exportRoot, targetFramework, formatFolder);
+
+        return [.. Directory.GetFiles(folderPath, $"*.{extension}")
+            .Select(fileName => Path.GetFileName(fileName) ?? string.Empty)
+            .OrderBy(fileName => fileName, StringComparer.OrdinalIgnoreCase)];
+    }
+
+    public static SortedDictionary<string, string> CollectExportSnapshot(string exportRoot)
+    {
+        var snapshot = new SortedDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var targetFramework in GetTargetFrameworkDirectories(exportRoot))
+        {
+            var targetFrameworkRoot = Path.Combine(exportRoot, targetFramework);
+            var summaryPath = Path.Combine(targetFrameworkRoot, SummaryDependencyGenerator.MarkdownFilename);
+
+            if (File.Exists(summaryPath))
+            {
+                snapshot[$"{targetFramework}/{SummaryDependencyGenerator.MarkdownFilename}"] = File.ReadAllText(summaryPath);
+            }
+
+            AddDiagramFilesToSnapshot(snapshot, targetFrameworkRoot, targetFramework, "d2", "d2");
+            AddDiagramFilesToSnapshot(snapshot, targetFrameworkRoot, targetFramework, "mmd", "mmd");
+        }
+
+        return snapshot;
+    }
+
+    private static void AddDiagramFilesToSnapshot(SortedDictionary<string, string> snapshot, string targetFrameworkRoot,
+        string targetFramework, string formatFolder, string extension)
+    {
+        var formatRoot = Path.Combine(targetFrameworkRoot, formatFolder);
+
+        if (!Directory.Exists(formatRoot))
+        {
+            return;
+        }
+
+        foreach (var filePath in Directory.GetFiles(formatRoot, $"*.{extension}").OrderBy(fileName => fileName, StringComparer.OrdinalIgnoreCase))
+        {
+            var fileName = Path.GetFileName(filePath);
+
+            if (fileName is null)
+            {
+                continue;
+            }
+
+            snapshot[$"{targetFramework}/{formatFolder}/{fileName}"] = File.ReadAllText(filePath);
+        }
+    }
+
+    public static async Task<SolutionProject[]> ParseFixtureAsync(string fixtureName, string extension, string targetFramework,
+        string[] regexToInclude, string[] regexToExclude, string[] excludePackages, string[] excludeFrameworks, int maxTransitiveDepth)
+    {
+        var discovery = CreateDiscoveryService();
+        var solutionPath = GetFixtureSolutionPath(fixtureName, extension);
+
+        var parseRequest = new SolutionParseRequest
+        {
+            SolutionFilePath = solutionPath,
+            RegexToInclude = regexToInclude,
+            RegexToExclude = regexToExclude,
+            ExcludePackages = excludePackages,
+            ExcludeFrameworks = excludeFrameworks,
+            TargetFramework = targetFramework,
+            MaxTransitiveDepth = maxTransitiveDepth
+        };
+
+        return await discovery.ParseProjectsAsync(parseRequest, CancellationToken.None);
+    }
+
+    public static async Task<string[]> DiscoverFixtureTargetFrameworksAsync(string fixtureName, string extension,
+        string[] regexToInclude, string[] regexToExclude)
+    {
+        var discovery = CreateDiscoveryService();
+        var solutionPath = GetFixtureSolutionPath(fixtureName, extension);
+
+        return await discovery.DiscoverTargetFrameworksAsync(solutionPath, regexToInclude, regexToExclude, CancellationToken.None);
+    }
+
+    public static async Task<ProjectDiscoveryResult> DiscoverFixtureProjectsAsync(string fixtureName, string extension,
+        string[] regexToInclude, string[] regexToExclude)
+    {
+        var discovery = CreateDiscoveryService();
+        var solutionPath = GetFixtureSolutionPath(fixtureName, extension);
+
+        return await discovery.DiscoverProjectsAsync(solutionPath, regexToInclude, regexToExclude, CancellationToken.None);
+    }
+
+    private static ProjectDiscoveryService CreateDiscoveryService()
+    {
+        return new ProjectDiscoveryService(
+            new SolutionParser(
+                new ProjectAssetReader(NullLogger<ProjectAssetReader>.Instance),
+                [new SlnSolutionProjectResolver(), new SlnxSolutionProjectResolver()],
+                NullLogger<SolutionParser>.Instance),
+            NullLogger<ProjectDiscoveryService>.Instance);
+    }
+
+}

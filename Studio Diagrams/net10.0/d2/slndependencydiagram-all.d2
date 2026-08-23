@@ -1,0 +1,15 @@
+direction: left
+
+ddg: SlnDependencyDiagram
+ddg.slndependencydiagramgenerator: SlnDependencyDiagramGenerator
+ddg.slndependencystudio-cli: SlnDependencyStudio.Cli
+ddg.slndependencystudio-shared: SlnDependencyStudio.Shared
+ddg.slndependencystudio-wpf: SlnDependencyStudio.Wpf
+ddg.slndependencydiagramgenerator <- ddg.slndependencystudio-cli
+ddg.slndependencystudio-shared <- ddg.slndependencystudio-cli
+ddg.slndependencydiagramgenerator <- ddg.slndependencystudio-shared
+ddg.slndependencydiagramgenerator <- ddg.slndependencystudio-wpf
+ddg.slndependencystudio-shared <- ddg.slndependencystudio-wpf
+ddg.style.fill: "#E7EBFC"
+ddg.style.opacity: 1
+

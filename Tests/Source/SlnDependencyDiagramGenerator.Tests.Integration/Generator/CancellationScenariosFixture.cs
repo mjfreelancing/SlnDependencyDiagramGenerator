@@ -1,0 +1,39 @@
+﻿using AllOverIt.Logging;
+using NSubstitute;
+using SlnDependencyDiagramGenerator.Config;
+using SlnDependencyDiagramGenerator.Generator;
+using SlnDependencyDiagramGenerator.Generator.Discovery;
+using SlnDependencyDiagramGenerator.Generator.ToolDetection;
+using SlnDependencyDiagramGenerator.Tests.Integration.Support;
+using SlnDependencyDiagramGenerator.Tests.Shared;
+using Shouldly;
+using System.Threading;
+
+namespace SlnDependencyDiagramGenerator.Tests.Integration.Generator;
+
+public class CancellationScenariosFixture : FixtureCollectionTestBase
+{
+    public class GeneratorCancellation : CancellationScenariosFixture
+    {
+        [Fact]
+        public async Task Should_Throw_OperationCanceledException_When_PreCancelled_Token_Is_Provided()
+        {
+            var options = IntegrationTestHarness.CreateScenarioOptions("Basic", "Basic Group", "basic");
+            options.Formats = [DiagramFormat.D2, DiagramFormat.Mermaid];
+
+            using var tempDirectory = new DisposableTempDirectory("cancellation-pre-cancelled");
+
+            var solutionPath = IntegrationTestHarness.GetFixtureSolutionPath("Basic", ".slnx");
+            var configuration = IntegrationTestHarness.CreateConfig(solutionPath, tempDirectory.DirectoryPath, options);
+            var generator = IntegrationTestHarness.CreateGenerator();
+
+            using var cancellationTokenSource = new CancellationTokenSource();
+            cancellationTokenSource.Cancel();
+
+            var exception = await Should.ThrowAsync<OperationCanceledException>(() =>
+                generator.CreateDiagramsAsync(configuration, cancellationTokenSource.Token));
+
+            exception.ShouldNotBeNull();
+        }
+    }
+}

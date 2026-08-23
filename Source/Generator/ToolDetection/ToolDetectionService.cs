@@ -1,0 +1,149 @@
+﻿using AllOverIt.Extensions;
+using AllOverIt.Process;
+using AllOverIt.Process.Extensions;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace SlnDependencyDiagramGenerator.Generator.ToolDetection;
+
+/// <summary>Detects and validates the availability of external CLI tools, honoring configured
+/// path overrides and falling back to PATH lookup.</summary>
+internal sealed class ToolDetectionService : IToolDetectionService
+{
+    private static readonly string[] KnownTools = ["d2", "mmdc"];
+
+    private readonly IToolPathResolver _toolPathResolver;
+    private readonly ILogger<ToolDetectionService> _logger;
+
+    /// <inheritdoc />
+    public IReadOnlyList<string> KnownToolNames => KnownTools;
+
+    /// <summary>Initializes a new tool detection service.</summary>
+    /// <param name="toolPathResolver">Resolves effective tool paths for explicit-path availability checks.</param>
+    /// <param name="logger">A logger for diagnostics.</param>
+    public ToolDetectionService(IToolPathResolver toolPathResolver, ILogger<ToolDetectionService> logger)
+    {
+        _toolPathResolver = toolPathResolver;
+        _logger = logger;
+    }
+
+    /// <inheritdoc />
+    public async Task<ToolStatus> CheckToolAvailabilityAsync(string toolName, CancellationToken cancellationToken = default)
+    {
+        var explicitPath = _toolPathResolver.GetExplicitPath(toolName);
+
+        if (explicitPath.IsNotNullOrEmpty())
+        {
+            _logger.LogInformation("Checking availability of {ToolName} at {ExplicitPath}", toolName, explicitPath);
+
+            return await CheckExplicitPathAsync(toolName, explicitPath, cancellationToken).ConfigureAwait(false);
+        }
+
+        _logger.LogInformation("Checking availability of {ToolName} on PATH", toolName);
+
+        return await CheckPathAsync(toolName, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Resolves the full path of a tool executable on the system PATH using
+    /// platform-appropriate lookup (<c>where</c> on Windows, <c>which</c> otherwise).
+    /// </summary>
+    /// <param name="toolName">The tool name to locate.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The resolved full path, or <see langword="null"/> if not found.</returns>
+    internal static async Task<string?> ResolveToolPathAsync(string toolName, CancellationToken cancellationToken)
+    {
+        var locator = OperatingSystem.IsWindows() ? "where" : "which";
+
+        try
+        {
+            using var executor = ProcessBuilder
+                .For(locator)
+                .WithNoWindow()
+                .WithArguments(toolName)
+                .BuildProcessExecutor();
+
+            var result = await executor
+                .ExecuteBufferedAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            if (result.ExitCode != 0)
+            {
+                return null;
+            }
+
+            // Pick the first line — some tools may have multiple entries on PATH.
+            var output = result.StandardOutput?.Trim();
+
+            if (string.IsNullOrEmpty(output))
+            {
+                return null;
+            }
+
+            // Take the first line in case of multi-line output.
+            var firstLine = output.Split([Environment.NewLine, "\n"], StringSplitOptions.RemoveEmptyEntries)[0];
+
+            return firstLine.Trim();
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private async Task<ToolStatus> CheckExplicitPathAsync(string toolName, string explicitPath, CancellationToken cancellationToken)
+    {
+        var exists = File.Exists(explicitPath);
+
+        if (exists)
+        {
+            _logger.LogInformation("The tool {ToolName} was found at {ExplicitPath}", toolName, explicitPath);
+
+            return new ToolStatus
+            {
+                ToolName = toolName,
+                IsAvailable = true,
+                ResolvedPath = explicitPath
+            };
+        }
+
+        _logger.LogInformation("The tool {ToolName} was not found at {ExplicitPath}", toolName, explicitPath);
+
+        return new ToolStatus
+        {
+            ToolName = toolName,
+            IsAvailable = false,
+            ErrorMessage = $"The specified path for '{toolName}' was not found: {explicitPath}"
+        };
+    }
+
+    private async Task<ToolStatus> CheckPathAsync(string toolName, CancellationToken cancellationToken)
+    {
+        var resolvedPath = await ResolveToolPathAsync(toolName, cancellationToken).ConfigureAwait(false);
+
+        if (resolvedPath is not null)
+        {
+            _logger.LogInformation("The tool {ToolName} was found at {ResolvedPath}", toolName, resolvedPath);
+
+            return new ToolStatus
+            {
+                ToolName = toolName,
+                IsAvailable = true,
+                ResolvedPath = resolvedPath
+            };
+        }
+
+        _logger.LogInformation("The tool {ToolName} was not found", toolName);
+
+        return new ToolStatus
+        {
+            ToolName = toolName,
+            IsAvailable = false,
+            ErrorMessage = $"'{toolName}' was not found on PATH."
+        };
+    }
+}

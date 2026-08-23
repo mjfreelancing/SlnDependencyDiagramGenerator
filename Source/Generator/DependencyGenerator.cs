@@ -1,640 +1,697 @@
-﻿using AllOverIt.Assertion;
-using AllOverIt.Extensions;
+﻿using AllOverIt.Extensions;
 using AllOverIt.IO;
-using AllOverIt.Logging;
 using AllOverIt.Patterns.Specification.Extensions;
-using AllOverIt.Process;
-using AllOverIt.Process.Extensions;
-using AllOverIt.Validation.Extensions;
+using AllOverIt.Validation;
 using FluentValidation;
+using Microsoft.Extensions.Logging;
 using SlnDependencyDiagramGenerator.Config;
+using SlnDependencyDiagramGenerator.Exceptions;
+using SlnDependencyDiagramGenerator.Generator.Discovery;
+using SlnDependencyDiagramGenerator.Generator.Nodes;
+using SlnDependencyDiagramGenerator.Generator.ToolDetection;
 using SlnDependencyDiagramGenerator.Parser;
-using SlnDependencyDiagramGenerator.Validators;
+using SlnDependencyDiagramGenerator.Renderers;
+using SlnDependencyDiagramGenerator.Renderers.D2;
+using SlnDependencyDiagramGenerator.Renderers.Mermaid;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
-namespace SlnDependencyDiagramGenerator.Generator
+namespace SlnDependencyDiagramGenerator.Generator;
+
+/// <summary>Generates dependency summaries and diagrams for projects in a Visual Studio solution.</summary>
+/// <remarks>
+/// Matching projects are selected using include/exclude regex rules from <see cref="DependencyGeneratorConfig"/>.
+/// <para>
+/// Project and framework references are read from evaluated MSBuild items, while package references
+/// (explicit and transitive) are resolved from each project's <c>project.assets.json</c> file.
+/// This assets file is written by <c>dotnet restore</c> and is the authoritative source for
+/// resolved package versions, including Central Package Management and Directory.Build.props effects.
+/// </para>
+/// <para>
+/// Output includes a markdown summary plus D2 and/or Mermaid diagrams for individual projects and/or
+/// the full selected solution scope, with optional <c>svg</c>, <c>png</c>, and <c>pdf</c> image export.
+/// </para>
+/// </remarks>
+public sealed class DependencyGenerator : IDependencyGenerator
 {
-    /// <summary>Parses a Visual Studio Solution file to discover the projects it contains. These projects are then filtered based on
-    /// one or more regex expressions, allowing for projects to be filtered based on their name or folder location. Each project is
-    /// then parsed to discover any dependent <see cref="ProjectReference"/>, explicit and transitive (implicit) <see cref="PackageReference"/>,
-    /// and <see cref="FrameworkReference"/> elements.<br/><br/>
-    /// The <see cref="PackageReference"/> elements are recursively resolved to a specified depth from one or more nuget sources with the
-    /// transitive references reported based on their minimum package version. This opinionated method of reporting is to allow for the detection
-    /// of unintentional use of different versions across multiple projects in the solution and their dependencies.<br/><br/>
-    /// With all of this information the dependency generator creates a 'Dependency Summary' markdown report, a dependency diagram for each
-    /// project as well as the entire solution (for the projects processed) in D2 format as well as one or more of the <c>svg</c>, <c>png</c>,
-    /// or <c>pdf</c> formats.<br/><br/>
-    /// Refer to <see cref="DependencyGeneratorConfig"/> for more information on the configuration options available.</summary>
-    public sealed partial class DependencyGenerator
+    private readonly record struct PackageVersion(string Name, string Version);
+
+    private readonly IProjectDiscoveryService _projectDiscovery;
+    private readonly IToolDetectionService _toolDetection;
+    private readonly IToolPathResolver _toolPathResolver;
+    private readonly IValidationInvoker _validationInvoker;
+    private readonly ILoggerFactory _loggerFactory;
+    private readonly ILogger<DependencyGenerator> _logger;
+    /// <summary>Initializes a new dependency generator instance with explicitly provided services (for DI).</summary>
+    /// <param name="projectDiscovery">The project discovery service used for parsing solutions and resolving dependencies.</param>
+    /// <param name="toolDetection">The tool detection service used for checking external CLI tool availability.</param>
+    /// <param name="toolPathResolver">Resolves effective tool paths for external CLI invocation.</param>
+    /// <param name="validationInvoker">The validation invoker used to validate configuration before generation.</param>
+    /// <param name="loggerFactory">The logger factory used to create loggers for the generator and renderers.</param>
+    public DependencyGenerator(IProjectDiscoveryService projectDiscovery, IToolDetectionService toolDetection,
+        IToolPathResolver toolPathResolver, IValidationInvoker validationInvoker, ILoggerFactory loggerFactory)
     {
-        private readonly DependencyGeneratorConfig _configuration;
-        private readonly IColorConsoleLogger _logger;
+        _projectDiscovery = projectDiscovery;
+        _toolDetection = toolDetection;
+        _toolPathResolver = toolPathResolver;
+        _loggerFactory = loggerFactory;
+        _validationInvoker = validationInvoker;
+        _logger = loggerFactory.CreateLogger<DependencyGenerator>();
+    }
 
-        /// <summary>Constructor.</summary>
-        /// <param name="configuration">The dependency generator configuration options.</param>
-        /// <param name="logger">A console logger that provides progress information during the processing of projects and generation of diagrams.</param>
-        public DependencyGenerator(DependencyGeneratorConfig configuration, IColorConsoleLogger logger)
+    /// <inheritdoc />
+    public void ValidateConfiguration(DependencyGeneratorConfig configuration)
+    {
+        _validationInvoker.AssertValidation(configuration);
+    }
+
+    /// <inheritdoc />
+    public async Task CreateDiagramsAsync(DependencyGeneratorConfig configuration, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        ValidateConfiguration(configuration);
+
+        // Fail early if required external tools are not available.
+        await AssertToolAvailabilityAsync(configuration, cancellationToken).ConfigureAwait(false);
+
+        var individualTransitiveDepth = configuration.Solution.Individual.Enabled
+            ? configuration.Solution.Individual.TransitiveDepth
+            : 0;
+
+        var allTransitiveDepth = configuration.Solution.All.Enabled
+            ? configuration.Solution.All.TransitiveDepth
+            : 0;
+
+        var maxTransitiveDepth = Math.Max(individualTransitiveDepth, allTransitiveDepth);
+
+        var regexToInclude = configuration.Solution.RegexToInclude;
+        var regexToExclude = configuration.Solution.RegexToExclude;
+        var excludePackages = configuration.Solution.PackagesToExclude;
+        var excludeFrameworks = configuration.Solution.FrameworksToExclude;
+        var solutionPath = configuration.Solution.SolutionPath;
+
+        _logger.LogInformation("Starting diagram generation for {SolutionPath}", Path.GetFileName(solutionPath));
+
+        // Target frameworks are auto-discovered from each project's project.assets.json
+        var targetFrameworks = await _projectDiscovery
+            .DiscoverTargetFrameworksAsync(solutionPath, regexToInclude, regexToExclude, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (targetFrameworks.Length == 0)
         {
-            _configuration = configuration.WhenNotNull();
-            _logger = logger.WhenNotNull();
+            _logger.LogDebug("No target frameworks discovered in {SolutionPath}", Path.GetFileName(solutionPath));
 
-            AssertConfiguration();
+            return;
         }
 
-        /// <summary>Initiates the process of parsing the solution projects and diagram generation.</summary>
-        /// <returns>A <see cref="Task"/> that completes when the diagram generation has completed.</returns>
-        public async Task CreateDiagramsAsync()
+        _logger.LogDebug("Discovered {TargetFrameworkCount} target framework(s): {TargetFrameworks}",
+            targetFrameworks.Length, string.Join(", ", targetFrameworks));
+
+        var renderers = GetRenderers(configuration);
+
+        // Log which projects were resolved, included, and excluded.
+        await LogProjectDiscoveryAsync(solutionPath, regexToInclude, regexToExclude, cancellationToken).ConfigureAwait(false);
+
+        foreach (var targetFramework in targetFrameworks)
         {
-            var individualTransitiveDepth = _configuration.Projects.Individual.Enabled ? _configuration.Projects.Individual.TransitiveDepth : 0;
-            var allTransitiveDepth = _configuration.Projects.All.Enabled ? _configuration.Projects.All.TransitiveDepth : 0;
-            var maxTransitiveDepth = Math.Max(individualTransitiveDepth, allTransitiveDepth);
+            cancellationToken.ThrowIfCancellationRequested();
 
-            var solutionParser = new SolutionParser(_configuration.PackageFeeds, maxTransitiveDepth, _logger);
-
-            foreach (var targetFramework in _configuration.TargetFrameworks)
+            var parseRequest = new SolutionParseRequest
             {
-                var regexToInclude = _configuration.Projects.RegexToInclude;
-                var regexToExclude = _configuration.Projects.RegexToExclude;
+                SolutionFilePath = solutionPath,
+                RegexToInclude = regexToInclude,
+                RegexToExclude = regexToExclude,
+                ExcludePackages = excludePackages,
+                ExcludeFrameworks = excludeFrameworks,
+                TargetFramework = targetFramework,
+                MaxTransitiveDepth = maxTransitiveDepth
+            };
 
-                var allProjects = await solutionParser.ParseAsync(_configuration.Projects.SolutionPath, regexToInclude, regexToExclude, targetFramework);
+            var allProjects = await _projectDiscovery
+                .ParseProjectsAsync(parseRequest, cancellationToken)
+                .ConfigureAwait(false);
 
-                if (allProjects.Length == 0)
-                {
-                    _logger
-                        .Write(ConsoleColor.Red, "No projects found in ")
-                        .Write(ConsoleColor.Yellow, Path.GetFileName(_configuration.Projects.SolutionPath))
-                        .Write(ConsoleColor.Red, " using the regex(es) ")
-                        .Write(ConsoleColor.Yellow, string.Join(", ", _configuration.Projects.RegexToInclude))
-                        .Write(ConsoleColor.Red, " and target framework ")
-                        .WriteLine(ConsoleColor.Yellow, targetFramework)
-                        .WriteLine();
+            if (allProjects.Length == 0)
+            {
+                var includeRegexList = string.Join(", ", configuration.Solution.RegexToInclude);
 
-                    continue;
-                }
+                var excludeRegexList = configuration.Solution.RegexToExclude.Length > 0
+                    ? string.Join(", ", configuration.Solution.RegexToExclude)
+                    : "<none>";
 
-                foreach (var project in allProjects)
-                {
-                    LogDependencies(project);
-                }
+                _logger.LogError(
+                    "No projects matched the configured filters for target framework {TargetFramework}",
+                    targetFramework);
 
-                _logger.WriteLine();
+                continue;
+            }
 
-                var solutionProjects = allProjects.ToDictionary(project => project.Name, project => project);
+            _logger.LogDebug("Processing target framework: {TargetFramework}", targetFramework);
 
-                var exportPath = Path.Combine(_configuration.Export.RootPath, targetFramework);
+            foreach (var project in allProjects)
+            {
+                LogDependencies(project);
+            }
 
-                Directory.CreateDirectory(exportPath);
+            // GroupBy handles duplicate project filenames across different directories
+            var solutionProjects = allProjects
+                .GroupBy(project => project.Name, StringComparer.OrdinalIgnoreCase)
+                .Select(group => group.First())
+                .ToDictionary(project => project.Name, project => project, StringComparer.OrdinalIgnoreCase);
 
-                if (_configuration.Export.ClearContents)
-                {
-                    ClearFolder(exportPath);
-                }
+            var exportPath = Path.Combine(configuration.Export.RootPath, targetFramework);
 
-                await ExportAsSummary(exportPath, solutionProjects).ConfigureAwait(false);
+            Directory.CreateDirectory(exportPath);
 
-                if (_configuration.Projects.Individual.Enabled)
-                {
-                    await ExportAsIndividual(targetFramework, exportPath, solutionProjects).ConfigureAwait(false);
-                }
+            if (configuration.Export.ClearContents)
+            {
+                ClearFolder(exportPath);
+            }
 
-                if (_configuration.Projects.All.Enabled)
-                {
-                    await ExportAsAll(targetFramework, exportPath, solutionProjects).ConfigureAwait(false);
-                }
+            _logger.LogInformation("Exporting summary for {TargetFramework}…", targetFramework);
+
+            await ExportAsSummaryAsync(exportPath, solutionProjects, cancellationToken).ConfigureAwait(false);
+
+            // Prepare renderer folders up-front so both individual and all-projects output start clean,
+            // regardless of which scope(s) are enabled.
+            if (configuration.Solution.Individual.Enabled || configuration.Solution.All.Enabled)
+            {
+                PrepareRendererFolders(exportPath, renderers, configuration.Export.ClearContents);
+            }
+
+            if (configuration.Solution.Individual.Enabled)
+            {
+                _logger.LogInformation("Generating per-project diagrams for {TargetFramework}…", targetFramework);
+
+                await ExportAsIndividualAsync(configuration, targetFramework, exportPath, solutionProjects, renderers, cancellationToken).ConfigureAwait(false);
+            }
+
+            if (configuration.Solution.All.Enabled)
+            {
+                _logger.LogInformation("Generating all-projects diagram for {TargetFramework}…", targetFramework);
+
+                await ExportAsAllAsync(configuration, targetFramework, exportPath, solutionProjects, renderers, cancellationToken).ConfigureAwait(false);
             }
         }
 
-        private static void ClearFolder(string exportPath)
-        {
-            var files = FileSearch.GetFiles(exportPath, "*.*", DiskSearchOptions.None);
+        _logger.LogInformation("Diagram generation complete");
+    }
 
-            foreach (var file in files)
+    private static void ClearFolder(string exportPath)
+    {
+        var files = FileSearch.GetFiles(exportPath, "*.*", DiskSearchOptions.None);
+
+        foreach (var file in files)
+        {
+            file.Delete();
+        }
+    }
+
+    /// <summary>Creates each configured renderer's output folder and, when requested, empties it of existing files.</summary>
+    /// <param name="exportPath">The target-framework export path.</param>
+    /// <param name="renderers">The configured diagram renderers.</param>
+    /// <param name="clearContents">When <see langword="true"/>, existing files in each renderer folder are deleted first.</param>
+    private static void PrepareRendererFolders(string exportPath, IDiagramRenderer[] renderers, bool clearContents)
+    {
+        // Renderer folders are prepared up-front (before both individual and all-projects output) so that
+        // either scope starts from a clean folder — otherwise a run that switches scope could leave stale
+        // per-project files from a previous run behind.
+        foreach (var renderer in renderers)
+        {
+            var rendererExportPath = Path.Combine(exportPath, renderer.FileExtension);
+
+            Directory.CreateDirectory(rendererExportPath);
+
+            if (clearContents)
             {
-                file.Delete();
+                ClearFolder(rendererExportPath);
             }
         }
+    }
 
-        private async Task ExportAsIndividual(string targetFramework, string exportPath, IDictionary<string, SolutionProject> solutionProjects)
+    private async Task ExportAsIndividualAsync(DependencyGeneratorConfig configuration, string targetFramework,
+        string exportPath, IDictionary<string, SolutionProject> solutionProjects, IDiagramRenderer[] renderers,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var includeDependencies = configuration.Solution.Individual.IncludeDependencies;
+        var transitiveDepth = configuration.Solution.Individual.TransitiveDepth;
+
+        foreach (var renderer in renderers)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var rendererExportPath = Path.Combine(exportPath, renderer.FileExtension);
+
             foreach (var scopedProject in solutionProjects.Values)
             {
-                var d2Content = GenerateIndividualProjectD2Content(scopedProject, solutionProjects);
+                cancellationToken.ThrowIfCancellationRequested();
 
-                await CreateD2FileAndImages(targetFramework, exportPath, scopedProject.Name, d2Content).ConfigureAwait(false);
+                _logger.LogInformation("  Building {FileExtension} graph models for {ProjectName}", renderer.FileExtension, scopedProject.Name);
 
-                _logger.WriteLine();
-            }
-        }
-
-        private async Task ExportAsAll(string targetFramework, string exportPath, IDictionary<string, SolutionProject> solutionProjects)
-        {
-            var d2Content = GenerateAllProjectsD2Content(solutionProjects);
-
-            await CreateD2FileAndImages(targetFramework, exportPath, $"{_configuration.Diagram.GroupName}-All", d2Content).ConfigureAwait(false);
-
-            _logger.WriteLine();
-        }
-
-        private async Task CreateD2FileAndImages(string targetFramework, string exportPath, string projectScope, string d2Content)
-        {
-            var fileName = GetD2Filename(exportPath, GetDiagramAliasId(projectScope, false));
-
-            await CreateD2FileAsync(targetFramework, fileName, d2Content);
-
-            foreach (var format in _configuration.Export.ImageFormats)
-            {
-                await ExportD2ImageFileAsync(fileName, format);
-            }
-        }
-
-        private string GenerateIndividualProjectD2Content(SolutionProject solutionProject, IDictionary<string, SolutionProject> solutionProjects)
-        {
-            var sb = new StringBuilder();
-
-            sb.AppendLine($"direction: {_configuration.Diagram.Direction}".ToLowerInvariant());
-            sb.AppendLine();
-
-            sb.AppendLine($"{_configuration.Diagram.GroupNameAlias}: {_configuration.Diagram.GroupName}");
-
-            var packagesWithMultipleVersions = GetDeepOrderedDistinctPackageDependencies(solutionProject, solutionProjects, kvp => kvp.Count() > 1)
-                .ToDictionary(kvp => kvp.Key, kvp => GetDiagramPackageGroupId(kvp.Key));
-
-            var dependencySet = new HashSet<string>();
-
-            AppendProjectDependencies(solutionProject, packagesWithMultipleVersions, solutionProjects, dependencySet, _configuration.Projects.Individual.IncludeDependencies, _configuration.Projects.Individual.TransitiveDepth);
-
-            foreach (var dependency in dependencySet)
-            {
-                sb.AppendLine(dependency);
-            }
-
-            sb.AppendLine();
-
-            return sb.ToString();
-        }
-
-        private string GenerateAllProjectsD2Content(IDictionary<string, SolutionProject> solutionProjects)
-        {
-            var sb = new StringBuilder();
-
-            sb.AppendLine($"direction: {_configuration.Diagram.Direction}".ToLowerInvariant());
-            sb.AppendLine();
-
-            sb.AppendLine($"{_configuration.Diagram.GroupNameAlias}: {_configuration.Diagram.GroupName}");
-
-            var dependencySet = new HashSet<string>();
-
-            foreach (var solutionProject in solutionProjects)
-            {
-                var packagesWithMultipleVersions = GetDeepOrderedDistinctPackageDependencies(solutionProject.Value, solutionProjects, kvp => kvp.Count() > 1)
+                var packagesWithMultipleVersions = GetDeepOrderedDistinctPackageDependencies(scopedProject, solutionProjects, kvp => kvp.Count() > 1)
                     .ToDictionary(kvp => kvp.Key, kvp => GetDiagramPackageGroupId(kvp.Key));
 
-                AppendProjectDependencies(solutionProject.Value, packagesWithMultipleVersions, solutionProjects, dependencySet, _configuration.Projects.All.IncludeDependencies, _configuration.Projects.All.TransitiveDepth);
-            }
+                var model = BuildGraphModel([scopedProject], solutionProjects, includeDependencies, transitiveDepth, packagesWithMultipleVersions);
 
-            foreach (var dependency in dependencySet)
-            {
-                sb.AppendLine(dependency);
-            }
-
-            sb.AppendLine();
-
-            return sb.ToString();
-        }
-
-        private async Task ExportAsSummary(string exportPath, IDictionary<string, SolutionProject> solutionProjects)
-        {
-            var content = SummaryDependencyGenerator.CreateContent(solutionProjects);
-
-            var filename = Path.Combine(exportPath, SummaryDependencyGenerator.MarkdownFilename);
-
-            _logger
-                .Write("{forecolor:white}Exporting Summary: ")
-                .Write(ConsoleColor.Yellow, filename)
-                .Write("{forecolor:white}...");
-
-            await File.WriteAllTextAsync(filename, content);
-
-            _logger.WriteLine("{forecolor:green}Done");
-            _logger.WriteLine();
-        }
-
-        private void AppendProjectDependencies(SolutionProject solutionProject, IDictionary<string, string> packagesWithMultipleVersions,
-            IDictionary<string, SolutionProject> solutionProjects, HashSet<string> dependencySet, bool includeDependencies, int maxTransitiveDepth)
-        {
-            var projectName = solutionProject.Name;
-            var projectAlias = GetDiagramAliasId(projectName, true);
-
-            dependencySet.Add($"{projectAlias}: {projectName}");
-
-            if (includeDependencies)
-            {
-                AppendProjectFrameworkDependencies(solutionProject, dependencySet);
-
-                AppendProjectPackageDependencies(solutionProject, packagesWithMultipleVersions, dependencySet, maxTransitiveDepth);
-            }
-
-            AppendProjectProjectReferences(solutionProject, projectAlias, packagesWithMultipleVersions, solutionProjects, dependencySet, includeDependencies, maxTransitiveDepth);
-        }
-
-        private void AppendProjectDependenciesRecursively(ProjectReference projectReference, IDictionary<string, string> packagesWithMultipleVersions,
-            IDictionary<string, SolutionProject> solutionProjects, HashSet<string> dependencySet, bool includeDependencies, int maxTransitiveDepth)
-        {
-            var projectName = GetProjectName(projectReference);
-            var projectAlias = GetDiagramAliasId(projectName, true);
-
-            dependencySet.Add($"{projectAlias}: {projectName}");
-
-            if (includeDependencies)
-            {
-                // Add all packages dependencies (recursively) for the current project
-                AppendProjectPackageReferences(solutionProjects[projectName], projectAlias, packagesWithMultipleVersions, dependencySet, maxTransitiveDepth);
-            }
-
-            // Add all project dependencies (recursively) for the current project
-            AppendProjectProjectReferences(solutionProjects[projectName], projectAlias, packagesWithMultipleVersions, solutionProjects, dependencySet, includeDependencies, maxTransitiveDepth);
-        }
-
-        private void AppendProjectProjectReferences(SolutionProject solutionProject, string projectAlias, IDictionary<string, string> packagesWithMultipleVersions,
-            IDictionary<string, SolutionProject> solutionProjects, HashSet<string> dependencySet, bool includeDependencies, int maxTransitiveDepth)
-        {
-            foreach (var project in solutionProject.Dependencies.SelectMany(item => item.ProjectReferences))
-            {
-                AppendProjectDependenciesRecursively(project, packagesWithMultipleVersions, solutionProjects, dependencySet, includeDependencies, maxTransitiveDepth);
-
-                dependencySet.Add($"{GetProjectAliasId(project)} <- {projectAlias}");
+                await renderer
+                    .CreateDiagramArtifactsAsync(targetFramework, rendererExportPath, scopedProject.Name, model, configuration.Export.ImageFormats, cancellationToken)
+                    .ConfigureAwait(false);
             }
         }
+    }
 
-        private void AppendProjectFrameworkDependencies(SolutionProject solutionProject, HashSet<string> dependencySet)
+    private static async Task ExportAsAllAsync(DependencyGeneratorConfig configuration, string targetFramework,
+        string exportPath, IDictionary<string, SolutionProject> solutionProjects, IDiagramRenderer[] renderers,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var includeDependencies = configuration.Solution.All.IncludeDependencies;
+        var transitiveDepth = configuration.Solution.All.TransitiveDepth;
+
+        // Calculated from assets-resolved package graphs across the selected project scope.
+        // This flags cross-project version divergence (same package id, different resolved versions).
+        var packagesWithMultipleVersions = solutionProjects.Values
+            .SelectMany(project => GetAllPackageDependencies(project.PackageReferences))
+            .Select(package => new PackageVersion(package.Name, package.Version))
+            .Distinct()
+            .GroupBy(package => package.Name)
+            .Where(group => group.Count() > 1)
+            .ToDictionary(group => group.Key, group => GetDiagramPackageGroupId(group.Key));
+
+        var model = BuildGraphModel(solutionProjects.Values, solutionProjects, includeDependencies, transitiveDepth, packagesWithMultipleVersions);
+
+        foreach (var renderer in renderers)
         {
-            var projectName = solutionProject.Name;
-            var projectAlias = GetDiagramAliasId(projectName, true);
+            var projectScope = $"{configuration.Diagram.GroupName}-All";
+            var rendererExportPath = Path.Combine(exportPath, renderer.FileExtension);
 
-            foreach (var frameworkReference in solutionProject.Dependencies.SelectMany(item => item.FrameworkReferences))
+            await renderer
+                .CreateDiagramArtifactsAsync(targetFramework, rendererExportPath, projectScope, model, configuration.Export.ImageFormats, cancellationToken)
+                .ConfigureAwait(false);
+        }
+    }
+
+    private IDiagramRenderer[] GetRenderers(DependencyGeneratorConfig configuration)
+    {
+        var diagramOptions = configuration.Diagram;
+
+        return [.. diagramOptions.Formats
+            .Distinct()
+            .Select<DiagramFormat, IDiagramRenderer>(diagramFormat => diagramFormat switch
             {
-                var frameworkAlias = GetDiagramFrameworkAliasId(frameworkReference);
+                DiagramFormat.Mermaid => new MermaidDiagramRenderer(diagramOptions, _toolPathResolver, _loggerFactory.CreateLogger<MermaidDiagramRenderer>()),
+                DiagramFormat.D2 => new D2DiagramRenderer(diagramOptions, _toolPathResolver, _loggerFactory.CreateLogger<D2DiagramRenderer>()),
+                _ => throw new ArgumentOutOfRangeException(nameof(diagramFormat))
+            })];
+    }
 
-                dependencySet.Add($"{frameworkAlias} <- {projectAlias}");
+    private static DependencyGraphModel BuildGraphModel(IEnumerable<SolutionProject> rootProjects, IDictionary<string, SolutionProject> allProjects,
+        bool includeDependencies, int maxTransitiveDepth, IReadOnlyDictionary<string, string> packagesWithMultipleVersions)
+    {
+        var seen = new HashSet<string>();
+        var reachable = new List<SolutionProject>();
 
-                AddFrameworkStyleFillEntry(dependencySet, frameworkAlias);
-            }
+        foreach (var root in rootProjects)
+        {
+            CollectReachableProjects(root, allProjects, seen, reachable);
         }
 
-        private void AppendProjectPackageDependencies(SolutionProject solutionProject, IDictionary<string, string> packagesWithMultipleVersions,
-            HashSet<string> dependencySet, int maxTransitiveDepth)
-        {
-            var projectName = solutionProject.Name;
-            var projectAlias = GetDiagramAliasId(projectName, true);
+        var projectNodes = reachable
+            .Select(project => BuildProjectNode(project, includeDependencies, maxTransitiveDepth))
+            .ToArray();
 
-            // Add all packages dependencies (recursively) for the current project
-            AppendProjectPackageReferences(solutionProject, projectAlias, packagesWithMultipleVersions, dependencySet, maxTransitiveDepth);
+        return new DependencyGraphModel
+        {
+            Projects = projectNodes,
+            PackagesWithMultipleVersions = packagesWithMultipleVersions
+        };
+    }
+
+    private static void CollectReachableProjects(SolutionProject project, IDictionary<string, SolutionProject> allProjects,
+        HashSet<string> seen, List<SolutionProject> result)
+    {
+        if (!seen.Add(project.Name))
+        {
+            return;
         }
 
-        private void AppendProjectPackageReferences(SolutionProject solutionProject, string projectAlias, IDictionary<string, string> packagesWithMultipleVersions,
-            HashSet<string> dependencySet, int maxTransitiveDepth)
+        result.Add(project);
+
+        var refPaths = project.ProjectReferences
+            .Select(projectReference => projectReference.Path);
+
+        foreach (var refPath in refPaths)
         {
-            foreach (var package in solutionProject.Dependencies.SelectMany(item => item.PackageReferences))
+            var refName = Path.GetFileNameWithoutExtension(refPath);
+
+            if (allProjects.TryGetValue(refName, out var referenced))
             {
-                AppendPackageReferenceWithDependencies(package, projectAlias, packagesWithMultipleVersions, dependencySet, maxTransitiveDepth);
+                CollectReachableProjects(referenced, allProjects, seen, result);
             }
         }
+    }
 
-        private bool AppendPackageDependenciesRecursively(PackageReference packageReference, IDictionary<string, string> packagesWithMultipleVersions,
-            HashSet<string> dependencySet, int maxTransitiveDepth)
+    private static ProjectNode BuildProjectNode(SolutionProject project, bool includeDependencies, int maxTransitiveDepth)
+    {
+        var projectRefs = project.ProjectReferences
+            .Select(projectReference => projectReference.Path)
+            .ToArray();
+
+        if (!includeDependencies)
         {
-            if (packageReference.Depth > maxTransitiveDepth)
+            return new ProjectNode
             {
-                return false;
-            }
-
-            var packageName = packageReference.Name;
-            var packageAlias = GetDiagramPackageAliasId(packageReference, packagesWithMultipleVersions, dependencySet);
-
-            dependencySet.Add($"{packageAlias}: {packageName}\\nv{packageReference.Version}");
-
-            AddOrUpdatePackageReferenceStyle(packageReference, packageAlias, dependencySet);
-
-            foreach (var package in packageReference.TransitiveReferences)
-            {
-                AppendPackageReferenceWithDependencies(package, packageAlias, packagesWithMultipleVersions, dependencySet, maxTransitiveDepth);
-            }
-
-            return true;
+                Name = project.Name,
+                ProjectReferences = projectRefs
+            };
         }
 
-        private void AppendPackageReferenceWithDependencies(PackageReference package, string parentAlias, IDictionary<string, string> packagesWithMultipleVersions,
-            HashSet<string> dependencySet, int maxTransitiveDepth)
+        var frameworks = project.FrameworkReferences
+            .Select(framework => new FrameworkNode { Name = framework.Name })
+            .ToArray();
+
+        var packageList = new List<PackageNode>();
+        var dependencies = project.PackageReferences;
+
+        foreach (var dependency in dependencies)
         {
-            var added = AppendPackageDependenciesRecursively(package, packagesWithMultipleVersions, dependencySet, maxTransitiveDepth);
+            var node = BuildPackageNode(dependency, maxTransitiveDepth);
 
-            if (added)
+            if (node is not null)
             {
-                var transitivePackageAlias = GetDiagramPackageAliasId(package, packagesWithMultipleVersions, dependencySet);
-
-                dependencySet.Add($"{transitivePackageAlias} <- {parentAlias}");
+                packageList.Add(node);
             }
         }
 
-        private void AddOrUpdatePackageReferenceStyle(PackageReference packageReference, string packageAlias, HashSet<string> dependencySet)
+        return new ProjectNode
         {
-            var transitiveStyleFillEntry = GetTransitiveStyleFillEntry(packageAlias);
-            var packageStyleFillEntry = GetPackageStyleFillEntry(packageAlias);
+            Name = project.Name,
+            FrameworkReferences = frameworks,
+            PackageReferences = [.. packageList],
+            ProjectReferences = projectRefs
+        };
+    }
 
-            // The diagram should style package reference over transient reference
-            if (packageReference.IsTransitive)
+    private static PackageNode? BuildPackageNode(PackageReference packageReference, int maxTransitiveDepth)
+    {
+        if (packageReference.Depth > maxTransitiveDepth)
+        {
+            return null;
+        }
+
+        var children = new List<PackageNode>();
+
+        foreach (var child in packageReference.TransitiveReferences)
+        {
+            var childNode = BuildPackageNode(child, maxTransitiveDepth);
+
+            if (childNode is not null)
             {
-                if (!dependencySet.Contains(packageStyleFillEntry))
-                {
-                    dependencySet.Add(transitiveStyleFillEntry);
-                    dependencySet.Add($"{packageAlias}.style.opacity: {_configuration.Diagram.TransitiveStyle.Opacity}");
-                }
+                children.Add(childNode);
+            }
+        }
+
+        return new PackageNode
+        {
+            Name = packageReference.Name,
+            Version = packageReference.Version,
+            IsTransitive = packageReference.IsTransitive,
+            Depth = packageReference.Depth,
+            TransitiveReferences = [.. children]
+        };
+    }
+
+    private async Task ExportAsSummaryAsync(string exportPath, IDictionary<string, SolutionProject> solutionProjects, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var content = SummaryDependencyGenerator.CreateContent(solutionProjects);
+
+        var filename = Path.Combine(exportPath, SummaryDependencyGenerator.MarkdownFilename);
+
+        _logger.LogDebug("Exporting Summary: \"{Filename}\"", filename);
+
+        await File
+            .WriteAllTextAsync(filename, content, cancellationToken)
+            .ConfigureAwait(false);
+
+        _logger.LogDebug("Export complete");
+    }
+
+    private static string GetProjectName(ProjectReference projectReference)
+    {
+        return Path.GetFileNameWithoutExtension(projectReference.Path);
+    }
+
+    private static string GetDiagramPackageGroupId(string packageName)
+    {
+        return packageName.Replace(".", "-").ToLowerInvariant();
+    }
+
+    private void LogDependencies(SolutionProject solutionProject)
+    {
+        LogProjectDependencies(solutionProject);
+        LogFrameworkDependencies(solutionProject);
+        LogPackageDependencies(solutionProject);
+    }
+
+    private void LogProjectDependencies(SolutionProject solutionProject)
+    {
+        var sortedProjectDependenies = solutionProject.ProjectReferences
+            .Select(item => item.Path)
+            .Order();
+
+        foreach (var dependency in sortedProjectDependenies)
+        {
+            _logger.LogInformation("{ProjectName} depends on {DependencyName}",
+                solutionProject.Name, Path.GetFileNameWithoutExtension(dependency));
+        }
+    }
+
+    private void LogFrameworkDependencies(SolutionProject solutionProject)
+    {
+        var sortedFrameworkReferences = solutionProject.FrameworkReferences
+            .Select(item => item.Name)
+            .Order();
+
+        foreach (var dependency in sortedFrameworkReferences)
+        {
+            _logger.LogInformation("{ProjectName} depends on {DependencyName}",
+                solutionProject.Name, Path.GetFileNameWithoutExtension(dependency));
+        }
+    }
+
+    private static IEnumerable<IGrouping<string, PackageVersion>> GetOrderedDistinctPackageDependencies(SolutionProject solutionProject,
+        Func<IGrouping<string, PackageVersion>, bool>? predicate = null)
+    {
+        var results = GetAllPackageDependencies(solutionProject.PackageReferences)
+            .Select(item => new PackageVersion(item.Name, item.Version))
+            .Distinct()                                     // Multiple packages may depend on another common package
+            .OrderBy(item => item.Name, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(item => item.Version, StringComparer.OrdinalIgnoreCase)
+            .GroupBy(item => item.Name);
+
+        return predicate is null
+            ? results
+            : results.Where(predicate);
+    }
+
+    // For a given project get an ordered, distinct, list of all package references, including the package references for all referenced projects.
+    private static IEnumerable<IGrouping<string, PackageVersion>> GetDeepOrderedDistinctPackageDependencies(SolutionProject solutionProject,
+        IDictionary<string, SolutionProject> solutionProjects, Func<IGrouping<string, PackageVersion>, bool>? predicate = null)
+    {
+        var allPackageDependencies = new List<PackageVersion>();
+
+        GetDeepProjectPackageDependenciesRecursively(solutionProject, solutionProjects, allPackageDependencies);
+
+        var results = allPackageDependencies
+            .Distinct()                                     // Multiple packages may depend on another common package
+            .OrderBy(item => item.Name, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(item => item.Version, StringComparer.OrdinalIgnoreCase)
+            .GroupBy(item => item.Name);
+
+        return predicate is null
+            ? results
+            : results.Where(predicate);
+    }
+
+    // For a given project find all package references, including the package references for all referenced projects.
+    private static void GetDeepProjectPackageDependenciesRecursively(SolutionProject solutionProject, IDictionary<string, SolutionProject> solutionProjects,
+        List<PackageVersion> allPackageDependencies)
+    {
+        var packageDependencies = GetAllPackageDependencies(solutionProject.PackageReferences)
+            .Select(item => new PackageVersion(item.Name, item.Version))
+            .Distinct();
+
+        allPackageDependencies.AddRange(packageDependencies);
+
+        var projectReferences = solutionProject.ProjectReferences
+            .Select(GetProjectName)
+            .Select(projectName => solutionProjects[projectName]);
+
+        foreach (var projectReference in projectReferences)
+        {
+            GetDeepProjectPackageDependenciesRecursively(projectReference, solutionProjects, allPackageDependencies);
+        }
+    }
+
+    private void LogPackageDependencies(SolutionProject solutionProject)
+    {
+        var sortedPackageDependencies = GetOrderedDistinctPackageDependencies(solutionProject);
+
+        foreach (var dependency in sortedPackageDependencies)
+        {
+            var dependencyName = dependency.Key;
+            var dependencyVersions = dependency.ToList();
+
+            if (dependencyVersions.Count == 1)
+            {
+                var dependencyVersion = dependencyVersions.Single();
+
+                _logger.LogInformation("{ProjectName} depends on {PackageName} v{Version}",
+                    solutionProject.Name, dependencyName, dependencyVersion.Version);
             }
             else
             {
-#pragma warning disable CA1868 // Unnecessary call to 'Contains(item)'
-                if (dependencySet.Contains(transitiveStyleFillEntry))
-                {
-                    dependencySet.Remove(transitiveStyleFillEntry);
-                    dependencySet.Remove($"{packageAlias}.style.opacity: {_configuration.Diagram.TransitiveStyle.Opacity}");
-                }
-#pragma warning restore CA1868 // Unnecessary call to 'Contains(item)'
+                var versions = dependencyVersions.Select(item => $"v{item.Version}");
 
-                dependencySet.Add(packageStyleFillEntry);
-                dependencySet.Add($"{packageAlias}.style.opacity: {_configuration.Diagram.PackageStyle.Opacity}");
+                _logger.LogError("{ProjectName} depends on multiple versions of {PackageName}: {Versions}",
+                    solutionProject.Name, dependencyName, string.Join(", ", versions));
             }
         }
+    }
 
-        private void AddFrameworkStyleFillEntry(HashSet<string> dependencySet, string frameworkAlias)
+    private static IEnumerable<PackageReference> GetAllPackageDependencies(IEnumerable<PackageReference> packageReferences)
+    {
+        foreach (var packageReference in packageReferences)
         {
-            dependencySet.Add($"{frameworkAlias}.style.fill: \"{_configuration.Diagram.FrameworkStyle.Fill}\"");
-            dependencySet.Add($"{frameworkAlias}.style.opacity: {_configuration.Diagram.FrameworkStyle.Opacity}");
-        }
+            yield return packageReference;
 
-        private string GetPackageStyleFillEntry(string packageAlias)
-        {
-            return $"{packageAlias}.style.fill: \"{_configuration.Diagram.PackageStyle.Fill}\"";
-        }
-
-        private string GetTransitiveStyleFillEntry(string transitiveAlias)
-        {
-            return $"{transitiveAlias}.style.fill: \"{_configuration.Diagram.TransitiveStyle.Fill}\"";
-        }
-
-        private static string GetProjectName(ProjectReference projectReference)
-        {
-            return Path.GetFileNameWithoutExtension(projectReference.Path);
-        }
-
-        private string GetProjectAliasId(ProjectReference projectReference)
-        {
-            return GetDiagramAliasId(GetProjectName(projectReference), true);
-        }
-
-        private string GetDiagramAliasId(string alias, bool includeProjectGroupPrefix)
-        {
-            alias = alias.Replace(".", "-").ToLowerInvariant();
-
-            return includeProjectGroupPrefix
-                ? $"{_configuration.Diagram.GroupNameAlias}.{alias}"
-                : alias;
-        }
-
-        private static string GetDiagramPackageGroupId(string packageName)
-        {
-            return packageName.Replace(".", "-").ToLowerInvariant();
-        }
-
-        private static string GetDiagramFrameworkAliasId(FrameworkReference frameworkReference)
-        {
-            return frameworkReference.Name.Replace(".", "-").ToLowerInvariant();
-        }
-
-        private static string GetDiagramPackageAliasId(PackageReference packageReference, IDictionary<string, string> packagesWithMultipleVersions,
-            HashSet<string> dependencySet)
-        {
-            var packageAlias = $"{packageReference.Name}_{packageReference.Version}".Replace(".", "-").ToLowerInvariant();
-
-            if (packagesWithMultipleVersions.TryGetValue(packageReference.Name, out var diagramPackageName))
+            foreach (var transitiveReference in GetAllPackageDependencies(packageReference.TransitiveReferences))
             {
-                var groupName = $"{diagramPackageName}-group";
-
-                packageAlias = $"{groupName}.{packageAlias}";
-
-                var diagramGroupItem = $"{groupName}: \"\"";
-
-                // Ignored if already in the set
-                dependencySet.Add(diagramGroupItem);
+                yield return transitiveReference;
             }
+        }
+    }
 
-            return packageAlias;
+    private async Task AssertToolAvailabilityAsync(DependencyGeneratorConfig configuration, CancellationToken cancellationToken)
+    {
+        // External tools are only required for image export. Generating the diagram
+        // text files is fully in-process, so text-only generation must work without d2/mmdc.
+        if (configuration.Export.ImageFormats.Length == 0)
+        {
+            return;
         }
 
-        private string GetD2Filename(string exportPath, string projectScope)
-        {
-            var fileName = projectScope.IsNullOrEmpty()
-                ? $"{_configuration.Diagram.GroupName.ToLowerInvariant()}-all.d2"
-                : $"{projectScope}.d2";
+        var formats = configuration.Diagram.Formats;
 
-            return Path.Combine(exportPath, fileName);
+        if (formats.Length == 0)
+        {
+            return;
         }
 
-        private async Task CreateD2FileAsync(string targetFramework, string fileName, string content)
-        {
-            // Showing how to mix AddFormatted() with AddFragment() where the latter
-            // is a simple alternative to using string interpolation.
-            _logger.Write($"{{forecolor:white}}Creating {{forecolor:yellow}}'{targetFramework}'{{forecolor:white}} diagram: ")
-                   .Write(ConsoleColor.Yellow, Path.GetFileName(fileName))
-                   .Write("{forecolor:white}...");
-
-            File.WriteAllText(fileName, content);
-
-            await ProcessBuilder
-                .For("d2.exe")
-                .WithArguments("fmt", fileName)
-                .BuildProcessExecutor()
-                .ExecuteAsync();
-
-            // An example using formatted text
-            _logger.WriteLine("{forecolor:green}Done");
-        }
-
-        private async Task ExportD2ImageFileAsync(string d2FileName, DiagramImageFormat format)
-        {
-            var imageFileName = Path.ChangeExtension(d2FileName, $"{format}").ToLowerInvariant();
-
-            _logger
-                .Write(ConsoleColor.White, "Creating image: ")
-                .Write(ConsoleColor.Yellow, Path.GetFileName(imageFileName))
-                .WriteLine(ConsoleColor.White, "...");
-
-            // D2 sends all output to stderr so we need to check for "err:" to differentiate it from "success" / "info" messages.
-            var d2Process = ProcessBuilder
-                .For("d2.exe")
-                .WithNoWindow()
-                .WithArguments("-l", "elk", d2FileName, imageFileName)
-                .WithErrorOutputHandler((sender, eventArgs) =>
-                {
-                    if (eventArgs.Data is string message)
-                    {
-                        var consoleColor = message.StartsWith("err:", StringComparison.InvariantCultureIgnoreCase)
-                            ? ConsoleColor.Red
-                            : ConsoleColor.Green;
-
-                        _logger.WriteLine(consoleColor, $"  {message}");
-                    }
-                })
-                .BuildProcessExecutor();
-
-            _ = await d2Process.ExecuteAsync();
-
-            _logger.WriteLine(ConsoleColor.Green, "  Done");
-        }
-
-        private void LogDependencies(SolutionProject solutionProject)
-        {
-            LogProjectDependencies(solutionProject);
-            LogFrameworkDependencies(solutionProject);
-            LogPackageDependencies(solutionProject);
-        }
-
-        private void LogProjectDependencies(SolutionProject solutionProject)
-        {
-            var sortedProjectDependenies = solutionProject.Dependencies
-                .SelectMany(item => item.ProjectReferences)
-                .Select(item => item.Path)
-                .Order();
-
-            foreach (var dependency in sortedProjectDependenies)
+        var tasks = formats
+            .Distinct()
+            .Select(async format =>
             {
-                _logger
-                    .Write(ConsoleColor.Yellow, solutionProject.Name)
-                    .Write(ConsoleColor.White, " depends on ")
-                    .WriteLine(ConsoleColor.Yellow, Path.GetFileNameWithoutExtension(dependency));
-            }
+                return await _toolDetection.CheckToolAvailabilityAsync(
+                    _toolPathResolver.GetToolName(format), cancellationToken: cancellationToken).ConfigureAwait(false);
+            });
+
+        var statuses = await Task.WhenAll(tasks).ConfigureAwait(false);
+
+        if (statuses.All(status => status.IsAvailable))
+        {
+            return;
         }
 
-        private void LogFrameworkDependencies(SolutionProject solutionProject)
-        {
-            var sortedFrameworkReferences = solutionProject.Dependencies
-                .SelectMany(item => item.FrameworkReferences)
-                .Select(item => item.Name)
-                .Order();
+        var unavailable = statuses
+            .Where(status => !status.IsAvailable)
+            .Select(status => status.ToolName);
 
-            foreach (var dependency in sortedFrameworkReferences)
-            {
-                _logger
-                    .Write(ConsoleColor.Yellow, solutionProject.Name)
-                    .Write(ConsoleColor.White, " depends on ")
-                    .WriteLine(ConsoleColor.Yellow, Path.GetFileNameWithoutExtension(dependency));
-            }
+        var message = $"Required external tools are not available: {string.Join(", ", unavailable)}";
+
+        throw new ToolNotFoundException(message);
+    }
+
+    private async Task LogProjectDiscoveryAsync(string solutionPath, string[] regexToInclude, string[] regexToExclude,
+        CancellationToken cancellationToken)
+    {
+        var result = await _projectDiscovery
+            .DiscoverProjectsAsync(solutionPath, regexToInclude, regexToExclude, cancellationToken)
+            .ConfigureAwait(false);
+
+        _logger.LogInformation("Projects in solution: {ProjectCount}", result.AllProjectPaths.Length);
+
+        LogIncludedProjects(result.IncludedProjectPaths);
+
+        LogExcludedProjects(result.ExcludedProjectPaths);
+
+        LogImplicitlyExcludedProjects(result.ImplicitlyExcludedProjectPaths);
+    }
+
+    private void LogIncludedProjects(string[] includedPaths)
+    {
+        var ordered = includedPaths
+            .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        _logger.LogInformation("  Included (will be processed): {Count} project(s)", ordered.Length);
+
+        if (ordered.Length == 0)
+        {
+            return;
         }
 
-        private static IEnumerable<IGrouping<string, (string Name, string Version)>> GetOrderedDistinctPackageDependencies(SolutionProject solutionProject,
-            Func<IGrouping<string, (string Name, string Version)>, bool> predicate = default)
+        foreach (var path in ordered)
         {
-            var results = solutionProject.Dependencies
-                .SelectMany(item => GetAllPackageDependencies(item.PackageReferences))
-                .Select(item => (item.Name, item.Version))
-                .Distinct()                                     // Multiple packages may depend on another common package
-                .Order()
-                .GroupBy(item => item.Name);
+            _logger.LogInformation("    - {ProjectName}", Path.GetFileName(path));
+        }
+    }
 
-            return predicate is null
-                ? results
-                : results.Where(predicate);
+    private void LogExcludedProjects(string[] excludedPaths)
+    {
+        var ordered = excludedPaths
+            .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        _logger.LogInformation("  Excluded (matched exclude regex): {Count} project(s)", ordered.Length);
+
+        if (ordered.Length == 0)
+        {
+            return;
         }
 
-        // For a given project get an ordered, distinct, list of all package references, including the package references for all referenced projects.
-        private static IEnumerable<IGrouping<string, (string Name, string Version)>> GetDeepOrderedDistinctPackageDependencies(SolutionProject solutionProject,
-            IDictionary<string, SolutionProject> solutionProjects, Func<IGrouping<string, (string Name, string Version)>, bool> predicate = default)
+        foreach (var path in ordered)
         {
-            var allPackageDependencies = new List<(string Name, string Version)>();
+            _logger.LogInformation("    - {ProjectName}", Path.GetFileName(path));
+        }
+    }
 
-            GetDeepProjectPackageDependenciesRecursively(solutionProject, solutionProjects, allPackageDependencies);
+    private void LogImplicitlyExcludedProjects(string[] implicitlyExcludedPaths)
+    {
+        var ordered = implicitlyExcludedPaths
+            .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
 
-            var results = allPackageDependencies
-                .Distinct()                                     // Multiple packages may depend on another common package
-                .Order()
-                .GroupBy(item => item.Name);
+        _logger.LogInformation("  Implicitly excluded (did not match include regex): {Count} project(s)", ordered.Length);
 
-            return predicate is null
-                ? results
-                : results.Where(predicate);
+        if (ordered.Length == 0)
+        {
+            return;
         }
 
-        // For a given project find all package references, including the package references for all referenced projects.
-        private static void GetDeepProjectPackageDependenciesRecursively(SolutionProject solutionProject, IDictionary<string, SolutionProject> solutionProjects,
-            List<(string Name, string Version)> allPackageDependencies)
+        foreach (var path in ordered)
         {
-            var packageDependencies = solutionProject.Dependencies
-                .SelectMany(item => GetAllPackageDependencies(item.PackageReferences))
-                .Select(item => (item.Name, item.Version))
-                .Distinct();
-
-            allPackageDependencies.AddRange(packageDependencies);
-
-            var projectReferences = solutionProject.Dependencies
-                .SelectMany(item => item.ProjectReferences)
-                .Select(GetProjectName)
-                .Select(projectName => solutionProjects[projectName]);
-
-            foreach (var projectReference in projectReferences)
-            {
-                GetDeepProjectPackageDependenciesRecursively(projectReference, solutionProjects, allPackageDependencies);
-            }
-        }
-
-        private void LogPackageDependencies(SolutionProject solutionProject)
-        {
-            var sortedPackageDependencies = GetOrderedDistinctPackageDependencies(solutionProject);
-
-            foreach (var dependency in sortedPackageDependencies)
-            {
-                var dependencyName = dependency.Key;
-                var dependencyVersions = dependency.ToList();
-
-                if (dependencyVersions.Count == 1)
-                {
-                    var dependencyVersion = dependencyVersions.Single();
-
-                    _logger
-                        .Write(ConsoleColor.Yellow, solutionProject.Name)
-                        .Write(ConsoleColor.White, " depends on ")
-                        .WriteLine(ConsoleColor.Yellow, $"{dependencyName} v{dependencyVersion.Version}");
-                }
-                else
-                {
-                    var versions = dependencyVersions.Select(item => $"v{item.Version}");
-
-                    _logger
-                        .WriteLine(ConsoleColor.Red, $"{solutionProject.Name} depends on multiple versions of {dependencyName} {string.Join(", ", versions)}");
-                }
-            }
-        }
-
-        private static IEnumerable<PackageReference> GetAllPackageDependencies(IEnumerable<PackageReference> packageReferences)
-        {
-            foreach (var packageReference in packageReferences)
-            {
-                yield return packageReference;
-
-                foreach (var transitiveReference in GetAllPackageDependencies(packageReference.TransitiveReferences))
-                {
-                    yield return transitiveReference;
-                }
-            }
-        }
-
-        private void AssertConfiguration()
-        {
-            var validator = new DependencyGeneratorConfigValidator();
-            validator.ValidateAndThrow(_configuration);
+            _logger.LogInformation("    - {ProjectName}", Path.GetFileName(path));
         }
     }
 }

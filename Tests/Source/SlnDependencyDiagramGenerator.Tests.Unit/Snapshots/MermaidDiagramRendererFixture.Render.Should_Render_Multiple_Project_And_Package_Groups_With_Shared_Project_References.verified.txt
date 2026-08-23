@@ -1,0 +1,26 @@
+﻿flowchart LR
+  subgraph test["All Projects"]
+    direction LR
+    test_appconsole["AppConsole"]
+    test_libcore["LibCore"]
+  end
+  subgraph newtonsoft-json-group["Newtonsoft.Json"]
+      newtonsoft-json-group_newtonsoft-json_13-0-3["Newtonsoft.Json<br>v13.0.3"]
+      newtonsoft-json-group_newtonsoft-json_12-0-3["Newtonsoft.Json<br>v12.0.3"]
+    end
+  subgraph serilog-group["Serilog"]
+      serilog-group_serilog_3-1-1["Serilog<br>v3.1.1"]
+      serilog-group_serilog_2-12-0["Serilog<br>v2.12.0"]
+    end
+  test_appconsole --> newtonsoft-json-group_newtonsoft-json_13-0-3
+  newtonsoft-json-group_newtonsoft-json_13-0-3 --> newtonsoft-json-group_newtonsoft-json_12-0-3
+  test_appconsole --> test_libcore
+  test_libcore --> serilog-group_serilog_3-1-1
+  serilog-group_serilog_3-1-1 --> serilog-group_serilog_2-12-0
+  style test fill:#DDEEFF,stroke:#DDEEFF,stroke-width:1px,opacity:0.75
+  style newtonsoft-json-group fill:#DDEEFF,stroke:#DDEEFF,stroke-width:1px,opacity:0.75
+  style serilog-group fill:#DDEEFF,stroke:#DDEEFF,stroke-width:1px,opacity:0.75
+  style newtonsoft-json-group_newtonsoft-json_13-0-3 fill:#405060,opacity:0.8
+  style newtonsoft-json-group_newtonsoft-json_12-0-3 fill:#708090,opacity:0.8
+  style serilog-group_serilog_3-1-1 fill:#405060,opacity:0.8
+  style serilog-group_serilog_2-12-0 fill:#708090,opacity:0.8

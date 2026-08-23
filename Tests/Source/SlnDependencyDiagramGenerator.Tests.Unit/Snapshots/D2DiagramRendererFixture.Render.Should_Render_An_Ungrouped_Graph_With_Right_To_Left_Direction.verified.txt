@@ -1,0 +1,16 @@
+﻿direction: right
+
+appconsole: AppConsole
+microsoft-extensions-logging: Microsoft.Extensions.Logging
+newtonsoft-json_13-0-3: Newtonsoft.Json\nv13.0.3
+newtonsoft-json_12-0-3: Newtonsoft.Json\nv12.0.3
+microsoft-extensions-logging <- appconsole
+newtonsoft-json_13-0-3 <- appconsole
+newtonsoft-json_12-0-3 <- newtonsoft-json_13-0-3
+microsoft-extensions-logging.style.fill: "#010203"
+microsoft-extensions-logging.style.opacity: 0.9
+newtonsoft-json_13-0-3.style.fill: "#040506"
+newtonsoft-json_13-0-3.style.opacity: 0.7
+newtonsoft-json_12-0-3.style.fill: "#070809"
+newtonsoft-json_12-0-3.style.opacity: 0.5
+

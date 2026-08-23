@@ -1,0 +1,100 @@
+using AllOverIt.ReactiveUI.Factories;
+using MaterialDesignThemes.Wpf;
+using ReactiveUI;
+
+namespace SlnDependencyStudio.Wpf.ViewModels;
+
+/// <summary>Abstract base class for navigation items displayed in the left sidebar.</summary>
+public abstract class NavigationItemViewModel : ReactiveObject
+{
+    private string _displayName = string.Empty;
+    private string _statusToolTip = string.Empty;
+    private PackIconKind _iconKind;
+    private bool _hasValidationError;
+    private bool _hasUnsavedChanges;
+
+    /// <summary>The display label shown in the nav (e.g. "Project", "Sources").</summary>
+    public string DisplayName
+    {
+        get => _displayName;
+        set => this.RaiseAndSetIfChanged(ref _displayName, value);
+    }
+
+    /// <summary>The Material Design icon kind for this nav item's icon.</summary>
+    public PackIconKind IconKind
+    {
+        get => _iconKind;
+        set => this.RaiseAndSetIfChanged(ref _iconKind, value);
+    }
+
+    /// <summary>Whether the page associated with this nav item has validation errors.
+    /// Controls the warning dot indicator in the nav. Supersedes the dirty indicator
+    /// when both are present.</summary>
+    public bool HasValidationError
+    {
+        get => _hasValidationError;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _hasValidationError, value);
+            UpdateStatusToolTip();
+        }
+    }
+
+    /// <summary>Whether the page associated with this nav item has unsaved changes.
+    /// Controls the dirty indicator in the nav.</summary>
+    public bool HasUnsavedChanges
+    {
+        get => _hasUnsavedChanges;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _hasUnsavedChanges, value);
+            UpdateStatusToolTip();
+        }
+    }
+
+    /// <summary>Tooltip describing the combined status of this nav item (unsaved changes
+    /// and/or validation errors). Empty when the item has no status to report.</summary>
+    public string StatusToolTip
+    {
+        get => _statusToolTip;
+        private set => this.RaiseAndSetIfChanged(ref _statusToolTip, value);
+    }
+
+    /// <summary>Recomputes <see cref="StatusToolTip"/> from the current validation and
+    /// dirty state so the dot's tooltip always describes the combined condition.</summary>
+    private void UpdateStatusToolTip()
+    {
+        StatusToolTip = (HasValidationError, HasUnsavedChanges) switch
+        {
+            (true, true) => "This section has validation errors and unsaved changes",
+            (true, false) => "This section has validation errors",
+            (false, true) => "This section has unsaved changes",
+            _ => string.Empty
+        };
+    }
+
+    /// <summary>The CLR <see cref="Type"/> of the page view model associated with this nav item.
+    /// Used to resolve the correct view via <see cref="IViewFactory"/>.</summary>
+    public abstract Type ViewModelType { get; }
+
+    /// <summary>Creates the view for this nav item's page via the view factory.</summary>
+    /// <param name="viewFactory">The view factory used to create view/view-model pairs.</param>
+    /// <returns>The created view, with its <c>ViewModel</c> populated.</returns>
+    public abstract IViewFor CreateView(IViewFactory viewFactory);
+}
+
+/// <summary>Generic navigation item for a specific page view model type.
+/// <typeparamref name="TViewModel"/> must be a reference type registered with
+/// <see cref="IViewFactory"/>.</summary>
+/// <typeparam name="TViewModel">The page view model type.</typeparam>
+public sealed class NavigationItemViewModel<TViewModel> : NavigationItemViewModel where TViewModel : class
+{
+    /// <inheritdoc />
+    public override Type ViewModelType => typeof(TViewModel);
+
+    /// <inheritdoc />
+    public override IViewFor CreateView(IViewFactory viewFactory)
+    {
+        return viewFactory.CreateViewFor<TViewModel>();
+    }
+}

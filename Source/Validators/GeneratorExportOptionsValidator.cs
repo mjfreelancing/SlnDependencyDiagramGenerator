@@ -1,31 +1,26 @@
-﻿using AllOverIt.Extensions;
-using AllOverIt.Validation;
+﻿using AllOverIt.Validation;
 using AllOverIt.Validation.Extensions;
 using FluentValidation;
 using SlnDependencyDiagramGenerator.Config;
-using System.IO;
 
-namespace SlnDependencyDiagramGenerator.Validators
+namespace SlnDependencyDiagramGenerator.Validators;
+
+/// <summary>Validates <see cref="GeneratorExportOptions"/>.</summary>
+internal sealed class GeneratorExportOptionsValidator : ValidatorBase<GeneratorExportOptions>
 {
-    internal sealed class GeneratorExportOptionsValidator : ValidatorBase<GeneratorExportOptions>
+    /// <summary>Initializes static validator configuration.</summary>
+    static GeneratorExportOptionsValidator()
     {
-        static GeneratorExportOptionsValidator()
-        {
-            DisablePropertyNameSplitting();
-        }
+        DisablePropertyNameSplitting();
+    }
 
-        public GeneratorExportOptionsValidator()
-        {
-            RuleFor(model => model.RootPath).IsNotEmpty();
+    /// <summary>Initializes validation rules.</summary>
+    public GeneratorExportOptionsValidator()
+    {
+        RuleFor(model => model.RootPath).IsNotEmpty();
+        RuleFor(model => model.ImageFormats).NotNull();
 
-            When(model => model.RootPath.IsNotNullOrEmpty(), () =>
-            {
-                RuleFor(model => model.RootPath)
-                    .Must(Directory.Exists)
-                    .WithMessage("The root export path was not found.");
-            });
-
-            RuleFor(model => model.ImageFormats).NotNull();
-        }
+        // Can't validate since the document needs to be loaded first - which would raise a JsonException if the value is invalid.
+        // RuleForEach(model => model.ImageFormats).IsInEnum();
     }
 }

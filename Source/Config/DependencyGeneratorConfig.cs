@@ -1,29 +1,15 @@
-﻿using System.Collections.Generic;
+﻿namespace SlnDependencyDiagramGenerator.Config;
 
-namespace SlnDependencyDiagramGenerator.Config
+/// <summary>Provides configuration options that specify which projects in a solution are processed,
+/// how dependency depth and diagram styling are applied, and where diagram/source outputs are exported.</summary>
+public sealed class DependencyGeneratorConfig
 {
-    // Not sealed so it can be inherited for the purpose of loading configuration via user secrets (which searches the
-    // assembly containing the config type for an instance of UserSecretsIdAttribute, which specifies a user secrets ID).
+    /// <summary>Specifies solution-related options: solution path, filters, exclusions, and scope configuration.</summary>
+    public GeneratorSolutionOptions Solution { get; init; } = new GeneratorSolutionOptions();
 
-    /// <summary>Provides configuration options that specify which projects for a specified solution are parsed,
-    /// where each project nuget dependency is resolved from, how deep the dependency graph is resolved, how the diagram
-    /// will be styled, and where the diagrams and images will be exported to.</summary>
-    public class DependencyGeneratorConfig
-    {
-        /// <summary>Specifies one or more nuget feeds, with authorization credentials if required.</summary>
-        public IList<NugetPackageFeed> PackageFeeds { get; init; } = [];
+    /// <summary>Specifies diagram options that determine how the diagram will be styled.</summary>
+    public GeneratorDiagramOptions Diagram { get; init; } = new GeneratorDiagramOptions();
 
-        /// <summary>Specifies project related options that determine which projects for a given solution
-        /// are resolved and the depth of their package dependency graph.</summary>
-        public GeneratorProjectOptions Projects { get; init; } = new GeneratorProjectOptions();
-
-        /// <summary>Specifies diagram options that determine how the diagram will be styled.</summary>
-        public GeneratorDiagramOptions Diagram { get; init; } = new GeneratorDiagramOptions();
-
-        /// <summary>Specifies export path and image format options.</summary>
-        public GeneratorExportOptions Export { get; init; } = new GeneratorExportOptions();
-
-        /// <summary>Specifies the target frameworks to resolve for all nuget package references.</summary>
-        public IList<string> TargetFrameworks { get; init; } = [];
-    }
+    /// <summary>Specifies export path and image format options.</summary>
+    public GeneratorExportOptions Export { get; init; } = new GeneratorExportOptions();
 }
