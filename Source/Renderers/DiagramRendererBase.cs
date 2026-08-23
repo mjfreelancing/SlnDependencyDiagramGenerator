@@ -62,7 +62,7 @@ internal abstract class DiagramRendererBase : IDiagramRenderer
 
         var relativeFileName = Path.GetFileName(fileName);
 
-        Logger.LogDebug("  {TargetFramework}/{FileExtension}: Creating {RelativeFileName}", targetFramework, FileExtension, relativeFileName);
+        Logger.LogInformation("  {TargetFramework}/{FileExtension}: Creating {RelativeFileName}", targetFramework, FileExtension, relativeFileName);
 
         await File
             .WriteAllTextAsync(fileName, content, cancellationToken)

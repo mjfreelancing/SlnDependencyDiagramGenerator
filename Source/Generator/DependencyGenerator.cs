@@ -253,7 +253,7 @@ public sealed class DependencyGenerator : IDependencyGenerator
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                _logger.LogDebug("  {FileExtension}: {ProjectName}", renderer.FileExtension, scopedProject.Name);
+                _logger.LogInformation("  Building {FileExtension} graph models for {ProjectName}", renderer.FileExtension, scopedProject.Name);
 
                 var packagesWithMultipleVersions = GetDeepOrderedDistinctPackageDependencies(scopedProject, solutionProjects, kvp => kvp.Count() > 1)
                     .ToDictionary(kvp => kvp.Key, kvp => GetDiagramPackageGroupId(kvp.Key));

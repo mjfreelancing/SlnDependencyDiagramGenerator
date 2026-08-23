@@ -135,7 +135,7 @@ internal sealed class MermaidDiagramRenderer : DiagramRendererBase
     protected override async Task ExportImageFileAsync(string diagramFileName, DiagramImageFormat format, CancellationToken cancellationToken)
     {
         var imageFileName = Path.ChangeExtension(diagramFileName, format.ToString().ToLowerInvariant());
-        Logger.LogDebug("  Exporting {Format}: {FileName}", format, Path.GetFileName(imageFileName));
+        Logger.LogInformation("  Exporting {Format}: {FileName}", format, Path.GetFileName(imageFileName));
 
         var stopwatch = Stopwatch.StartNew();
 
