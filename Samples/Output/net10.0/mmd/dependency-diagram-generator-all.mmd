@@ -8,16 +8,16 @@ flowchart LR
   microsoft-extensions-configuration-fileextensions_10-0-8["Microsoft.Extensions.Configuration.FileExtensions<br>v10.0.8"]
   microsoft-extensions-fileproviders-abstractions_10-0-8["Microsoft.Extensions.FileProviders.Abstractions<br>v10.0.8"]
   microsoft-extensions-dependencyinjection_10-0-8["Microsoft.Extensions.DependencyInjection<br>v10.0.8"]
-  microsoft-extensions-dependencyinjection-abstractions_10-0-8["Microsoft.Extensions.DependencyInjection.Abstractions<br>v10.0.8"]
+  microsoft-extensions-dependencyinjection-abstractions_10-0-9["Microsoft.Extensions.DependencyInjection.Abstractions<br>v10.0.9"]
   microsoft-extensions-logging-console_10-0-8["Microsoft.Extensions.Logging.Console<br>v10.0.8"]
   microsoft-extensions-logging_10-0-8["Microsoft.Extensions.Logging<br>v10.0.8"]
   microsoft-extensions-logging-abstractions_10-0-8["Microsoft.Extensions.Logging.Abstractions<br>v10.0.8"]
   microsoft-extensions-logging-configuration_10-0-8["Microsoft.Extensions.Logging.Configuration<br>v10.0.8"]
   microsoft-extensions-options_10-0-8["Microsoft.Extensions.Options<br>v10.0.8"]
   slndependencydiagramgenerator["SlnDependencyDiagramGenerator"]
-  alloverit_9-2-1["AllOverIt<br>v9.2.1"]
-  alloverit-assertion_9-2-1["AllOverIt.Assertion<br>v9.2.1"]
-  alloverit-validation_9-2-1["AllOverIt.Validation<br>v9.2.1"]
+  alloverit_9-4-0["AllOverIt<br>v9.4.0"]
+  alloverit-assertion_9-4-0["AllOverIt.Assertion<br>v9.4.0"]
+  alloverit-validation_9-4-0["AllOverIt.Validation<br>v9.4.0"]
   fluentvalidation_12-1-1["FluentValidation<br>v12.1.1"]
   microsoft-build-locator_1-11-2["Microsoft.Build.Locator<br>v1.11.2"]
   microsoft-visualstudio-solutionpersistence_1-0-52["Microsoft.VisualStudio.SolutionPersistence<br>v1.0.52"]
@@ -26,6 +26,7 @@ flowchart LR
   nuget-dependencyresolver-core_7-6-0["NuGet.DependencyResolver.Core<br>v7.6.0"]
   nuget-protocol_7-6-0["NuGet.Protocol<br>v7.6.0"]
   nuget-packaging_7-6-0["NuGet.Packaging<br>v7.6.0"]
+  system-reactive_6-1-0["System.Reactive<br>v6.1.0"]
   nugetconflictsample["NugetConflictSample"]
   alloverit_9-2-0["AllOverIt<br>v9.2.0"]
   alloverit-assertion_9-2-0["AllOverIt.Assertion<br>v9.2.0"]
@@ -43,30 +44,31 @@ flowchart LR
   microsoft-extensions-configuration-json_10-0-8 --> microsoft-extensions-configuration-fileextensions_10-0-8
   microsoft-extensions-configuration-json_10-0-8 --> microsoft-extensions-fileproviders-abstractions_10-0-8
   diagramgeneratorsample --> microsoft-extensions-dependencyinjection_10-0-8
-  microsoft-extensions-dependencyinjection_10-0-8 --> microsoft-extensions-dependencyinjection-abstractions_10-0-8
+  microsoft-extensions-dependencyinjection_10-0-8 --> microsoft-extensions-dependencyinjection-abstractions_10-0-9
   diagramgeneratorsample --> microsoft-extensions-logging-console_10-0-8
-  microsoft-extensions-logging-console_10-0-8 --> microsoft-extensions-dependencyinjection-abstractions_10-0-8
+  microsoft-extensions-logging-console_10-0-8 --> microsoft-extensions-dependencyinjection-abstractions_10-0-9
   microsoft-extensions-logging-console_10-0-8 --> microsoft-extensions-logging_10-0-8
   microsoft-extensions-logging-console_10-0-8 --> microsoft-extensions-logging-abstractions_10-0-8
   microsoft-extensions-logging-console_10-0-8 --> microsoft-extensions-logging-configuration_10-0-8
   microsoft-extensions-logging-console_10-0-8 --> microsoft-extensions-options_10-0-8
   diagramgeneratorsample --> slndependencydiagramgenerator
-  slndependencydiagramgenerator --> alloverit_9-2-1
-  alloverit_9-2-1 --> alloverit-assertion_9-2-1
-  slndependencydiagramgenerator --> alloverit-validation_9-2-1
-  alloverit-validation_9-2-1 --> alloverit_9-2-1
-  alloverit-validation_9-2-1 --> fluentvalidation_12-1-1
-  alloverit-validation_9-2-1 --> microsoft-extensions-dependencyinjection-abstractions_10-0-8
+  slndependencydiagramgenerator --> alloverit_9-4-0
+  alloverit_9-4-0 --> alloverit-assertion_9-4-0
+  slndependencydiagramgenerator --> alloverit-validation_9-4-0
+  alloverit-validation_9-4-0 --> alloverit_9-4-0
+  alloverit-validation_9-4-0 --> fluentvalidation_12-1-1
+  alloverit-validation_9-4-0 --> microsoft-extensions-dependencyinjection-abstractions_10-0-9
   slndependencydiagramgenerator --> microsoft-build-locator_1-11-2
-  slndependencydiagramgenerator --> microsoft-extensions-dependencyinjection-abstractions_10-0-8
+  slndependencydiagramgenerator --> microsoft-extensions-dependencyinjection-abstractions_10-0-9
   slndependencydiagramgenerator --> microsoft-extensions-logging-abstractions_10-0-8
-  microsoft-extensions-logging-abstractions_10-0-8 --> microsoft-extensions-dependencyinjection-abstractions_10-0-8
+  microsoft-extensions-logging-abstractions_10-0-8 --> microsoft-extensions-dependencyinjection-abstractions_10-0-9
   slndependencydiagramgenerator --> microsoft-visualstudio-solutionpersistence_1-0-52
   slndependencydiagramgenerator --> nuget-frameworks_7-6-0
   slndependencydiagramgenerator --> nuget-projectmodel_7-6-0
   nuget-projectmodel_7-6-0 --> nuget-dependencyresolver-core_7-6-0
   slndependencydiagramgenerator --> nuget-protocol_7-6-0
   nuget-protocol_7-6-0 --> nuget-packaging_7-6-0
+  slndependencydiagramgenerator --> system-reactive_6-1-0
   nugetconflictsample --> alloverit_9-2-0
   alloverit_9-2-0 --> alloverit-assertion_9-2-0
   nugetconflictsample --> nuget-protocol_7-3-1
@@ -79,15 +81,15 @@ flowchart LR
   style microsoft-extensions-configuration-fileextensions_10-0-8 fill:#FFEC96,opacity:0.8
   style microsoft-extensions-fileproviders-abstractions_10-0-8 fill:#FFEC96,opacity:0.8
   style microsoft-extensions-dependencyinjection_10-0-8 fill:#ADD8E6,opacity:0.8
-  style microsoft-extensions-dependencyinjection-abstractions_10-0-8 fill:#ADD8E6,opacity:0.8
+  style microsoft-extensions-dependencyinjection-abstractions_10-0-9 fill:#ADD8E6,opacity:0.8
   style microsoft-extensions-logging-console_10-0-8 fill:#ADD8E6,opacity:0.8
   style microsoft-extensions-logging_10-0-8 fill:#FFEC96,opacity:0.8
   style microsoft-extensions-logging-abstractions_10-0-8 fill:#ADD8E6,opacity:0.8
   style microsoft-extensions-logging-configuration_10-0-8 fill:#FFEC96,opacity:0.8
   style microsoft-extensions-options_10-0-8 fill:#FFEC96,opacity:0.8
-  style alloverit_9-2-1 fill:#ADD8E6,opacity:0.8
-  style alloverit-assertion_9-2-1 fill:#FFEC96,opacity:0.8
-  style alloverit-validation_9-2-1 fill:#ADD8E6,opacity:0.8
+  style alloverit_9-4-0 fill:#ADD8E6,opacity:0.8
+  style alloverit-assertion_9-4-0 fill:#FFEC96,opacity:0.8
+  style alloverit-validation_9-4-0 fill:#ADD8E6,opacity:0.8
   style fluentvalidation_12-1-1 fill:#FFEC96,opacity:0.8
   style microsoft-build-locator_1-11-2 fill:#ADD8E6,opacity:0.8
   style microsoft-visualstudio-solutionpersistence_1-0-52 fill:#ADD8E6,opacity:0.8
@@ -96,6 +98,7 @@ flowchart LR
   style nuget-dependencyresolver-core_7-6-0 fill:#FFEC96,opacity:0.8
   style nuget-protocol_7-6-0 fill:#ADD8E6,opacity:0.8
   style nuget-packaging_7-6-0 fill:#FFEC96,opacity:0.8
+  style system-reactive_6-1-0 fill:#ADD8E6,opacity:0.8
   style alloverit_9-2-0 fill:#ADD8E6,opacity:0.8
   style alloverit-assertion_9-2-0 fill:#FFEC96,opacity:0.8
   style nuget-protocol_7-3-1 fill:#ADD8E6,opacity:0.8

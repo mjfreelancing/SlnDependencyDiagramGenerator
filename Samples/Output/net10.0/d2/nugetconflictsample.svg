@@ -1,9 +1,9 @@
-<?xml version="1.0" encoding="utf-8"?><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" d2Version="v0.6.8" preserveAspectRatio="xMinYMin meet" viewBox="0 0 1316 590"><svg id="d2-svg" class="d2-4282290151" width="1316" height="590" viewBox="-89 -89 1316 590"><rect x="-89.000000" y="-89.000000" width="1316.000000" height="590.000000" rx="0.000000" fill="#FFFFFF" class=" fill-N7" stroke-width="0" /><style type="text/css"><![CDATA[
-.d2-4282290151 .text-bold {
-	font-family: "d2-4282290151-font-bold";
+<?xml version="1.0" encoding="utf-8"?><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" data-d2-version="v0.7.1" preserveAspectRatio="xMinYMin meet" viewBox="0 0 1316 590"><svg class="d2-3411437836 d2-svg" width="1316" height="590" viewBox="-89 -89 1316 590"><rect x="-89.000000" y="-89.000000" width="1316.000000" height="590.000000" rx="0.000000" fill="#FFFFFF" class=" fill-N7" stroke-width="0" /><style type="text/css"><![CDATA[
+.d2-3411437836 .text-bold {
+	font-family: "d2-3411437836-font-bold";
 }
 @font-face {
-	font-family: d2-4282290151-font-bold;
+	font-family: d2-3411437836-font-bold;
 	src: url("data:application/font-woff;base64,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");
 }]]></style><style type="text/css"><![CDATA[.shape {
   shape-rendering: geometricPrecision;
@@ -18,86 +18,78 @@
   opacity: 0.5;
 }
 
-		.d2-4282290151 .fill-N1{fill:#0A0F25;}
-		.d2-4282290151 .fill-N2{fill:#676C7E;}
-		.d2-4282290151 .fill-N3{fill:#9499AB;}
-		.d2-4282290151 .fill-N4{fill:#CFD2DD;}
-		.d2-4282290151 .fill-N5{fill:#DEE1EB;}
-		.d2-4282290151 .fill-N6{fill:#EEF1F8;}
-		.d2-4282290151 .fill-N7{fill:#FFFFFF;}
-		.d2-4282290151 .fill-B1{fill:#0D32B2;}
-		.d2-4282290151 .fill-B2{fill:#0D32B2;}
-		.d2-4282290151 .fill-B3{fill:#E3E9FD;}
-		.d2-4282290151 .fill-B4{fill:#E3E9FD;}
-		.d2-4282290151 .fill-B5{fill:#EDF0FD;}
-		.d2-4282290151 .fill-B6{fill:#F7F8FE;}
-		.d2-4282290151 .fill-AA2{fill:#4A6FF3;}
-		.d2-4282290151 .fill-AA4{fill:#EDF0FD;}
-		.d2-4282290151 .fill-AA5{fill:#F7F8FE;}
-		.d2-4282290151 .fill-AB4{fill:#EDF0FD;}
-		.d2-4282290151 .fill-AB5{fill:#F7F8FE;}
-		.d2-4282290151 .stroke-N1{stroke:#0A0F25;}
-		.d2-4282290151 .stroke-N2{stroke:#676C7E;}
-		.d2-4282290151 .stroke-N3{stroke:#9499AB;}
-		.d2-4282290151 .stroke-N4{stroke:#CFD2DD;}
-		.d2-4282290151 .stroke-N5{stroke:#DEE1EB;}
-		.d2-4282290151 .stroke-N6{stroke:#EEF1F8;}
-		.d2-4282290151 .stroke-N7{stroke:#FFFFFF;}
-		.d2-4282290151 .stroke-B1{stroke:#0D32B2;}
-		.d2-4282290151 .stroke-B2{stroke:#0D32B2;}
-		.d2-4282290151 .stroke-B3{stroke:#E3E9FD;}
-		.d2-4282290151 .stroke-B4{stroke:#E3E9FD;}
-		.d2-4282290151 .stroke-B5{stroke:#EDF0FD;}
-		.d2-4282290151 .stroke-B6{stroke:#F7F8FE;}
-		.d2-4282290151 .stroke-AA2{stroke:#4A6FF3;}
-		.d2-4282290151 .stroke-AA4{stroke:#EDF0FD;}
-		.d2-4282290151 .stroke-AA5{stroke:#F7F8FE;}
-		.d2-4282290151 .stroke-AB4{stroke:#EDF0FD;}
-		.d2-4282290151 .stroke-AB5{stroke:#F7F8FE;}
-		.d2-4282290151 .background-color-N1{background-color:#0A0F25;}
-		.d2-4282290151 .background-color-N2{background-color:#676C7E;}
-		.d2-4282290151 .background-color-N3{background-color:#9499AB;}
-		.d2-4282290151 .background-color-N4{background-color:#CFD2DD;}
-		.d2-4282290151 .background-color-N5{background-color:#DEE1EB;}
-		.d2-4282290151 .background-color-N6{background-color:#EEF1F8;}
-		.d2-4282290151 .background-color-N7{background-color:#FFFFFF;}
-		.d2-4282290151 .background-color-B1{background-color:#0D32B2;}
-		.d2-4282290151 .background-color-B2{background-color:#0D32B2;}
-		.d2-4282290151 .background-color-B3{background-color:#E3E9FD;}
-		.d2-4282290151 .background-color-B4{background-color:#E3E9FD;}
-		.d2-4282290151 .background-color-B5{background-color:#EDF0FD;}
-		.d2-4282290151 .background-color-B6{background-color:#F7F8FE;}
-		.d2-4282290151 .background-color-AA2{background-color:#4A6FF3;}
-		.d2-4282290151 .background-color-AA4{background-color:#EDF0FD;}
-		.d2-4282290151 .background-color-AA5{background-color:#F7F8FE;}
-		.d2-4282290151 .background-color-AB4{background-color:#EDF0FD;}
-		.d2-4282290151 .background-color-AB5{background-color:#F7F8FE;}
-		.d2-4282290151 .color-N1{color:#0A0F25;}
-		.d2-4282290151 .color-N2{color:#676C7E;}
-		.d2-4282290151 .color-N3{color:#9499AB;}
-		.d2-4282290151 .color-N4{color:#CFD2DD;}
-		.d2-4282290151 .color-N5{color:#DEE1EB;}
-		.d2-4282290151 .color-N6{color:#EEF1F8;}
-		.d2-4282290151 .color-N7{color:#FFFFFF;}
-		.d2-4282290151 .color-B1{color:#0D32B2;}
-		.d2-4282290151 .color-B2{color:#0D32B2;}
-		.d2-4282290151 .color-B3{color:#E3E9FD;}
-		.d2-4282290151 .color-B4{color:#E3E9FD;}
-		.d2-4282290151 .color-B5{color:#EDF0FD;}
-		.d2-4282290151 .color-B6{color:#F7F8FE;}
-		.d2-4282290151 .color-AA2{color:#4A6FF3;}
-		.d2-4282290151 .color-AA4{color:#EDF0FD;}
-		.d2-4282290151 .color-AA5{color:#F7F8FE;}
-		.d2-4282290151 .color-AB4{color:#EDF0FD;}
-		.d2-4282290151 .color-AB5{color:#F7F8FE;}.appendix text.text{fill:#0A0F25}.md{--color-fg-default:#0A0F25;--color-fg-muted:#676C7E;--color-fg-subtle:#9499AB;--color-canvas-default:#FFFFFF;--color-canvas-subtle:#EEF1F8;--color-border-default:#0D32B2;--color-border-muted:#0D32B2;--color-neutral-muted:#EEF1F8;--color-accent-fg:#0D32B2;--color-accent-emphasis:#0D32B2;--color-attention-subtle:#676C7E;--color-danger-fg:red;}.sketch-overlay-B1{fill:url(#streaks-darker);mix-blend-mode:lighten}.sketch-overlay-B2{fill:url(#streaks-darker);mix-blend-mode:lighten}.sketch-overlay-B3{fill:url(#streaks-bright);mix-blend-mode:darken}.sketch-overlay-B4{fill:url(#streaks-bright);mix-blend-mode:darken}.sketch-overlay-B5{fill:url(#streaks-bright);mix-blend-mode:darken}.sketch-overlay-B6{fill:url(#streaks-bright);mix-blend-mode:darken}.sketch-overlay-AA2{fill:url(#streaks-dark);mix-blend-mode:overlay}.sketch-overlay-AA4{fill:url(#streaks-bright);mix-blend-mode:darken}.sketch-overlay-AA5{fill:url(#streaks-bright);mix-blend-mode:darken}.sketch-overlay-AB4{fill:url(#streaks-bright);mix-blend-mode:darken}.sketch-overlay-AB5{fill:url(#streaks-bright);mix-blend-mode:darken}.sketch-overlay-N1{fill:url(#streaks-darker);mix-blend-mode:lighten}.sketch-overlay-N2{fill:url(#streaks-dark);mix-blend-mode:overlay}.sketch-overlay-N3{fill:url(#streaks-normal);mix-blend-mode:color-burn}.sketch-overlay-N4{fill:url(#streaks-normal);mix-blend-mode:color-burn}.sketch-overlay-N5{fill:url(#streaks-bright);mix-blend-mode:darken}.sketch-overlay-N6{fill:url(#streaks-bright);mix-blend-mode:darken}.sketch-overlay-N7{fill:url(#streaks-bright);mix-blend-mode:darken}.light-code{display: block}.dark-code{display: none}]]></style><g id="nugetconflictsample"><g class="shape" ><rect x="12.000000" y="95.000000" width="195.000000" height="80.000000" stroke="#0D32B2" fill="#F7F8FE" class=" stroke-B1 fill-B6" style="stroke-width:2;" /></g><text x="109.500000" y="140.500000" fill="#0A0F25" class="text-bold fill-N1" style="text-anchor:middle;font-size:16px">NugetConflictSample</text></g><g id="alloverit_9-2-0" style='opacity:0.800000'><g class="shape" ><rect x="310.000000" y="24.000000" width="110.000000" height="82.000000" stroke="#0D32B2" fill="#ADD8E6" class=" stroke-B1" style="stroke-width:2;" /></g><text x="365.000000" y="62.500000" fill="#0A0F25" class="text-bold fill-N1" style="text-anchor:middle;font-size:16px"><tspan x="365.000000" dy="0.000000">AllOverIt</tspan><tspan x="365.000000" dy="18.500000">v9.2.0</tspan></text></g><g id="alloverit-assertion_9-2-0" style='opacity:0.800000'><g class="shape" ><rect x="513.000000" y="24.000000" width="181.000000" height="82.000000" stroke="#0D32B2" fill="#FFEC96" class=" stroke-B1" style="stroke-width:2;" /></g><text x="603.500000" y="62.500000" fill="#0A0F25" class="text-bold fill-N1" style="text-anchor:middle;font-size:16px"><tspan x="603.500000" dy="0.000000">AllOverIt.Assertion</tspan><tspan x="603.500000" dy="18.500000">v9.2.0</tspan></text></g><g id="nuget-protocol_7-3-1" style='opacity:0.800000'><g class="shape" ><rect x="287.000000" y="165.000000" width="156.000000" height="82.000000" stroke="#0D32B2" fill="#ADD8E6" class=" stroke-B1" style="stroke-width:2;" /></g><text x="365.000000" y="203.500000" fill="#0A0F25" class="text-bold fill-N1" style="text-anchor:middle;font-size:16px"><tspan x="365.000000" dy="0.000000">NuGet.Protocol</tspan><tspan x="365.000000" dy="18.500000">v7.3.1</tspan></text></g><g id="nuget-packaging_7-3-1" style='opacity:0.800000'><g class="shape" ><rect x="523.000000" y="126.000000" width="168.000000" height="160.000000" stroke="#0D32B2" fill="#FFEC96" class=" stroke-B1" style="stroke-width:2;" /></g><text x="607.000000" y="203.500000" fill="#0A0F25" class="text-bold fill-N1" style="text-anchor:middle;font-size:16px"><tspan x="607.000000" dy="0.000000">NuGet.Packaging</tspan><tspan x="607.000000" dy="18.500000">v7.3.1</tspan></text></g><g id="newtonsoft-json_13-0-3" style='opacity:0.800000'><g class="shape" ><rect x="824.000000" y="12.000000" width="166.000000" height="82.000000" stroke="#0D32B2" fill="#FFEC96" class=" stroke-B1" style="stroke-width:2;" /></g><text x="907.000000" y="50.500000" fill="#0A0F25" class="text-bold fill-N1" style="text-anchor:middle;font-size:16px"><tspan x="907.000000" dy="0.000000">Newtonsoft.Json</tspan><tspan x="907.000000" dy="18.500000">v13.0.3</tspan></text></g><g id="nuget-configuration_7-3-1" style='opacity:0.800000'><g class="shape" ><rect x="824.000000" y="114.000000" width="193.000000" height="82.000000" stroke="#0D32B2" fill="#FFEC96" class=" stroke-B1" style="stroke-width:2;" /></g><text x="920.500000" y="152.500000" fill="#0A0F25" class="text-bold fill-N1" style="text-anchor:middle;font-size:16px"><tspan x="920.500000" dy="0.000000">NuGet.Configuration</tspan><tspan x="920.500000" dy="18.500000">v7.3.1</tspan></text></g><g id="nuget-versioning_7-3-1" style='opacity:0.800000'><g class="shape" ><rect x="824.000000" y="216.000000" width="170.000000" height="82.000000" stroke="#0D32B2" fill="#FFEC96" class=" stroke-B1" style="stroke-width:2;" /></g><text x="909.000000" y="254.500000" fill="#0A0F25" class="text-bold fill-N1" style="text-anchor:middle;font-size:16px"><tspan x="909.000000" dy="0.000000">NuGet.Versioning</tspan><tspan x="909.000000" dy="18.500000">v7.3.1</tspan></text></g><g id="system-security-cryptography-pkcs_8-0-1" style='opacity:0.800000'><g class="shape" ><rect x="824.000000" y="318.000000" width="302.000000" height="82.000000" stroke="#0D32B2" fill="#FFEC96" class=" stroke-B1" style="stroke-width:2;" /></g><text x="975.000000" y="356.500000" fill="#0A0F25" class="text-bold fill-N1" style="text-anchor:middle;font-size:16px"><tspan x="975.000000" dy="0.000000">System.Security.Cryptography.Pkcs</tspan><tspan x="975.000000" dy="18.500000">v8.0.1</tspan></text></g><g id="(alloverit_9-2-0 &lt;- nugetconflictsample)[0]"><marker id="mk-2451250203" markerWidth="10.000000" markerHeight="12.000000" refX="3.000000" refY="6.000000" viewBox="0.000000 0.000000 10.000000 12.000000" orient="auto" markerUnits="userSpaceOnUse"> <polygon points="10.000000,0.000000 0.000000,6.000000 10.000000,12.000000" fill="#0D32B2" class="connection fill-B1" stroke-width="2" /> </marker><path d="M 306.000000 65.000000 L 257.000000 65.000000 S 247.000000 65.000000 247.000000 75.000000 L 247.000000 112.166000 S 247.000000 122.166000 237.000000 122.166000 L 209.000000 122.166000" stroke="#0D32B2" fill="none" class="connection stroke-B1" style="stroke-width:2;" marker-start="url(#mk-2451250203)" mask="url(#d2-4282290151)" /></g><g id="(alloverit-assertion_9-2-0 &lt;- alloverit_9-2-0)[0]"><path d="M 509.000000 65.000000 L 422.000000 65.000000" stroke="#0D32B2" fill="none" class="connection stroke-B1" style="stroke-width:2;" marker-start="url(#mk-2451250203)" mask="url(#d2-4282290151)" /></g><g id="(nuget-protocol_7-3-1 &lt;- nugetconflictsample)[0]"><path d="M 283.000000 206.000000 L 257.000000 206.000000 S 247.000000 206.000000 247.000000 196.000000 L 247.000000 158.832993 S 247.000000 148.832993 237.000000 148.832993 L 209.000000 148.832993" stroke="#0D32B2" fill="none" class="connection stroke-B1" style="stroke-width:2;" marker-start="url(#mk-2451250203)" mask="url(#d2-4282290151)" /></g><g id="(nuget-packaging_7-3-1 &lt;- nuget-protocol_7-3-1)[0]"><path d="M 519.000000 206.000000 L 445.000000 206.000000" stroke="#0D32B2" fill="none" class="connection stroke-B1" style="stroke-width:2;" marker-start="url(#mk-2451250203)" mask="url(#d2-4282290151)" /></g><g id="(newtonsoft-json_13-0-3 &lt;- nuget-packaging_7-3-1)[0]"><path d="M 820.000000 53.000000 L 744.000000 53.000000 S 734.000000 53.000000 734.000000 63.000000 L 734.000000 148.000000 S 734.000000 158.000000 724.000000 158.000000 L 693.000000 158.000000" stroke="#0D32B2" fill="none" class="connection stroke-B1" style="stroke-width:2;" marker-start="url(#mk-2451250203)" mask="url(#d2-4282290151)" /></g><g id="(nuget-configuration_7-3-1 &lt;- nuget-packaging_7-3-1)[0]"><path d="M 820.000000 155.000000 L 794.000000 155.000000 S 784.000000 155.000000 784.000000 165.000000 L 784.000000 180.000000 S 784.000000 190.000000 774.000000 190.000000 L 693.000000 190.000000" stroke="#0D32B2" fill="none" class="connection stroke-B1" style="stroke-width:2;" marker-start="url(#mk-2451250203)" mask="url(#d2-4282290151)" /></g><g id="(nuget-versioning_7-3-1 &lt;- nuget-packaging_7-3-1)[0]"><path d="M 820.000000 257.000000 L 794.000000 257.000000 S 784.000000 257.000000 784.000000 247.000000 L 784.000000 232.000000 S 784.000000 222.000000 774.000000 222.000000 L 693.000000 222.000000" stroke="#0D32B2" fill="none" class="connection stroke-B1" style="stroke-width:2;" marker-start="url(#mk-2451250203)" mask="url(#d2-4282290151)" /></g><g id="(system-security-cryptography-pkcs_8-0-1 &lt;- nuget-packaging_7-3-1)[0]"><path d="M 820.000000 359.000000 L 744.000000 359.000000 S 734.000000 359.000000 734.000000 349.000000 L 734.000000 264.000000 S 734.000000 254.000000 724.000000 254.000000 L 693.000000 254.000000" stroke="#0D32B2" fill="none" class="connection stroke-B1" style="stroke-width:2;" marker-start="url(#mk-2451250203)" mask="url(#d2-4282290151)" /></g><mask id="d2-4282290151" maskUnits="userSpaceOnUse" x="-89" y="-89" width="1316" height="590">
+		.d2-3411437836 .fill-N1{fill:#0A0F25;}
+		.d2-3411437836 .fill-N2{fill:#676C7E;}
+		.d2-3411437836 .fill-N3{fill:#9499AB;}
+		.d2-3411437836 .fill-N4{fill:#CFD2DD;}
+		.d2-3411437836 .fill-N5{fill:#DEE1EB;}
+		.d2-3411437836 .fill-N6{fill:#EEF1F8;}
+		.d2-3411437836 .fill-N7{fill:#FFFFFF;}
+		.d2-3411437836 .fill-B1{fill:#0D32B2;}
+		.d2-3411437836 .fill-B2{fill:#0D32B2;}
+		.d2-3411437836 .fill-B3{fill:#E3E9FD;}
+		.d2-3411437836 .fill-B4{fill:#E3E9FD;}
+		.d2-3411437836 .fill-B5{fill:#EDF0FD;}
+		.d2-3411437836 .fill-B6{fill:#F7F8FE;}
+		.d2-3411437836 .fill-AA2{fill:#4A6FF3;}
+		.d2-3411437836 .fill-AA4{fill:#EDF0FD;}
+		.d2-3411437836 .fill-AA5{fill:#F7F8FE;}
+		.d2-3411437836 .fill-AB4{fill:#EDF0FD;}
+		.d2-3411437836 .fill-AB5{fill:#F7F8FE;}
+		.d2-3411437836 .stroke-N1{stroke:#0A0F25;}
+		.d2-3411437836 .stroke-N2{stroke:#676C7E;}
+		.d2-3411437836 .stroke-N3{stroke:#9499AB;}
+		.d2-3411437836 .stroke-N4{stroke:#CFD2DD;}
+		.d2-3411437836 .stroke-N5{stroke:#DEE1EB;}
+		.d2-3411437836 .stroke-N6{stroke:#EEF1F8;}
+		.d2-3411437836 .stroke-N7{stroke:#FFFFFF;}
+		.d2-3411437836 .stroke-B1{stroke:#0D32B2;}
+		.d2-3411437836 .stroke-B2{stroke:#0D32B2;}
+		.d2-3411437836 .stroke-B3{stroke:#E3E9FD;}
+		.d2-3411437836 .stroke-B4{stroke:#E3E9FD;}
+		.d2-3411437836 .stroke-B5{stroke:#EDF0FD;}
+		.d2-3411437836 .stroke-B6{stroke:#F7F8FE;}
+		.d2-3411437836 .stroke-AA2{stroke:#4A6FF3;}
+		.d2-3411437836 .stroke-AA4{stroke:#EDF0FD;}
+		.d2-3411437836 .stroke-AA5{stroke:#F7F8FE;}
+		.d2-3411437836 .stroke-AB4{stroke:#EDF0FD;}
+		.d2-3411437836 .stroke-AB5{stroke:#F7F8FE;}
+		.d2-3411437836 .background-color-N1{background-color:#0A0F25;}
+		.d2-3411437836 .background-color-N2{background-color:#676C7E;}
+		.d2-3411437836 .background-color-N3{background-color:#9499AB;}
+		.d2-3411437836 .background-color-N4{background-color:#CFD2DD;}
+		.d2-3411437836 .background-color-N5{background-color:#DEE1EB;}
+		.d2-3411437836 .background-color-N6{background-color:#EEF1F8;}
+		.d2-3411437836 .background-color-N7{background-color:#FFFFFF;}
+		.d2-3411437836 .background-color-B1{background-color:#0D32B2;}
+		.d2-3411437836 .background-color-B2{background-color:#0D32B2;}
+		.d2-3411437836 .background-color-B3{background-color:#E3E9FD;}
+		.d2-3411437836 .background-color-B4{background-color:#E3E9FD;}
+		.d2-3411437836 .background-color-B5{background-color:#EDF0FD;}
+		.d2-3411437836 .background-color-B6{background-color:#F7F8FE;}
+		.d2-3411437836 .background-color-AA2{background-color:#4A6FF3;}
+		.d2-3411437836 .background-color-AA4{background-color:#EDF0FD;}
+		.d2-3411437836 .background-color-AA5{background-color:#F7F8FE;}
+		.d2-3411437836 .background-color-AB4{background-color:#EDF0FD;}
+		.d2-3411437836 .background-color-AB5{background-color:#F7F8FE;}
+		.d2-3411437836 .color-N1{color:#0A0F25;}
+		.d2-3411437836 .color-N2{color:#676C7E;}
+		.d2-3411437836 .color-N3{color:#9499AB;}
+		.d2-3411437836 .color-N4{color:#CFD2DD;}
+		.d2-3411437836 .color-N5{color:#DEE1EB;}
+		.d2-3411437836 .color-N6{color:#EEF1F8;}
+		.d2-3411437836 .color-N7{color:#FFFFFF;}
+		.d2-3411437836 .color-B1{color:#0D32B2;}
+		.d2-3411437836 .color-B2{color:#0D32B2;}
+		.d2-3411437836 .color-B3{color:#E3E9FD;}
+		.d2-3411437836 .color-B4{color:#E3E9FD;}
+		.d2-3411437836 .color-B5{color:#EDF0FD;}
+		.d2-3411437836 .color-B6{color:#F7F8FE;}
+		.d2-3411437836 .color-AA2{color:#4A6FF3;}
+		.d2-3411437836 .color-AA4{color:#EDF0FD;}
+		.d2-3411437836 .color-AA5{color:#F7F8FE;}
+		.d2-3411437836 .color-AB4{color:#EDF0FD;}
+		.d2-3411437836 .color-AB5{color:#F7F8FE;}.appendix text.text{fill:#0A0F25}.md{--color-fg-default:#0A0F25;--color-fg-muted:#676C7E;--color-fg-subtle:#9499AB;--color-canvas-default:#FFFFFF;--color-canvas-subtle:#EEF1F8;--color-border-default:#0D32B2;--color-border-muted:#0D32B2;--color-neutral-muted:#EEF1F8;--color-accent-fg:#0D32B2;--color-accent-emphasis:#0D32B2;--color-attention-subtle:#676C7E;--color-danger-fg:red;}.sketch-overlay-B1{fill:url(#streaks-darker-d2-3411437836);mix-blend-mode:lighten}.sketch-overlay-B2{fill:url(#streaks-darker-d2-3411437836);mix-blend-mode:lighten}.sketch-overlay-B3{fill:url(#streaks-bright-d2-3411437836);mix-blend-mode:darken}.sketch-overlay-B4{fill:url(#streaks-bright-d2-3411437836);mix-blend-mode:darken}.sketch-overlay-B5{fill:url(#streaks-bright-d2-3411437836);mix-blend-mode:darken}.sketch-overlay-B6{fill:url(#streaks-bright-d2-3411437836);mix-blend-mode:darken}.sketch-overlay-AA2{fill:url(#streaks-dark-d2-3411437836);mix-blend-mode:overlay}.sketch-overlay-AA4{fill:url(#streaks-bright-d2-3411437836);mix-blend-mode:darken}.sketch-overlay-AA5{fill:url(#streaks-bright-d2-3411437836);mix-blend-mode:darken}.sketch-overlay-AB4{fill:url(#streaks-bright-d2-3411437836);mix-blend-mode:darken}.sketch-overlay-AB5{fill:url(#streaks-bright-d2-3411437836);mix-blend-mode:darken}.sketch-overlay-N1{fill:url(#streaks-darker-d2-3411437836);mix-blend-mode:lighten}.sketch-overlay-N2{fill:url(#streaks-dark-d2-3411437836);mix-blend-mode:overlay}.sketch-overlay-N3{fill:url(#streaks-normal-d2-3411437836);mix-blend-mode:color-burn}.sketch-overlay-N4{fill:url(#streaks-normal-d2-3411437836);mix-blend-mode:color-burn}.sketch-overlay-N5{fill:url(#streaks-bright-d2-3411437836);mix-blend-mode:darken}.sketch-overlay-N6{fill:url(#streaks-bright-d2-3411437836);mix-blend-mode:darken}.sketch-overlay-N7{fill:url(#streaks-bright-d2-3411437836);mix-blend-mode:darken}.light-code{display: block}.dark-code{display: none}]]></style><g class="bnVnZXRjb25mbGljdHNhbXBsZQ=="><g class="shape" ><rect x="12.000000" y="95.000000" width="195.000000" height="80.000000" stroke="#0D32B2" fill="#F7F8FE" class=" stroke-B1 fill-B6" style="stroke-width:2;" /></g><text x="109.500000" y="140.500000" fill="#0A0F25" class="text-bold fill-N1" style="text-anchor:middle;font-size:16px">NugetConflictSample</text></g><g class="YWxsb3Zlcml0XzktMi0w" style='opacity:0.800000'><g class="shape" ><rect x="310.000000" y="24.000000" width="110.000000" height="82.000000" stroke="#0D32B2" fill="#ADD8E6" class=" stroke-B1" style="stroke-width:2;" /></g><text x="365.000000" y="62.500000" fill="#0A0F25" class="text-bold fill-N1" style="text-anchor:middle;font-size:16px"><tspan x="365.000000" dy="0.000000">AllOverIt</tspan><tspan x="365.000000" dy="18.500000">v9.2.0</tspan></text></g><g class="YWxsb3Zlcml0LWFzc2VydGlvbl85LTItMA==" style='opacity:0.800000'><g class="shape" ><rect x="513.000000" y="24.000000" width="181.000000" height="82.000000" stroke="#0D32B2" fill="#FFEC96" class=" stroke-B1" style="stroke-width:2;" /></g><text x="603.500000" y="62.500000" fill="#0A0F25" class="text-bold fill-N1" style="text-anchor:middle;font-size:16px"><tspan x="603.500000" dy="0.000000">AllOverIt.Assertion</tspan><tspan x="603.500000" dy="18.500000">v9.2.0</tspan></text></g><g class="bnVnZXQtcHJvdG9jb2xfNy0zLTE=" style='opacity:0.800000'><g class="shape" ><rect x="287.000000" y="165.000000" width="156.000000" height="82.000000" stroke="#0D32B2" fill="#ADD8E6" class=" stroke-B1" style="stroke-width:2;" /></g><text x="365.000000" y="203.500000" fill="#0A0F25" class="text-bold fill-N1" style="text-anchor:middle;font-size:16px"><tspan x="365.000000" dy="0.000000">NuGet.Protocol</tspan><tspan x="365.000000" dy="18.500000">v7.3.1</tspan></text></g><g class="bnVnZXQtcGFja2FnaW5nXzctMy0x" style='opacity:0.800000'><g class="shape" ><rect x="523.000000" y="126.000000" width="168.000000" height="160.000000" stroke="#0D32B2" fill="#FFEC96" class=" stroke-B1" style="stroke-width:2;" /></g><text x="607.000000" y="203.500000" fill="#0A0F25" class="text-bold fill-N1" style="text-anchor:middle;font-size:16px"><tspan x="607.000000" dy="0.000000">NuGet.Packaging</tspan><tspan x="607.000000" dy="18.500000">v7.3.1</tspan></text></g><g class="bmV3dG9uc29mdC1qc29uXzEzLTAtMw==" style='opacity:0.800000'><g class="shape" ><rect x="824.000000" y="12.000000" width="166.000000" height="82.000000" stroke="#0D32B2" fill="#FFEC96" class=" stroke-B1" style="stroke-width:2;" /></g><text x="907.000000" y="50.500000" fill="#0A0F25" class="text-bold fill-N1" style="text-anchor:middle;font-size:16px"><tspan x="907.000000" dy="0.000000">Newtonsoft.Json</tspan><tspan x="907.000000" dy="18.500000">v13.0.3</tspan></text></g><g class="bnVnZXQtY29uZmlndXJhdGlvbl83LTMtMQ==" style='opacity:0.800000'><g class="shape" ><rect x="824.000000" y="114.000000" width="193.000000" height="82.000000" stroke="#0D32B2" fill="#FFEC96" class=" stroke-B1" style="stroke-width:2;" /></g><text x="920.500000" y="152.500000" fill="#0A0F25" class="text-bold fill-N1" style="text-anchor:middle;font-size:16px"><tspan x="920.500000" dy="0.000000">NuGet.Configuration</tspan><tspan x="920.500000" dy="18.500000">v7.3.1</tspan></text></g><g class="bnVnZXQtdmVyc2lvbmluZ183LTMtMQ==" style='opacity:0.800000'><g class="shape" ><rect x="824.000000" y="216.000000" width="170.000000" height="82.000000" stroke="#0D32B2" fill="#FFEC96" class=" stroke-B1" style="stroke-width:2;" /></g><text x="909.000000" y="254.500000" fill="#0A0F25" class="text-bold fill-N1" style="text-anchor:middle;font-size:16px"><tspan x="909.000000" dy="0.000000">NuGet.Versioning</tspan><tspan x="909.000000" dy="18.500000">v7.3.1</tspan></text></g><g class="c3lzdGVtLXNlY3VyaXR5LWNyeXB0b2dyYXBoeS1wa2NzXzgtMC0x" style='opacity:0.800000'><g class="shape" ><rect x="824.000000" y="318.000000" width="302.000000" height="82.000000" stroke="#0D32B2" fill="#FFEC96" class=" stroke-B1" style="stroke-width:2;" /></g><text x="975.000000" y="356.500000" fill="#0A0F25" class="text-bold fill-N1" style="text-anchor:middle;font-size:16px"><tspan x="975.000000" dy="0.000000">System.Security.Cryptography.Pkcs</tspan><tspan x="975.000000" dy="18.500000">v8.0.1</tspan></text></g><g class="KGFsbG92ZXJpdF85LTItMCAmbHQ7LSBudWdldGNvbmZsaWN0c2FtcGxlKVswXQ=="><marker id="mk-d2-3411437836-2451250203" markerWidth="10.000000" markerHeight="12.000000" refX="3.000000" refY="6.000000" viewBox="0.000000 0.000000 10.000000 12.000000" orient="auto" markerUnits="userSpaceOnUse"> <polygon points="10.000000,0.000000 0.000000,6.000000 10.000000,12.000000" fill="#0D32B2" class="connection fill-B1" stroke-width="2" /> </marker><path d="M 306.000000 65.000000 L 257.000000 65.000000 S 247.000000 65.000000 247.000000 75.000000 L 247.000000 112.166000 S 247.000000 122.166000 237.000000 122.166000 L 209.000000 122.166000" stroke="#0D32B2" fill="none" class="connection stroke-B1" style="stroke-width:2;" marker-start="url(#mk-d2-3411437836-2451250203)" mask="url(#d2-3411437836)" /></g><g class="KGFsbG92ZXJpdC1hc3NlcnRpb25fOS0yLTAgJmx0Oy0gYWxsb3Zlcml0XzktMi0wKVswXQ=="><path d="M 509.000000 65.000000 L 422.000000 65.000000" stroke="#0D32B2" fill="none" class="connection stroke-B1" style="stroke-width:2;" marker-start="url(#mk-d2-3411437836-2451250203)" mask="url(#d2-3411437836)" /></g><g class="KG51Z2V0LXByb3RvY29sXzctMy0xICZsdDstIG51Z2V0Y29uZmxpY3RzYW1wbGUpWzBd"><path d="M 283.000000 206.000000 L 257.000000 206.000000 S 247.000000 206.000000 247.000000 196.000000 L 247.000000 158.832993 S 247.000000 148.832993 237.000000 148.832993 L 209.000000 148.832993" stroke="#0D32B2" fill="none" class="connection stroke-B1" style="stroke-width:2;" marker-start="url(#mk-d2-3411437836-2451250203)" mask="url(#d2-3411437836)" /></g><g class="KG51Z2V0LXBhY2thZ2luZ183LTMtMSAmbHQ7LSBudWdldC1wcm90b2NvbF83LTMtMSlbMF0="><path d="M 519.000000 206.000000 L 445.000000 206.000000" stroke="#0D32B2" fill="none" class="connection stroke-B1" style="stroke-width:2;" marker-start="url(#mk-d2-3411437836-2451250203)" mask="url(#d2-3411437836)" /></g><g class="KG5ld3RvbnNvZnQtanNvbl8xMy0wLTMgJmx0Oy0gbnVnZXQtcGFja2FnaW5nXzctMy0xKVswXQ=="><path d="M 820.000000 53.000000 L 744.000000 53.000000 S 734.000000 53.000000 734.000000 63.000000 L 734.000000 148.000000 S 734.000000 158.000000 724.000000 158.000000 L 693.000000 158.000000" stroke="#0D32B2" fill="none" class="connection stroke-B1" style="stroke-width:2;" marker-start="url(#mk-d2-3411437836-2451250203)" mask="url(#d2-3411437836)" /></g><g class="KG51Z2V0LWNvbmZpZ3VyYXRpb25fNy0zLTEgJmx0Oy0gbnVnZXQtcGFja2FnaW5nXzctMy0xKVswXQ=="><path d="M 820.000000 155.000000 L 794.000000 155.000000 S 784.000000 155.000000 784.000000 165.000000 L 784.000000 180.000000 S 784.000000 190.000000 774.000000 190.000000 L 693.000000 190.000000" stroke="#0D32B2" fill="none" class="connection stroke-B1" style="stroke-width:2;" marker-start="url(#mk-d2-3411437836-2451250203)" mask="url(#d2-3411437836)" /></g><g class="KG51Z2V0LXZlcnNpb25pbmdfNy0zLTEgJmx0Oy0gbnVnZXQtcGFja2FnaW5nXzctMy0xKVswXQ=="><path d="M 820.000000 257.000000 L 794.000000 257.000000 S 784.000000 257.000000 784.000000 247.000000 L 784.000000 232.000000 S 784.000000 222.000000 774.000000 222.000000 L 693.000000 222.000000" stroke="#0D32B2" fill="none" class="connection stroke-B1" style="stroke-width:2;" marker-start="url(#mk-d2-3411437836-2451250203)" mask="url(#d2-3411437836)" /></g><g class="KHN5c3RlbS1zZWN1cml0eS1jcnlwdG9ncmFwaHktcGtjc184LTAtMSAmbHQ7LSBudWdldC1wYWNrYWdpbmdfNy0zLTEpWzBd"><path d="M 820.000000 359.000000 L 744.000000 359.000000 S 734.000000 359.000000 734.000000 349.000000 L 734.000000 264.000000 S 734.000000 254.000000 724.000000 254.000000 L 693.000000 254.000000" stroke="#0D32B2" fill="none" class="connection stroke-B1" style="stroke-width:2;" marker-start="url(#mk-d2-3411437836-2451250203)" mask="url(#d2-3411437836)" /></g><mask id="d2-3411437836" maskUnits="userSpaceOnUse" x="-89" y="-89" width="1316" height="590">
 <rect x="-89" y="-89" width="1316" height="590" fill="white"></rect>
-<rect x="34.500000" y="124.500000" width="150" height="21" fill="rgba(0,0,0,0.75)"></rect>
-<rect x="332.500000" y="46.500000" width="65" height="37" fill="rgba(0,0,0,0.75)"></rect>
-<rect x="535.500000" y="46.500000" width="136" height="37" fill="rgba(0,0,0,0.75)"></rect>
-<rect x="309.500000" y="187.500000" width="111" height="37" fill="rgba(0,0,0,0.75)"></rect>
-<rect x="545.500000" y="187.500000" width="123" height="37" fill="rgba(0,0,0,0.75)"></rect>
-<rect x="846.500000" y="34.500000" width="121" height="37" fill="rgba(0,0,0,0.75)"></rect>
-<rect x="846.500000" y="136.500000" width="148" height="37" fill="rgba(0,0,0,0.75)"></rect>
-<rect x="846.500000" y="238.500000" width="125" height="37" fill="rgba(0,0,0,0.75)"></rect>
-<rect x="846.500000" y="340.500000" width="257" height="37" fill="rgba(0,0,0,0.75)"></rect>
+
 </mask></svg></svg>

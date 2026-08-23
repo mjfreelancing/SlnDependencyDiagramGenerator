@@ -6,15 +6,15 @@
 
 | Project | Resolved | Conflict Details |
 |---------|----------|----------------------|
-| NugetConflictSample | 9.2.0 | Project requested AllOverIt [9.2.0, ), resolved v9.2.0 |
-| SlnDependencyDiagramGenerator | 9.2.1 | Project requested AllOverIt [9.2.1, ), resolved v9.2.1<br>Via AllOverIt.Validation v9.2.1 requested AllOverIt [9.2.1, 10.0.0), resolved v9.2.1 |
+| NugetConflictSample | 9.2.0 | Project resolved v9.2.0 |
+| SlnDependencyDiagramGenerator | 9.4.0 | Project resolved v9.4.0 |
 
 ### NuGet.Protocol
 
 | Project | Resolved | Conflict Details |
 |---------|----------|----------------------|
-| NugetConflictSample | 7.3.1 | Project requested NuGet.Protocol [7.3.1, ), resolved v7.3.1 |
-| SlnDependencyDiagramGenerator | 7.6.0 | Project requested NuGet.Protocol [7.6.0, ), resolved v7.6.0<br>Via NuGet.ProjectModel v7.6.0 -> NuGet.DependencyResolver.Core v7.6.0 requested NuGet.Protocol [7.6.0, ), resolved v7.6.0 |
+| NugetConflictSample | 7.3.1 | Project resolved v7.3.1 |
+| SlnDependencyDiagramGenerator | 7.6.0 | Project resolved v7.6.0 |
 
 
 <br>
@@ -29,9 +29,9 @@
 
 ### Dependencies
 
-* AllOverIt v9.2.1
-* AllOverIt.Assertion v9.2.1
-* AllOverIt.Validation v9.2.1
+* AllOverIt v9.4.0
+* AllOverIt.Assertion v9.4.0
+* AllOverIt.Validation v9.4.0
 * FluentValidation v12.1.1
 * Microsoft.Build.Locator v1.11.2
 * Microsoft.Extensions.Configuration v10.0.8
@@ -40,7 +40,7 @@
 * Microsoft.Extensions.Configuration.FileExtensions v10.0.8
 * Microsoft.Extensions.Configuration.Json v10.0.8
 * Microsoft.Extensions.DependencyInjection v10.0.8
-* Microsoft.Extensions.DependencyInjection.Abstractions v10.0.8
+* Microsoft.Extensions.DependencyInjection.Abstractions v10.0.9
 * Microsoft.Extensions.FileProviders.Abstractions v10.0.8
 * Microsoft.Extensions.FileProviders.Physical v10.0.8
 * Microsoft.Extensions.Logging v10.0.8
@@ -61,6 +61,7 @@
 * NuGet.Protocol v7.6.0
 * NuGet.Versioning v7.6.0
 * SlnDependencyDiagramGenerator
+* System.Reactive v6.1.0
 * System.Security.Cryptography.Pkcs v8.0.1
 
 <br>
@@ -96,12 +97,12 @@
 
 ### Dependencies
 
-* AllOverIt v9.2.1
-* AllOverIt.Assertion v9.2.1
-* AllOverIt.Validation v9.2.1
+* AllOverIt v9.4.0
+* AllOverIt.Assertion v9.4.0
+* AllOverIt.Validation v9.4.0
 * FluentValidation v12.1.1
 * Microsoft.Build.Locator v1.11.2
-* Microsoft.Extensions.DependencyInjection.Abstractions v10.0.8
+* Microsoft.Extensions.DependencyInjection.Abstractions v10.0.9
 * Microsoft.Extensions.Logging.Abstractions v10.0.8
 * Microsoft.VisualStudio.SolutionPersistence v1.0.52
 * Newtonsoft.Json v13.0.3
@@ -113,6 +114,7 @@
 * NuGet.ProjectModel v7.6.0
 * NuGet.Protocol v7.6.0
 * NuGet.Versioning v7.6.0
+* System.Reactive v6.1.0
 * System.Security.Cryptography.Pkcs v8.0.1
 
 <br>
