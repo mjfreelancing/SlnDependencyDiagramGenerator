@@ -1,6 +1,6 @@
 ﻿# v4.0.0
 
-## <date placeholder>
+## 23 Aug 2026
 
 ### SlnDependencyDiagramGenerator
 
@@ -8,18 +8,27 @@
 - Added support for excluding framework references from diagrams and the dependency summary.
 - Improved multi-version package conflict reporting in the dependency summary.
 - Added project grouping options and a renderer-neutral intermediate representation.
+- Added a Mermaid (`.mmd`) renderer alongside D2, with multi-format output via a `formats` array (D2 and/or Mermaid).
 - Added cancellation support to the generator.
 - Normalised generated file names to safe lower-kebab-case and made badge colours deterministic.
 - Added unit and integration test projects for the generator, validators, and renderers.
 
-### SlnDependencyStudio (new)
+### SlnDependencyStudio v1.0.0 (new)
 
 - **SlnDependencyStudio.Shared** — Shared `.sds` document format, services, and process-execution contracts used by both frontends.
-- **SlnDependencyStudio CLI** — A cross-platform command-line tool with `validate` and `run` commands, deterministic exit codes (1001–1008, 1999), verbose logging, and rolling file logs.
+- **SlnDependencyStudio CLI** — A cross-platform command-line tool with `validate` and `run` commands, deterministic exit codes (1001–1014, 1999), verbose logging, and rolling file logs.
 - **SlnDependencyStudio WPF** — A Windows desktop application (ReactiveUI, MaterialDesignThemes) with an IDE-style shell, five configuration pages, Analyse/Generate workflows, an output panel, application settings, and light/dark theming.
+  - Added an empty state with New/Open/Recent actions and a recent-projects list (most recent first, capped at 10, removable entries, missing-file detection).
+  - Added per-page dirty tracking and validation indicators on navigation items and the window title.
+  - Added an output panel with real-time streaming, level colouring, verbose/wrap/auto-scroll toggles, cancel, clear, copy-all, and save-as (preferences persisted).
+  - Added application settings for the default project folder, d2/mmdc executable overrides, log retention, and theme.
+  - Added persistent window placement and rolling file logs.
+  - Added Save As relative-path re-basing so portable `.sds` files remain valid when moved.
+  - Added a shared error dialog service.
 - Added solution restore and optional pre/post-generation command support to the generation pipeline (CLI and WPF).
 - Added tool detection for the d2 and mmdc executables.
 - Added an installer project for the Studio applications.
+- Added unit and integration test projects for the Studio CLI, Shared, and WPF applications.
 
 ---
 
