@@ -12,6 +12,7 @@ using SlnDependencyStudio.Wpf.Features.ErrorDialog;
 using SlnDependencyStudio.Wpf.Features.Project.Stores;
 using SlnDependencyStudio.Wpf.Features.Settings;
 using SlnDependencyStudio.Wpf.Models;
+using SlnDependencyStudio.Wpf.Utils;
 using System.ComponentModel;
 using System.IO;
 using System.Reactive;
@@ -25,6 +26,8 @@ namespace SlnDependencyStudio.Wpf;
 /// <summary>The main application window.</summary>
 public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 {
+    private const string ApplicationName = "SlnDependencyStudio";
+
     private readonly IViewFactory _viewFactory;
     private readonly IApplicationSettingsService _settingsService;
     private readonly IFileSystem _fileSystem;
@@ -50,6 +53,8 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         InitializeComponent();
 
         RestorePlacement(_settingsService.CurrentState.WindowPlacement);
+
+        UpdateTitle();
 
         this.WhenActivated(disposables =>
         {
@@ -346,17 +351,19 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 
     private void UpdateTitle()
     {
+        var baseTitle = $"{ApplicationName} v{ApplicationVersion.Value}";
+
         if (_store.DocumentFilePath is null)
         {
-            Title = "SlnDependencyStudio";
+            Title = baseTitle;
         }
         else
         {
             var name = Path.GetFileNameWithoutExtension(_store.DocumentFilePath);
 
             Title = _store.IsDirty
-                ? $"SlnDependencyStudio — {name} ●"
-                : $"SlnDependencyStudio — {name}";
+                ? $"{baseTitle} — {name} ●"
+                : $"{baseTitle} — {name}";
         }
     }
 

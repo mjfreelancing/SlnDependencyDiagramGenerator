@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using SlnDependencyStudio.Wpf.Features.Application;
 using SlnDependencyStudio.Wpf.Features.Theming;
+using SlnDependencyStudio.Wpf.Utils;
 using System.Windows;
 
 namespace SlnDependencyStudio.Wpf;
@@ -35,6 +36,8 @@ internal sealed class WpfAppBootstrapper
     {
         try
         {
+            _logger.LogInformation("SlnDependencyStudio {Version} starting", $"v{ApplicationVersion.Value}");
+
             _logger.LogInformation("Loading application settings");
 
             // Load durable application settings before showing the main window.
